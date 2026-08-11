@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Harness PTY spike</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Harness PTY spike</h1>
+      <p id="status" role="status">Connecting…</p>
+      <pre id="output" aria-label="Terminal output"></pre>
+      <form id="command-form">
+        <label for="command">Bash command</label>
+        <div class="command-row">
+          <input
+            id="command"
+            name="command"
+            autocomplete="off"
+            autofocus
+            disabled
+          />
+          <button type="submit" disabled>Send</button>
+        </div>
+      </form>
+    </main>
+    <script src="/client.js"></script>
+  </body>
+</html>

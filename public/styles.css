@@ -1,0 +1,51 @@
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  background: #111;
+  color: #eee;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  width: min(60rem, calc(100% - 2rem));
+  margin: 2rem auto;
+}
+
+#status {
+  color: #aaa;
+}
+
+#output {
+  min-height: 24rem;
+  max-height: 65vh;
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid #444;
+  background: #080808;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.command-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.65rem;
+  font: inherit;
+}
+
+button {
+  padding-inline: 1.25rem;
+}
