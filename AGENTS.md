@@ -197,6 +197,16 @@ Do not silently change public contracts.
 
 If the requested change reveals an architectural problem outside the task scope, report it rather than automatically redesigning the surrounding system.
 
+## Git Workflow
+
+Treat `main` as protected even when the GitHub account plan cannot enforce branch protection.
+
+* Do not commit or push changes directly to `main`.
+* Create a focused feature branch for each change.
+* Merge changes into `main` through a pull request.
+* Use squash merge only; do not create merge commits or rebase-merge pull requests.
+* Do not bypass this workflow unless the user explicitly requests an exception.
+
 ## Completion
 
 Before declaring a task complete:
@@ -208,4 +218,3 @@ Before declaring a task complete:
 5. Report any known limitations, assumptions, or unresolved risks.
 
 Keep completion summaries concise and factual.
-
