@@ -1,6 +1,9 @@
 ---
 name: outcome
-description: Synthesize the complete historical outcome of a finished Harness spike after implementation, evaluation, and review. Use when producing or updating outcome.md for a completed spike.
+description:
+  Synthesize the complete historical outcome of a finished Harness spike after
+  implementation, evaluation, and review. Use when producing or updating
+  outcome.md for a completed spike.
 ---
 
 # Spike Outcome
@@ -17,7 +20,8 @@ It is not:
 - a retrospective justification of the implementation;
 - a polished success narrative.
 
-Preserve failures, ambiguity, unexpected complexity, deferred risks, and process problems when they materially contributed to what was learned.
+Preserve failures, ambiguity, unexpected complexity, deferred risks, and process
+problems when they materially contributed to what was learned.
 
 ## Preconditions
 
@@ -25,9 +29,12 @@ Use this skill only after the spike has completed:
 
 1. implementation;
 2. successful independent evaluation and promotion;
-3. independent code review.
 
-If the spike has not successfully completed evaluation, do not write a final outcome.
+A separate code review may be performed when warranted by the size, risk, or
+complexity of the spike, but is not required for every spike.
+
+If the spike has not successfully completed evaluation, do not write a final
+outcome.
 
 Report which prerequisite is incomplete instead.
 
@@ -57,13 +64,16 @@ Do not modify:
 - skills;
 - other project documentation.
 
-Recommendations for changes to those artifacts belong in the outcome as follow-up suggestions.
+Recommendations for changes to those artifacts belong in the outcome as
+follow-up suggestions.
 
 ## Read Authority
 
-For the target completed spike, read all available artifacts needed to reconstruct what actually happened.
+For the target completed spike, read all available artifacts needed to
+reconstruct what actually happened.
 
-This includes normally restricted evaluation artifacts that have been promoted into the target spike's permanent historical record.
+This includes normally restricted evaluation artifacts that have been promoted
+into the target spike's permanent historical record.
 
 Inspect where relevant:
 
@@ -80,15 +90,18 @@ Inspect where relevant:
 - `AGENTS.md`;
 - relevant `GOALS.md`, architecture documentation, and ADRs.
 
-Restricted evaluation access granted to this skill is for historical synthesis only.
+Restricted evaluation access granted to this skill is for historical synthesis
+only.
 
-Do not inspect active evaluator-private workspaces outside the target completed spike unless explicitly authorized by the user.
+Do not inspect active evaluator-private workspaces outside the target completed
+spike unless explicitly authorized by the user.
 
 Do not modify any restricted evaluation artifact.
 
 ## Source Discipline
 
-Ground every material conclusion in the spike's actual artifacts, implementation, repository history, or established project documentation.
+Ground every material conclusion in the spike's actual artifacts,
+implementation, repository history, or established project documentation.
 
 Distinguish clearly between:
 
@@ -101,9 +114,11 @@ Distinguish clearly between:
 
 Do not infer that something was proven merely because it was implemented.
 
-Do not infer that something was correct merely because evaluation ultimately passed.
+Do not infer that something was correct merely because evaluation ultimately
+passed.
 
-Do not erase earlier blocked or failed attempts from the historical account when they produced meaningful lessons.
+Do not erase earlier blocked or failed attempts from the historical account when
+they produced meaningful lessons.
 
 Avoid reproducing large sections of existing artifacts. Synthesize them.
 
@@ -117,7 +132,8 @@ Normally this should be:
 
 Do not use `PASS` merely because implementation completed.
 
-Record the final implementation commit and final evaluation result when available.
+Record the final implementation commit and final evaluation result when
+available.
 
 ## Write `outcome.md`
 
@@ -133,11 +149,14 @@ Include, where available:
 
 - final implementation commit;
 - final evaluation result;
-- whether code review completed successfully.
+
+Include code-review findings when a separate review was performed. Do not
+require a code-review artifact for completion.
 
 ## What Was Proven
 
-Describe only the meaningful behaviours, boundaries, or architectural assumptions that this spike demonstrated.
+Describe only the meaningful behaviours, boundaries, or architectural
+assumptions that this spike demonstrated.
 
 Prefer statements such as:
 
@@ -153,11 +172,13 @@ Focus on what became established knowledge because the spike succeeded.
 
 Summarize the implemented shape of the solution.
 
-Include only architecture or implementation decisions useful to understanding the resulting system.
+Include only architecture or implementation decisions useful to understanding
+the resulting system.
 
 Do not reproduce the diff or provide a file-by-file changelog.
 
-Do not describe incidental implementation details unless they became important during evaluation or review.
+Do not describe incidental implementation details unless they became important
+during evaluation or review.
 
 ## Evaluation Outcome
 
@@ -174,7 +195,8 @@ Do not reproduce the evaluation report.
 
 ## Evaluation History
 
-Include this section when there were meaningful earlier blocked, failed, or revised evaluation attempts.
+Include this section when there were meaningful earlier blocked, failed, or
+revised evaluation attempts.
 
 Summarize:
 
@@ -195,21 +217,26 @@ Do not rewrite an evaluator defect as a product defect or vice versa.
 
 ## Decisions Made
 
-Record material decisions made during the spike that affect how Harness should be understood going forward.
+Record material decisions made during the spike that affect how Harness should
+be understood going forward.
 
 For each significant decision, briefly capture:
 
 - the decision;
 - why it was made;
-- whether it is intended as a durable architectural decision or a spike-local constraint.
+- whether it is intended as a durable architectural decision or a spike-local
+  constraint.
 
-Do not silently elevate a spike-local decision into permanent project architecture.
+Do not silently elevate a spike-local decision into permanent project
+architecture.
 
 ## Discoveries
 
-Record material facts learned during implementation, evaluation, or review that were not adequately understood when the spike began.
+Record material facts learned during implementation, evaluation, or review that
+were not adequately understood when the spike began.
 
-A discovery describes something learned about reality, the technology, the existing system, or the AI-development process.
+A discovery describes something learned about reality, the technology, the
+existing system, or the AI-development process.
 
 Keep discoveries separate from decisions.
 
@@ -232,11 +259,13 @@ For each material item include:
 
 Do not convert every non-goal into deferred work.
 
-Include only concerns that emerged as meaningful future risks, requirements, or architectural questions.
+Include only concerns that emerged as meaningful future risks, requirements, or
+architectural questions.
 
 ## AI-Development Process Findings
 
-Include this section only when the spike produced meaningful lessons about the Harness AI-first workflow.
+Include this section only when the spike produced meaningful lessons about the
+Harness AI-first workflow.
 
 Potential subjects include:
 
@@ -251,7 +280,8 @@ Potential subjects include:
 
 State both successes and failures plainly.
 
-Do not portray process failures as evidence that the process worked merely because they were eventually discovered.
+Do not portray process failures as evidence that the process worked merely
+because they were eventually discovered.
 
 When the process was changed during the spike, state:
 
@@ -276,7 +306,8 @@ Do not edit other project artifacts to implement these recommendations.
 
 ## Provenance
 
-Record available references to the artifacts from which the outcome was synthesized.
+Record available references to the artifacts from which the outcome was
+synthesized.
 
 Include where available:
 
@@ -313,10 +344,30 @@ If evidence is incomplete or contradictory, say so.
 Before finishing:
 
 1. Confirm the final outcome agrees with the promoted evaluation result.
-2. Confirm important earlier evaluation attempts have been represented when relevant.
+2. Confirm important earlier evaluation attempts have been represented when
+   relevant.
 3. Confirm decisions and discoveries are not conflated.
 4. Confirm deferred concerns are not presented as completed work.
-5. Confirm recommended follow-ups have not been silently promoted into project requirements.
-6. Confirm only `outcome.md` was modified unless the user explicitly authorized other changes.
+5. Confirm recommended follow-ups have not been silently promoted into project
+   requirements.
+6. Confirm only `outcome.md` was modified unless the user explicitly authorized
+   other changes.
 
 Report the path written and a concise summary of the major outcome findings.
+
+## Git Handoff
+
+When the user requests it, the outcome workflow may commit and push the
+completed outcome together with other explicitly authorized changes on the
+current feature branch.
+
+Merge only with explicit user permission for that merge. Follow the repository's
+protected-branch workflow: use a pull request and squash merge; do not push
+directly to `main`, create a merge commit, or use rebase merge.
+
+Before committing or merging:
+
+1. inspect the staged paths and preserve unrelated work;
+2. run checks appropriate to the changed artifacts;
+3. confirm the branch and target branch;
+4. report the commit, push, pull request, and merge result.
