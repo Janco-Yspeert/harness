@@ -1,0 +1,11 @@
+{
+  "cases": {
+    "E7": {
+      "requirements": ["R3"],
+      "invariants": ["I2"],
+      "negativeRequirements": [],
+      "assumptions": ["A1"],
+      "tests": ["session-isolation.test.ts"]
+    }
+  }
+}

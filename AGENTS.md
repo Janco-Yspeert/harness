@@ -1,220 +1,137 @@
 # Harness — Project Instructions
 
-Harness is an Ubuntu-hosted control plane for supervising multiple AI coding agents from a phone or other remote client.
+Harness is an Ubuntu-hosted control plane for supervising multiple AI coding
+agents. Read `GOALS.md` for authoritative product direction, architectural
+preferences, current non-goals, and open questions.
 
-The project is intentionally being built in small, reviewable increments. Do not attempt to complete anticipated future features unless explicitly requested.
+This file contains the rules that apply broadly to engineering work in this
+repository. Task-specific workflows belong in the relevant skill or spike
+contract, not here.
 
-## Product Direction
+## Scope and design
 
-Harness should eventually support:
+- Implement only the requested slice. Do not silently broaden the task or build
+  anticipated follow-on features.
+- Prefer the smallest design that preserves the required behaviour and leaves a
+  reasonable path to evolve.
+- Do not introduce speculative abstractions, dependencies, frameworks,
+  infrastructure, or persistence.
+- Preserve established behaviour and public contracts unless the task
+  explicitly changes them.
+- Inspect the surrounding implementation, tests, conventions, and public API
+  before making meaningful changes.
+- Fix root causes. Avoid unrelated refactoring, renaming, or reorganization.
+- Report important out-of-scope problems separately instead of quietly folding
+  them into the change.
+- Treat explicit non-goals as requirements.
 
-* Multiple concurrent AI coding-agent sessions.
-* Codex and Claude Code as first-class agents.
-* Additional agents through adapters where practical.
-* Persistent sessions owned by the Ubuntu host, not by connected clients.
-* Remote observation and interaction from an Android client.
-* Human-in-the-loop approvals and decisions.
-* Attention-based notifications when an agent requires intervention.
-* Raw terminal access as a fallback, not as the primary product abstraction.
+If applicable project contracts conflict, or leave a product, scope, or
+externally observable behaviour decision unresolved, stop and report the issue.
+Make ordinary implementation and architectural choices yourself when they
+preserve those contracts.
 
-This describes the intended direction, not the scope of the current task.
+## Architectural invariants
 
-## Platform
+- Ubuntu is the host platform. Do not add cross-platform host abstractions
+  unless explicitly requested; use Linux facilities where they materially
+  simplify the implementation.
+- Harness supervises multiple agents and sessions. Do not introduce assumptions
+  that only one agent, provider, project, workspace, or session can exist unless
+  a spike explicitly limits its proof-of-concept scope.
+- Session lifecycle, underlying process or provider lifecycle, and client
+  connection lifecycle are separate concerns. A client disconnect must not
+  implicitly terminate agent work.
+- Keep the Harness domain protocol independent of its transport.
+- Keep provider-specific behaviour out of the core session model where
+  practical, but do not build a universal agent framework before supported
+  integrations require one.
+- Prefer structured provider APIs and events when available. PTY integration is
+  a fallback; do not parse terminal output semantically unless required by the
+  current task.
+- Keep Harness messages structurally compatible with the Conduit message model
+  where that fits naturally, but do not add Conduit or force its semantics
+  without a current requirement.
 
-The host/daemon is Ubuntu-first.
-
-Do not add cross-platform abstractions unless explicitly requested.
-
-It is acceptable to use Linux-specific facilities when they materially simplify the implementation.
-
-## Architecture
-
-The intended high-level boundary is:
-
-Android / other clients
-↕
-Harness protocol
-↕
-Harness daemon
-↕
-Session / agent integration
-↕
-PTY / Codex / Claude / other agents
-
-Preserve these boundaries where useful, but do not create speculative frameworks or abstractions simply because they may be needed later.
-
-## Incremental Development
-
-Implement only the requested slice.
-
-A task is complete when:
-
-* The requested behaviour works.
-* Relevant tests pass.
-* Relevant linting/type checks pass.
-* No unrelated behaviour was changed.
-
-A task is not an invitation to implement the next logical feature.
-
-Prefer the smallest implementation that leaves a reasonable path for later extension.
-
-Do not introduce abstractions for hypothetical future requirements.
-
-## Sessions
-
-The Harness daemon owns session lifetime.
-
-A WebSocket connection, Android activity, browser tab, or other client must never implicitly own the lifetime of the underlying agent process.
-
-Clients should be able to disconnect and later reattach without terminating the agent session.
-
-Session lifecycle, process lifecycle, and client connection lifecycle are separate concepts.
-
-## Agent Integration
-
-Codex-specific or Claude-specific behaviour should not leak unnecessarily into the core session model.
-
-However, do not design a large universal agent framework prematurely.
-
-Introduce agent abstractions only as required by actual supported agents or by an explicitly requested architectural boundary.
-
-Where structured agent APIs or events are available, prefer them.
-
-PTY-based integration is an acceptable fallback and may be the initial implementation.
-
-Do not implement fragile terminal-output parsing unless the current task requires it.
-
-## Protocol
-
-The Harness protocol is independent of its transport.
-
-WebSocket may carry Harness messages, but WebSocket is not the domain protocol.
-
-Harness messages should, where natural, remain structurally compatible with the Conduit message model:
-
-* `meta.id`
-* `meta.kind`
-* `meta.type`
-* `meta.version`
-* `meta.streamId`
-* `meta.correlationId`
-* `meta.causationId` when applicable
-* `meta.timestamp`
-* `meta.source`
-* optional `meta.extensions`
-* `data`
-
-Do not add Conduit itself as a dependency unless explicitly requested.
-
-Do not force Conduit semantics where they do not fit the Harness domain.
-
-Harness owns its protocol independently.
-
-## Message Semantics
-
-Prefer domain-level events and commands over transport-level concepts.
-
-Examples may eventually include:
-
-* `session.started`
-* `session.stopped`
-* `session.output`
-* `agent.message`
-* `agent.waiting`
-* `approval.requested`
-* `approval.resolved`
-* `agent.completed`
-* `agent.failed`
-
-Do not implement these merely because they are listed here.
-
-Add message types only when required by current behaviour.
-
-A session is the likely natural `streamId`.
-
-Higher-level tasks may eventually use `correlationId`, but do not introduce a task system until requested.
-
-## Multiple Agents
-
-Multiple concurrent agents are a core product requirement.
-
-Avoid assumptions that only one active session or one agent provider exists.
-
-Do not, however, build orchestration, scheduling, worktree management, or agent-to-agent coordination until explicitly requested.
+These are constraints, not an invitation to implement the architecture
+described in `GOALS.md` ahead of need.
 
 ## Security
 
 Treat Harness as a remote code-execution control surface.
 
-Security-sensitive shortcuts must not silently become production behaviour.
-
-In particular:
-
-* Do not expose the daemon publicly by default.
-* Do not bind to arbitrary network interfaces merely to make development easier.
-* Do not disable authentication or authorization mechanisms once they have been introduced.
-* Do not log secrets, credentials, tokens, or sensitive environment values.
-* Do not permit broader command execution than the requested feature requires.
-
-For early localhost-only proofs of concept, keep security simple rather than prematurely building a full security system.
-
-Clearly identify any deliberate development-only security limitations.
+- Do not expose the daemon publicly or bind it to arbitrary network interfaces
+  by default.
+- Do not weaken authentication or authorization mechanisms once introduced.
+- Do not log secrets, credentials, tokens, or sensitive environment values.
+- Do not permit broader command execution than the requested feature requires.
+- Keep deliberate early-development security limitations localhost-only where
+  practical and identify them clearly as development-only.
 
 ## Dependencies
 
-Prefer standard platform capabilities and small focused dependencies.
+- Prefer standard platform capabilities and small, focused dependencies.
+- Every new dependency must solve a concrete current problem.
+- Do not add a framework, event bus, database, message broker, plugin framework,
+  dependency-injection system, or persistence layer without a current
+  requirement.
 
-Do not add a framework, event bus, database, message broker, plugin framework, dependency injection system, or persistence layer without a current requirement.
+## Testing and verification
 
-Every new dependency should solve a concrete present problem.
+- Test behavioural boundaries rather than implementation details.
+- Pay particular attention where relevant to lifecycle, attach/detach and
+  disconnect behaviour, concurrency, isolation, message validation, failure
+  propagation, and resource cleanup.
+- Do not mock away the behaviour a test is intended to prove. Use integration
+  tests when process or PTY behaviour cannot be validated meaningfully in
+  isolation.
+- Run relevant visible tests and required lint, type, static-analysis, and build
+  checks before declaring work complete.
+- Run the broader test suite where practical.
+- Fix failures caused by or relevant to the change. Report unrelated
+  pre-existing failures with evidence rather than expanding scope to repair
+  them.
+- Review the final diff for unrelated changes.
+- Do not claim verification you did not actually perform.
 
-## Testing
+## Git workflow
 
-Add tests around behavioural boundaries rather than implementation details.
+Treat `main` as protected even when the hosting plan cannot enforce it.
 
-Pay particular attention to:
+- Do not commit or push changes directly to `main`.
+- Use a focused feature branch and merge through a pull request.
+- Use squash merge only. Do not create merge commits or rebase-merge pull
+  requests.
+- Do not bypass this workflow unless the user explicitly requests an exception.
 
-* Process lifecycle.
-* Session lifecycle.
-* Attach/detach behaviour.
-* Disconnect behaviour.
-* Concurrency.
-* Message validation.
-* Error propagation.
-* Cleanup of processes and resources.
+## Restricted evaluator material
 
-Do not mock away the behaviour the test is intended to prove.
+The following paths contain active evaluator-private material:
 
-Use integration tests where lifecycle or PTY behaviour cannot be meaningfully validated with isolated unit tests.
+- `**/eval-spec.md`
+- `**/.hidden-test/**`
+- `**/.eval/**`
 
-## Changes
+Implementation, review, and planning agents must not read, search, inspect,
+summarize, or use these paths unless the active skill explicitly grants
+evaluator access.
 
-Avoid unrelated refactoring.
+Evaluator skills may access them only as required by their workflow.
 
-Do not rename or reorganize existing code merely for consistency unless required by the current task.
+Exception: artifacts promoted after successful verification under
+`spikes/NNN-*/evaluation/**` are public historical records. They may be read by
+any role and are not evaluator-private, even when a promoted file is named
+`eval-spec.md`.
 
-Do not silently change public contracts.
-
-If the requested change reveals an architectural problem outside the task scope, report it rather than automatically redesigning the surrounding system.
-
-## Git Workflow
-
-Treat `main` as protected even when the GitHub account plan cannot enforce branch protection.
-
-* Do not commit or push changes directly to `main`.
-* Create a focused feature branch for each change.
-* Merge changes into `main` through a pull request.
-* Use squash merge only; do not create merge commits or rebase-merge pull requests.
-* Do not bypass this workflow unless the user explicitly requests an exception.
+The repository-owned structural template at
+`skills/evaluator/templates/eval-spec.md` is also public and may be read by any
+role. This exception applies only to the template, not to an evaluation
+specification created from it.
 
 ## Completion
 
-Before declaring a task complete:
+Report concisely:
 
-1. Run the relevant tests.
-2. Run relevant lint/type checks.
-3. Review the diff for unrelated changes.
-4. Report what changed.
-5. Report any known limitations, assumptions, or unresolved risks.
-
-Keep completion summaries concise and factual.
+- what changed;
+- verification performed and its results;
+- relevant checks skipped and why;
+- known limitations, assumptions, or unresolved risks.
