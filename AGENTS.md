@@ -139,8 +139,11 @@ The outcome skill:
 
 - may read promoted evaluation specifications, results, hidden tests, manifests,
   and archived evaluation attempts for the target spike;
-- must not modify those artifacts;
-- must not inspect evaluator-private material for active or unrelated spikes;
+- may read `outcome.md` from other completed spikes as read-only historical
+  context;
+- must not inspect other spikes' implementation, evaluation artifacts, hidden
+  tests, or private evaluator workspaces unless explicitly instructed;
+- must not modify historical artifacts;
 - may write only the target spike's `outcome.md` unless explicitly instructed
   otherwise.
   

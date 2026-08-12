@@ -88,8 +88,8 @@ The current workflow is:
    verification are promoted into the spike directory and committed as part of
    its permanent historical record.
 
-8. **Independent code review** The verified implementation receives an
-   additional independent review before the spike is considered complete.
+8. **Independent code review** Additional code review is performed where
+   warranted by the scope or risk of the spike.
 
 This separation is deliberate:
 
