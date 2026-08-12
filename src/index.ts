@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createServer, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -29,6 +30,16 @@ const staticFiles = new Map([
 interface InputMessage {
   type: "input";
   data: string;
+}
+
+interface Session {
+  readonly id: string;
+  readonly terminal: pty.IPty;
+  readonly exited: Promise<void>;
+  resolveExited(): void;
+  attaching?: boolean;
+  socket: WebSocket | undefined;
+  stopping?: Promise<void>;
 }
 
 export interface HarnessHost {
@@ -93,70 +104,221 @@ async function serveStatic(
   }
 }
 
+function rejectUpgrade(
+  socket: import("node:stream").Duplex,
+  status: 404 | 409,
+): void {
+  const reason = status === 404 ? "Not Found" : "Conflict";
+  socket.end(
+    `HTTP/1.1 ${String(status)} ${reason}\r\nConnection: close\r\n\r\n`,
+  );
+}
+
+function signalProcessGroup(pid: number, signal: NodeJS.Signals): void {
+  try {
+    process.kill(-pid, signal);
+  } catch (error) {
+    if (
+      typeof error !== "object" ||
+      error === null ||
+      !("code" in error) ||
+      error.code !== "ESRCH"
+    ) {
+      throw error;
+    }
+  }
+}
+
 export async function startHarnessHost(
   port = DEFAULT_PORT,
 ): Promise<HarnessHost> {
-  const bash = pty.spawn("/bin/bash", ["--noprofile", "--norc", "-i"], {
-    name: "xterm-256color",
-    cols: 80,
-    rows: 24,
-    cwd: process.cwd(),
-    env: { ...process.env, TERM: "xterm-256color" },
-  });
-
-  const server = createServer((request, response) => {
-    const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
-    void serveStatic(pathname, response);
-  });
+  const server = createServer();
   const webSockets = new WebSocketServer({ noServer: true });
-  let activeSocket: WebSocket | undefined;
+  const issuedSessionIds = new Set<string>();
+  let activeSession: Session | undefined;
   let closed = false;
 
-  bash.onData((data) => {
-    if (activeSocket?.readyState === WebSocket.OPEN) {
-      activeSocket.send(JSON.stringify({ type: "output", data }));
+  function removeSession(session: Session): void {
+    session.socket?.terminate();
+    session.socket = undefined;
+    if (activeSession === session) {
+      activeSession = undefined;
     }
+  }
+
+  function stopSession(session: Session): Promise<void> {
+    session.stopping ??= (async () => {
+      session.socket?.terminate();
+      session.socket = undefined;
+
+      signalProcessGroup(session.terminal.pid, "SIGTERM");
+      session.terminal.kill("SIGTERM");
+
+      const exitedPromptly = await Promise.race([
+        session.exited.then(() => true),
+        new Promise<false>((resolve) => {
+          setTimeout(() => {
+            resolve(false);
+          }, 1_000);
+        }),
+      ]);
+
+      if (!exitedPromptly) {
+        signalProcessGroup(session.terminal.pid, "SIGKILL");
+        session.terminal.kill("SIGKILL");
+        await session.exited;
+      }
+
+      // Kill anything still in the PTY leader's process group before freeing
+      // the session slot. ESRCH is the expected clean result.
+      signalProcessGroup(session.terminal.pid, "SIGKILL");
+      removeSession(session);
+    })();
+
+    return session.stopping;
+  }
+
+  function createSession(): Session {
+    let id = randomUUID();
+    while (issuedSessionIds.has(id)) {
+      id = randomUUID();
+    }
+    issuedSessionIds.add(id);
+
+    const terminal = pty.spawn("/bin/bash", ["--noprofile", "--norc", "-i"], {
+      name: "xterm-256color",
+      cols: 80,
+      rows: 24,
+      cwd: process.cwd(),
+      env: { ...process.env, TERM: "xterm-256color" },
+    });
+    let resolveExited!: () => void;
+    const exited = new Promise<void>((resolve) => {
+      resolveExited = resolve;
+    });
+    const session: Session = {
+      id,
+      terminal,
+      exited,
+      resolveExited,
+      socket: undefined,
+    };
+
+    terminal.onData((data) => {
+      if (session.socket?.readyState === WebSocket.OPEN) {
+        session.socket.send(JSON.stringify({ type: "output", data }));
+      }
+    });
+    terminal.onExit(() => {
+      resolveExited();
+      session.socket?.terminate();
+      session.socket = undefined;
+      if (session.stopping === undefined) {
+        removeSession(session);
+      }
+    });
+
+    return session;
+  }
+
+  server.on("request", (request, response) => {
+    const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
+
+    if (request.method === "POST" && pathname === "/sessions") {
+      if (closed || activeSession !== undefined) {
+        response.writeHead(409).end("Session already active\n");
+        return;
+      }
+
+      const session = createSession();
+      activeSession = session;
+      const body = JSON.stringify({ id: session.id });
+      response.writeHead(201, {
+        "content-type": "application/json",
+        "content-length": Buffer.byteLength(body),
+      });
+      response.end(body);
+      return;
+    }
+
+    const deleteMatch = pathname.match(/^\/sessions\/([^/]+)$/);
+    if (request.method === "DELETE" && deleteMatch !== null) {
+      const session = activeSession;
+      if (session === undefined || deleteMatch[1] !== session.id) {
+        response.writeHead(404).end("Not found\n");
+        return;
+      }
+
+      void stopSession(session).then(
+        () => response.writeHead(204).end(),
+        (error: unknown) => {
+          console.error("Failed to stop session", error);
+          response.writeHead(500).end("Internal server error\n");
+        },
+      );
+      return;
+    }
+
+    void serveStatic(pathname, response);
   });
 
-  bash.onExit(({ exitCode }) => {
-    if (activeSocket?.readyState === WebSocket.OPEN) {
-      activeSocket.close(1011, `Bash exited with status ${String(exitCode)}`);
-    }
-  });
+  webSockets.on("connection", (socket, request) => {
+    const session = activeSession;
+    const id = new URL(request.url ?? "/", "http://localhost").pathname.match(
+      /^\/sessions\/([^/]+)\/ws$/,
+    )?.[1];
 
-  webSockets.on("connection", (socket) => {
-    activeSocket = socket;
+    if (session === undefined || id !== session.id) {
+      socket.terminate();
+      return;
+    }
+    session.socket = socket;
 
     socket.on("message", (data) => {
       const message = parseInputMessage(data);
-      if (message !== undefined) {
-        bash.write(message.data);
+      if (
+        message !== undefined &&
+        activeSession === session &&
+        session.stopping === undefined &&
+        session.socket === socket
+      ) {
+        session.terminal.write(message.data);
       }
     });
 
     socket.on("close", () => {
-      if (activeSocket === socket) {
-        activeSocket = undefined;
+      if (session.socket === socket) {
+        session.socket = undefined;
       }
     });
   });
 
   server.on("upgrade", (request, socket, head) => {
     const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
+    const id = pathname.match(/^\/sessions\/([^/]+)\/ws$/)?.[1];
+    const session = activeSession;
 
-    if (pathname !== "/ws") {
-      socket.write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
-      socket.destroy();
+    if (
+      id === undefined ||
+      session === undefined ||
+      id !== session.id ||
+      session.stopping !== undefined
+    ) {
+      rejectUpgrade(socket, 404);
       return;
     }
 
-    if (activeSocket !== undefined) {
-      socket.write("HTTP/1.1 409 Conflict\r\nConnection: close\r\n\r\n");
-      socket.destroy();
+    if (session.attaching === true || session.socket !== undefined) {
+      rejectUpgrade(socket, 409);
       return;
     }
 
+    // Reserve the attachment synchronously so competing upgrades cannot both
+    // pass the check before handleUpgrade finishes.
+    session.attaching = true;
     webSockets.handleUpgrade(request, socket, head, (webSocket) => {
+      session.attaching = false;
+      session.socket = webSocket;
       webSockets.emit("connection", webSocket, request);
     });
   });
@@ -180,8 +342,9 @@ export async function startHarnessHost(
       }
       closed = true;
 
-      activeSocket?.close(1001, "Harness host shutting down");
-      bash.kill();
+      if (activeSession !== undefined) {
+        await stopSession(activeSession);
+      }
 
       await Promise.all([
         new Promise<void>((resolve, reject) => {
@@ -208,8 +371,10 @@ export async function startHarnessHost(
 }
 
 if (import.meta.main) {
-  const host = await startHarnessHost();
-  console.log(`Harness PTY spike listening at ${host.url}`);
+  const port =
+    process.env.PORT === undefined ? DEFAULT_PORT : Number(process.env.PORT);
+  const host = await startHarnessHost(port);
+  console.log(`Harness session lifecycle spike listening at ${host.url}`);
 
   const shutDown = async (): Promise<void> => {
     await host.close();
