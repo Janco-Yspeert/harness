@@ -98,6 +98,32 @@ spike unless explicitly authorized by the user.
 
 Do not modify any restricted evaluation artifact.
 
+### Cross-spike historical context
+
+The outcome skill may read `outcome.md` from other completed spikes when useful
+for distinguishing a spike-local observation from a repeated project-level
+pattern.
+
+This access is read-only.
+
+Do not inspect the full implementation, evaluation artifacts, hidden tests, or
+other detailed records of unrelated spikes unless explicitly authorized by the
+user.
+
+Prefer prior `outcome.md` files as the compressed historical record of completed
+spikes.
+
+Read prior spike outcomes selectively.
+
+Use them when:
+
+- making a claim about repeated project behaviour;
+- evaluating whether a process lesson has recurred;
+- determining whether a deferred concern has appeared previously;
+- identifying continuity with an earlier architectural decision.
+
+Do not load unrelated historical outcomes merely for completeness.
+
 ## Source Discipline
 
 Ground every material conclusion in the spike's actual artifacts,
@@ -121,6 +147,15 @@ Do not erase earlier blocked or failed attempts from the historical account when
 they produced meaningful lessons.
 
 Avoid reproducing large sections of existing artifacts. Synthesize them.
+
+Treat a successful result from a single spike as evidence about that spike.
+
+Before describing a workflow, testing technique, architectural approach, or
+process improvement as a repeated or project-level finding, inspect relevant
+`outcome.md` files from prior completed spikes where available.
+
+Do not generalize beyond the evidence present in the current spike and those
+historical outcomes.
 
 ## Determine the Spike Result
 

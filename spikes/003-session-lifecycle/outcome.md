@@ -180,8 +180,8 @@ The workflow was strengthened in response. New evaluation preparation records
 skill provenance, validates shared machinery independently, reviews mandatory
 oracles for false signals, and empirically checks material runtime assumptions.
 Verification now requires confirmation before attributing a failure to the
-implementation. The successful second run demonstrated that these safeguards
-were practical rather than requiring a custom evaluator framework.
+implementation. The successful second run showed that these safeguards were
+practical for this spike without requiring a custom evaluator framework.
 
 The implementation-side visible tests had analogous weak PTY markers. They were
 changed to construct expected output from separate shell arguments, making the
