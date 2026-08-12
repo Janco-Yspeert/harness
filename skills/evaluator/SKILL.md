@@ -131,6 +131,21 @@ files, not a duplicate Harness development environment.
 This applies wherever hidden tests are executed: harness validation during
 `prepare` and hidden evaluation during `verify`.
 
+## Formatting
+
+Where the project defines a formatter or format-check command (for example
+`npm run format` / `npm run format:check`), run it over any file the evaluator
+writes — public (`eval-requirements.md`) or private (`eval-spec.md`,
+`eval-result.md`, hidden test source) — before treating that artifact as
+finished, and before computing or recording any hash of it.
+
+This matters more than ordinary tidiness here: `eval-spec.md` records a hash of
+`eval-requirements.md` at freeze time, and `verify` compares that hash against
+the current file to detect `SPEC_DRIFT`. Formatting a public artifact _after_
+its hash has already been frozen changes that hash and produces a false-positive
+drift report on the next `verify` — so format first, then hash, then freeze, not
+the other way around.
+
 ## Authority and sources
 
 Use the following sources when deriving the evaluation contract:
@@ -187,6 +202,20 @@ If evaluation genuinely requires an observable seam or structural requirement
 that is not part of the current contract, surface it in `eval-requirements.md`.
 
 Do not impose it secretly through a hidden test.
+
+### Minimize evaluator cleverness
+
+Prefer direct use of standard libraries and the project's existing test tooling
+over bespoke evaluator machinery.
+
+Create shared evaluator abstractions (helpers, harnesses, wrappers) only when
+they materially improve reliability or reduce meaningful duplication — not by
+default.
+
+Keep helper behaviour small, explicit, and independently testable. A helper that
+is hard to reason about in isolation is a likely source of the kind of silent,
+cross-cutting evaluator defect this skill exists to prevent (see the pre-freeze
+integrity gate below).
 
 ### Do not invent requirements
 
@@ -347,6 +376,19 @@ Distinguish:
 - non-blocking ambiguity — can be handled without imposing an implementation
   choice.
 
+### Material runtime assumptions
+
+If a mandatory evaluation case depends on non-obvious behaviour of the operating
+system, process or session semantics, the runtime, a library, a protocol, or
+external tooling, validate that assumption empirically now, where practical,
+rather than relying on evaluator intuition — a small diagnostic script that
+exercises the real behaviour beats an assumption carried silently into a hidden
+test.
+
+If validation exposes ambiguity in the spike's own contract, record it under
+Ambiguities (and Blocking Questions if it prevents fair mandatory evaluation)
+rather than silently resolving it in either direction.
+
 ## 3. Write `eval-requirements.md`
 
 Create or replace:
@@ -389,6 +431,16 @@ The specification must include the sections defined in `templates/eval-spec.md`.
 
 Every mandatory hidden test must trace back through an evaluation case to a
 requirement, invariant, or negative requirement.
+
+Record evaluator-skill provenance in the `Source` section: the canonical
+evaluator skill path (this file's repository-relative path) and its revision —
+prefer a git commit hash for the repository at freeze time; if this skill file
+itself is uncommitted or locally modified, record its own content hash instead
+(e.g. via `git hash-object`) and say so. This makes it possible to determine
+which evaluator-skill version produced a historical evaluation attempt.
+
+Do not set `Status` to `Frozen` yet — the pre-freeze integrity gate below must
+pass first.
 
 ## 6. Build hidden tests
 
@@ -461,26 +513,75 @@ Rules:
 - An evaluation case may be covered by multiple tests.
 - Tests that provide evaluator infrastructure rather than contractual coverage
   must be explicitly marked as support files and must not be represented as
-  evaluation cases.
+  evaluation cases. This includes shared helpers and the helper integrity
+  self-checks required by the pre-freeze integrity gate below — they are
+  evaluator infrastructure, not evaluation cases.
 - The manifest is evaluator-private while the evaluation is active.
 - The manifest must be promoted with the hidden tests after successful
   verification.
 
 Before completing `prepare`, verify that the manifest and `eval-spec.md` agree.
 
-## 7. Validate the evaluation harness
+## 7. Pre-freeze evaluator integrity gate
 
-Where practical:
+Do not set `eval-spec.md`'s `Status` to `Frozen` while any check below is
+failing. A failing check is handled the same way as a blocking ambiguity: fix
+it, or stop and report it — do not freeze around it.
 
-- confirm hidden tests can be discovered and executed;
-- confirm test code parses, compiles, or type-checks as appropriate;
-- distinguish expected pre-implementation assertion failures from failures in
+### Validate shared helpers
+
+- Identify non-trivial shared evaluator helpers (parsing, connection setup,
+  process/PTY control, timing, polling, cleanup, and similar support code used
+  by more than one evaluation case).
+- Independently validate each one where practical — a small, isolated check that
+  the helper does what it claims, separate from the mandatory cases that depend
+  on it.
+- Structure hidden tests so that a single helper defect cannot silently
+  invalidate more mandatory cases than necessary: keep helpers small and
+  single-purpose rather than routing every case through one large do-everything
+  utility unless that's genuinely required.
+- Helper integrity self-checks are evaluator infrastructure, not evaluation
+  cases — mark them as support in `manifest.json`, never as contractual coverage
+  (see the manifest rules above).
+
+### Validate oracle and falsifiability, per mandatory case
+
+For every mandatory evaluation case, before freezing, check that:
+
+- the assertion measures the intended behaviour, not a proxy for it;
+- a correct implementation can realistically satisfy it;
+- an incorrect implementation can realistically fail it;
+- unrelated runtime behaviour cannot reasonably produce the same observed
+  signal;
+- the evaluator is not confusing transport noise, command echo, logs, shell
+  behaviour, timing artefacts, or other environmental output with the behaviour
+  under test.
+
+Where a case relies on custom parsing, markers, asynchronous output, PTYs,
+processes, WebSockets, timing, or similar mechanisms, use a positive control
+(confirm the assertion can pass) and/or a negative control (confirm the exact
+signal being matched doesn't already occur for unrelated reasons, or that the
+assertion can fail) where practical.
+
+Do not build elaborate controls for trivial, deterministic assertions — an HTTP
+status code check needs none of this.
+
+### Validate the harness mechanically
+
+- Confirm hidden tests can be discovered and executed.
+- Confirm test code parses, compiles, or type-checks as appropriate.
+- Confirm `eval-requirements.md` and other evaluator-written files pass the
+  project's formatter/format-check (see Formatting above) _before_ any hash of
+  them is recorded in `eval-spec.md`'s `Source` section.
+- Distinguish expected pre-implementation assertion failures from failures in
   the evaluation harness itself.
 
-The feature may not exist yet, so hidden behavioural tests are not required to
-pass during `prepare`.
+The feature may not exist yet, so hidden behavioural assertions are not required
+to pass during `prepare` — but the harness itself, and every helper and oracle
+it depends on, must be demonstrably sound before the evaluation is frozen.
 
-The evaluation harness itself must be runnable.
+Once every check above passes, `eval-spec.md`'s `Status` may be recorded as
+`Frozen`.
 
 ## 8. Report preparation status
 
@@ -494,6 +595,8 @@ Report only:
 - whether public testability requirements were added;
 - whether assumptions were surfaced;
 - whether blocking questions remain;
+- whether the pre-freeze integrity gate passed cleanly, and if not, what remains
+  outstanding;
 - paths of created public and private artifacts.
 
 Do not print the hidden cases or private evaluation specification unless the
@@ -542,7 +645,7 @@ Do not silently evaluate against a stale contract.
 
 Report the drift and stop unless the user explicitly directs otherwise.
 
-## 3. Inspect the implementation only for verification
+## 3. Inspect the implementation and run diagnostic probes
 
 You may now inspect the completed implementation and relevant visible tests.
 
@@ -554,6 +657,27 @@ Use implementation knowledge to:
 
 Do not use implementation knowledge to redefine expected behaviour.
 
+### Diagnostic probes
+
+When needed to classify a failure, run read-only diagnostic probes against the
+implementation outside the frozen hidden tests — for example, a throwaway script
+that exercises the same behaviour through a more direct or more reliable path
+than a suspect helper.
+
+Diagnostic probes:
+
+- may investigate implementation behaviour;
+- may validate evaluator assumptions;
+- may help distinguish an evaluator defect from an implementation defect;
+- must not modify the frozen evaluation (`eval-spec.md`, `.hidden-test/**`);
+- must not substitute for a mandatory frozen evaluation case — they inform
+  classification, they do not replace required coverage;
+- must not turn an otherwise `BLOCKED` or `FAIL` result into `PASS`.
+
+Record any diagnostic probe used, and what it showed, in `eval-result.md` as
+supplementary evidence, clearly separated from the frozen evaluation's own
+results.
+
 ## 4. Run hidden evaluation
 
 Run the frozen hidden tests.
@@ -564,6 +688,23 @@ Also run any deterministic regression checks explicitly required by
 Capture enough diagnostic information to classify failures reliably.
 
 ## 5. Classify findings
+
+### Confirm before blaming the implementation
+
+A failing hidden test is evidence, not automatically an implementation defect.
+Before classifying any result as `IMPLEMENTATION_FAILURE`, where practical:
+
+1. rerun the failing case in isolation;
+2. confirm the evaluator helpers it depends on passed their pre-freeze integrity
+   checks — or re-validate them now if that wasn't practical earlier;
+3. confirm setup and teardown behaved correctly;
+4. rule out evaluator parsing, timing, environment, transport, or helper defects
+   — a diagnostic probe (see step 3) is often the fastest way to do this;
+5. produce a minimal behavioural reproduction where useful.
+
+If evaluator correctness cannot be established, classify the result as
+`EVALUATOR_DEFECT` or `INFRASTRUCTURE_FAILURE` instead — never
+`IMPLEMENTATION_FAILURE`.
 
 Use these classifications:
 
@@ -694,6 +835,8 @@ Report to the user:
 - counts by finding classification;
 - the requirements or behaviours that failed at a useful conceptual level;
 - whether any evaluator defect or specification ambiguity was found;
+- whether any diagnostic probes were used, and a one-line summary of what they
+  showed;
 - path to the private result when evaluation did not pass;
 - path to the promoted evaluation record when evaluation passed;
 - whether promotion and cleanup completed successfully.
@@ -727,6 +870,13 @@ These rules apply in both modes.
     the evaluation is active.**
 13. **Hidden evaluation artifacts become public historical artifacts only after
     successful verification and exact-copy promotion.**
+14. **Shared evaluator helpers and each mandatory case's oracle must be
+    validated before freezing, not discovered broken during verification.**
+15. **Material runtime, OS, library, or protocol assumptions behind a mandatory
+    case must be validated, or surfaced as ambiguity, before freezing.**
+16. **Diagnostic probes run during verification inform classification; they
+    never substitute for frozen coverage and never turn `BLOCKED`/`FAIL` into
+    `PASS`.**
 
 # Current non-goals
 

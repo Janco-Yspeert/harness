@@ -1,48 +1,93 @@
-const status = document.querySelector("#status");
+const sessionId = document.querySelector("#session-id");
+const attachment = document.querySelector("#attachment");
 const output = document.querySelector("#output");
 const form = document.querySelector("#command-form");
 const command = document.querySelector("#command");
+const createButton = document.querySelector("#create");
+const attachButton = document.querySelector("#attach");
+const disconnectButton = document.querySelector("#disconnect");
+const stopButton = document.querySelector("#stop");
 const sendButton = form.querySelector("button");
 
-const webSocketProtocol =
-  window.location.protocol === "https:" ? "wss:" : "ws:";
-const socket = new WebSocket(
-  `${webSocketProtocol}//${window.location.host}/ws`,
-);
+let id;
+let socket;
 
-socket.addEventListener("open", () => {
-  status.textContent = "Connected";
-  command.disabled = false;
-  sendButton.disabled = false;
-  command.focus();
-});
+function render() {
+  const connected = socket?.readyState === WebSocket.OPEN;
+  sessionId.textContent = id ?? "None";
+  attachment.textContent = connected ? "Attached" : "Detached";
+  createButton.disabled = id !== undefined;
+  attachButton.disabled = id === undefined || connected;
+  disconnectButton.disabled = !connected;
+  stopButton.disabled = id === undefined;
+  command.disabled = !connected;
+  sendButton.disabled = !connected;
+}
 
-socket.addEventListener("message", (event) => {
-  const message = JSON.parse(event.data);
-  if (message.type === "output" && typeof message.data === "string") {
-    output.textContent += message.data;
-    output.scrollTop = output.scrollHeight;
+function attach() {
+  if (id === undefined) return;
+
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  socket = new WebSocket(
+    `${protocol}//${window.location.host}/sessions/${encodeURIComponent(id)}/ws`,
+  );
+  attachment.textContent = "Connecting…";
+
+  socket.addEventListener("open", () => {
+    render();
+    command.focus();
+  });
+  socket.addEventListener("message", (event) => {
+    const message = JSON.parse(event.data);
+    if (message.type === "output" && typeof message.data === "string") {
+      output.textContent += message.data;
+      output.scrollTop = output.scrollHeight;
+    }
+  });
+  socket.addEventListener("close", () => {
+    socket = undefined;
+    render();
+  });
+  socket.addEventListener("error", () => {
+    attachment.textContent = "Connection error";
+  });
+}
+
+createButton.addEventListener("click", async () => {
+  const response = await fetch("/sessions", { method: "POST" });
+  if (!response.ok) {
+    attachment.textContent = `Create failed (${String(response.status)})`;
+    return;
   }
+  ({ id } = await response.json());
+  render();
+  attach();
 });
 
-socket.addEventListener("close", () => {
-  status.textContent = "Disconnected";
-  command.disabled = true;
-  sendButton.disabled = true;
-});
-
-socket.addEventListener("error", () => {
-  status.textContent = "Connection error";
+attachButton.addEventListener("click", attach);
+disconnectButton.addEventListener("click", () => socket?.close());
+stopButton.addEventListener("click", async () => {
+  if (id === undefined) return;
+  const response = await fetch(`/sessions/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    attachment.textContent = `Stop failed (${String(response.status)})`;
+    return;
+  }
+  id = undefined;
+  socket = undefined;
+  render();
 });
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-
-  if (socket.readyState !== WebSocket.OPEN || command.value.length === 0) {
+  if (socket?.readyState !== WebSocket.OPEN || command.value.length === 0) {
     return;
   }
-
   socket.send(JSON.stringify({ type: "input", data: `${command.value}\r` }));
   command.value = "";
   command.focus();
 });
+
+render();

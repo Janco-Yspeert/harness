@@ -14,7 +14,25 @@ Record:
 - spike path;
 - current project commit when available;
 - hash of `spike.md`;
-- hash of `eval-requirements.md`.
+- hash of `eval-requirements.md`;
+- canonical evaluator skill path (e.g. `skills/evaluator/SKILL.md`);
+- evaluator skill revision — prefer a git commit hash for the repository at
+  freeze time; if the skill file itself is uncommitted or locally modified,
+  record its own content hash instead (e.g. via `git hash-object`) and say so.
+
+## Pre-Freeze Integrity Gate
+
+Record, before setting Status to Frozen:
+
+- shared helpers identified and how each was independently validated;
+- for each mandatory evaluation case, confirmation that its oracle measures the
+  intended behaviour and is falsifiable (positive/negative controls used, where
+  applicable);
+- material runtime/OS/library/protocol assumptions validated, and how;
+- confirmation the harness itself parses, compiles, and executes.
+
+If any of the above could not be completed, do not freeze — resolve it or report
+it as a blocking issue instead.
 
 ## Explicit Requirements
 
