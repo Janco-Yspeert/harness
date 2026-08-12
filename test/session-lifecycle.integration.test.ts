@@ -120,8 +120,8 @@ await test("creates, detaches, and reattaches to the same shell state", async ()
     socket = await connect(host, id);
     await sendAndWait(
       socket,
-      "export HARNESS_REATTACH=survived",
-      /root@|bash-[\d.]+\$/,
+      "export HARNESS_REATTACH=survived; printf '%s%s\\n' __SETUP_ OK__",
+      /__SETUP_OK__\r?\n/,
     );
     const firstPid = await sendAndWait(
       socket,
@@ -160,7 +160,11 @@ await test("serializes creation and rejects a second attachment", async () => {
     const { id } = (await winner.json()) as { id: string };
     socket = await connect(host, id);
     assert.equal(await rejectedUpgrade(host, id), 409);
-    await sendAndWait(socket, "echo __STILL_ATTACHED__", /__STILL_ATTACHED__/);
+    await sendAndWait(
+      socket,
+      "printf '%s%s\\n' __ATTACHMENT_ SURVIVED__",
+      /__ATTACHMENT_SURVIVED__\r?\n/,
+    );
   } finally {
     if (socket?.readyState === WebSocket.OPEN) await disconnect(socket);
     await host.close();

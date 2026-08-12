@@ -7,18 +7,18 @@
   port to be overridden via the `PORT` environment variable, falling back to the
   existing default port when `PORT` is not set.
   - Reason: `startHarnessHost` already accepts a `port` parameter, but the CLI
-    entrypoint needs a way to be started as an isolated, addressable process.
-    Verifying that Harness shutdown cleans up the active session on `SIGINT` and
-    `SIGTERM` (an explicit spike requirement) requires starting the real
-    entrypoint as a separate OS process and sending it real signals — a fixed,
-    non-overridable port makes that evaluation unreliable (port conflicts with
-    any other running instance, or with parallel test runs).
+    entrypoint currently hard-codes the default port. Verifying that Harness
+    shutdown cleans up the active session on `SIGINT` and `SIGTERM` (an explicit
+    spike requirement) requires starting the real entrypoint as a separate OS
+    process and sending it real signals — a fixed, non-overridable port makes
+    that evaluation unreliable (port conflicts with any other running instance,
+    or with parallel test runs).
   - Source: derived from the explicit `SIGINT`/`SIGTERM` shutdown requirement in
     `spike.md`, combined with the project's own guidance to avoid fixed ports in
     tests when an alternative exists.
   - Implementation impact: minimal — read `process.env.PORT` (parsed as a
-    number) where the entrypoint currently calls `startHarnessHost()`. Does not
-    change the HTTP/WebSocket contract.
+    number) where the entrypoint currently calls `startHarnessHost()` with no
+    argument. Does not change the HTTP/WebSocket contract.
 
 No other testability requirements were identified. Session ids, PTY output, and
 shell state are all observable through the HTTP and WebSocket surface the spike

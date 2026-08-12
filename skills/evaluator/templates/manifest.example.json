@@ -1,4 +1,5 @@
 {
+  "support": ["helpers.ts", "helpers.selfcheck.test.ts"],
   "cases": {
     "E7": {
       "requirements": ["R3"],

@@ -178,15 +178,14 @@ or previously stopped session ID.
 
 ### Session cleanup
 
-Stopping a session or shutting down Harness must clean up the PTY session. It
-must terminate Bash and processes still belonging to the PTY's managed process
-group before cleanup completes.
+Stopping a session or shutting down Harness must terminate the PTY/Bash process
+owned directly by the session and close any attached client.
 
-The implementation does not need to recover independently daemonized processes
-that deliberately detach from the session.
+This spike does not require Harness to discover or terminate descendant or
+background processes that have moved into separate process groups.
 
-The implementation mechanism for process cleanup is not part of this spike's
-public contract.
+Descendant-process cleanup is a known lifecycle concern and is deferred to a
+future spike.
 
 ### Harness shutdown
 
@@ -239,3 +238,5 @@ The spike demonstrates that:
   The implementation should nevertheless avoid public contracts that assume
   Harness can only ever identify one session.
 - Do not build a polished or general-purpose session-management UI.
+- Do not guarantee cleanup of background or descendant processes outside the
+  PTY/Bash process group directly managed by Harness.

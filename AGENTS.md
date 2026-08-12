@@ -127,6 +127,23 @@ The repository-owned structural template at
 role. This exception applies only to the template, not to an evaluation
 specification created from it.
 
+### Outcome synthesis exception
+
+When the active `outcome` skill is producing the historical record for a
+completed spike, it may read normally restricted evaluation artifacts that
+have been promoted into that target spike's directory.
+
+This authority is read-only and applies only to the target completed spike.
+
+The outcome skill:
+
+- may read promoted evaluation specifications, results, hidden tests, manifests,
+  and archived evaluation attempts for the target spike;
+- must not modify those artifacts;
+- must not inspect evaluator-private material for active or unrelated spikes;
+- may write only the target spike's `outcome.md` unless explicitly instructed
+  otherwise.
+  
 ## Completion
 
 Report concisely:

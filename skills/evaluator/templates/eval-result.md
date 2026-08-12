@@ -43,13 +43,26 @@ Do not expose unnecessary hidden-test implementation details.
 
 Record required regression checks and outcomes.
 
+## Diagnostic Probes
+
+If any read-only diagnostic probes were run during verification (see the skill's
+"Diagnostic probes" section), record what each one checked and what it showed.
+Label this evidence as supplementary — it informs classification of findings
+above but is not itself frozen coverage, and it does not by itself change the
+Overall Result.
+
+If none were used, state that explicitly.
+
 ## Evaluator Integrity
 
 Confirm whether:
 
 - the frozen evaluation was modified during verification;
 - specification drift was detected;
-- any evaluator defects were discovered.
+- any evaluator defects were discovered;
+- for any `IMPLEMENTATION_FAILURE` finding, that the pre-classification
+  confirmation checklist (rerun in isolation, helper integrity, setup/ teardown,
+  ruling out evaluator causes) was applied.
 
 ## Overall Assessment
 
