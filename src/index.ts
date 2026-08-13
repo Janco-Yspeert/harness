@@ -3,8 +3,18 @@ import { readFile } from "node:fs/promises";
 import { createServer, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 
-import * as pty from "node-pty";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
+
+import { PtyBackend } from "./pty-backend.ts";
+import type {
+  SessionBackend,
+  SessionBackendFactory,
+} from "./session-backend.ts";
+
+export type {
+  SessionBackend,
+  SessionBackendFactory,
+} from "./session-backend.ts";
 
 const LOOPBACK_HOST = "127.0.0.1";
 const DEFAULT_PORT = 3000;
@@ -34,17 +44,19 @@ interface InputMessage {
 
 interface Session {
   readonly id: string;
-  readonly terminal: pty.IPty;
-  readonly exited: Promise<void>;
-  resolveExited(): void;
+  readonly backend: SessionBackend;
   attaching?: boolean;
   socket: WebSocket | undefined;
-  stopping?: Promise<void>;
+  ending?: Promise<void>;
 }
 
 export interface HarnessHost {
   readonly url: string;
   close(): Promise<void>;
+}
+
+export interface HarnessHostOptions {
+  createBackend?: SessionBackendFactory;
 }
 
 function parseInputMessage(data: RawData): InputMessage | undefined {
@@ -114,28 +126,16 @@ function rejectUpgrade(
   );
 }
 
-function signalProcessGroup(pid: number, signal: NodeJS.Signals): void {
-  try {
-    process.kill(-pid, signal);
-  } catch (error) {
-    if (
-      typeof error !== "object" ||
-      error === null ||
-      !("code" in error) ||
-      error.code !== "ESRCH"
-    ) {
-      throw error;
-    }
-  }
-}
-
 export async function startHarnessHost(
   port = DEFAULT_PORT,
+  options: HarnessHostOptions = {},
 ): Promise<HarnessHost> {
   const server = createServer();
   const webSockets = new WebSocketServer({ noServer: true });
   const issuedSessionIds = new Set<string>();
+  const createBackend = options.createBackend ?? (() => new PtyBackend());
   let activeSession: Session | undefined;
+  let creatingSession = false;
   let closed = false;
 
   function removeSession(session: Session): void {
@@ -146,76 +146,55 @@ export async function startHarnessHost(
     }
   }
 
-  function stopSession(session: Session): Promise<void> {
-    session.stopping ??= (async () => {
-      session.socket?.terminate();
-      session.socket = undefined;
+  function endSession(session: Session): Promise<void> {
+    if (session.ending !== undefined) {
+      return session.ending;
+    }
 
-      signalProcessGroup(session.terminal.pid, "SIGTERM");
-      session.terminal.kill("SIGTERM");
+    let resolveEnding!: () => void;
+    let rejectEnding!: (error: unknown) => void;
+    session.ending = new Promise<void>((resolve, reject) => {
+      resolveEnding = resolve;
+      rejectEnding = reject;
+    });
 
-      const exitedPromptly = await Promise.race([
-        session.exited.then(() => true),
-        new Promise<false>((resolve) => {
-          setTimeout(() => {
-            resolve(false);
-          }, 1_000);
-        }),
-      ]);
-
-      if (!exitedPromptly) {
-        signalProcessGroup(session.terminal.pid, "SIGKILL");
-        session.terminal.kill("SIGKILL");
-        await session.exited;
+    void (async () => {
+      try {
+        await session.backend.stop();
+        removeSession(session);
+        resolveEnding();
+      } catch (error) {
+        removeSession(session);
+        rejectEnding(error);
       }
-
-      // Kill anything still in the PTY leader's process group before freeing
-      // the session slot. ESRCH is the expected clean result.
-      signalProcessGroup(session.terminal.pid, "SIGKILL");
-      removeSession(session);
     })();
 
-    return session.stopping;
+    return session.ending;
   }
 
-  function createSession(): Session {
+  async function createSession(): Promise<Session> {
     let id = randomUUID();
     while (issuedSessionIds.has(id)) {
       id = randomUUID();
     }
     issuedSessionIds.add(id);
 
-    const terminal = pty.spawn("/bin/bash", ["--noprofile", "--norc", "-i"], {
-      name: "xterm-256color",
-      cols: 80,
-      rows: 24,
-      cwd: process.cwd(),
-      env: { ...process.env, TERM: "xterm-256color" },
-    });
-    let resolveExited!: () => void;
-    const exited = new Promise<void>((resolve) => {
-      resolveExited = resolve;
-    });
+    const backend = await createBackend();
     const session: Session = {
       id,
-      terminal,
-      exited,
-      resolveExited,
+      backend,
       socket: undefined,
     };
 
-    terminal.onData((data) => {
+    backend.onData((data) => {
       if (session.socket?.readyState === WebSocket.OPEN) {
         session.socket.send(JSON.stringify({ type: "output", data }));
       }
     });
-    terminal.onExit(() => {
-      resolveExited();
-      session.socket?.terminate();
-      session.socket = undefined;
-      if (session.stopping === undefined) {
-        removeSession(session);
-      }
+    backend.onExit(() => {
+      void endSession(session).catch((error: unknown) => {
+        console.error("Failed to finalize ended session", error);
+      });
     });
 
     return session;
@@ -225,23 +204,64 @@ export async function startHarnessHost(
     const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
 
     if (request.method === "POST" && pathname === "/sessions") {
-      if (closed || activeSession !== undefined) {
+      if (closed || creatingSession || activeSession !== undefined) {
         response.writeHead(409).end("Session already active\n");
         return;
       }
 
-      const session = createSession();
-      activeSession = session;
-      const body = JSON.stringify({ id: session.id });
-      response.writeHead(201, {
-        "content-type": "application/json",
-        "content-length": Buffer.byteLength(body),
-      });
-      response.end(body);
+      creatingSession = true;
+      void createSession().then(
+        (session) => {
+          creatingSession = false;
+          if (closed || session.ending !== undefined) {
+            void endSession(session).then(
+              () =>
+                response
+                  .writeHead(closed ? 409 : 500)
+                  .end(
+                    closed
+                      ? "Host is closed\n"
+                      : "Backend ended during startup\n",
+                  ),
+              (error: unknown) => {
+                console.error(
+                  "Failed to finalize session during shutdown",
+                  error,
+                );
+                response.writeHead(500).end("Internal server error\n");
+              },
+            );
+            return;
+          }
+          activeSession = session;
+          const body = JSON.stringify({ id: session.id });
+          response.writeHead(201, {
+            "content-type": "application/json",
+            "content-length": Buffer.byteLength(body),
+          });
+          response.end(body);
+        },
+        (error: unknown) => {
+          creatingSession = false;
+          console.error("Failed to start session backend", error);
+          response.writeHead(500).end("Internal server error\n");
+        },
+      );
       return;
     }
 
-    const deleteMatch = pathname.match(/^\/sessions\/([^/]+)$/);
+    const sessionMatch = pathname.match(/^\/sessions\/([^/]+)$/);
+    if (request.method === "GET" && sessionMatch !== null) {
+      const session = activeSession;
+      response
+        .writeHead(
+          session !== undefined && sessionMatch[1] === session.id ? 200 : 404,
+        )
+        .end();
+      return;
+    }
+
+    const deleteMatch = sessionMatch;
     if (request.method === "DELETE" && deleteMatch !== null) {
       const session = activeSession;
       if (session === undefined || deleteMatch[1] !== session.id) {
@@ -249,7 +269,7 @@ export async function startHarnessHost(
         return;
       }
 
-      void stopSession(session).then(
+      void endSession(session).then(
         () => response.writeHead(204).end(),
         (error: unknown) => {
           console.error("Failed to stop session", error);
@@ -279,10 +299,10 @@ export async function startHarnessHost(
       if (
         message !== undefined &&
         activeSession === session &&
-        session.stopping === undefined &&
+        session.ending === undefined &&
         session.socket === socket
       ) {
-        session.terminal.write(message.data);
+        session.backend.write(message.data);
       }
     });
 
@@ -302,7 +322,7 @@ export async function startHarnessHost(
       id === undefined ||
       session === undefined ||
       id !== session.id ||
-      session.stopping !== undefined
+      session.ending !== undefined
     ) {
       rejectUpgrade(socket, 404);
       return;
@@ -343,7 +363,7 @@ export async function startHarnessHost(
       closed = true;
 
       if (activeSession !== undefined) {
-        await stopSession(activeSession);
+        await endSession(activeSession);
       }
 
       await Promise.all([

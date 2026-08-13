@@ -12,6 +12,20 @@ const sendButton = form.querySelector("button");
 let id;
 let socket;
 
+async function discardSessionIfStale(expectedId) {
+  if (expectedId === undefined) return;
+
+  try {
+    const response = await fetch(`/sessions/${encodeURIComponent(expectedId)}`);
+    if (response.status === 404 && id === expectedId) {
+      id = undefined;
+      render();
+    }
+  } catch {
+    // Connection failure says nothing about whether the session still exists.
+  }
+}
+
 function render() {
   const connected = socket?.readyState === WebSocket.OPEN;
   sessionId.textContent = id ?? "None";
@@ -47,6 +61,7 @@ function attach() {
   socket.addEventListener("close", () => {
     socket = undefined;
     render();
+    void discardSessionIfStale(id);
   });
   socket.addEventListener("error", () => {
     attachment.textContent = "Connection error";

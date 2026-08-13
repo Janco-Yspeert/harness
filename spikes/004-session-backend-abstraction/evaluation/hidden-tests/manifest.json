@@ -1,0 +1,243 @@
+{
+  "support": ["helpers.ts", "helpers.selfcheck.test.ts"],
+  "cases": {
+    "E1": {
+      "requirements": ["R1"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": ["A2"],
+      "tests": ["session-create.test.ts"]
+    },
+    "E2": {
+      "requirements": ["R3"],
+      "invariants": ["I2"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-create.test.ts"]
+    },
+    "E3": {
+      "requirements": ["R4"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": ["A1"],
+      "tests": ["session-create.test.ts"]
+    },
+    "E4": {
+      "requirements": ["R2"],
+      "invariants": ["I7"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-create.test.ts"]
+    },
+    "E5": {
+      "requirements": ["R4", "R5"],
+      "invariants": ["I1"],
+      "negativeRequirements": ["N1"],
+      "assumptions": ["A1"],
+      "tests": ["session-startup.test.ts"]
+    },
+    "E6": {
+      "requirements": ["R6"],
+      "invariants": [],
+      "negativeRequirements": ["N1", "N2"],
+      "assumptions": ["A3"],
+      "tests": ["session-startup.test.ts"]
+    },
+    "E7": {
+      "requirements": ["R7"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-attach.test.ts"]
+    },
+    "E8": {
+      "requirements": ["R8"],
+      "invariants": ["I4"],
+      "negativeRequirements": [],
+      "assumptions": ["A4"],
+      "tests": ["session-attach.test.ts"]
+    },
+    "E9": {
+      "requirements": ["R8"],
+      "invariants": [],
+      "negativeRequirements": ["N7"],
+      "assumptions": ["A4"],
+      "tests": ["session-attach.test.ts"]
+    },
+    "E10": {
+      "requirements": ["R8"],
+      "invariants": ["I12"],
+      "negativeRequirements": [],
+      "assumptions": ["A4"],
+      "tests": ["session-attach.test.ts"]
+    },
+    "E11": {
+      "requirements": ["R9"],
+      "invariants": ["I3"],
+      "negativeRequirements": [],
+      "assumptions": ["A4"],
+      "tests": ["session-attach.test.ts"]
+    },
+    "E12": {
+      "requirements": ["R10"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-detach-reattach.test.ts"]
+    },
+    "E13": {
+      "requirements": ["R10"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-detach-reattach.test.ts"]
+    },
+    "E14": {
+      "requirements": [],
+      "invariants": [],
+      "negativeRequirements": ["N6"],
+      "assumptions": [],
+      "tests": ["session-detach-reattach.test.ts"]
+    },
+    "E15": {
+      "requirements": ["R11"],
+      "invariants": ["I6"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-stop.test.ts"]
+    },
+    "E16": {
+      "requirements": ["R13"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-stop.test.ts"]
+    },
+    "E17": {
+      "requirements": ["R12"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-stop.test.ts"]
+    },
+    "E18": {
+      "requirements": ["R12"],
+      "invariants": ["I8"],
+      "negativeRequirements": ["N7"],
+      "assumptions": [],
+      "tests": ["session-stop.test.ts"]
+    },
+    "E19": {
+      "requirements": ["R12"],
+      "invariants": ["I12"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-stop.test.ts"]
+    },
+    "E20": {
+      "requirements": ["R14"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-recovery.test.ts"]
+    },
+    "E21": {
+      "requirements": ["R13", "R14", "R15"],
+      "invariants": ["I5"],
+      "negativeRequirements": ["N7"],
+      "assumptions": [],
+      "tests": ["session-recovery.test.ts"]
+    },
+    "E22": {
+      "requirements": ["R13", "R14", "R16", "R20"],
+      "invariants": ["I5"],
+      "negativeRequirements": ["N3", "N4"],
+      "assumptions": [],
+      "tests": ["session-recovery.test.ts"]
+    },
+    "E23": {
+      "requirements": ["R15"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-get.test.ts"]
+    },
+    "E24": {
+      "requirements": ["R15"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-get.test.ts"]
+    },
+    "E25": {
+      "requirements": ["R15"],
+      "invariants": ["I5", "I12"],
+      "negativeRequirements": ["N7"],
+      "assumptions": [],
+      "tests": ["session-get.test.ts"]
+    },
+    "E26": {
+      "requirements": ["R7", "R16", "R20"],
+      "invariants": [],
+      "negativeRequirements": ["N5"],
+      "assumptions": [],
+      "tests": ["session-backend-independence.test.ts"]
+    },
+    "E27": {
+      "requirements": ["R10", "R16", "R20"],
+      "invariants": [],
+      "negativeRequirements": ["N5"],
+      "assumptions": [],
+      "tests": ["session-backend-independence.test.ts"]
+    },
+    "E28": {
+      "requirements": ["R11", "R16", "R20", "R21"],
+      "invariants": [],
+      "negativeRequirements": ["N5"],
+      "assumptions": [],
+      "tests": ["session-backend-independence.test.ts"]
+    },
+    "E29": {
+      "requirements": ["R21"],
+      "invariants": ["I9"],
+      "negativeRequirements": [],
+      "assumptions": ["A1", "A5"],
+      "tests": ["session-finalization-races.test.ts"]
+    },
+    "E30": {
+      "requirements": ["R21"],
+      "invariants": ["I10"],
+      "negativeRequirements": ["N3"],
+      "assumptions": ["A1", "A5"],
+      "tests": ["session-finalization-races.test.ts"]
+    },
+    "E31": {
+      "requirements": ["R17"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-shutdown.test.ts"]
+    },
+    "E32": {
+      "requirements": ["R16", "R17", "R20", "R21"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-shutdown.test.ts"]
+    },
+    "E33": {
+      "requirements": ["R18"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-shutdown.test.ts"]
+    },
+    "E34": {
+      "requirements": ["R19"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["session-networking.test.ts"]
+    }
+  }
+}
