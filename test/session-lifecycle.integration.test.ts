@@ -202,6 +202,14 @@ await test("natural shell exit closes the attachment and frees the slot", async 
   socket.send(JSON.stringify({ type: "input", data: "exit\r" }));
   await closed;
   assert.equal(await rejectedUpgrade(host, id), 404);
-  assert.notEqual(await createSession(host), id);
+  const replacementId = await createSession(host);
+  assert.notEqual(replacementId, id);
+  const replacementSocket = await connect(host, replacementId);
+  await sendAndWait(
+    replacementSocket,
+    "printf '%s%s\\n' __REPLACEMENT_ READY__",
+    /__REPLACEMENT_READY__\r?\n/,
+  );
+  await disconnect(replacementSocket);
   await host.close();
 });
