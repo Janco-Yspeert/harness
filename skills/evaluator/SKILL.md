@@ -543,6 +543,20 @@ it, or stop and report it — do not freeze around it.
 - Helper integrity self-checks are evaluator infrastructure, not evaluation
   cases — mark them as support in `manifest.json`, never as contractual coverage
   (see the manifest rules above).
+- If a helper is exercised through an asynchronous boundary by the mandatory
+  cases that depend on it — WebSocket, network transport, event queue,
+  subprocess stream, callback scheduling, or similar — validate it through that
+  same boundary. A helper passing in isolation (called directly, in-process,
+  with no boundary crossed) is not sufficient evidence that an end-to-end oracle
+  built on top of it is valid; the isolated check and the real usage can pass
+  and fail for different reasons.
+- More generally: where shared evaluator machinery is exercised through a
+  materially different production path than in its helper self-tests — a
+  different transport, call site, serialization step, process boundary, or
+  similar, not only an asynchronous one — preparation must include at least one
+  end-to-end integrity check that exercises the real path the mandatory cases
+  actually use. A self-test that only proves the helper's own logic in isolation
+  does not prove it behaves the same way when driven through that real path.
 
 ### Validate oracle and falsifiability, per mandatory case
 
@@ -556,6 +570,16 @@ For every mandatory evaluation case, before freezing, check that:
 - the evaluator is not confusing transport noise, command echo, logs, shell
   behaviour, timing artefacts, or other environmental output with the behaviour
   under test.
+
+Where an assertion depends on data crossing an asynchronous boundary —
+WebSocket, network transport, event queue, subprocess stream, callback
+scheduling, or similar — validate the assertion through that same boundary, not
+only against an isolated helper. Do not assume that an operation such as
+`send()`, `write()`, or event emission is a delivery barrier unless the
+underlying contract explicitly guarantees synchronous delivery. Assertions
+against downstream state must synchronize on an observable acknowledgment,
+event, eventual condition, or other contract-valid signal instead of on the mere
+act of initiating the operation.
 
 Where a case relies on custom parsing, markers, asynchronous output, PTYs,
 processes, WebSockets, timing, or similar mechanisms, use a positive control
@@ -645,7 +669,32 @@ Do not silently evaluate against a stale contract.
 
 Report the drift and stop unless the user explicitly directs otherwise.
 
-## 3. Inspect the implementation and run diagnostic probes
+## 3. Record implementation identity
+
+Before frozen verification begins, record an immutable identity for the
+implementation under evaluation.
+
+Prefer a clean implementation commit — a specific commit hash on a specific
+branch is the simplest sufficient identity, and should be recorded as such.
+
+If evaluation against uncommitted changes is deliberately allowed (for example
+because the user asked for a pre-commit check), record enough provenance to
+reconstruct the exact evaluated state, not just a description of it. At minimum:
+
+- the base commit hash;
+- working-tree status (which tracked files are modified, which files are
+  untracked and included in evaluation);
+- a stable patch/diff identity for the actual changes evaluated — for example a
+  hash of `git diff`/`git diff --stat` output, or an equivalent
+  content-addressed reference — sufficient that the exact evaluated state could
+  be reconstructed later, not merely summarized.
+
+Record this identity now, before running hidden tests or diagnostic probes, so
+that if the working tree changes mid-verification (deliberately or not) that
+drift is itself detectable rather than silently invalidating the result. Carry
+this identity into `eval-result.md`'s `Evaluation Source` section verbatim.
+
+## 4. Inspect the implementation and run diagnostic probes
 
 You may now inspect the completed implementation and relevant visible tests.
 
@@ -678,7 +727,7 @@ Record any diagnostic probe used, and what it showed, in `eval-result.md` as
 supplementary evidence, clearly separated from the frozen evaluation's own
 results.
 
-## 4. Run hidden evaluation
+## 5. Run hidden evaluation
 
 Run the frozen hidden tests.
 
@@ -687,7 +736,7 @@ Also run any deterministic regression checks explicitly required by
 
 Capture enough diagnostic information to classify failures reliably.
 
-## 5. Classify findings
+## 6. Classify findings
 
 ### Confirm before blaming the implementation
 
@@ -699,7 +748,12 @@ Before classifying any result as `IMPLEMENTATION_FAILURE`, where practical:
    checks — or re-validate them now if that wasn't practical earlier;
 3. confirm setup and teardown behaved correctly;
 4. rule out evaluator parsing, timing, environment, transport, or helper defects
-   — a diagnostic probe (see step 3) is often the fastest way to do this;
+   — a diagnostic probe (see step 4) is often the fastest way to do this. In
+   particular, if the failing assertion depends on data crossing an asynchronous
+   boundary (WebSocket, network transport, event queue, subprocess stream,
+   callback scheduling, or similar), check whether the test assumed synchronous
+   delivery — e.g. treated `send()`, `write()`, or event emission as a delivery
+   barrier — instead of synchronizing on an observable, contract-valid signal;
 5. produce a minimal behavioural reproduction where useful.
 
 If evaluator correctness cannot be established, classify the result as
@@ -736,7 +790,7 @@ frozen.
 
 Do not classify evaluator defects as implementation failures.
 
-## 6. Do not repair the evaluator during verification
+## 7. Do not repair the evaluator during verification
 
 During `verify`:
 
@@ -755,7 +809,7 @@ If an evaluator defect is discovered:
 Any correction to a frozen evaluation must be deliberate and recorded in
 revision history.
 
-## 7. Write `eval-result.md`
+## 8. Write `eval-result.md`
 
 Create or replace:
 
@@ -765,7 +819,7 @@ Create or replace:
 
 Include the sections defined in `templates/eval-result.md`.
 
-## 8. Promote evaluation artifacts on PASS
+## 9. Promote evaluation artifacts on PASS
 
 If and only if the overall verification result is `PASS`, promote the private
 evaluation artifacts into the spike's permanent project record.
@@ -808,6 +862,41 @@ performed for the spike.
 
 They are no longer considered hidden after promotion.
 
+### Commit the promotion
+
+A `PASS` result is not durably recorded until the promoted artifacts are
+committed in the main project. Do not leave promotion as an uncommitted
+working-tree change — an uncommitted promotion can drift or be lost, and the
+private evaluator workspace must not be removed while it is the only durable
+copy (see below).
+
+Commit local history so that two commit identities can be recorded, kept
+distinct:
+
+- **Evaluated implementation commit** — the commit identity recorded in step 3
+  ("Record implementation identity"). If that was already a clean commit, reuse
+  its hash; do not create a redundant commit for it. If verification instead ran
+  against deliberately-evaluated uncommitted changes, commit exactly those
+  changes now, on their own, before the promotion commit — stage only the files
+  that made up the evaluated implementation, not unrelated working-tree changes.
+- **Evaluation-result commit** — a separate, focused commit containing only the
+  newly promoted `<spike>/evaluation/**` (plus `<spike>/spike.md` and
+  `<spike>/eval-requirements.md` if those are not already committed). Do not
+  combine this with the evaluated implementation commit — keeping the two
+  separate keeps both hashes independently meaningful, and mirrors this
+  project's own preference for focused commits.
+
+Since promotion is archival (see Promotion rules above), the promoted
+`eval-result.md` cannot itself be edited afterward to reference the
+evaluation-result commit's own hash. Record both commit identities in the
+evaluation-result commit's message instead (e.g. "Evaluated implementation
+commit: `<hash>`"), and report both in the final verification status (see
+step 10) so they're visible without needing to inspect git history.
+
+This step commits locally only. Do not push or open a pull request as part of
+`verify` — those remain separate, explicit actions on the user's request, per
+this project's own git workflow.
+
 ### Remove the private evaluation workspace
 
 After all of the following are true:
@@ -815,6 +904,8 @@ After all of the following are true:
 1. verification result is `PASS`;
 2. all required evaluator artifacts have been promoted;
 3. the promoted copies have been verified identical to their private sources;
+4. the evaluated implementation and the promoted evaluation artifacts have both
+   been committed in the main project (see Commit the promotion above);
 
 remove:
 
@@ -827,7 +918,7 @@ Do not remove private artifacts before successful promotion has been verified.
 After promotion, the project copy is the canonical historical record for the
 completed spike.
 
-## 9. Report verification status
+## 10. Report verification status
 
 Report to the user:
 
@@ -839,7 +930,9 @@ Report to the user:
   showed;
 - path to the private result when evaluation did not pass;
 - path to the promoted evaluation record when evaluation passed;
-- whether promotion and cleanup completed successfully.
+- whether promotion and cleanup completed successfully;
+- on `PASS`: the evaluated implementation commit and the evaluation-result
+  commit (see "Commit the promotion").
 
 Do not dump hidden test source or reveal unnecessary hidden cases before
 successful promotion.
@@ -877,6 +970,28 @@ These rules apply in both modes.
 16. **Diagnostic probes run during verification inform classification; they
     never substitute for frozen coverage and never turn `BLOCKED`/`FAIL` into
     `PASS`.**
+17. **An assertion whose data crosses an asynchronous boundary — WebSocket,
+    network transport, event queue, subprocess stream, callback scheduling, or
+    similar — must be validated through that same boundary; a helper passing in
+    isolation is not sufficient evidence the end-to-end oracle is valid. Never
+    assume `send()`, `write()`, or event emission is a delivery barrier unless
+    the contract explicitly guarantees synchronous delivery — synchronize on an
+    observable acknowledgment, event, eventual condition, or other
+    contract-valid signal instead.**
+18. **Where shared evaluator machinery is exercised through a materially
+    different production path than in its helper self-tests, preparation must
+    include at least one end-to-end integrity check through the real path — an
+    isolated self-test alone is not sufficient.**
+19. **Before frozen verification begins, the implementation under evaluation
+    must have a recorded immutable identity — prefer a clean commit; if
+    uncommitted changes are deliberately evaluated, record base commit,
+    working-tree status, and a stable patch/diff identity sufficient to
+    reconstruct the exact evaluated state.**
+20. **A `PASS` result requires committing the promoted evaluation artifacts — do
+    not leave promotion as an uncommitted working-tree change, and do not remove
+    the private evaluator workspace until it is committed. Record both the
+    evaluated implementation commit and the evaluation-result commit as distinct
+    identities.**
 
 # Current non-goals
 

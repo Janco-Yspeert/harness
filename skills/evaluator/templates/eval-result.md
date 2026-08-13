@@ -9,9 +9,15 @@ PASS, FAIL, or BLOCKED.
 
 ## Evaluation Source
 
-Record:
+Record the immutable implementation identity captured in the skill's "Record
+implementation identity" step:
 
-- project commit evaluated;
+- project commit evaluated (branch + commit hash), if the implementation is a
+  clean commit;
+- otherwise, since evaluation is against uncommitted changes: base commit hash,
+  working-tree status (modified/untracked files included in evaluation), and a
+  stable patch/diff identity sufficient to reconstruct the exact evaluated
+  state;
 - frozen eval-spec identity/hash;
 - spike brief hash;
 - evaluation timestamp when available.

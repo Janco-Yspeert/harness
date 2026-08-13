@@ -27,16 +27,27 @@ problems when they materially contributed to what was learned.
 
 Use this skill only after the spike has completed:
 
-1. implementation;
-2. successful independent evaluation and promotion;
+1. implementation committed at the revision that was independently evaluated;
+2. successful independent evaluation and promotion committed to the feature
+   branch;
 
 A separate code review may be performed when warranted by the size, risk, or
 complexity of the spike, but is not required for every spike.
 
-If the spike has not successfully completed evaluation, do not write a final
-outcome.
+Before writing the outcome, resolve and verify both:
 
-Report which prerequisite is incomplete instead.
+- the evaluated implementation commit; and
+- the evaluation commit containing the promoted final evaluation artifacts.
+
+Do not infer either commit from the current `HEAD` alone. Confirm the identities
+from the evaluation result and Git history. The evaluation commit must contain
+the promoted final result, and the implementation commit must identify the exact
+implementation evaluated.
+
+If implementation was evaluated from uncommitted changes, or if the promoted
+evaluation has not been committed, do not write a final outcome. Report which
+prerequisite is incomplete instead. Do not manufacture provenance by committing
+after the fact and calling the new commit the evaluated revision.
 
 ## Target
 
@@ -167,8 +178,8 @@ Normally this should be:
 
 Do not use `PASS` merely because implementation completed.
 
-Record the final implementation commit and final evaluation result when
-available.
+Record the evaluated implementation commit and the evaluation commit. These are
+required provenance, not optional metadata.
 
 ## Write `outcome.md`
 
@@ -180,10 +191,9 @@ Use the following structure.
 
 State the final result concisely.
 
-Include, where available:
-
-- final implementation commit;
-- final evaluation result;
+Include the final evaluation result, evaluated implementation commit, and
+evaluation commit. Do not call a later artifact or cleanup commit the
+implementation revision that was evaluated.
 
 Include code-review findings when a separate review was performed. Do not
 require a code-review artifact for completion.
@@ -348,7 +358,8 @@ Include where available:
 
 - spike brief;
 - public evaluation requirements;
-- final implementation commit;
+- evaluated implementation commit;
+- evaluation commit containing the promoted final evaluation;
 - final evaluation specification;
 - final evaluation result;
 - archived evaluation attempts;
@@ -356,6 +367,10 @@ Include where available:
 - relevant ADRs created during the spike.
 
 Use repository-relative paths where practical.
+
+Do not put the outcome commit hash inside `outcome.md`. A commit cannot contain
+its own final hash because changing the file changes the hash. Record the
+outcome commit in the completion report after creating it.
 
 ## Historical Integrity
 
@@ -385,24 +400,39 @@ Before finishing:
 4. Confirm deferred concerns are not presented as completed work.
 5. Confirm recommended follow-ups have not been silently promoted into project
    requirements.
-6. Confirm only `outcome.md` was modified unless the user explicitly authorized
+6. Confirm `outcome.md` records the evaluated implementation commit and
+   evaluation commit.
+7. Confirm only `outcome.md` was modified unless the user explicitly authorized
    other changes.
+8. Commit the final `outcome.md` as a dedicated outcome commit on the current
+   feature branch.
+9. Confirm that the outcome commit contains `outcome.md` and no unrelated paths.
 
-Report the path written and a concise summary of the major outcome findings.
+Report the path written, a concise summary of the major outcome findings, and
+all three provenance revisions:
+
+- evaluated implementation commit;
+- evaluation commit;
+- outcome commit.
 
 ## Git Handoff
 
-When the user requests it, the outcome workflow may commit and push the
-completed outcome together with other explicitly authorized changes on the
-current feature branch.
+The outcome workflow must create the dedicated outcome commit described above.
+This commit is part of completing the skill, not an optional handoff step.
+
+Do not include unrelated working-tree changes in the outcome commit. Stage
+`<spike>/outcome.md` explicitly, inspect the staged diff, run checks appropriate
+to Markdown-only changes, and commit it with a focused message.
+
+Pushing remains optional unless the user requests it. When requested, push the
+committed outcome on the current feature branch.
 
 Merge only with explicit user permission for that merge. Follow the repository's
 protected-branch workflow: use a pull request and squash merge; do not push
 directly to `main`, create a merge commit, or use rebase merge.
 
-Before committing or merging:
+Before pushing or merging:
 
-1. inspect the staged paths and preserve unrelated work;
-2. run checks appropriate to the changed artifacts;
-3. confirm the branch and target branch;
-4. report the commit, push, pull request, and merge result.
+1. preserve unrelated work;
+2. confirm the branch and target branch;
+3. report the outcome commit, push, pull request, and merge result.

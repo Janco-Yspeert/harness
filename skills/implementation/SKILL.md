@@ -24,6 +24,20 @@ If either document is missing or unreadable, stop and report the problem.
 Also obey the repository `AGENTS.md` and any relevant project documentation it
 directs you to.
 
+## Branch and provenance
+
+Perform implementation on a focused feature branch, never directly on `main`.
+
+Before changing files:
+
+1. inspect the current branch and working tree;
+2. if currently on `main`, create and switch to a focused feature branch;
+3. identify and preserve pre-existing or unrelated working-tree changes.
+
+Do not discard, overwrite, stage, or commit unrelated user changes. If existing
+changes overlap the spike and prevent a trustworthy isolated implementation
+commit, stop and report the conflict.
+
 ## Authority
 
 `spike.md` defines the spike's intended behaviour, scope, constraints, and
@@ -113,10 +127,49 @@ visible test or required check has an unrelated pre-existing failure, do not
 broaden the spike to fix it; report the failure and the evidence that it is
 unrelated.
 
+## Implementation commit
+
+After verification succeeds, create a focused implementation commit on the
+feature branch before declaring the implementation complete.
+
+The commit must contain the exact revision intended for independent evaluation,
+including:
+
+- implementation changes;
+- visible tests added or changed for the spike; and
+- the frozen `spike.md` and `eval-requirements.md` when they are not already
+  committed unchanged in the branch history.
+
+Do not include evaluator-private artifacts, promoted evaluation artifacts,
+outcomes, or unrelated working-tree changes in the implementation commit.
+
+Before committing:
+
+1. stage the intended paths explicitly;
+2. inspect the staged path list and staged diff;
+3. confirm the staged content contains no unrelated changes or restricted
+   evaluator material;
+4. create a focused commit message identifying the spike implementation.
+
+After committing:
+
+1. resolve the full commit hash;
+2. verify that the commit contains every intended implementation and visible-
+   test change;
+3. verify that no implementation change remains uncommitted relative to that
+   commit;
+4. leave unrelated pre-existing working-tree changes untouched.
+
+The implementation commit is the immutable revision the evaluator must use. Do
+not hand off an implementation represented partly by a commit and partly by
+working-tree changes. Pushing is not required unless the user requests it.
+
 ## Completion report
 
 Report:
 
+- feature branch name;
+- evaluated implementation commit hash;
 - what was implemented;
 - important implementation decisions;
 - visible tests added or changed;
@@ -129,3 +182,6 @@ Do not claim that the spike has passed independent evaluation.
 
 Successful implementation means only that it is ready for the evaluator's
 `verify` phase.
+
+Do not report readiness for evaluation unless the focused implementation commit
+has been created and the intended implementation matches that commit.
