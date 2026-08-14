@@ -1,0 +1,226 @@
+{
+  "support": [
+    "helpers.ts",
+    "helpers.selfcheck.test.ts",
+    "fixtures/fake-app-server.ts"
+  ],
+  "cases": {
+    "E1": {
+      "requirements": ["R1"],
+      "invariants": [],
+      "negativeRequirements": ["N6"],
+      "assumptions": [],
+      "tests": ["codex-protocol-baseline.test.ts"]
+    },
+    "E2": {
+      "requirements": ["R3", "R4"],
+      "invariants": [],
+      "negativeRequirements": ["N1"],
+      "assumptions": [],
+      "tests": ["codex-startup.test.ts"]
+    },
+    "E3": {
+      "requirements": ["R3"],
+      "invariants": ["I1"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-startup.test.ts"]
+    },
+    "E4": {
+      "requirements": ["R5"],
+      "invariants": [],
+      "negativeRequirements": ["N1", "N2"],
+      "assumptions": ["A4"],
+      "tests": ["codex-startup.test.ts"]
+    },
+    "E5": {
+      "requirements": ["R5"],
+      "invariants": [],
+      "negativeRequirements": ["N1", "N2"],
+      "assumptions": ["A4"],
+      "tests": ["codex-startup.test.ts"]
+    },
+    "E6": {
+      "requirements": ["R6"],
+      "invariants": [],
+      "negativeRequirements": ["N8"],
+      "assumptions": [],
+      "tests": ["codex-startup.test.ts"]
+    },
+    "E7": {
+      "requirements": ["R7"],
+      "invariants": [],
+      "negativeRequirements": ["N13"],
+      "assumptions": [],
+      "tests": ["codex-turns.test.ts"]
+    },
+    "E8": {
+      "requirements": ["R8"],
+      "invariants": ["I4"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-turns.test.ts"]
+    },
+    "E9": {
+      "requirements": ["R10"],
+      "invariants": [],
+      "negativeRequirements": ["N5"],
+      "assumptions": [],
+      "tests": ["codex-turns.test.ts"]
+    },
+    "E10": {
+      "requirements": ["R10"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-turns.test.ts"]
+    },
+    "E11": {
+      "requirements": ["R9"],
+      "invariants": ["I8"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-turns.test.ts"]
+    },
+    "E12": {
+      "requirements": ["R11"],
+      "invariants": ["I2"],
+      "negativeRequirements": ["N4"],
+      "assumptions": ["A1"],
+      "tests": ["codex-active-turn.test.ts"]
+    },
+    "E13": {
+      "requirements": ["R11"],
+      "invariants": ["I2", "I3"],
+      "negativeRequirements": [],
+      "assumptions": ["A1"],
+      "tests": ["codex-active-turn.test.ts"]
+    },
+    "E14": {
+      "requirements": ["R11"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-active-turn.test.ts"]
+    },
+    "E15": {
+      "requirements": ["R12"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-structured-events.test.ts"]
+    },
+    "E16": {
+      "requirements": ["R4", "R13"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-structured-events.test.ts"]
+    },
+    "E17": {
+      "requirements": ["R14"],
+      "invariants": [],
+      "negativeRequirements": ["N12"],
+      "assumptions": [],
+      "tests": ["codex-detach-reattach.test.ts"]
+    },
+    "E18": {
+      "requirements": ["R14"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-detach-reattach.test.ts"]
+    },
+    "E19": {
+      "requirements": ["R15"],
+      "invariants": ["I5", "I6", "I7"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-stop.test.ts"]
+    },
+    "E20": {
+      "requirements": ["R16"],
+      "invariants": [],
+      "negativeRequirements": ["N9"],
+      "assumptions": [],
+      "tests": ["codex-stop.test.ts"]
+    },
+    "E21": {
+      "requirements": ["R17"],
+      "invariants": [],
+      "negativeRequirements": ["N10"],
+      "assumptions": [],
+      "tests": ["codex-stop.test.ts"]
+    },
+    "E22": {
+      "requirements": ["R17"],
+      "invariants": [],
+      "negativeRequirements": ["N10"],
+      "assumptions": [],
+      "tests": ["codex-stop.test.ts"]
+    },
+    "E23": {
+      "requirements": ["R17"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-stop.test.ts"]
+    },
+    "E24": {
+      "requirements": ["R18"],
+      "invariants": [],
+      "negativeRequirements": ["N10"],
+      "assumptions": [],
+      "tests": ["codex-stop.test.ts"]
+    },
+    "E25": {
+      "requirements": ["R19"],
+      "invariants": [],
+      "negativeRequirements": ["N3"],
+      "assumptions": [],
+      "tests": ["codex-stop.test.ts"]
+    },
+    "E26": {
+      "requirements": ["R20"],
+      "invariants": [],
+      "negativeRequirements": ["N3"],
+      "assumptions": [],
+      "tests": ["codex-backend-failure.test.ts"]
+    },
+    "E27": {
+      "requirements": ["R20"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-backend-failure.test.ts"]
+    },
+    "E28": {
+      "requirements": ["R21", "R22"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-regression-pty.test.ts"]
+    },
+    "E29": {
+      "requirements": [],
+      "invariants": [],
+      "negativeRequirements": ["N13"],
+      "assumptions": [],
+      "tests": ["codex-regression-pty.test.ts"]
+    },
+    "E30": {
+      "requirements": [],
+      "invariants": ["I9"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-regression-pty.test.ts"]
+    },
+    "E31": {
+      "requirements": [],
+      "invariants": ["I10"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["codex-regression-pty.test.ts"]
+    }
+  }
+}
