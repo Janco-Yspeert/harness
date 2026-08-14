@@ -269,18 +269,26 @@ class CodexBackend implements SessionBackend {
   async #terminateProcess(): Promise<void> {
     if (this.#hasExited) return;
     this.#process.kill("SIGTERM");
-    const exited = await Promise.race([
-      this.#exited.then(() => true),
-      new Promise<false>((resolveTimeout) => {
-        setTimeout(() => {
-          resolveTimeout(false);
-        }, PROCESS_EXIT_GRACE_MS);
-      }),
-    ]);
-    if (!exited) {
-      this.#process.kill("SIGKILL");
-      await this.#exited;
-    }
+    if (await this.#waitForExit(PROCESS_EXIT_GRACE_MS)) return;
+
+    this.#process.kill("SIGKILL");
+    if (await this.#waitForExit(PROCESS_EXIT_GRACE_MS)) return;
+
+    throw new Error("Codex App Server could not be terminated");
+  }
+
+  #waitForExit(timeoutMs: number): Promise<boolean> {
+    if (this.#hasExited) return Promise.resolve(true);
+
+    return new Promise<boolean>((resolveExit) => {
+      const timeout = setTimeout(() => {
+        resolveExit(false);
+      }, timeoutMs);
+      void this.#exited.then(() => {
+        clearTimeout(timeout);
+        resolveExit(true);
+      });
+    });
   }
 
   #request(method: string, params: JsonObject): Promise<unknown> {

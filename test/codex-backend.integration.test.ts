@@ -10,6 +10,7 @@ import { WebSocket, type RawData } from "ws";
 
 import {
   createCodexBackend,
+  type AppServerProcess,
   type CodexBackendOptions,
 } from "../src/codex-backend.ts";
 import { startHarnessHost, type HarnessHost } from "../src/index.ts";
@@ -281,6 +282,48 @@ await test("uses bounded fallback when interruption never completes", async () =
   );
   assert.equal((await fetch(`${host.url}/sessions/${id}`)).status, 404);
   await host.close();
+});
+
+await test("returns 500 when forced App Server teardown cannot finalize", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "harness-codex-stuck-"));
+  const child = spawn(process.execPath, [fixture.pathname, "success"], {
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+  const signals: (NodeJS.Signals | number | undefined)[] = [];
+  const processThatNeverExits: AppServerProcess = {
+    stdin: child.stdin,
+    stdout: child.stdout,
+    stderr: child.stderr,
+    pid: child.pid,
+    on: (event, listener) => child.on(event, listener),
+    kill: (signal) => {
+      signals.push(signal);
+      return true;
+    },
+  };
+  const host = await startHarnessHost(0, {
+    createBackend: () =>
+      createCodexBackend({
+        cwd: directory,
+        spawnAppServer: () => processThatNeverExits,
+      }),
+  });
+
+  try {
+    const id = await createSession(host);
+    const startedAt = Date.now();
+    const response = await fetch(`${host.url}/sessions/${id}`, {
+      method: "DELETE",
+    });
+    assert.equal(response.status, 500);
+    assert.ok(Date.now() - startedAt < 3_000);
+    assert.deepEqual(signals, ["SIGTERM", "SIGKILL"]);
+    assert.equal((await fetch(`${host.url}/sessions/${id}`)).status, 404);
+  } finally {
+    child.kill("SIGKILL");
+    await once(child, "exit");
+    await host.close();
+  }
 });
 
 await test("backend process exit ends the session and frees the slot", async () => {
