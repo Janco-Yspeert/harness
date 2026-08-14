@@ -2,6 +2,8 @@
 
 ## Result
 
+_PASS after evaluator revision and one implementation correction._
+
 **PASS.** The final frozen v2 evaluation passed all 31 mandatory cases against
 implementation commit `bb67186d7a5b8fdcba7409ce89e593427d6c52eb`. The promoted
 evaluation is committed at `5878209d8e69201158644a1fe26f4a919aeb9bc6`.
@@ -52,6 +54,10 @@ locally installed App Server. The smoke used `codex-cli 0.147.0`, matching the
 schema-generating version, ran through the normal `HARNESS_BACKEND=codex`
 runtime path, completed two turns (`ALPHA`, then `BETA`) across detach/reattach,
 and stopped with `204`.
+
+The spike proves the Codex backend through the existing client transport path;
+it does not prove that Codex is yet accessible as a first-class session type
+from the normal Harness UI.
 
 ## Implementation Summary
 
@@ -304,8 +310,17 @@ These numbers are a baseline rather than a target; future evaluator revisions
 should measure whether stronger oracle validation can be achieved with fewer
 iterative turns, less retained command output, and less context growth.
 
-_AI workflow_: Run future spikes with Claude and Codex swapped between
+**AI workflow**: Run future spikes with Claude and Codex swapped between
 implementation and evaluation roles, and selectively replay equivalent frozen
 spikes with isolated same-model implementor/evaluator sessions. Compare
 evaluator defects, implementation defects found, human intervention, tool/turn
 cost, and completion reliability before permanently assigning roles by model.
+
+Codex is not yet exposed through the normal browser UI. The Spike 005 Codex
+backend is selectable through host/runtime configuration
+(HARNESS_BACKEND=codex), but the current web application still presents the
+terminal-oriented session flow and does not provide a user-facing way to launch
+or select a Codex-backed session. The live smoke therefore proves the backend
+and existing client transport path, not a finished Codex supervisory UX. A later
+spike must decide how backend/session type is selected and how native-agent
+sessions are represented in the UI without treating them as terminals.
