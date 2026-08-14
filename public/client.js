@@ -56,6 +56,13 @@ function attach() {
     if (message.type === "output" && typeof message.data === "string") {
       output.textContent += message.data;
       output.scrollTop = output.scrollHeight;
+    } else if (
+      message.type === "error" &&
+      typeof message.code === "string" &&
+      typeof message.data === "string"
+    ) {
+      output.textContent += `\n[${message.code}] ${message.data}\n`;
+      output.scrollTop = output.scrollHeight;
     }
   });
   socket.addEventListener("close", () => {

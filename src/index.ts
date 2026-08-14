@@ -7,11 +7,14 @@ import { WebSocket, WebSocketServer, type RawData } from "ws";
 
 import { PtyBackend } from "./pty-backend.ts";
 import type {
+  HarnessErrorMessage,
   SessionBackend,
   SessionBackendFactory,
 } from "./session-backend.ts";
 
 export type {
+  BackendInputResult,
+  HarnessErrorMessage,
   SessionBackend,
   SessionBackendFactory,
 } from "./session-backend.ts";
@@ -57,6 +60,12 @@ export interface HarnessHost {
 
 export interface HarnessHostOptions {
   createBackend?: SessionBackendFactory;
+}
+
+function sendError(socket: WebSocket | undefined, error: HarnessErrorMessage) {
+  if (socket?.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(error));
+  }
 }
 
 function parseInputMessage(data: RawData): InputMessage | undefined {
@@ -191,6 +200,9 @@ export async function startHarnessHost(
         session.socket.send(JSON.stringify({ type: "output", data }));
       }
     });
+    backend.onError((error) => {
+      sendError(session.socket, error);
+    });
     backend.onExit(() => {
       void endSession(session).catch((error: unknown) => {
         console.error("Failed to finalize ended session", error);
@@ -302,7 +314,10 @@ export async function startHarnessHost(
         session.ending === undefined &&
         session.socket === socket
       ) {
-        session.backend.write(message.data);
+        const result = session.backend.write(message.data);
+        if (result !== undefined && !result.accepted) {
+          sendError(socket, result.error);
+        }
       }
     });
 
@@ -393,7 +408,18 @@ export async function startHarnessHost(
 if (import.meta.main) {
   const port =
     process.env.PORT === undefined ? DEFAULT_PORT : Number(process.env.PORT);
-  const host = await startHarnessHost(port);
+  const createBackend =
+    process.env.HARNESS_BACKEND === "codex"
+      ? async (): Promise<SessionBackend> => {
+          const { createCodexBackend } = await import("./codex-backend.ts");
+          const cwd = process.env.HARNESS_CODEX_CWD;
+          return createCodexBackend(cwd === undefined ? {} : { cwd });
+        }
+      : undefined;
+  const host = await startHarnessHost(
+    port,
+    createBackend === undefined ? {} : { createBackend },
+  );
   console.log(`Harness session lifecycle spike listening at ${host.url}`);
 
   const shutDown = async (): Promise<void> => {
