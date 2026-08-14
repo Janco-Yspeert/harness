@@ -6,6 +6,7 @@ import { WebSocket, type RawData } from "ws";
 
 import {
   startHarnessHost,
+  type BackendInputResult,
   type HarnessHost,
   type SessionBackend,
 } from "../src/index.ts";
@@ -31,13 +32,16 @@ class MemoryBackend implements SessionBackend {
   #dataListener: ((output: string) => void) | undefined;
   #exitListener: (() => void) | undefined;
 
-  write(input: string): void {
+  write(input: string): BackendInputResult {
     this.inputs.push(input);
+    return { accepted: true };
   }
 
   onData(listener: (output: string) => void): void {
     this.#dataListener = listener;
   }
+
+  onError(): void {}
 
   onExit(listener: () => void): void {
     this.#exitListener = listener;

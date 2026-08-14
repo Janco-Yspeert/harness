@@ -1,6 +1,6 @@
 import * as pty from "node-pty";
 
-import type { SessionBackend } from "./session-backend.ts";
+import type { BackendInputResult, SessionBackend } from "./session-backend.ts";
 
 function signalProcessGroup(pid: number, signal: NodeJS.Signals): void {
   try {
@@ -45,13 +45,16 @@ export class PtyBackend implements SessionBackend {
     });
   }
 
-  write(input: string): void {
+  write(input: string): BackendInputResult {
     this.#terminal.write(input);
+    return { accepted: true };
   }
 
   onData(listener: (output: string) => void): void {
     this.#dataListener = listener;
   }
+
+  onError(): void {}
 
   onExit(listener: () => void): void {
     this.#exitListener = listener;
