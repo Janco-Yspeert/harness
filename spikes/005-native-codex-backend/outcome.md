@@ -293,3 +293,19 @@ snapshot.
 - Implementation: `src/codex-backend.ts`, `src/session-backend.ts`,
   `src/index.ts`, `src/pty-backend.ts`, `public/client.js`
 - No ADR or separate post-implementation code-review artifact was created.
+
+## Human/ChatGPT Additions
+
+Evaluator preparation was also operationally expensive. The Spike 005 prepare
+run used approximately 155 agent/inference cycles, generated about 202k output
+tokens, reached roughly 270k context, returned about 54k tokens of file reads
+and 39k tokens of shell output, and required repeated permission interaction.
+These numbers are a baseline rather than a target; future evaluator revisions
+should measure whether stronger oracle validation can be achieved with fewer
+iterative turns, less retained command output, and less context growth.
+
+_AI workflow_: Run future spikes with Claude and Codex swapped between
+implementation and evaluation roles, and selectively replay equivalent frozen
+spikes with isolated same-model implementor/evaluator sessions. Compare
+evaluator defects, implementation defects found, human intervention, tool/turn
+cost, and completion reliability before permanently assigning roles by model.
