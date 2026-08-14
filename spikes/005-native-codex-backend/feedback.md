@@ -2,92 +2,57 @@
 
 ## Findings
 
-### Blocker — the required protocol baseline has not been frozen
+No blockers or material clarifications remain.
 
-The revised brief correctly requires an exact Codex CLI version and generated
-App Server schema to be committed before the spike is frozen (`spike.md`, lines
-94–124). It repeats that requirement in the success criteria (`spike.md`, lines
-989–995) and provenance contract (`spike.md`, lines 1120–1125).
+The active brief is internally consistent with the current repository and the
+frozen Codex App Server protocol baseline:
 
-No root-level `protocol/` artifact, schema bundle, or equivalent version record
-currently exists. The locally installed CLI reports `codex-cli 0.147.0`, and
-its `codex app-server generate-json-schema` command supports generating the
-required non-experimental bundle when `--experimental` is omitted. Official
-App Server documentation also states that generated schemas are specific to
-the Codex version that produced them.
+- Harness session, Codex thread, Codex turn, and App Server process identity and
+  lifecycle remain distinct.
+- Startup readiness, reservation cleanup, fatal backend termination, detach,
+  reattach, and guarded finalization preserve the Spike 004 contracts.
+- The busy interval begins synchronously, so unresolved `turn/start` requests
+  cannot race into overlapping turns.
+- Recoverable `turn/start` failure returns the backend to idle, preserves the
+  Harness session, emits exactly one `turn_start_failed` message, and permits a
+  later attempt.
+- `turn_active` and `turn_start_failed` are now consistent across the lifecycle
+  text, browser requirements, WebSocket contract, deterministic verification,
+  and success criteria.
+- PTY-only carriage-return handling is explicitly excluded from Codex provider
+  input without changing PTY behaviour.
+- Agent-message delta and completed-item projection has a deterministic
+  no-duplication rule.
+- Active-turn stop defines required graceful evidence, a five-second bound,
+  fallback teardown, and HTTP outcomes.
+- Authentication, diagnostics, approvals, structured non-text events, replay,
+  and provider-history ownership have narrow and coherent scope boundaries.
+- The deterministic peer must exercise the real asynchronous framing path,
+  while the separately required live smoke proves compatibility with the real
+  provider.
 
-This is no longer an ambiguity in the brief; it is an explicit freeze
-prerequisite that has not yet been performed. Implementation and evaluator
-preparation cannot share the required immutable wire contract until it exists.
+The generated schema baseline and `protocol/README.md` are committed at
+`c4827dee40a8d4108db43a38b0d44a5da5694ffd`. The README records
+`codex-cli 0.147.0`, and the brief consistently prohibits opting into
+`capabilities.experimentalApi`.
 
-Minimum action before freeze: generate the non-experimental schema from the
-chosen installed Codex CLI, save its exact version alongside it, and commit
-both under Spike 005.
-
-### Material clarification — the active-turn rejection window does not cover turn startup explicitly
-
-The brief defines the client-visible rejection contract for input received
-while a Codex turn is active (`spike.md`, lines 365–404), but does not say when
-Harness enters that state. There is an asynchronous interval after Harness
-accepts the first browser instruction and sends `turn/start`, but before App
-Server returns the new turn or emits its lifecycle notifications.
-
-If a second WebSocket message arrives in that interval, one implementation may
-reject it with `turn_active`, while another may send a second `turn/start` and
-leave overlap prevention to App Server. The latter conflicts with the intended
-guarantee that Harness itself does not create overlapping turns, and the
-deterministic evaluator has no unambiguous oracle for this race.
-
-Minimum clarification: define the busy/rejection interval as beginning
-synchronously when Harness accepts an idle instruction and lasting until that
-turn reaches a terminal event or its start attempt fails. State what state the
-session returns to after a non-fatal `turn/start` rejection.
-
-### Material clarification — the existing browser adds a PTY carriage return to provider input
-
-The current browser sends each instruction as `${command.value}\r`
-(`public/client.js`, line 103), because Spike 004 input was terminal input. The
-revised brief now treats input as a provider-native textual instruction
-(`spike.md`, lines 315–337), but does not decide whether that trailing carriage
-return remains part of the Codex prompt.
-
-Either retaining or normalizing it is cheap, but evaluator peers comparing the
-`turn/start` input and implementers trying not to leak PTY mechanics into Codex
-need the same rule.
-
-Minimum clarification: require the Codex path to submit the browser's logical
-text without the PTY-only trailing carriage return, or explicitly declare that
-the existing input payload—including `\r`—is passed through unchanged for this
-spike.
-
-## Resolved from the preliminary review
-
-The replacement brief now clearly defines:
-
-- the non-experimental App Server protocol surface;
-- active-turn rejection and its client-visible error;
-- graceful interruption, the five-second fallback, and resulting HTTP status;
-- delta-first text projection without duplicate completed output; and
-- the server-side diagnostic and sanitization contract.
-
-Those preliminary findings are resolved and are not blockers in the revised
-brief.
+No requirement appears technically infeasible or disproportionately costly for
+the stated spike. Evolving `SessionBackend.write(): void` and the browser
+message handling is explicitly authorized by the brief and is necessary to
+represent the two narrow Harness error messages; it does not require the
+universal provider/event architecture excluded by the non-goals.
 
 ## Verdict
 
-**Not ready to freeze.** The only blocker is the brief's own missing
-version-specific protocol/schema artifact. Once that is generated and
-committed, the two named wording clarifications should be made so implementation
-and evaluation handle the startup race and browser input payload consistently.
-
-No technically infeasible or disproportionately costly requirement was
-identified. The real-provider smoke remains environment-dependent, but the
-brief separates that limitation cleanly from deterministic evaluation.
+**Ready to freeze.** The brief is sufficiently clear, complete, internally
+consistent, and implementable. It supplies fair observable contracts for
+implementation and deterministic evaluation while preserving the intended
+real-provider smoke requirement.
 
 No root-level `eval-requirements.md` existed at review time. The review covered
-the complete replacement brief, current implementation and public contracts,
-visible tests, project guidance, prior public outcome context, the installed
-Codex CLI, and the current official
+the complete active brief, committed protocol provenance and generated schema
+baseline, current implementation and public contracts, visible tests, project
+guidance, prior public outcome context, and the current official
 [Codex App Server documentation](https://developers.openai.com/codex/app-server).
-Only this required `feedback.md` review artifact was added; no brief,
-implementation, or test files were changed, and no tests were run.
+Only this required `feedback.md` artifact was written; no brief,
+implementation, schema, or test files were changed, and no tests were run.
