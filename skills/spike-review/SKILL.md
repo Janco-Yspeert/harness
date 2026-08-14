@@ -39,8 +39,9 @@ active `eval-spec.md`, `.hidden-test/**`, or `.eval/**` paths. Public promoted
 historical evaluation artifacts remain governed by `AGENTS.md`; normally they
 are unnecessary for this review.
 
-This is a read-only review. Do not edit the brief, implementation, tests, or
-project documentation unless the user separately asks for changes.
+Do not edit the brief, implementation, tests, or project documentation unless
+the user separately asks for changes. The sole routine write made by this skill
+is the review artifact described under **Output**.
 
 ## Review method
 
@@ -110,6 +111,27 @@ Classify findings as:
 Do not bury blockers beneath summaries. If no material findings exist, say so
 plainly rather than inventing a review-shaped fog bank.
 
+## Output
+
+Produce the complete review in both places:
+
+1. Print it in the final response so the user can read the findings and verdict
+   immediately.
+2. Save the same substantive review as `feedback.md` beside the target
+   `spike.md`.
+
+Use repository-relative references in `feedback.md` so the artifact remains
+useful after checkout elsewhere. The screen and file versions may differ only in
+presentation details such as clickable link targets; their findings,
+classifications, minimum clarifications, verdict, and limitations must agree.
+
+If `feedback.md` already exists, inspect it first. Replace it when it is plainly
+the prior review artifact for the same spike; otherwise preserve unrelated
+content and report the conflict instead of silently overwriting it.
+
+Writing `feedback.md` does not authorize edits to the spike brief or any other
+project file.
+
 ## Verdict
 
 End with one explicit verdict:
@@ -120,5 +142,6 @@ End with one explicit verdict:
 - **Not ready to freeze** — list the unresolved blockers.
 
 State any limitations of the review, including relevant files or checks that
-could not be inspected. Mention that no files were changed and no tests were run
-when applicable.
+could not be inspected. Mention that no implementation, brief, or test files
+were changed and no tests were run when applicable; account separately for the
+required `feedback.md` artifact.
