@@ -1,6 +1,7 @@
 coverage/
 dist/
 node_modules/
+spikes/
 package-lock.json
 AGENTS.md
 GOALS.md
