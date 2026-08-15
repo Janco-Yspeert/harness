@@ -1,4 +1,6 @@
 interface:
   display_name: "Spike Outcome"
   short_description: "Synthesize a completed Harness spike outcome"
-  default_prompt: "Use $outcome to synthesize the completed spike into its historical outcome record."
+  default_prompt:
+    "Use $outcome to synthesize the completed spike into its historical outcome
+    record."
