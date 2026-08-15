@@ -313,8 +313,7 @@ harness/
 ├── GOALS.md
 ├── AGENTS.md
 ├── CONTRIBUTING.md
-├── SECURITY.md
-└── LICENSE
+└── SECURITY.md
 ```
 
 ### Spikes
@@ -492,10 +491,11 @@ existing assumptions.
 
 ## License
 
-Harness-authored code and documentation are released under the
-[MIT License](./LICENSE).
+No license is currently granted for reuse or redistribution. The Harness source
+is public for demonstration and evaluation purposes.
 
-Third-party generated artefacts retain their upstream licences.
+Third-party generated artefacts retain their upstream licences and are not
+subject to that restriction.
 
 In particular, the Codex App Server schemas under:
 
