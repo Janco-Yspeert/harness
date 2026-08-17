@@ -45,6 +45,22 @@ interface InputMessage {
   data: string;
 }
 
+type SessionEventType = "session.started" | "session.ended";
+
+interface SessionEvent {
+  readonly meta: {
+    readonly id: string;
+    readonly kind: "event";
+    readonly type: SessionEventType;
+    readonly version: "1.0.0";
+    readonly streamId: string;
+    readonly correlationId: string;
+    readonly timestamp: string;
+    readonly source: "harness";
+  };
+  readonly data: Record<string, never>;
+}
+
 interface Session {
   readonly id: string;
   readonly backend: SessionBackend;
@@ -141,17 +157,46 @@ export async function startHarnessHost(
 ): Promise<HarnessHost> {
   const server = createServer();
   const webSockets = new WebSocketServer({ noServer: true });
+  const eventSockets = new Set<WebSocket>();
   const issuedSessionIds = new Set<string>();
   const createBackend = options.createBackend ?? (() => new PtyBackend());
   let activeSession: Session | undefined;
   let creatingSession = false;
   let closed = false;
 
+  function publishSessionEvent(
+    type: SessionEventType,
+    sessionId: string,
+  ): void {
+    const id = randomUUID();
+    const event: SessionEvent = {
+      meta: {
+        id,
+        kind: "event",
+        type,
+        version: "1.0.0",
+        streamId: sessionId,
+        correlationId: id,
+        timestamp: new Date().toISOString(),
+        source: "harness",
+      },
+      data: {},
+    };
+    const message = JSON.stringify(event);
+
+    for (const socket of eventSockets) {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(message);
+      }
+    }
+  }
+
   function removeSession(session: Session): void {
     session.socket?.terminate();
     session.socket = undefined;
     if (activeSession === session) {
       activeSession = undefined;
+      publishSessionEvent("session.ended", session.id);
     }
   }
 
@@ -246,6 +291,7 @@ export async function startHarnessHost(
             return;
           }
           activeSession = session;
+          publishSessionEvent("session.started", session.id);
           const body = JSON.stringify({ id: session.id });
           response.writeHead(201, {
             "content-type": "application/json",
@@ -295,10 +341,15 @@ export async function startHarnessHost(
   });
 
   webSockets.on("connection", (socket, request) => {
+    const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
+    if (pathname === "/events/ws") {
+      eventSockets.add(socket);
+      socket.on("close", () => eventSockets.delete(socket));
+      return;
+    }
+
     const session = activeSession;
-    const id = new URL(request.url ?? "/", "http://localhost").pathname.match(
-      /^\/sessions\/([^/]+)\/ws$/,
-    )?.[1];
+    const id = pathname.match(/^\/sessions\/([^/]+)\/ws$/)?.[1];
 
     if (session === undefined || id !== session.id) {
       socket.terminate();
@@ -330,6 +381,13 @@ export async function startHarnessHost(
 
   server.on("upgrade", (request, socket, head) => {
     const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
+    if (pathname === "/events/ws") {
+      webSockets.handleUpgrade(request, socket, head, (webSocket) => {
+        webSockets.emit("connection", webSocket, request);
+      });
+      return;
+    }
+
     const id = pathname.match(/^\/sessions\/([^/]+)\/ws$/)?.[1];
     const session = activeSession;
 
@@ -379,6 +437,10 @@ export async function startHarnessHost(
 
       if (activeSession !== undefined) {
         await endSession(activeSession);
+      }
+
+      for (const socket of eventSockets) {
+        socket.close();
       }
 
       await Promise.all([

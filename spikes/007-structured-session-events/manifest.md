@@ -141,3 +141,37 @@ This append-only record preserves material workflow runs for Spike 007.
   temporary, uncommitted dependency-injection probe used to validate one
   case's negative control
 - Measurement cutoff: immediately before this manifest update
+
+## Run 005 — Implementation
+
+- Recorded: contemporaneously
+- Skill: `implementation` v3
+- Agent/tool: Codex
+- Result: candidate prepared for independent evaluation
+- Inputs: frozen `spike.md`, frozen `design-map.md`, public
+  `eval-requirements.md`, `AGENTS.md`, `GOALS.md`, and public implementation
+  feedback
+- Frozen brief content identity:
+  `sha256:39f0282af77befbe503cdbffb432ca108d30b1b6c05a3f37cba82fcb6635efe2`
+- Frozen Design Map content identity:
+  `sha256:f77725941c6e5b6c0658d4bee7406afa19a2f53bfb915c394e9efcdbbb10d421`
+- Evaluation requirements content identity:
+  `sha256:160c87200ca3c534a31b9bc1d10d0f476088b3f99d2a8cd5b9ebb6c9b6b90a58`
+- Input Git provenance: brief `b1a2ecc`, Design Map `0139517`, evaluator
+  preparation `7dd8b8f`
+- Output: host-owned `/events/ws` live lifecycle broadcast and visible session
+  event integration tests
+- Output identity: the containing implementation commit; resolved after commit
+- Files changed before this manifest entry: `src/index.ts` and
+  `test/session-events.integration.test.ts`
+- Decisions: lifecycle transitions construct one closed Conduit-aligned envelope
+  and serialize it once for every live observer; event connections remain
+  independent of the existing singleton session attachment and backends remain
+  unaware of the public event contract
+- Tests/checks: `npm test` passed (25 tests); `npm run typecheck` passed;
+  changed-file ESLint and Prettier checks passed; `git diff --check` passed
+- Skipped check: repository-wide `npm run lint` could not traverse the
+  sandbox-exposed `.codex` directory (`ENOENT` from ESLint); direct linting of
+  every changed TypeScript file passed
+- Restricted evaluator material inspected: none
+- Measurement cutoff: immediately before this manifest update
