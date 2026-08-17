@@ -104,4 +104,21 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
   not expected to pass the Codex-only validator
 - Consequence: the prior Claude compatibility result must be rerun because the
   evaluator frontmatter representation changed
+- Repository checks: `npm run check` passed after one transient test-runner
+  startup failure; direct rerun passed all 21 tests before the full check passed
+- Other reliably available statistics: unavailable
+
+## Run 008 — Claude evaluator compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v2
+- Agent/tool: Claude Code 2.1.232
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: candidate commit `2cf889a`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, body-level contract version parsing, invalid-mode
+  gating, unchanged project-root and hidden-sibling conventions
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
 - Other reliably available statistics: unavailable

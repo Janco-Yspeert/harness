@@ -43,3 +43,17 @@ correction does not alter the public candidate revision.
 - This review establishes Claude discovery, parsing, invocation, path, argument,
   and environment compatibility. Spike 007 remains responsible for the first
   complete end-to-end workflow exercise.
+
+## Revalidation after candidate revision
+
+The compatibility exercise was repeated after candidate commit `2cf889a`, which
+moved evaluator contract versioning from an extra frontmatter key to the skill
+body without changing its Claude-specific invocation fields.
+
+- Claude Code again discovered `/evaluator` through the project skill link.
+- It parsed `Contract version: 2` from the skill body.
+- The harmless `compatibility-check` invocation was rejected and only
+  `prepare`/`verify` were offered.
+- Claude returned **PASS** for discovery, contract parsing, mode gating, and the
+  unchanged path/environment conventions.
+- No full evaluator mode ran and no evaluator-private content was read.
