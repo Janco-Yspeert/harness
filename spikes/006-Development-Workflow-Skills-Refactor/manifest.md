@@ -223,3 +223,24 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
   all 21 tests after the known transient first-launch test-runner failure and a
   successful direct 21/21 rerun
 - Measurement cutoff: immediately before this manifest update
+
+## Run 015 — Outcome
+
+- Recorded: contemporaneously
+- Skill: `outcome` v3
+- Agent/tool: Codex
+- Result: `COMPLETE — PROCESS EXCEPTION`
+- Inputs: frozen Spike 006 brief and feedback, append-only manifest, durable
+  project-owner acceptance, Claude compatibility evidence, Git provenance,
+  active skill versions, and archived public skill contracts
+- Accepted candidate: `ace7212bbd464343a300b46b1e6ea2f916064172`
+- Acceptance checkpoint: `21c229b`
+- Output: `outcome.md`
+- Output content identity:
+  `sha256:eb4982c46f82e6a476ce915a057399457a5ca9136a6bdcafa6dca368b811cf34`
+- Independent evaluation: intentionally omitted under the predeclared Spike 006
+  process exception; revised methodology remains unvalidated pending Spike 007
+- Private evaluator content inspected: none
+- Output lines: 151
+- Validation: Prettier and `git diff --check` passed
+- Measurement cutoff: immediately before this manifest update
