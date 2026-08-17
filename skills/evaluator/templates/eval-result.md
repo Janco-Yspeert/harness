@@ -1,5 +1,6 @@
-Structural template for `<project>-hidden/<spike>/eval-result.md`. Keep the
-headings; replace each section's guidance with the derived content.
+Structural template for
+`<project>-hidden/<spike>/.eval/attempts/NNN/eval-result.md`. Keep the headings;
+replace each section's guidance with the derived content.
 
 # Evaluation Result
 

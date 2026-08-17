@@ -1098,6 +1098,20 @@ A failed implementation does not automatically make its full `eval-result` publi
 
 The implementation-facing handoff is sanitized public feedback.
 
+Private verification bookkeeping uses:
+
+```text
+<project>-hidden/<spike>/.eval/attempt-ledger.json
+<project>-hidden/<spike>/.eval/attempts/NNN/eval-result.md
+<project>-hidden/<spike>/.eval/revisions/NNN/**
+```
+
+Attempt and revision identifiers are monotonically increasing zero-padded
+three-digit numbers. The ledger links each immutable attempt result to the exact
+implementation and evaluator revision. A superseded frozen evaluator bundle is
+copied exactly into its revision archive before correction; it is never
+reconstructed later.
+
 ## Correcting evaluator artifacts
 
 If a frozen evaluator artifact is demonstrated to be defective:

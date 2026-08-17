@@ -284,3 +284,28 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
 - Private evaluator content inspected: none
 - Limitation: no end-to-end evaluator mode was exercised
 - Measurement cutoff: immediately before this manifest update
+
+## Run 018 — Private evaluator-attempt path correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex, applying focused Claude review and project-owner direction
+- Result: candidate revised; evaluator attempt/revision storage collision closed
+- Input: evaluator v4 public contract/templates and existing repository-private
+  `.eval/**` namespace
+- Outputs: evaluator v5; explicit `.eval/attempt-ledger.json`, numbered immutable
+  `.eval/attempts/NNN/eval-result.md`, and superseded
+  `.eval/revisions/NNN/**` paths; aligned brief/template/version example; exact
+  evaluator v4 archive
+- New brief content identity:
+  `sha256:76e05cf24358ac1c26158d23431372ba0bdc21e3a5080e0abab8b73504a3603c`
+- Privacy: only public contracts and repository-owned templates were inspected;
+  no active `.eval/**` or other evaluator-private material was read
+- Files changed by this run before this entry: 6
+- Evaluator skill lines after correction: 237
+- Validation: evaluator v4 archive exactly matches commit `e72dbf9`; formatting
+  and `git diff --check` passed; `npm run check` passed with all 21 tests after
+  the known transient first-launch failure and successful direct/full reruns
+- Worktree isolation: pre-existing project-owner deletion of root `outcome.md`
+  and new public `attempts/` artifacts were not modified or staged
+- Measurement cutoff: immediately before this manifest update
