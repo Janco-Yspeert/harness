@@ -135,6 +135,8 @@ distinguished evaluator preparation from implementation. It also revealed that
 promotion provenance needed stricter semantics. End-to-end dogfooding worked,
 but the paperwork dragon still found one loose scale.
 
+Evaluator preparation showed a materially better failure profile than earlier spikes: the frozen requirement interpretation, case set, expected behaviours, and oracles remained stable throughout preparation, with no semantic evaluator churn observed. The remaining substantial cost was generated evaluator infrastructure—WebSocket connection/error handling, lifecycle cleanup, path/module resolution, and positive-control scaffolding. Informal retrospective accounting suggests a substantial minority of preparation effort was spent correcting this disposable infrastructure. The next methodology experiment should therefore extract only clearly criteria-neutral evaluator plumbing and compare a subsequent prepare run before changing evaluator reasoning or procedure again. The positive-control approach remains an open concern because validating the hidden suite required building and debugging a partial reference implementation of Harness.
+
 ## Deferred Concerns
 
 - Replay, snapshots, persistence, cursors, and detached-client
@@ -150,6 +152,7 @@ but the paperwork dragon still found one loose scale.
   envelope.
 - A future promotion format that cleanly separates byte-exact historical
   artifacts from public relocation metadata, as evaluator v7 now requires.
+- Criteria-neutral evaluator infrastructure and the long-term positive-control strategy; Spike 007 suggests evaluator semantics are stabilizing while evaluator-support code remains disproportionately expensive.
 
 ## Skill Versions and Workflow Cost
 

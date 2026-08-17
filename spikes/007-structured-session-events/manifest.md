@@ -357,3 +357,24 @@ This append-only record preserves material workflow runs for Spike 007.
 - Statistics omitted: token, context, duration, and agent-turn totals were not
   reliably available
 - Measurement cutoff: immediately before this manifest update
+
+## Run 011 — Outcome amendment
+
+- Recorded: contemporaneously
+- Skill: none; project-owner amendment
+- Agent/tool: project owner, committed by Codex
+- Result: Outcome expanded with evaluator-preparation cost findings and a
+  corresponding deferred methodology concern
+- Input: committed Run 010 `outcome.md`
+- Input content identity:
+  `sha256:75095fb2a8ae94d0f418b49bc3a2711888cd7d79e9d3b0e2207f1274da851248`
+- Output: amended `outcome.md`
+- Output content identity:
+  `sha256:9ed0c56a762c246bc828216c82e436625ba8fd8df4101db51de92502f0e9145d`
+- Checks before this manifest update: Outcome passed Prettier;
+  `git diff --check` passed; worktree changes were limited to `outcome.md`
+- Runtime tests: not run; documentation-only amendment
+- Outcome lines: 176
+- Statistics omitted: token, context, duration, and agent-turn totals were not
+  reliably available
+- Measurement cutoff: immediately before this manifest update
