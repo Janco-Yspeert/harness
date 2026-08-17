@@ -309,3 +309,19 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
 - Worktree isolation: pre-existing project-owner deletion of root `outcome.md`
   and new public `attempts/` artifacts were not modified or staged
 - Measurement cutoff: immediately before this manifest update
+
+## Run 019 — Claude evaluator v5 compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v5
+- Agent/tool: Claude Code
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: evaluator v5 path correction commit `0fd80a1`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, parsing, and invalid-mode gating
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
+- Worktree isolation: project-owner public attempt-history changes remained
+  untouched and unstaged
+- Measurement cutoff: immediately before this manifest update

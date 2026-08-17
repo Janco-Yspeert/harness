@@ -95,3 +95,16 @@ attempt/revision history after an accepted pass.
 - Neither evaluator mode ran and no evaluator-private content was read.
 
 Result: **PASS** for Claude discovery, parsing, and invocation compatibility.
+
+## Revalidation after private attempt-path correction
+
+The invalid-mode exercise was repeated after commit `0fd80a1`, which versioned
+the evaluator contract to v5 and defined the private `.eval` attempt ledger,
+immutable numbered results, and superseded-revision archive paths.
+
+- Claude Code discovered and parsed `/evaluator` successfully.
+- It rejected `compatibility-check` and returned only the defined `prepare` and
+  `verify` invocation forms.
+- Neither evaluator mode ran and no evaluator-private content was read.
+
+Result: **PASS** for Claude discovery, parsing, and invocation compatibility.
