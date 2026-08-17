@@ -1,6 +1,5 @@
 ---
 name: evaluator
-version: 2
 description:
   Prepare and verify independent hidden evaluation for a frozen Harness spike
   using only the prepare and verify modes.
@@ -15,6 +14,8 @@ compatibility:
 ---
 
 # Evaluator
+
+Contract version: 2
 
 Mode: `$mode`
 

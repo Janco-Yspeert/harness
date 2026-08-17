@@ -84,3 +84,24 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
   local Claude settings
 - Limitation: no end-to-end evaluator mode was exercised
 - Other reliably available statistics: unavailable
+
+## Run 007 — Candidate contract correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex
+- Result: candidate revised; prior readiness result and candidate revision
+  invalidated pending another Brief Readiness pass
+- Reason: project-owner direction expanded Design Map from recording settled
+  structural decisions to establishing the smallest behavior-preserving shared
+  contract required by implementation and evaluation
+- Inputs: `skills/design-map/SKILL.md`, live Spike 006 brief, repository workflow
+  documentation, Codex skill-format guidance
+- Outputs: revised Design Map contract, aligned brief and README wording, and
+  Codex-compatible body-level contract versions for active skills
+- Validation: `quick_validate.py` passed for all Codex-facing active skills;
+  evaluator retains its required Claude-specific frontmatter and therefore is
+  not expected to pass the Codex-only validator
+- Consequence: the prior Claude compatibility result must be rerun because the
+  evaluator frontmatter representation changed
+- Other reliably available statistics: unavailable

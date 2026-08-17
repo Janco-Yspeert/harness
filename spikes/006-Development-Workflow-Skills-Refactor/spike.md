@@ -673,21 +673,31 @@ Where findings block freeze, the blocked draft and corresponding findings must b
 
 ## Design Map
 
-> What structural and architectural decisions are already settled for this frozen spike?
+> What is the smallest shared design contract that implementation and evaluation must interpret consistently?
 
 The Design Map skill creates a small `design-map.md`.
 
 The Quest project's existing Design Map skill may be used as a practical reference for scale and intent, but Harness requirements remain authoritative.
 
+The Design Map should first prefer black-box evaluation through externally observable behavior.
+
+It may make a bounded shared-contract decision when implementation and evaluation would otherwise need to guess independently and every valid choice preserves the frozen product behavior and scope.
+
+Such decisions may include a stable construction/import surface, artifact location, ownership boundary, lifecycle responsibility, or evaluation/testability seam genuinely required by both roles.
+
+It must not decide externally observable behavior, product scope, failure semantics omitted by the brief, or architecture unnecessary for fair independent evaluation.
+
+Choices needed only by implementation remain implementation freedom. Evaluator convenience alone does not justify a shared structural contract where reasonable black-box evaluation is available.
+
 The Design Map should record only material information useful to independent implementation and evaluation, such as:
 
+- shared contracts established within this bounded authority;
 - settled structural decisions;
 - architectural invariants relevant to the spike;
-- meaningful implementation freedoms;
 - implementation seams;
 - evaluation/testability seams;
 - ownership and lifecycle boundaries where relevant; and
-- genuinely open structural questions that do not change externally observable semantics.
+- meaningful implementation freedoms left deliberately undecided.
 
 It must not invent product behavior.
 
@@ -699,7 +709,7 @@ If producing the Design Map exposes an unresolved question that changes external
 4. refreeze the brief;
 5. regenerate or revise the Design Map from the new frozen contract.
 
-The Design Map is not a general architecture document.
+The Design Map is not a general architecture document or implementation plan.
 
 ## Evaluator — `prepare`
 
@@ -1398,7 +1408,7 @@ Spike 006 is successful when all of the following are true:
 
 26. Repository-wide workflow rules and skill-specific blind spots have a clear ownership rule and unnecessary duplication is reduced.
 
-27. A bounded Design Map skill exists and cannot legitimately invent unresolved externally observable product behavior.
+27. A bounded Design Map skill establishes the smallest shared contract required by implementation and evaluation, prefers black-box evaluation, leaves implementation-only choices free, and cannot legitimately invent unresolved externally observable product behavior.
 
 28. The evaluator still exposes only `prepare` and `verify`.
 

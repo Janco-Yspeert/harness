@@ -1,6 +1,5 @@
 ---
 name: brief-readiness
-version: 2
 description:
   Review a proposed Harness spike brief against the current repository before
   freeze, Design Map, evaluation, or implementation. Preserve blocked drafts and
@@ -8,6 +7,8 @@ description:
 ---
 
 # Brief Readiness
+
+Contract version: 2
 
 Answer one question: **is this proposed brief ready to become a frozen
 implementation contract?**

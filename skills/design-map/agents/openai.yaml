@@ -1,6 +1,6 @@
 interface:
   display_name: "Design Map"
-  short_description: "Record settled spike design decisions"
+  short_description: "Establish the shared spike design contract"
   default_prompt:
-    "Use $design-map to create the compact structural contract for a frozen
-    Harness spike."
+    "Use $design-map to establish the smallest shared design contract needed by
+    implementation and evaluation."

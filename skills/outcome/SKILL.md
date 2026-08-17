@@ -1,12 +1,13 @@
 ---
 name: outcome
-version: 2
 description:
   Synthesize a completed Harness spike into a compact historical outcome after
   accepted evaluation or an explicitly predeclared process exception.
 ---
 
 # Spike Outcome
+
+Contract version: 2
 
 Answer one question: **what did this spike establish and teach us?**
 

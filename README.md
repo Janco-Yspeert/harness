@@ -246,9 +246,9 @@ At a high level:
 3. **Brief freeze** — Those findings are resolved and the spike brief becomes
    the implementation contract.
 
-4. **Design Map** — A compact structural contract records settled architecture,
-   invariants, seams, and meaningful implementation freedom without inventing
-   product behaviour.
+4. **Design Map** — A compact shared contract records existing constraints and
+   establishes only the behavior-preserving seams that implementation and
+   evaluation must interpret consistently.
 
 5. **Independent evaluation preparation** — An evaluator derives public
    evaluation requirements and private executable evaluation from the frozen
@@ -388,8 +388,8 @@ prompts or placed in broader always-loaded agent instructions.
 Current skills include:
 
 - **Brief Readiness** — reviews a proposed brief before it is frozen.
-- **Design Map** — records the compact structural contract shared by evaluator
-  and implementation.
+- **Design Map** — establishes the smallest shared design contract needed by
+  evaluator and implementation.
 - **Evaluator** — prepares and runs independent spike evaluation.
 - **Implementation** — implements a frozen spike from its public contract.
 - **As-Built** — records the material behavior and structure actually built.

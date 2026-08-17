@@ -1,12 +1,13 @@
 ---
 name: implementation
-version: 2
 description:
   Implement a frozen Harness spike from its public contract and produce a
   focused, reproducible implementation revision.
 ---
 
 # Spike Implementation
+
+Contract version: 2
 
 Answer one question: **does the frozen spike now exist in the repository?**
 

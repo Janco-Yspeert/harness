@@ -1,12 +1,13 @@
 ---
 name: as-built
-version: 1
 description:
   Reconstruct the material behavior and structure actually built for a Harness
   spike after final verification and before Outcome.
 ---
 
 # As-Built
+
+Contract version: 1
 
 Answer one question: **what did we actually build?**
 
