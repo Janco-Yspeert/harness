@@ -150,7 +150,7 @@ history and skill provenance, not freeze state.
 Public entries must not leak evaluator-private mechanics. Evaluators write any
 richer execution detail to the private evaluator workspace before appending
 only safe aggregates to the public manifest. Private detail may become public
-only through the existing accepted-evaluation promotion rules.
+only through promotion after a successful evaluator result.
 
 When Brief Readiness blocks freeze, preserve the exact reviewed draft and its
 matching findings under the next `preliminary/NNN/` directory before revising
@@ -162,12 +162,14 @@ the version for material responsibility, input, output, permission, lifecycle,
 safety, or procedure changes; editorial corrections do not require a bump.
 Preserve replaced contracts outside active skill-discovery paths.
 
-Evaluation preserves an immutable private result for every attempt. After an
-accepted pass, promotion copies the exact final evaluator revision, every
-superseded revision from the cycle, and the complete attempt/result history with
-implementation/evaluator provenance. An unchanged evaluator suite is stored
-once and referenced by multiple attempts. Promotion never rebuilds, cleans up,
-or selectively omits failed attempts to manufacture a tidier history.
+Evaluation preserves an immutable private result for every attempt. After a
+`PASS`, evaluator-owned promotion completes before the later human acceptance
+gate. Promotion preserves eligible artifacts from the exact final evaluator
+revision, every eligible superseded revision from the cycle, and the complete
+attempt/result history with implementation/evaluator provenance. An unchanged
+evaluator suite is stored once and referenced by multiple attempts. Promotion
+never rebuilds, cleans up, or selectively omits failed attempts to manufacture a
+tidier history.
 
 ## Git workflow
 

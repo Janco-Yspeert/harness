@@ -19,7 +19,7 @@ Record the immutable attempt, implementation, and evaluator identities:
 - frozen eval-spec identity/hash;
 - spike brief hash;
 - Design Map and public evaluation-requirements identities;
-- evaluator revision and skill version;
+- evaluator revision number, canonical revision identity, and skill version;
 - evaluation timestamp when available.
 
 State the private attempt-ledger path. This result is immutable after the

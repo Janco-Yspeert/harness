@@ -1,0 +1,63 @@
+{
+  "evaluationRevision": 1,
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "contractVersion": 6,
+    "path": "skills/evaluator/SKILL.md",
+    "contentIdentity": "sha256:9ec48c1cae0cbc6abaa67ae166ac99b03aed459febff630c46cb6f574c5fe237",
+    "lastModifiedCommit": "e7a9d51d125923e0a5d70735c549deb3c76bdd68"
+  },
+  "inputs": {
+    "brief": {
+      "path": "spikes/007-structured-session-events/spike.md",
+      "contentIdentity": "sha256:39f0282af77befbe503cdbffb432ca108d30b1b6c05a3f37cba82fcb6635efe2",
+      "provenanceCommit": "b1a2ecc47d4e37d3ce5afb28810350edfaa0716b"
+    },
+    "designMap": {
+      "path": "spikes/007-structured-session-events/design-map.md",
+      "contentIdentity": "sha256:f77725941c6e5b6c0658d4bee7406afa19a2f53bfb915c394e9efcdbbb10d421",
+      "provenanceCommit": "0139517629f8abd4bd113e97d3708037137a0e35"
+    },
+    "evaluationRequirements": {
+      "path": "spikes/007-structured-session-events/eval-requirements.md",
+      "contentIdentity": "sha256:160c87200ca3c534a31b9bc1d10d0f476088b3f99d2a8cd5b9ebb6c9b6b90a58"
+    }
+  },
+  "projectCommitAtPrepare": "0139517629f8abd4bd113e97d3708037137a0e35",
+  "private": {
+    "evalSpec": {
+      "path": "eval-spec.md",
+      "contentIdentity": "sha256:8b11d85a0798e32af3eea15963e93ab1fe2a22db4268573fe5f56c504e3e7847"
+    },
+    "caseManifest": {
+      "path": ".hidden-test/manifest.json",
+      "contentIdentity": "sha256:ea2db64fce9998e33226a618901d620ac4f8c2935cec50aded687fb478ef642e"
+    },
+    "hiddenTests": [
+      { "path": ".hidden-test/lifecycle-core.test.ts", "contentIdentity": "sha256:fa87798bee960d064d502d5eb64b90e3dd8054972edff1fc749109134f021f8f" },
+      { "path": ".hidden-test/startup-failure.test.ts", "contentIdentity": "sha256:ae4742d460a1c52907d0f5a14861e4b1c37631092c4fa30105496c51fbdab518" },
+      { "path": ".hidden-test/natural-exit-and-races.test.ts", "contentIdentity": "sha256:c43f2ad35ccf3f5d63af626ea3771daa27676236ec00dce1c88a2a93b0e79ea1" },
+      { "path": ".hidden-test/finalization-failure.test.ts", "contentIdentity": "sha256:fb76b1cf1348cba009e91183cfbe135f08da4bdf48f9c9188457c5deb3af31d0" },
+      { "path": ".hidden-test/envelope-shape.test.ts", "contentIdentity": "sha256:6c50e5571aa7c3f9b6f9f0c01831d9475ef7b63b10e4fc93306dea0ae01a5494" },
+      { "path": ".hidden-test/fanout-and-replay.test.ts", "contentIdentity": "sha256:9a28d0e6f9a44ef43cfebb6b0af5e22117af1e40092e91d428f3f970e7461aa1" },
+      { "path": ".hidden-test/channel-and-lifecycle-isolation.test.ts", "contentIdentity": "sha256:5c4c88874e403d77dc29e3a9b017a91bdadaefda5920809d6f78fd03869db391" },
+      { "path": ".hidden-test/no-conduit-dependency.test.ts", "contentIdentity": "sha256:0b6529c397cb4c629d08c4357125111826a65e09ba09001015f67438a59b5873" }
+    ],
+    "supportFiles": [
+      { "path": ".hidden-test/support/envelope.ts", "contentIdentity": "sha256:d2b05450c5a5fe8a5db4274a6679b35e340960a9a561642979622e14e430e904" },
+      { "path": ".hidden-test/support/helpers.ts", "contentIdentity": "sha256:e5d207997a71b1a0dba81daa2fec991f9989c064f064da89feba904bc30acacc" },
+      { "path": ".hidden-test/support/envelope.selfcheck.test.ts", "contentIdentity": "sha256:4f71266b9b92c6bd1496fd9723aca4483b8b5da3ccd0bc99bb55daf256035df2" }
+    ]
+  },
+  "integrityChecksPerformed": [
+    "envelope.selfcheck.test.ts: 13/13 positive+negative helper self-checks passed",
+    "all 17 mandatory case tests (E1-E12) positive-controlled against a throwaway, uncommitted reference implementation of the frozen contract: 17/17 passed",
+    "all 17 mandatory case tests negative-controlled against the current, unimplemented public repository: 16/17 failed for the confirmed intended reason (HTTP 404 on the /events/ws upgrade), 1/17 (E12, static dependency check) correctly passed as unaffected",
+    "E12 additionally negative-controlled by temporarily injecting a fake Conduit dependency into a backed-up copy of package.json, confirming failure for the intended reason, then restoring the original file",
+    "empirical validation of ws-library multi-client broadcast ordering and no-replay-for-late-joiner semantics, independent of Harness code, before any hidden test was written",
+    "awaitOpen connection helper defect (hung on rejected upgrade) discovered and fixed during negative-control validation, before freeze",
+    "npm test (public regression suite) confirmed passing on the frozen commit before preparation began",
+    "git diff --check / git status --porcelain confirmed clean for both the public eval-requirements.md addition and the temporary package.json probe"
+  ],
+  "frozenAt": "2026-08-17"
+}
