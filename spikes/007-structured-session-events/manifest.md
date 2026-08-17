@@ -95,3 +95,49 @@ This append-only record preserves material workflow runs for Spike 007.
 - Runtime tests: not run because no implementation changed
 - Design Map lines: 112
 - Measurement cutoff: immediately before this manifest update
+
+## Run 004 — Evaluator `prepare`
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v6, mode `prepare`
+- Agent/tool: Claude Code
+- Result: prepared and frozen (evaluation revision 1)
+- Frozen brief content identity:
+  `sha256:39f0282af77befbe503cdbffb432ca108d30b1b6c05a3f37cba82fcb6635efe2`
+- Frozen Design Map content identity:
+  `sha256:f77725941c6e5b6c0658d4bee7406afa19a2f53bfb915c394e9efcdbbb10d421`
+- Output: `eval-requirements.md`
+- Output content identity:
+  `sha256:160c87200ca3c534a31b9bc1d10d0f476088b3f99d2a8cd5b9ebb6c9b6b90a58`
+- Blocking questions: none; the frozen brief and Design Map left no material
+  ambiguity preventing fair evaluation
+- Testability requirements published: 4
+- Evaluator assumptions published: 4
+- Mandatory evaluation cases frozen: 12, exercising both PTY- and
+  Codex-backed sessions where the brief requires backend-neutral coverage
+- Repository evidence inspected: frozen brief, Design Map, and readiness
+  history; `src/index.ts`, `src/session-backend.ts`, `src/pty-backend.ts`,
+  `src/codex-backend.ts`; the existing public integration test suites for
+  session lifecycle, session backend injection, and Codex backend
+  behaviour; `package.json`
+- Restricted evaluator material inspected/produced: private `eval-spec.md`,
+  a private hidden-test suite, and a private case manifest, all under the
+  mirrored `harness-hidden` spike path
+- Pre-freeze integrity gate: shared evaluator helpers independently
+  validated (positive and negative hand-built samples); every mandatory
+  case positive-controlled against a throwaway, uncommitted reference
+  implementation of the frozen contract and negative-controlled against
+  the current, unimplemented repository, confirming each failure/pass was
+  for the intended reason; the one materially new runtime mechanism
+  (live WebSocket broadcast with no replay for late joiners) was
+  additionally validated empirically, independent of Harness code, before
+  any hidden test was written; one connection-helper defect (hangs on a
+  rejected upgrade instead of failing) was found and fixed during this
+  process, before freeze
+- Runtime tests: public `npm test` confirmed passing on the frozen commit
+  before preparation began; no implementation change was made
+- Checks: `git diff --check` passed for the Spike 007 directory before this
+  manifest update; the public working tree was confirmed clean after a
+  temporary, uncommitted dependency-injection probe used to validate one
+  case's negative control
+- Measurement cutoff: immediately before this manifest update
