@@ -108,3 +108,15 @@ immutable numbered results, and superseded-revision archive paths.
 - Neither evaluator mode ran and no evaluator-private content was read.
 
 Result: **PASS** for Claude discovery, parsing, and invocation compatibility.
+
+## Revalidation after attempt-ledger template addition
+
+The invalid-mode exercise was repeated after commit `2e1a1a9`, which versioned
+the evaluator contract to v6 and added the structural attempt-ledger template.
+
+- Claude Code discovered and parsed `/evaluator` successfully.
+- It rejected `compatibility-check` and returned only the defined `prepare` and
+  `verify` invocation forms.
+- Neither evaluator mode ran and no evaluator-private content was read.
+
+Result: **PASS** for Claude discovery, parsing, and invocation compatibility.
