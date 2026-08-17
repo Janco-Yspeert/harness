@@ -380,3 +380,25 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
   acceptance checkpoint
 - Validation: Prettier and `git diff --check` passed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 023 — Final project-owner acceptance checkpoint
+
+- Recorded: contemporaneously
+- Workflow stage: Spike 006 substitute acceptance gate
+- Agent/tool: project-owner decision expanded and checked by Codex
+- Result: `ACCEPTED — PROCESS EXCEPTION`
+- Accepted candidate: `917a11614a24935c277ef5e8eec0c07a2fa2e5b1`
+- Brief content identity:
+  `sha256:06182bd12daec7024fec697b112bf3907e3a03799849d3341198395fd79376b9`
+- Output: revised root `acceptance.md`
+- Review scope: complete candidate including evaluator v6, immutable attempt
+  ledger/results, superseded-revision preservation, complete post-pass
+  promotion, structural ledger template, and archived first completion attempt
+- Exception: project owner waived another Brief Readiness run and accepted the
+  preserved `spike-review` results plus subsequent human inspection as
+  substitute evidence
+- Unresolved material findings: none accepted as blocking
+- Validation: acceptance artifact passed Prettier; `npm run check` passed with
+  all 21 tests after the known transient first-launch test-runner failure and
+  successful direct/full reruns
+- Measurement cutoff: immediately before this manifest update
