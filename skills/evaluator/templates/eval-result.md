@@ -9,17 +9,15 @@ PASS, FAIL, or BLOCKED.
 
 ## Evaluation Source
 
-Record the immutable implementation identity captured in the skill's "Record
-implementation identity" step:
+Record the immutable implementation identity and frozen evaluator revision:
 
 - project commit evaluated (branch + commit hash), if the implementation is a
   clean commit;
-- otherwise, since evaluation is against uncommitted changes: base commit hash,
-  working-tree status (modified/untracked files included in evaluation), and a
-  stable patch/diff identity sufficient to reconstruct the exact evaluated
-  state;
+- refuse evaluation represented partly by uncommitted changes;
 - frozen eval-spec identity/hash;
 - spike brief hash;
+- Design Map and public evaluation-requirements identities;
+- evaluator revision and skill version;
 - evaluation timestamp when available.
 
 ## Summary
@@ -73,3 +71,9 @@ Confirm whether:
 ## Overall Assessment
 
 State whether the implementation satisfies the frozen spike evaluation contract.
+
+## Public Feedback
+
+State whether sanitized public implementation feedback was emitted and identify
+its public path. Do not reproduce hidden evaluator mechanics here for public
+use; the full result remains private until promotion.

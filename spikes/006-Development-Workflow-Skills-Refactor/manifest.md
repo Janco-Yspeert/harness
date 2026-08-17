@@ -1,0 +1,68 @@
+# Spike 006 — Workflow Manifest
+
+This append-only record begins during Spike 006. Earlier entries are
+retrospective and contain only facts recoverable from preserved artifacts.
+Unavailable runtime telemetry is recorded as unavailable rather than invented.
+
+## Run 001 — Brief Readiness
+
+- Recorded: retrospectively
+- Skill: `spike-review` v1
+- Agent/tool: Codex
+- Result: `Not ready to freeze`
+- Input: `preliminary/001/spike.md`
+- Output: `preliminary/001/feedback.md`
+- Findings: 2 blockers, 2 material clarifications
+- Other execution statistics: unavailable
+
+## Run 002 — Brief Readiness
+
+- Recorded: retrospectively
+- Skill: `spike-review` v1
+- Agent/tool: Codex
+- Result: `Not ready to freeze`
+- Input: `preliminary/002/spike.md`
+- Output: `preliminary/002/feedback.md`
+- Findings: 2 blockers, 1 material clarification
+- Other execution statistics: unavailable
+
+## Run 003 — Brief Readiness
+
+- Recorded: retrospectively
+- Skill: `spike-review` v1
+- Agent/tool: Codex
+- Result: `Not ready to freeze`
+- Input: `preliminary/003/spike.md`
+- Output: `preliminary/003/feedback.md`
+- Findings: 1 blocker
+- Other execution statistics: unavailable
+
+## Run 004 — Brief Readiness
+
+- Recorded: retrospectively
+- Skill: `spike-review` v1
+- Agent/tool: Codex
+- Result: `Ready to freeze`
+- Input: `spike.md`
+- Input content identity: `sha256:21b6f9da7507c518b0d91f8d28111db9ba56a7d525472fc800e952a1c3213549`
+- Output: `feedback.md`
+- Output content identity: `sha256:39648e0bd8b26a137603b9e4dbd6fa4cbd9bf91834b623e8814d23117c2f6965`
+- Findings: none
+- Other execution statistics: unavailable
+
+## Run 005 — Implementation
+
+- Recorded: contemporaneously
+- Skill: `implementation` v1, under the frozen Spike 006 process exception
+- Agent/tool: Codex
+- Result: candidate prepared and committed by the containing implementation commit
+- Inputs: frozen `spike.md`, `AGENTS.md`, `GOALS.md`, repository documentation,
+  active v1 skills, and preserved readiness history
+- Output: methodology skills, supporting templates, repository instructions,
+  documentation, historical skill contracts, and this manifest
+- Output identity: the containing implementation commit; resolved after commit
+- Files inspected: repository instructions, workflow documentation, active skill
+  contracts/templates, Spike 006 brief and readiness history, package tooling
+- Files changed: 29 paths in the candidate working tree
+- Tests/checks: `npm run check` passed (typecheck, lint, Prettier check, 21 tests)
+- Other reliably available statistics: unavailable

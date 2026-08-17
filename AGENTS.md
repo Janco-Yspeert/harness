@@ -93,6 +93,63 @@ Treat Harness as a remote code-execution control surface.
 - Review the final diff for unrelated changes.
 - Do not claim verification you did not actually perform.
 
+## Development workflow
+
+Ordinary implementation spikes use this order:
+
+1. draft the brief;
+2. run Brief Readiness;
+3. resolve findings and freeze the brief;
+4. create and freeze the Design Map;
+5. run evaluator `prepare` and freeze evaluation;
+6. implement;
+7. run evaluator `verify`, retrying implementation when required;
+8. create As-Built; and
+9. create Outcome.
+
+Brief Readiness is the first code-facing workflow. It runs before freeze, Design
+Map, evaluation, or implementation. A process exception must be declared in the
+frozen brief before implementation and must define substitute evidence; it is
+never a retroactive escape from failed evaluation.
+
+### Freeze and provenance
+
+A frozen artifact is identified by a deterministic content identity. Exact
+public frozen content must also have committed Git provenance before downstream
+work relies on it. Private evaluator artifacts remain outside this repository
+and use private content identities and freeze metadata.
+
+Material changes create a new frozen revision and invalidate dependent work.
+Implementation failure never permits the evaluator contract to move. Evaluator
+defects may create a corrected revision only when the prior revision and attempt
+provenance are preserved.
+
+Use `feat/spike-NNN` as the normal spike branch. Commit and push stable public
+handoff boundaries. Never include evaluator-private material merely to satisfy
+the public branch convention.
+
+### Workflow evidence
+
+Spikes using the revised workflow maintain an append-only `manifest.md` that
+records material runs, skill versions, input/output identities, results, and
+reliably available telemetry. Never fabricate unavailable metrics. The manifest
+is authoritative for execution history and skill provenance, not freeze state.
+Public entries must not leak evaluator-private mechanics.
+
+When Brief Readiness blocks freeze, preserve the exact reviewed draft and its
+matching findings under the next `preliminary/NNN/` directory before revising
+the live brief. Preliminary snapshots are immutable. Passing briefs remain live
+at the spike root.
+
+Active skills use monotonically increasing integer contract versions. Increment
+the version for material responsibility, input, output, permission, lifecycle,
+safety, or procedure changes; editorial corrections do not require a bump.
+Preserve replaced contracts outside active skill-discovery paths.
+
+Evaluation promotion copies the exact successful frozen evidence; it never
+rebuilds or cleans it up. Preserve superseded evaluator revisions when they are
+material historical evidence.
+
 ## Git workflow
 
 Treat `main` as protected even when the hosting plan cannot enforce it.

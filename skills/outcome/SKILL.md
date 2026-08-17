@@ -1,438 +1,71 @@
 ---
 name: outcome
+version: 2
 description:
-  Synthesize the complete historical outcome of a finished Harness spike after
-  implementation, evaluation, and review. Use when producing or updating
-  outcome.md for a completed spike.
+  Synthesize a completed Harness spike into a compact historical outcome after
+  accepted evaluation or an explicitly predeclared process exception.
 ---
 
 # Spike Outcome
 
-Create the historical outcome record for a completed Harness spike.
+Answer one question: **what did this spike establish and teach us?**
 
-The outcome is a synthesis of what actually happened during the spike.
-
-It is not:
-
-- an implementation task;
-- another evaluation;
-- a code review;
-- a retrospective justification of the implementation;
-- a polished success narrative.
-
-Preserve failures, ambiguity, unexpected complexity, deferred risks, and process
-problems when they materially contributed to what was learned.
+Write only `<spike>/outcome.md` unless explicitly asked otherwise. Do not edit
+implementation, tests, contracts, evaluation evidence, reviews, skills, or
+project documentation.
 
 ## Preconditions
 
-Use this skill only after the spike has completed:
-
-1. implementation committed at the revision that was independently evaluated;
-2. successful independent evaluation and promotion committed to the feature
-   branch;
-
-A separate code review may be performed when warranted by the size, risk, or
-complexity of the spike, but is not required for every spike.
-
-Before writing the outcome, resolve and verify both:
-
-- the evaluated implementation commit; and
-- the evaluation commit containing the promoted final evaluation artifacts.
-
-Do not infer either commit from the current `HEAD` alone. Confirm the identities
-from the evaluation result and Git history. The evaluation commit must contain
-the promoted final result, and the implementation commit must identify the exact
-implementation evaluated.
-
-If implementation was evaluated from uncommitted changes, or if the promoted
-evaluation has not been committed, do not write a final outcome. Report which
-prerequisite is incomplete instead. Do not manufacture provenance by committing
-after the fact and calling the new commit the evaluated revision.
-
-## Target
-
-Use the spike directory identified by the user.
-
-Write only:
-
-`<spike>/outcome.md`
-
-unless the user explicitly requests another change.
-
-Do not modify:
-
-- implementation code;
-- tests;
-- `spike.md`;
-- `eval-requirements.md`;
-- evaluation specifications;
-- evaluation results;
-- historical evaluation attempts;
-- review artifacts;
-- `AGENTS.md`;
-- `GOALS.md`;
-- ADRs;
-- skills;
-- other project documentation.
-
-Recommendations for changes to those artifacts belong in the outcome as
-follow-up suggestions.
-
-## Read Authority
-
-For the target completed spike, read all available artifacts needed to
-reconstruct what actually happened.
-
-This includes normally restricted evaluation artifacts that have been promoted
-into the target spike's permanent historical record.
-
-Inspect where relevant:
-
-- `spike.md`;
-- `eval-requirements.md`;
-- final promoted `evaluation/eval-spec.md`;
-- final promoted `evaluation/eval-result.md`;
-- promoted hidden tests and their manifest;
-- archived blocked or failed evaluation attempts;
-- code-review findings;
-- existing `outcome.md` when updating rather than creating;
-- implementation and visible tests;
-- relevant git commits and diff/history;
-- `AGENTS.md`;
-- relevant `GOALS.md`, architecture documentation, and ADRs.
-
-Restricted evaluation access granted to this skill is for historical synthesis
-only.
-
-Do not inspect active evaluator-private workspaces outside the target completed
-spike unless explicitly authorized by the user.
-
-Do not modify any restricted evaluation artifact.
-
-### Cross-spike historical context
-
-The outcome skill may read `outcome.md` from other completed spikes when useful
-for distinguishing a spike-local observation from a repeated project-level
-pattern.
-
-This access is read-only.
-
-Do not inspect the full implementation, evaluation artifacts, hidden tests, or
-other detailed records of unrelated spikes unless explicitly authorized by the
-user.
-
-Prefer prior `outcome.md` files as the compressed historical record of completed
-spikes.
-
-Read prior spike outcomes selectively.
-
-Use them when:
-
-- making a claim about repeated project behaviour;
-- evaluating whether a process lesson has recurred;
-- determining whether a deferred concern has appeared previously;
-- identifying continuity with an earlier architectural decision.
-
-Do not load unrelated historical outcomes merely for completeness.
-
-## Source Discipline
-
-Ground every material conclusion in the spike's actual artifacts,
-implementation, repository history, or established project documentation.
-
-Distinguish clearly between:
-
-- what the spike proved;
-- what was observed;
-- what was decided;
-- what remains uncertain;
-- what was deliberately deferred;
-- what is merely recommended for future work.
-
-Do not infer that something was proven merely because it was implemented.
-
-Do not infer that something was correct merely because evaluation ultimately
-passed.
-
-Do not erase earlier blocked or failed attempts from the historical account when
-they produced meaningful lessons.
-
-Avoid reproducing large sections of existing artifacts. Synthesize them.
-
-Treat a successful result from a single spike as evidence about that spike.
-
-Before describing a workflow, testing technique, architectural approach, or
-process improvement as a repeated or project-level finding, inspect relevant
-`outcome.md` files from prior completed spikes where available.
-
-Do not generalize beyond the evidence present in the current spike and those
-historical outcomes.
-
-## Determine the Spike Result
-
-Establish the final result from the promoted evaluation and review record.
-
-Normally this should be:
-
-`PASS`
-
-Do not use `PASS` merely because implementation completed.
-
-Record the evaluated implementation commit and the evaluation commit. These are
-required provenance, not optional metadata.
-
-## Write `outcome.md`
-
-Use the following structure.
-
-# Spike NNN: <Name> — Outcome
-
-## Result
-
-State the final result concisely.
-
-Include the final evaluation result, evaluated implementation commit, and
-evaluation commit. Do not call a later artifact or cleanup commit the
-implementation revision that was evaluated.
-
-Include code-review findings when a separate review was performed. Do not
-require a code-review artifact for completion.
-
-## What Was Proven
-
-Describe only the meaningful behaviours, boundaries, or architectural
-assumptions that this spike demonstrated.
-
-Prefer statements such as:
-
-- Harness can...
-- The spike demonstrated...
-- Evaluation confirmed...
-
-Do not merely repeat every requirement from `spike.md`.
-
-Focus on what became established knowledge because the spike succeeded.
-
-## Implementation Summary
-
-Summarize the implemented shape of the solution.
-
-Include only architecture or implementation decisions useful to understanding
-the resulting system.
-
-Do not reproduce the diff or provide a file-by-file changelog.
-
-Do not describe incidental implementation details unless they became important
-during evaluation or review.
-
-## Evaluation Outcome
-
-Summarize the final independent evaluation.
-
-Include:
-
-- whether the final frozen evaluation passed;
-- significant behavioural areas exercised;
-- any important limitations of the evaluation;
-- evaluator defects or specification issues that materially affected the spike.
-
-Do not reproduce the evaluation report.
-
-## Evaluation History
-
-Include this section when there were meaningful earlier blocked, failed, or
-revised evaluation attempts.
-
-Summarize:
-
-- what happened;
-- why the attempt did not produce a final PASS;
-- how the issue was classified;
-- what deliberately changed before evaluation resumed.
-
-Preserve the distinction between:
-
-- implementation failure;
-- evaluator defect;
-- specification ambiguity;
-- infrastructure failure;
-- specification drift.
-
-Do not rewrite an evaluator defect as a product defect or vice versa.
-
-## Decisions Made
-
-Record material decisions made during the spike that affect how Harness should
-be understood going forward.
-
-For each significant decision, briefly capture:
-
-- the decision;
-- why it was made;
-- whether it is intended as a durable architectural decision or a spike-local
-  constraint.
-
-Do not silently elevate a spike-local decision into permanent project
-architecture.
-
-## Discoveries
-
-Record material facts learned during implementation, evaluation, or review that
-were not adequately understood when the spike began.
-
-A discovery describes something learned about reality, the technology, the
-existing system, or the AI-development process.
-
-Keep discoveries separate from decisions.
-
-For example:
-
-- a runtime behaves differently from an assumption made during planning;
-- an operating-system mechanism has an unexpected constraint;
-- an evaluation technique produces ambiguous observations;
-- an existing architectural boundary behaves differently than expected.
-
-## Deferred Concerns
-
-Record known concerns intentionally left unresolved.
-
-For each material item include:
-
-- what remains unresolved;
-- why it was deferred;
-- why it may matter later.
-
-Do not convert every non-goal into deferred work.
-
-Include only concerns that emerged as meaningful future risks, requirements, or
-architectural questions.
-
-## AI-Development Process Findings
-
-Include this section only when the spike produced meaningful lessons about the
-Harness AI-first workflow.
-
-Potential subjects include:
-
-- implementation-readiness review findings;
-- evaluator quality or evaluator defects;
-- hidden-test design;
-- context separation;
-- skill changes;
-- specification quality;
-- review effectiveness;
-- workflow friction.
-
-State both successes and failures plainly.
-
-Do not portray process failures as evidence that the process worked merely
-because they were eventually discovered.
-
-When the process was changed during the spike, state:
-
-- what failed or proved inadequate;
-- what was changed;
-- why.
-
-## Recommended Follow-ups
-
-List only concrete follow-ups supported by what was learned during the spike.
-
-Distinguish between:
-
-- likely future implementation spikes;
-- project-documentation changes;
-- AI-workflow improvements;
-- architectural questions requiring later investigation.
-
-Recommendations are not automatically approved project decisions.
-
-Do not edit other project artifacts to implement these recommendations.
-
-## Provenance
-
-Record available references to the artifacts from which the outcome was
-synthesized.
-
-Include where available:
-
-- spike brief;
-- public evaluation requirements;
-- evaluated implementation commit;
-- evaluation commit containing the promoted final evaluation;
-- final evaluation specification;
-- final evaluation result;
-- archived evaluation attempts;
-- code-review artifact or commit;
-- relevant ADRs created during the spike.
-
-Use repository-relative paths where practical.
-
-Do not put the outcome commit hash inside `outcome.md`. A commit cannot contain
-its own final hash because changing the file changes the hash. Record the
-outcome commit in the completion report after creating it.
-
-## Historical Integrity
-
-The outcome must remain an honest historical record.
-
-Do not:
-
-- hide unsuccessful attempts that materially affected the spike;
-- describe evaluator defects as implementation defects;
-- describe implementation defects as evaluator defects;
-- claim deferred behaviour was implemented;
-- claim an evaluation proved something outside its coverage;
-- turn unexpected discoveries into claims that they were planned from the start;
-- rewrite earlier decisions to make the final architecture appear inevitable;
-- invent rationale that is not supported by the available record.
-
-If evidence is incomplete or contradictory, say so.
-
-## Completion
-
-Before finishing:
-
-1. Confirm the final outcome agrees with the promoted evaluation result.
-2. Confirm important earlier evaluation attempts have been represented when
-   relevant.
-3. Confirm decisions and discoveries are not conflated.
-4. Confirm deferred concerns are not presented as completed work.
-5. Confirm recommended follow-ups have not been silently promoted into project
-   requirements.
-6. Confirm `outcome.md` records the evaluated implementation commit and
-   evaluation commit.
-7. Confirm only `outcome.md` was modified unless the user explicitly authorized
-   other changes.
-8. Commit the final `outcome.md` as a dedicated outcome commit on the current
-   feature branch.
-9. Confirm that the outcome commit contains `outcome.md` and no unrelated paths.
-
-Report the path written, a concise summary of the major outcome findings, and
-all three provenance revisions:
-
-- evaluated implementation commit;
-- evaluation commit;
-- outcome commit.
-
-## Git Handoff
-
-The outcome workflow must create the dedicated outcome commit described above.
-This commit is part of completing the skill, not an optional handoff step.
-
-Do not include unrelated working-tree changes in the outcome commit. Stage
-`<spike>/outcome.md` explicitly, inspect the staged diff, run checks appropriate
-to Markdown-only changes, and commit it with a focused message.
-
-Pushing remains optional unless the user requests it. When requested, push the
-committed outcome on the current feature branch.
-
-Merge only with explicit user permission for that merge. Follow the repository's
-protected-branch workflow: use a pull request and squash merge; do not push
-directly to `main`, create a merge commit, or use rebase merge.
-
-Before pushing or merging:
-
-1. preserve unrelated work;
-2. confirm the branch and target branch;
-3. report the outcome commit, push, pull request, and merge result.
+For the ordinary workflow, require:
+
+- a committed implementation revision;
+- accepted successful independent evaluation of that exact revision;
+- committed promoted evaluation containing the exact evaluated artifacts and
+  provenance; and
+- completed As-Built evidence.
+
+Do not infer identities from `HEAD`; confirm them from evaluation, manifest, and
+Git evidence. Refuse a final Outcome when evaluation used uncommitted work or
+promotion is incomplete.
+
+An Outcome may instead use a process exception only when the frozen brief
+declared it before implementation, defined substitute evidence, all substitute
+checks completed, the final candidate is committed, and durable acceptance
+explicitly approves that candidate. Label the result unambiguously, for example
+`COMPLETE — PROCESS EXCEPTION`; never call it an independently evaluated PASS.
+An exception is not a retroactive escape hatch after failed evaluation.
+
+## Evidence and read authority
+
+Use the frozen brief, Design Map, manifest, public feedback history, As-Built,
+Git provenance, accepted evaluation, and other bounded spike-local evidence. For
+the target completed spike only, promoted evaluation artifacts—including
+promoted hidden tests and prior material evaluator revisions—may be read for
+historical synthesis. Do not inspect active private evaluator workspaces.
+
+Use prior Outcomes selectively when supporting a cross-spike claim. Do not
+inspect unrelated spikes' detailed implementation or evaluation records.
+
+## Synthesis
+
+Distinguish what was proven, observed, decided, deferred, or merely recommended.
+Preserve material failures and evaluator corrections. Do not reproduce source
+artifacts or turn Outcome into evaluation, code review, or forensic archaeology.
+Use the manifest as the primary execution-history source.
+
+Include compact sections appropriate to the evidence:
+
+- Result and exact provenance
+- What Was Established
+- Implementation Summary
+- Evaluation or Process-Exception Evidence
+- Material History
+- Decisions
+- Discoveries
+- Deferred Concerns
+- Skill Versions and Workflow Cost
+- Next Step
+
+Record which material skill versions ran and whether entries were retrospective.
+State limitations plainly. Commit Outcome with the final manifest update and
+push it to the spike branch.

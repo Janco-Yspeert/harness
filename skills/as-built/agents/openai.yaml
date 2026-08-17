@@ -1,0 +1,6 @@
+interface:
+  display_name: "As-Built"
+  short_description: "Record what a spike actually built"
+  default_prompt:
+    "Use $as-built to reconstruct the material behavior and structure of a
+    verified Harness spike before Outcome."
