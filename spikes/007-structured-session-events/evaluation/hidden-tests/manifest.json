@@ -1,0 +1,100 @@
+{
+  "evaluationRevision": 1,
+  "evaluatorSkill": { "name": "evaluator", "version": 6 },
+  "inputs": {
+    "brief": "sha256:39f0282af77befbe503cdbffb432ca108d30b1b6c05a3f37cba82fcb6635efe2",
+    "designMap": "sha256:f77725941c6e5b6c0658d4bee7406afa19a2f53bfb915c394e9efcdbbb10d421",
+    "evaluationRequirements": "sha256:160c87200ca3c534a31b9bc1d10d0f476088b3f99d2a8cd5b9ebb6c9b6b90a58"
+  },
+  "support": [
+    "support/envelope.ts",
+    "support/helpers.ts",
+    "support/envelope.selfcheck.test.ts"
+  ],
+  "cases": {
+    "E1": {
+      "requirements": ["R1", "R2", "R8", "R9"],
+      "invariants": ["I3"],
+      "negativeRequirements": [],
+      "assumptions": ["A1", "A2"],
+      "tests": ["lifecycle-core.test.ts"]
+    },
+    "E2": {
+      "requirements": ["R4", "R7"],
+      "invariants": ["I1", "I2"],
+      "negativeRequirements": [],
+      "assumptions": ["A1"],
+      "tests": ["lifecycle-core.test.ts"]
+    },
+    "E3": {
+      "requirements": ["R2", "R8", "R9", "R10", "R18"],
+      "invariants": ["I3"],
+      "negativeRequirements": [],
+      "assumptions": ["A1", "A2"],
+      "tests": ["lifecycle-core.test.ts"]
+    },
+    "E4": {
+      "requirements": ["R3", "R10"],
+      "invariants": [],
+      "negativeRequirements": ["N5"],
+      "assumptions": ["A1", "A2", "A3"],
+      "tests": ["startup-failure.test.ts"]
+    },
+    "E5": {
+      "requirements": ["R5", "R10"],
+      "invariants": ["I1"],
+      "negativeRequirements": [],
+      "assumptions": ["A1", "A2"],
+      "tests": ["natural-exit-and-races.test.ts"]
+    },
+    "E6": {
+      "requirements": ["R5"],
+      "invariants": ["I1"],
+      "negativeRequirements": [],
+      "assumptions": ["A1", "A2"],
+      "tests": ["natural-exit-and-races.test.ts"]
+    },
+    "E7": {
+      "requirements": ["R6"],
+      "invariants": ["I1"],
+      "negativeRequirements": [],
+      "assumptions": ["A1", "A2"],
+      "tests": ["finalization-failure.test.ts"]
+    },
+    "E8": {
+      "requirements": ["R9", "R18"],
+      "invariants": ["I4"],
+      "negativeRequirements": ["N2"],
+      "assumptions": ["A4"],
+      "tests": ["envelope-shape.test.ts"]
+    },
+    "E9": {
+      "requirements": ["R11", "R12"],
+      "invariants": ["I5"],
+      "negativeRequirements": [],
+      "assumptions": ["A1", "A2"],
+      "tests": ["fanout-and-replay.test.ts"]
+    },
+    "E10": {
+      "requirements": ["R13"],
+      "invariants": ["I6"],
+      "negativeRequirements": [],
+      "assumptions": ["A3"],
+      "tests": ["fanout-and-replay.test.ts"]
+    },
+    "E11": {
+      "requirements": ["R14", "R15"],
+      "invariants": [],
+      "negativeRequirements": ["N1", "N4"],
+      "assumptions": [],
+      "tests": ["channel-and-lifecycle-isolation.test.ts"]
+    },
+    "E12": {
+      "requirements": ["R17"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["no-conduit-dependency.test.ts"]
+    }
+  }
+}

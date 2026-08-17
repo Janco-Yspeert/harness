@@ -211,3 +211,37 @@ This append-only record preserves material workflow runs for Spike 007.
   manifest update; public working tree confirmed clean before and after
   verification
 - Measurement cutoff: immediately before this manifest update
+
+## Run 007 — Evaluator Promotion
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v6, mode `verify` (Promotion step)
+- Agent/tool: Claude Code
+- Result: promoted
+- Promoted after: accepted successful result (attempt `001`, `PASS`) and
+  completion of the active implementation loop (single attempt, no retry
+  needed)
+- Promoted evaluator revision: `1` (the only revision this cycle produced;
+  no evaluator defect required a corrected revision, so no superseded
+  revision was promoted)
+- Promoted contents: `evaluation/eval-spec.md`, `evaluation/freeze.json`,
+  `evaluation/attempt-ledger.json` (complete, 1 entry), `evaluation/hidden-tests/**`
+  (8 mandatory hidden-test files, case manifest, and support helpers/self-check,
+  byte-identical to what actually ran); `attempts/001/eval-result.md`
+  (byte-identical immutable per-attempt result) plus explanatory
+  `evaluation/README.md` and `attempts/001/README.md`
+- Anti-duplication: the evaluator suite was promoted once at `evaluation/`
+  and linked from `attempts/001/` rather than duplicated there, per the
+  evaluator skill's promotion rule, since the sole attempt ran against the
+  sole/final revision
+- Fidelity check: every promoted file byte-diffed against its private
+  source before commit; all matched exactly except the two files
+  necessarily updated for the new public path (`attempt-ledger.json`'s
+  `resultPath`, documented in `evaluation/README.md`) — no other content
+  was rebuilt, regenerated, or summarized in place of the original evidence
+- Private material remains in place: `harness-hidden/spikes/007-structured-session-events/`
+  was not deleted or modified by promotion
+- Checks: `git diff --check` passed for the Spike 007 directory before this
+  manifest update; public working tree confirmed clean after staging only
+  the promoted paths
+- Measurement cutoff: immediately before this manifest update
