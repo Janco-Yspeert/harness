@@ -1,4 +1,11 @@
 {
+  "evaluationRevision": 1,
+  "evaluatorSkill": { "name": "evaluator", "version": 6 },
+  "inputs": {
+    "brief": "sha256:<content-identity>",
+    "designMap": "sha256:<content-identity>",
+    "evaluationRequirements": "sha256:<content-identity>"
+  },
   "support": ["helpers.ts", "helpers.selfcheck.test.ts"],
   "cases": {
     "E7": {

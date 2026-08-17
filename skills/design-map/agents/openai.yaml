@@ -1,0 +1,6 @@
+interface:
+  display_name: "Design Map"
+  short_description: "Establish the shared spike design contract"
+  default_prompt:
+    "Use $design-map to establish the smallest shared design contract needed by
+    implementation and evaluation."

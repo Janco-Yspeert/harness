@@ -14,11 +14,12 @@ Record:
 - spike path;
 - current project commit when available;
 - hash of `spike.md`;
+- hash of `design-map.md`;
 - hash of `eval-requirements.md`;
 - canonical evaluator skill path (e.g. `skills/evaluator/SKILL.md`);
-- evaluator skill revision — prefer a git commit hash for the repository at
-  freeze time; if the skill file itself is uncommitted or locally modified,
-  record its own content hash instead (e.g. via `git hash-object`) and say so.
+- evaluator skill name and integer contract version;
+- evaluator skill content identity; and
+- evaluation revision identity.
 
 ## Pre-Freeze Integrity Gate
 
@@ -96,4 +97,5 @@ than strong assurance.
 
 ## Revision History
 
-Record the initial frozen version.
+Record the initial frozen version and every corrected frozen revision. Preserve
+the identity of the prior revision and the classified reason for correction.

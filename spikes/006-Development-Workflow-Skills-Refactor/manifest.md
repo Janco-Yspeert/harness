@@ -1,0 +1,427 @@
+# Spike 006 — Workflow Manifest
+
+This append-only record begins during Spike 006. Earlier entries are
+retrospective and contain only facts recoverable from preserved artifacts.
+Unavailable runtime telemetry is recorded as unavailable rather than invented.
+
+## Run 001 — Brief Readiness
+
+- Recorded: retrospectively
+- Skill: `spike-review` v1
+- Agent/tool: Codex
+- Result: `Not ready to freeze`
+- Input: `preliminary/001/spike.md`
+- Output: `preliminary/001/feedback.md`
+- Findings: 2 blockers, 2 material clarifications
+- Other execution statistics: unavailable
+
+## Run 002 — Brief Readiness
+
+- Recorded: retrospectively
+- Skill: `spike-review` v1
+- Agent/tool: Codex
+- Result: `Not ready to freeze`
+- Input: `preliminary/002/spike.md`
+- Output: `preliminary/002/feedback.md`
+- Findings: 2 blockers, 1 material clarification
+- Other execution statistics: unavailable
+
+## Run 003 — Brief Readiness
+
+- Recorded: retrospectively
+- Skill: `spike-review` v1
+- Agent/tool: Codex
+- Result: `Not ready to freeze`
+- Input: `preliminary/003/spike.md`
+- Output: `preliminary/003/feedback.md`
+- Findings: 1 blocker
+- Other execution statistics: unavailable
+
+## Run 004 — Brief Readiness
+
+- Recorded: retrospectively
+- Skill: `spike-review` v1
+- Agent/tool: Codex
+- Result: `Ready to freeze`
+- Input: `spike.md`
+- Input content identity: `sha256:21b6f9da7507c518b0d91f8d28111db9ba56a7d525472fc800e952a1c3213549`
+- Output: `feedback.md`
+- Output content identity: `sha256:39648e0bd8b26a137603b9e4dbd6fa4cbd9bf91834b623e8814d23117c2f6965`
+- Findings: none
+- Other execution statistics: unavailable
+
+## Run 005 — Implementation
+
+- Recorded: contemporaneously
+- Skill: `implementation` v1, under the frozen Spike 006 process exception
+- Agent/tool: Codex
+- Result: candidate prepared and committed by the containing implementation commit
+- Inputs: frozen `spike.md`, `AGENTS.md`, `GOALS.md`, repository documentation,
+  active v1 skills, and preserved readiness history
+- Output: methodology skills, supporting templates, repository instructions,
+  documentation, historical skill contracts, and this manifest
+- Output identity: the containing implementation commit; resolved after commit
+- Files inspected: repository instructions, workflow documentation, active skill
+  contracts/templates, Spike 006 brief and readiness history, package tooling
+- Files changed: 29 paths in the candidate working tree
+- Tests/checks: `npm run check` passed (typecheck, lint, Prettier check, 21 tests)
+- Other reliably available statistics: unavailable
+
+## Run 006 — Claude evaluator compatibility
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v2
+- Agent/tool: Claude Code 2.1.232
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: public candidate commit `e943b1bed4b609f685e52761db4e2d65183875ef`
+- Output: `claude-compatibility.md`
+- Checks: skill discovery, invalid-mode invocation, frontmatter and arguments,
+  project-root and mirrored hidden-sibling conventions, Codex-specific
+  assumption review
+- Private evaluator content inspected: none
+- Correction: removed one obsolete redundant permission rule from gitignored
+  local Claude settings
+- Limitation: no end-to-end evaluator mode was exercised
+- Other reliably available statistics: unavailable
+
+## Run 007 — Candidate contract correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex
+- Result: candidate revised; prior readiness result and candidate revision
+  invalidated pending another Brief Readiness pass
+- Reason: project-owner direction expanded Design Map from recording settled
+  structural decisions to establishing the smallest behavior-preserving shared
+  contract required by implementation and evaluation
+- Inputs: `skills/design-map/SKILL.md`, live Spike 006 brief, repository workflow
+  documentation, Codex skill-format guidance
+- Outputs: revised Design Map contract, aligned brief and README wording, and
+  Codex-compatible body-level contract versions for active skills
+- Validation: `quick_validate.py` passed for all Codex-facing active skills;
+  evaluator retains its required Claude-specific frontmatter and therefore is
+  not expected to pass the Codex-only validator
+- Consequence: the prior Claude compatibility result must be rerun because the
+  evaluator frontmatter representation changed
+- Repository checks: `npm run check` passed after one transient test-runner
+  startup failure; direct rerun passed all 21 tests before the full check passed
+- Other reliably available statistics: unavailable
+
+## Run 008 — Claude evaluator compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v2
+- Agent/tool: Claude Code 2.1.232
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: candidate commit `2cf889a`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, body-level contract version parsing, invalid-mode
+  gating, unchanged project-root and hidden-sibling conventions
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
+- Other reliably available statistics: unavailable
+
+## Run 009 — Evaluator review corrections
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex, applying focused Claude review findings
+- Result: evaluator candidate corrected
+- Input: `skills/evaluator/SKILL.md` v2 and public evaluator templates
+- Outputs: explicit diagnostic-probe contract, terminal
+  `SPECIFICATION_DRIFT` handling, and bounded public aggregate-statistics rule
+- Review disposition: accepted the dangling-reference and drift findings;
+  refined rather than deleted telemetry because the current Spike 006 brief
+  requires capability-dependent manifest statistics
+- Private evaluator content inspected: none
+- Validation: formatting passed; `npm run check` passed with all 21 tests after
+  the same transient first-launch test-runner failure already recorded for the
+  candidate revision
+- Other reliably available statistics: unavailable
+
+## Run 010 — Claude evaluator compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v2
+- Agent/tool: Claude Code 2.1.232
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: evaluator correction commit `cc9eebb`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, parsing, and invalid-mode gating
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
+- Other reliably available statistics: unavailable
+
+## Run 011 — End-of-run statistics contract correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex
+- Result: candidate revised; active workflow skill contracts versioned forward
+- Inputs: repository workflow-evidence rules, six active workflow skills, and
+  the live Spike 006 brief
+- Outputs: one shared measurement cutoff, optional non-manifest start baseline,
+  final manifest-content step, retrospective post-response rule, and explicit
+  evaluator public/private statistics boundary
+- Active skill versions after this run: Brief Readiness v3, Design Map v2,
+  evaluator v3, implementation v3, As-Built v2, Outcome v3
+- Privacy: no evaluator-private material was read; detailed evaluator statistics
+  remain private and can become public only through accepted-evaluation
+  promotion
+- Files changed before this entry: 8
+- Validation: all five Codex-facing skill packages passed `quick_validate.py`;
+  formatting passed; `npm run check` passed with all 21 tests after the known
+  transient first-launch test-runner failure, followed by a direct 21/21 test
+  pass
+- Measurement cutoff: immediately before this manifest update
+
+## Run 012 — Claude evaluator v3 compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v3
+- Agent/tool: Claude Code
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: execution-statistics correction commit `fd9fe4c`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, parsing, and invalid-mode gating
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
+- Measurement cutoff: immediately before this manifest update
+
+## Run 013 — Evaluator manifest-template version correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex
+- Result: evaluator private-manifest example aligned with the active contract
+- Input: `skills/evaluator/templates/manifest.example.json`
+- Output: example evaluator skill version corrected from v2 to v3
+- Privacy: only the public repository-owned template was inspected; no
+  evaluator-private material was read
+- Files changed before this entry: 1
+- Validation: Prettier and `git diff --check` passed
+- Measurement cutoff: immediately before this manifest update
+
+## Run 014 — Project-owner acceptance checkpoint
+
+- Recorded: contemporaneously
+- Workflow stage: Spike 006 substitute acceptance gate
+- Agent/tool: project-owner decision formatted and checked by Codex
+- Result: `ACCEPTED — PROCESS EXCEPTION`
+- Accepted candidate: `ace7212bbd464343a300b46b1e6ea2f916064172`
+- Output: `acceptance.md`
+- Exception: project owner waived another Brief Readiness run and accepted the
+  preserved `spike-review` results plus subsequent human inspection as
+  substitute evidence
+- Unresolved material findings: none accepted as blocking
+- Files changed before this entry: 1
+- Validation: acceptance artifact passed Prettier; `npm run check` passed with
+  all 21 tests after the known transient first-launch test-runner failure and a
+  successful direct 21/21 rerun
+- Measurement cutoff: immediately before this manifest update
+
+## Run 015 — Outcome
+
+- Recorded: contemporaneously
+- Skill: `outcome` v3
+- Agent/tool: Codex
+- Result: `COMPLETE — PROCESS EXCEPTION`
+- Inputs: frozen Spike 006 brief and feedback, append-only manifest, durable
+  project-owner acceptance, Claude compatibility evidence, Git provenance,
+  active skill versions, and archived public skill contracts
+- Accepted candidate: `ace7212bbd464343a300b46b1e6ea2f916064172`
+- Acceptance checkpoint: `21c229b`
+- Output: `outcome.md`
+- Output content identity:
+  `sha256:eb4982c46f82e6a476ce915a057399457a5ca9136a6bdcafa6dca368b811cf34`
+- Independent evaluation: intentionally omitted under the predeclared Spike 006
+  process exception; revised methodology remains unvalidated pending Spike 007
+- Private evaluator content inspected: none
+- Output lines: 151
+- Validation: Prettier and `git diff --check` passed
+- Measurement cutoff: immediately before this manifest update
+
+## Run 016 — Complete evaluator-attempt promotion correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex, applying project-owner review
+- Result: candidate revised; prior acceptance and Outcome invalidated pending a
+  repeated substitute acceptance gate and final Outcome
+- Prior accepted candidate: `ace7212bbd464343a300b46b1e6ea2f916064172`
+- Inputs: public evaluator v3 contract/templates, repository workflow rules,
+  Spike 006 brief, and Outcome wording
+- Outputs: evaluator v4; immutable private result/ledger requirement; mandatory
+  promotion of the complete attempt and evaluator-revision history after an
+  accepted pass; aligned public documentation and templates; archived exact
+  evaluator v3 contract
+- New brief content identity:
+  `sha256:1d5885f27d6e0b499f2090cf6b7c1ee97e0d6cb80582e84f9955e23bdf0f564d`
+- Privacy: only public contracts and repository-owned templates were inspected;
+  no evaluator-private material was read
+- Files changed before this entry: 9
+- Evaluator skill lines after correction: 228
+- Validation: evaluator v3 archive exactly matches commit `24acf70`; formatting
+  and `git diff --check` passed; `npm run check` passed with all 21 tests
+- Validator limitation: Codex `quick_validate.py` rejects the evaluator's
+  intentional Claude-specific frontmatter, unchanged from earlier revisions
+- Measurement cutoff: immediately before this manifest update
+
+## Run 017 — Claude evaluator v4 compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v4
+- Agent/tool: Claude Code
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: evaluator v4 correction commit `43b3eed`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, parsing, and invalid-mode gating
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
+- Measurement cutoff: immediately before this manifest update
+
+## Run 018 — Private evaluator-attempt path correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex, applying focused Claude review and project-owner direction
+- Result: candidate revised; evaluator attempt/revision storage collision closed
+- Input: evaluator v4 public contract/templates and existing repository-private
+  `.eval/**` namespace
+- Outputs: evaluator v5; explicit `.eval/attempt-ledger.json`, numbered immutable
+  `.eval/attempts/NNN/eval-result.md`, and superseded
+  `.eval/revisions/NNN/**` paths; aligned brief/template/version example; exact
+  evaluator v4 archive
+- New brief content identity:
+  `sha256:76e05cf24358ac1c26158d23431372ba0bdc21e3a5080e0abab8b73504a3603c`
+- Privacy: only public contracts and repository-owned templates were inspected;
+  no active `.eval/**` or other evaluator-private material was read
+- Files changed by this run before this entry: 6
+- Evaluator skill lines after correction: 237
+- Validation: evaluator v4 archive exactly matches commit `e72dbf9`; formatting
+  and `git diff --check` passed; `npm run check` passed with all 21 tests after
+  the known transient first-launch failure and successful direct/full reruns
+- Worktree isolation: pre-existing project-owner deletion of root `outcome.md`
+  and new public `attempts/` artifacts were not modified or staged
+- Measurement cutoff: immediately before this manifest update
+
+## Run 019 — Claude evaluator v5 compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v5
+- Agent/tool: Claude Code
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: evaluator v5 path correction commit `0fd80a1`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, parsing, and invalid-mode gating
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
+- Worktree isolation: project-owner public attempt-history changes remained
+  untouched and unstaged
+- Measurement cutoff: immediately before this manifest update
+
+## Run 020 — Attempt-ledger structural template
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex, applying focused Claude review and project-owner direction
+- Result: candidate revised; attempt-ledger structure made explicit
+- Input: evaluator v5 ledger procedure and existing evaluator template pattern
+- Outputs: evaluator v6; `templates/attempt-ledger.example.json`; explicit
+  allocate/finalize mutation rule; aligned brief and evaluator-version example;
+  exact evaluator v5 archive
+- New brief content identity:
+  `sha256:06182bd12daec7024fec697b112bf3907e3a03799849d3341198395fd79376b9`
+- Privacy: only public contracts and repository-owned templates were inspected;
+  no evaluator-private material was read
+- Files changed by this run before this entry: 6
+- Evaluator skill lines after correction: 240
+- Validation: evaluator v5 archive exactly matches commit `3740618`; formatting
+  and `git diff --check` passed; `npm run check` passed with all 21 tests after
+  the known transient first-launch failure and successful direct/full reruns
+- Worktree isolation: project-owner public attempt-history changes remained
+  untouched and unstaged
+- Measurement cutoff: immediately before this manifest update
+
+## Run 021 — Claude evaluator v6 compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v6
+- Agent/tool: Claude Code
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: evaluator v6 template commit `2e1a1a9`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, parsing, and invalid-mode gating
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
+- Worktree isolation: project-owner public attempt-history changes remained
+  untouched and unstaged
+- Measurement cutoff: immediately before this manifest update
+
+## Run 022 — Superseded acceptance/Outcome archive
+
+- Recorded: contemporaneously
+- Workflow stage: public attempt-history preservation
+- Agent/tool: project-owner move verified and committed by Codex
+- Result: superseded acceptance and draft Outcome preserved under
+  `attempts/001/`; root Outcome removed pending final synthesis
+- Inputs: prior root `acceptance.md` and stale root `outcome.md`
+- Outputs: `attempts/001/acceptance.md` and `attempts/001/outcome.md`
+- Integrity: archived acceptance exactly matches the prior/root acceptance;
+  archived Outcome exactly matches the tracked stale Outcome
+- Root acceptance: retained for replacement by the next project-owner
+  acceptance checkpoint
+- Validation: Prettier and `git diff --check` passed
+- Measurement cutoff: immediately before this manifest update
+
+## Run 023 — Final project-owner acceptance checkpoint
+
+- Recorded: contemporaneously
+- Workflow stage: Spike 006 substitute acceptance gate
+- Agent/tool: project-owner decision expanded and checked by Codex
+- Result: `ACCEPTED — PROCESS EXCEPTION`
+- Accepted candidate: `917a11614a24935c277ef5e8eec0c07a2fa2e5b1`
+- Brief content identity:
+  `sha256:06182bd12daec7024fec697b112bf3907e3a03799849d3341198395fd79376b9`
+- Output: revised root `acceptance.md`
+- Review scope: complete candidate including evaluator v6, immutable attempt
+  ledger/results, superseded-revision preservation, complete post-pass
+  promotion, structural ledger template, and archived first completion attempt
+- Exception: project owner waived another Brief Readiness run and accepted the
+  preserved `spike-review` results plus subsequent human inspection as
+  substitute evidence
+- Unresolved material findings: none accepted as blocking
+- Validation: acceptance artifact passed Prettier; `npm run check` passed with
+  all 21 tests after the known transient first-launch test-runner failure and
+  successful direct/full reruns
+- Measurement cutoff: immediately before this manifest update
+
+## Run 024 — Final Outcome
+
+- Recorded: contemporaneously
+- Skill: `outcome` v3
+- Agent/tool: Codex
+- Result: `COMPLETE — PROCESS EXCEPTION`
+- Inputs: frozen Spike 006 brief and feedback, append-only manifest, final
+  project-owner acceptance, Claude compatibility evidence, archived first
+  completion attempt, Git provenance, active skill versions, and public
+  historical skill contracts
+- Accepted candidate: `917a11614a24935c277ef5e8eec0c07a2fa2e5b1`
+- Acceptance checkpoint: `22e07dd`
+- Output: root `outcome.md`
+- Output content identity:
+  `sha256:4a287ca798377ce6a6f0624396382a4c925013ec9d03b8bb3140eb84993a6963`
+- Independent evaluation: intentionally omitted under the predeclared Spike 006
+  process exception; revised methodology remains unvalidated pending Spike 007
+- Private evaluator content inspected: none
+- Output lines: 158
+- Validation: Prettier and `git diff --check` passed; candidate checks were
+  confirmed by Manifest Run 023 and the accepted `acceptance.md`
+- Measurement cutoff: immediately before this manifest update

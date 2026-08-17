@@ -154,8 +154,8 @@ Practices currently being explored include:
 - withholding selected executable evaluation tests from the implementation
   agent;
 - making assumptions required for fair evaluation visible to the implementer;
-- retaining failed or superseded attempts when they provide useful engineering
-  evidence;
+- retaining every evaluation attempt privately and promoting the complete
+  attempt/revision history after an accepted pass;
 - explicitly recording what a spike demonstrated — and what it did not;
 - treating the development workflow itself as something that can be measured and
   improved.
@@ -206,7 +206,9 @@ the implementation agent while implementation is in progress.
 The implementation agent receives:
 
 - the frozen spike brief;
+- the frozen Design Map;
 - public evaluation requirements;
+- public feedback from prior confirmed implementation failures, if any;
 - relevant repository contracts and operating instructions.
 
 It does **not** receive the private evaluation specification or hidden
@@ -221,9 +223,9 @@ materially affect what constitutes a fair implementation.
 “Hidden” describes the tests' relationship to the implementation agent **during
 evaluation**, not their permanent visibility.
 
-After successful verification, the exact evaluation artefacts used to reach that
-result can be promoted into the repository as part of the spike's historical
-record.
+After successful verification, the exact evaluator revisions and complete
+attempt/result history from that evaluation cycle can be promoted into the
+repository as part of the spike's historical record.
 
 That means a reader can inspect not only the implementation, but also the
 evidence used to verify it.
@@ -237,35 +239,44 @@ At a high level:
 1. **Spike design** — Human + AI work through the intended behaviour, scope, and
    constraints of the next increment.
 
-2. **Implementation-readiness review** — A separate agent reviews the proposed
-   brief against the current repository and identifies ambiguities,
-   contradictions, missing decisions, and hidden implementation assumptions.
+2. **Brief Readiness** — A separate agent reviews the proposed brief against the
+   current repository and identifies ambiguities, contradictions, missing
+   decisions, and hidden implementation assumptions.
 
 3. **Brief freeze** — Those findings are resolved and the spike brief becomes
    the implementation contract.
 
-4. **Independent evaluation preparation** — An evaluator derives public
+4. **Design Map** — A compact shared contract records existing constraints and
+   establishes only the behavior-preserving seams that implementation and
+   evaluation must interpret consistently.
+
+5. **Independent evaluation preparation** — An evaluator derives public
    evaluation requirements and private executable evaluation from the frozen
    contract.
 
-5. **Implementation** — A separate implementation agent works from the frozen
-   brief, public evaluation requirements, and applicable repository instructions
-   without access to the hidden evaluation.
+6. **Implementation** — A separate implementation agent works from the frozen
+   brief, Design Map, public evaluation requirements, applicable repository
+   instructions, and sanitized feedback from confirmed earlier failures without
+   access to hidden evaluation.
 
-6. **Independent verification** — The evaluator runs the previously prepared
+7. **Independent verification** — The evaluator runs the previously prepared
    evaluation against the completed implementation.
 
-7. **Failure diagnosis where necessary** — A failure is investigated to
-   determine whether it represents an implementation defect, evaluator defect,
-   ambiguity, infrastructure failure, or specification drift rather than merely
-   attempting to make the result green.
+8. **Failure diagnosis and retry where necessary** — A failure is investigated
+   to determine whether it represents an implementation defect, evaluator
+   defect, ambiguity, infrastructure failure, or specification drift rather than
+   merely attempting to make the result green.
 
-8. **Evaluation promotion** — Successful evaluation evidence is preserved with
-   the spike as part of its historical record.
+9. **Evaluation promotion** — After an accepted pass, the exact evaluator
+   revisions and complete attempt history are preserved with the spike.
 
-9. **Outcome** — Evidence from the spike is synthesised into an explicit outcome
-   describing what was demonstrated, what failed, what changed, and what remains
-   unresolved.
+10. **As-Built** — A fresh-context pass records material behavior and structure
+    actually present and classifies discrepancies as Missing, Contradictory, or
+    Extra.
+
+11. **Outcome** — Evidence from the spike is synthesised into an explicit
+    outcome describing what was demonstrated, what failed, what changed, and
+    what remains unresolved.
 
 Additional independent code review can be performed where warranted by the scope
 or risk of the change.
@@ -295,17 +306,21 @@ harness/
 ├── fixtures/            # Test fixtures and fake backends
 │
 ├── skills/              # Canonical reusable AI workflows
+│   ├── as-built/
+│   ├── brief-readiness/
+│   ├── design-map/
 │   ├── evaluator/
 │   ├── implementation/
-│   ├── outcome/
-│   └── spike-review/
+│   └── outcome/
+├── docs/history/skills/ # Immutable prior skill contracts
 │
 ├── spikes/              # Incremental experiments and engineering evidence
 │   ├── 001-pty/
 │   ├── 002-ai-development-workflow/
 │   ├── 003-session-lifecycle/
 │   ├── 004-session-backend-abstraction/
-│   └── 005-native-codex-backend/
+│   ├── 005-native-codex-backend/
+│   └── 006-Development-Workflow-Skills-Refactor/
 │
 ├── .github/
 │   └── workflows/       # CI
@@ -327,8 +342,13 @@ Later spikes typically contain artefacts such as:
 spikes/
 └── NNN-example/
     ├── spike.md
+    ├── feedback.md
+    ├── design-map.md
     ├── eval-requirements.md
+    ├── manifest.md
+    ├── as-built.md
     ├── outcome.md
+    ├── preliminary/
     ├── attempts/
     └── evaluation/
         ├── eval-spec.md
@@ -367,14 +387,19 @@ prompts or placed in broader always-loaded agent instructions.
 
 Current skills include:
 
-- **Spike Review** — reviews a proposed spike for implementation readiness.
+- **Brief Readiness** — reviews a proposed brief before it is frozen.
+- **Design Map** — establishes the smallest shared design contract needed by
+  evaluator and implementation.
 - **Evaluator** — prepares and runs independent spike evaluation.
-- **Implementation** — implements a frozen spike from its brief and public
-  evaluation requirements.
+- **Implementation** — implements a frozen spike from its public contract.
+- **As-Built** — records the material behavior and structure actually built.
 - **Outcome** — synthesises evidence and conclusions from a completed spike.
 
-The skills are not currently independently versioned artefacts. Their evolution
-is instead inspectable through the project's Git history.
+Active skills carry monotonically increasing integer contract versions.
+Materially replaced contracts are preserved as non-executable historical
+documents under [`docs/history/skills/`](./docs/history/skills/) as well as in
+Git history. Spikes using the revised workflow record the skill versions that
+actually ran in their append-only `manifest.md`.
 
 Some skills are deliberately detailed. They act as operational contracts for
 coding agents rather than introductory documentation for human readers.
