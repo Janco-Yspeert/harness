@@ -132,9 +132,25 @@ the public branch convention.
 
 Spikes using the revised workflow maintain an append-only `manifest.md` that
 records material runs, skill versions, input/output identities, results, and
-reliably available telemetry. Never fabricate unavailable metrics. The manifest
-is authoritative for execution history and skill provenance, not freeze state.
-Public entries must not leak evaluator-private mechanics.
+reliably available execution statistics. Capture a lightweight start baseline
+only when needed to measure a real value; do not append a provisional entry just
+to mark that work began. After substantive work and verification, make the
+manifest update the run's final repository-content change. Its measurement
+cutoff is immediately before that update, so the entry does not measure itself
+or later commit, push, or response activity.
+
+Record only runtime-provided or cheaply and directly measured values. Do not
+manually estimate tokens, context, calls, or duration, and omit unavailable
+metrics instead of adding ceremonial `unknown` fields. Statistics available
+only after the response may be appended later by a runtime or orchestrator when
+clearly marked retrospective. If a failed or interrupted run retains control,
+record it under the same rule. The manifest is authoritative for execution
+history and skill provenance, not freeze state.
+
+Public entries must not leak evaluator-private mechanics. Evaluators write any
+richer execution detail to the private evaluator workspace before appending
+only safe aggregates to the public manifest. Private detail may become public
+only through the existing accepted-evaluation promotion rules.
 
 When Brief Readiness blocks freeze, preserve the exact reviewed draft and its
 matching findings under the next `preliminary/NNN/` directory before revising

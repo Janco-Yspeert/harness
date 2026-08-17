@@ -8,7 +8,7 @@ description:
 
 # Brief Readiness
 
-Contract version: 2
+Contract version: 3
 
 Answer one question: **is this proposed brief ready to become a frozen
 implementation contract?**
@@ -70,7 +70,12 @@ End with exactly one:
 - **Ready after minor clarification**
 - **Not ready to freeze**
 
-State review limitations, files changed, and checks run. Record this run in the
-spike manifest when the revised workflow applies, including this skill's name
-and version plus reliably available execution statistics. Never fabricate
-telemetry.
+State review limitations, files changed, and checks run.
+
+As the final repository-content step, append the run to `manifest.md` when the
+revised workflow applies. Include this skill's name/version, inputs, result,
+outputs, and statistics reliably available through immediately before the
+manifest update. Capture a start baseline only when needed for a directly
+measurable statistic. Do not append a provisional start entry, estimate metrics,
+or record the manifest update itself. Then commit/push the checkpoint where the
+workflow requires it and return the verdict.

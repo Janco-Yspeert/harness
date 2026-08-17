@@ -8,7 +8,7 @@ description:
 
 # Design Map
 
-Contract version: 1
+Contract version: 2
 
 Answer one question: **what is the smallest shared design contract that
 implementation and evaluation must interpret consistently?**
@@ -70,7 +70,11 @@ Use a compact structure, omitting empty sections:
 ## Implementation freedom
 ```
 
-Record its deterministic content identity and run in `manifest.md`, including
-skill version and available statistics. Commit and push the map before evaluator
-preparation. A material revision requires a new identity and invalidates
-downstream evaluation where affected.
+After writing and checking the map, make the `manifest.md` entry the final
+repository-content step. Record its deterministic content identity, skill
+version, result, and statistics reliably available through immediately before
+that update. Capture a start baseline only for a directly measurable value; do
+not create a provisional entry, estimate metrics, or measure the entry itself.
+Commit and push the resulting checkpoint before evaluator preparation. A
+material revision requires a new identity and invalidates downstream evaluation
+where affected.

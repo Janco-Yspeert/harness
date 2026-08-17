@@ -7,7 +7,7 @@ description:
 
 # Spike Outcome
 
-Contract version: 2
+Contract version: 3
 
 Answer one question: **what did this spike establish and teach us?**
 
@@ -68,5 +68,11 @@ Include compact sections appropriate to the evidence:
 - Next Step
 
 Record which material skill versions ran and whether entries were retrospective.
-State limitations plainly. Commit Outcome with the final manifest update and
+State limitations plainly.
+
+After checking Outcome, make its `manifest.md` entry the final
+repository-content step. Record the result and statistics reliably available
+through immediately before that update. Capture a start baseline only for a
+directly measurable value; do not create a provisional entry, estimate metrics,
+or measure the entry itself. Commit Outcome with that final manifest update and
 push it to the spike branch.

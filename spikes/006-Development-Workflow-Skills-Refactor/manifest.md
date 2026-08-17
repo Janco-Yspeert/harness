@@ -154,3 +154,26 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
 - Private evaluator content inspected: none
 - Limitation: no end-to-end evaluator mode was exercised
 - Other reliably available statistics: unavailable
+
+## Run 011 — End-of-run statistics contract correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex
+- Result: candidate revised; active workflow skill contracts versioned forward
+- Inputs: repository workflow-evidence rules, six active workflow skills, and
+  the live Spike 006 brief
+- Outputs: one shared measurement cutoff, optional non-manifest start baseline,
+  final manifest-content step, retrospective post-response rule, and explicit
+  evaluator public/private statistics boundary
+- Active skill versions after this run: Brief Readiness v3, Design Map v2,
+  evaluator v3, implementation v3, As-Built v2, Outcome v3
+- Privacy: no evaluator-private material was read; detailed evaluator statistics
+  remain private and can become public only through accepted-evaluation
+  promotion
+- Files changed before this entry: 8
+- Validation: all five Codex-facing skill packages passed `quick_validate.py`;
+  formatting passed; `npm run check` passed with all 21 tests after the known
+  transient first-launch test-runner failure, followed by a direct 21/21 test
+  pass
+- Measurement cutoff: immediately before this manifest update

@@ -7,7 +7,7 @@ description:
 
 # Spike Implementation
 
-Contract version: 2
+Contract version: 3
 
 Answer one question: **does the frozen spike now exist in the repository?**
 
@@ -44,19 +44,23 @@ with evidence instead of quietly fixing them.
 
 ## Revision and retry
 
-Create a focused implementation commit containing the complete candidate and its
-manifest entry. Stage intended paths explicitly, inspect the staged diff, and
-exclude private evaluation, promoted evaluation, Outcomes, and unrelated work.
-Push the commit before external verification when the branch is the handoff
-surface.
+Create a focused implementation checkpoint containing the complete candidate and
+its manifest entry. Stage intended paths explicitly, inspect the staged diff,
+and exclude private evaluation, promoted evaluation, Outcomes, and unrelated
+work. Push the commit before external verification when the branch is the
+handoff surface.
 
 On a confirmed implementation failure, consume only sanitized public feedback
 and the same frozen contract. Produce a new implementation commit. Do not ask
 the evaluator to rerun `prepare` and do not attempt to reconstruct hidden tests.
 
-Record each attempt in `manifest.md` with skill/version, inputs, output
-identity, status, and reliably available execution statistics. Preserve prior
-attempts; do not overwrite history or invent metrics.
+After implementation and visible verification, make each attempt's `manifest.md`
+entry the final repository-content step. Record skill/version, inputs, output
+content identity, status, and statistics reliably available through immediately
+before that update. Capture a start baseline only for a directly measurable
+value; do not create a provisional entry, estimate metrics, or measure the entry
+itself. Preserve prior attempts. Then commit and push the checkpoint as required
+for evaluator handoff.
 
 ## Completion
 

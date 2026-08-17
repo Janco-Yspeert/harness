@@ -537,6 +537,14 @@ Retrospective entries must:
 
 Subsequent Spike 006 runs should record themselves contemporaneously.
 
+A run may capture a lightweight start baseline when needed to measure a real
+value, but must not append a provisional manifest entry merely to mark its
+start. After substantive work and verification, the manifest update is the
+run's final repository-content change. Its measurement cutoff is immediately
+before that update; it does not include the update itself or later commit, push,
+or response activity. A failed or interrupted run should still be recorded when
+the agent retains control.
+
 ## Append-only execution history
 
 Material workflow runs append distinct entries.
@@ -574,7 +582,7 @@ The exact Markdown format is not prescribed, but it should remain human-readable
 
 ## Execution statistics
 
-Each skill should additionally record meaningful execution statistics that are reliably available from the agent or runtime that performed it.
+Each skill should additionally record meaningful execution statistics that are reliably available from the agent or runtime that performed it through the manifest-update cutoff.
 
 These statistics are deliberately capability-dependent.
 
@@ -595,7 +603,13 @@ Possible examples include:
 
 Do not require artificial parity between Claude, Codex, or future agents.
 
-Do not fabricate metrics that the current runtime cannot reliably provide.
+Record only runtime-provided or cheaply and directly measured values. Do not
+manually estimate tokens, context, calls, or duration. Omit unavailable metrics
+instead of adding ceremonial `unknown` fields.
+
+Metrics available only after the final response cannot be persisted truthfully
+during that same run. A later runtime or orchestrator may append them when they
+are useful and clearly marked retrospective.
 
 The rule is:
 
@@ -641,7 +655,10 @@ They must not expose unnecessarily:
 - private diagnostic evidence; or
 - other information intended to remain independent from implementation.
 
-Richer evaluator telemetry may remain under `../harness-hidden` and may later be promoted where historically useful.
+Richer evaluator telemetry must remain under `../harness-hidden` during the
+active loop. It may become public only through the existing accepted-evaluation
+promotion rules. The evaluator writes private detail before making the safe
+public manifest update its final repository-content step.
 
 ---
 

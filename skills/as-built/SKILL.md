@@ -7,7 +7,7 @@ description:
 
 # As-Built
 
-Contract version: 1
+Contract version: 2
 
 Answer one question: **what did we actually build?**
 
@@ -28,6 +28,10 @@ Do not rerun evaluation, judge general code quality, invent requirements,
 recommend refactors, or become a second Outcome. If there are no discrepancies,
 say so plainly.
 
-Record the inspected revision, input identities, skill version, result, and
-available execution statistics in `manifest.md`. Commit the artifact separately
-and push it before Outcome when another context will consume it.
+After checking the artifact, make the `manifest.md` entry the final
+repository-content step. Record the inspected revision, input identities, skill
+version, result, and statistics reliably available through immediately before
+that update. Capture a start baseline only for a directly measurable value; do
+not create a provisional entry, estimate metrics, or measure the entry itself.
+Commit the artifact and manifest entry separately from implementation, and push
+the checkpoint before Outcome when another context will consume it.

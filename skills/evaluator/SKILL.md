@@ -15,7 +15,7 @@ compatibility:
 
 # Evaluator
 
-Contract version: 2
+Contract version: 3
 
 Mode: `$mode`
 
@@ -121,13 +121,10 @@ Private freeze metadata must identify:
 - every hidden test and support-file identity; and
 - integrity checks performed.
 
-Then write the safe public manifest entry, commit and push the exact public
-requirements, and confirm committed public content matches the identity in the
+Confirm the frozen public content identity, then follow **Final execution
+record** below. Commit and push the exact public requirements and safe public
+manifest entry, and confirm committed public content matches the identity in the
 private freeze. Implementation must not begin before both sides correspond.
-
-Append only safe, reliably available aggregate execution statistics to the
-public spike manifest. Do not reveal private mechanics or fabricate unavailable
-metrics; keep richer evaluator statistics private during the active loop.
 
 ## `verify`
 
@@ -183,8 +180,9 @@ and evaluator-integrity status.
 For confirmed implementation failure, emit a separate public feedback artifact
 that states the violated public requirement, expected and observed public
 behavior, classification, and safe diagnostics. Do not reveal hidden mechanics.
-Commit the public feedback and safe manifest entry. Implementation retries
-against the same frozen evaluation; do not rerun `prepare`.
+Follow **Final execution record** below, then commit the public feedback and
+safe manifest entry. Implementation retries against the same frozen evaluation;
+do not rerun `prepare`.
 
 For an evaluator defect, preserve the prior frozen revision, create a
 distinguishable corrected revision, record which verification used each, and
@@ -203,5 +201,21 @@ specification correction, or evaluation history. Private results caused only by
 implementation failures need not all become public; sanitized feedback and
 Outcome may preserve that history.
 
-Update the public manifest and commit/push promoted evaluation separately from
-implementation. Promotion preserves evidence; it does not recreate it.
+Promotion preserves evidence; it does not recreate it. Follow **Final execution
+record** below, then commit/push promoted evaluation separately from
+implementation.
+
+## Final execution record
+
+This is the final repository-content step for `prepare`, each terminal `verify`
+result, and promotion. If useful statistics require a start baseline, capture it
+privately without appending a provisional public entry.
+
+First write any richer execution statistics to the private evaluator workspace.
+Then append only safe aggregates, skill/version, mode, public identities, and
+high-level result to public `manifest.md`. The measurement cutoff is immediately
+before the public update: do not measure the entry itself, estimate unavailable
+metrics, or expose hidden tests, cases, fixtures, inputs, oracle/timing
+strategy, diagnostics, or private evidence. If control remains after a blocked
+or failed run, record it too. Private detail may become public only through
+accepted evaluation promotion under the existing rules.
