@@ -122,3 +122,21 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
 - Private evaluator content inspected: none
 - Limitation: no end-to-end evaluator mode was exercised
 - Other reliably available statistics: unavailable
+
+## Run 009 — Evaluator review corrections
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex, applying focused Claude review findings
+- Result: evaluator candidate corrected
+- Input: `skills/evaluator/SKILL.md` v2 and public evaluator templates
+- Outputs: explicit diagnostic-probe contract, terminal
+  `SPECIFICATION_DRIFT` handling, and bounded public aggregate-statistics rule
+- Review disposition: accepted the dangling-reference and drift findings;
+  refined rather than deleted telemetry because the current Spike 006 brief
+  requires capability-dependent manifest statistics
+- Private evaluator content inspected: none
+- Validation: formatting passed; `npm run check` passed with all 21 tests after
+  the same transient first-launch test-runner failure already recorded for the
+  candidate revision
+- Other reliably available statistics: unavailable

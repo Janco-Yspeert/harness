@@ -750,7 +750,7 @@ Relevant classifications include:
 - `EVALUATOR_DEFECT`;
 - `SPECIFICATION_AMBIGUITY`;
 - `INFRASTRUCTURE_FAILURE`; and
-- specification drift where applicable.
+- `SPECIFICATION_DRIFT` where applicable.
 
 ## As-Built
 

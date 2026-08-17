@@ -125,7 +125,9 @@ Then write the safe public manifest entry, commit and push the exact public
 requirements, and confirm committed public content matches the identity in the
 private freeze. Implementation must not begin before both sides correspond.
 
-Record safe capability-dependent telemetry without revealing private mechanics.
+Append only safe, reliably available aggregate execution statistics to the
+public spike manifest. Do not reveal private mechanics or fabricate unavailable
+metrics; keep richer evaluator statistics private during the active loop.
 
 ## `verify`
 
@@ -135,7 +137,9 @@ Resolve the exact committed implementation revision. Refuse a handoff partly
 represented by working-tree changes. Verify that the brief, Design Map, public
 requirements, private spec, hidden tests, support files, and evaluator revision
 match their frozen identities. A mismatch is specification drift or evaluator
-integrity failure, not an implementation failure.
+integrity failure, not an implementation failure. Classify it as
+`SPECIFICATION_DRIFT`, report it, and stop; do not run evaluation against
+drifted inputs.
 
 ### 2. Run frozen evaluation
 
@@ -143,6 +147,17 @@ Run mandatory hidden cases and required public regressions without modifying the
 frozen evaluator. Capture enough evidence to classify failures. Diagnostics may
 clarify a failure but cannot replace broken mandatory evidence or retroactively
 rewrite what a test established.
+
+### Diagnostic probes
+
+Use diagnostic probes only as read-only, supplementary investigation. They may
+validate an assumption or help distinguish implementation, evaluator,
+specification, and infrastructure failures, but they are not frozen coverage. Do
+not let a probe substitute for a broken mandatory case or change a
+`BLOCKED`/`FAIL` result to `PASS`. A probe may instead demonstrate an evaluator
+defect that requires preserving the prior revision, correcting and refreezing
+the evaluator, and rerunning `verify` against the unchanged implementation.
+Record every probe and its non-authoritative role in the private result.
 
 Before classifying `IMPLEMENTATION_FAILURE`, rerun the relevant case in
 isolation, confirm helper/oracle integrity and setup/teardown, and rule out
@@ -154,7 +169,7 @@ Use these material classifications:
 - `EVALUATOR_DEFECT`
 - `SPECIFICATION_AMBIGUITY`
 - `INFRASTRUCTURE_FAILURE`
-- specification drift
+- `SPECIFICATION_DRIFT`
 
 If both evaluator and possible implementation defects appear, establish a
 trustworthy evaluator first.
