@@ -177,3 +177,17 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
   transient first-launch test-runner failure, followed by a direct 21/21 test
   pass
 - Measurement cutoff: immediately before this manifest update
+
+## Run 012 — Claude evaluator v3 compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v3
+- Agent/tool: Claude Code
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: execution-statistics correction commit `fd9fe4c`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, parsing, and invalid-mode gating
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
+- Measurement cutoff: immediately before this manifest update

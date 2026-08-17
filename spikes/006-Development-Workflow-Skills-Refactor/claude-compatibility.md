@@ -69,3 +69,16 @@ added the diagnostic-probe contract and terminal drift handling.
 - No full evaluator mode ran and no evaluator-private content was read.
 
 Result: **PASS** for Claude discovery, parsing, and invocation compatibility.
+
+## Revalidation after execution-statistics contract correction
+
+The invalid-mode exercise was repeated after commit `fd9fe4c`, which versioned
+the evaluator contract to v3 and made its privacy-preserving execution record
+the final repository-content step.
+
+- Claude Code discovered and parsed `/evaluator` successfully.
+- It rejected `compatibility-check` and returned only the defined `prepare` and
+  `verify` invocation forms.
+- Neither evaluator mode ran and no evaluator-private content was read.
+
+Result: **PASS** for Claude discovery, parsing, and invocation compatibility.
