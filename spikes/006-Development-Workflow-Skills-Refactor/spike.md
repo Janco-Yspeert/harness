@@ -1112,6 +1112,13 @@ implementation and evaluator revision. A superseded frozen evaluator bundle is
 copied exactly into its revision archive before correction; it is never
 reconstructed later.
 
+The evaluator repository owns a small structural attempt-ledger template. An
+attempt is first appended with its implementation/evaluator provenance,
+`ALLOCATED` status, result path, and null result identity; only that entry's
+result identity and terminal `PASS`, `FAIL`, or `BLOCKED` status may then be
+finalized. Earlier entries are never reordered, removed, reused, or otherwise
+mutated.
+
 ## Correcting evaluator artifacts
 
 If a frozen evaluator artifact is demonstrated to be defective:

@@ -325,3 +325,26 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
 - Worktree isolation: project-owner public attempt-history changes remained
   untouched and unstaged
 - Measurement cutoff: immediately before this manifest update
+
+## Run 020 — Attempt-ledger structural template
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex, applying focused Claude review and project-owner direction
+- Result: candidate revised; attempt-ledger structure made explicit
+- Input: evaluator v5 ledger procedure and existing evaluator template pattern
+- Outputs: evaluator v6; `templates/attempt-ledger.example.json`; explicit
+  allocate/finalize mutation rule; aligned brief and evaluator-version example;
+  exact evaluator v5 archive
+- New brief content identity:
+  `sha256:06182bd12daec7024fec697b112bf3907e3a03799849d3341198395fd79376b9`
+- Privacy: only public contracts and repository-owned templates were inspected;
+  no evaluator-private material was read
+- Files changed by this run before this entry: 6
+- Evaluator skill lines after correction: 240
+- Validation: evaluator v5 archive exactly matches commit `3740618`; formatting
+  and `git diff --check` passed; `npm run check` passed with all 21 tests after
+  the known transient first-launch failure and successful direct/full reruns
+- Worktree isolation: project-owner public attempt-history changes remained
+  untouched and unstaged
+- Measurement cutoff: immediately before this manifest update

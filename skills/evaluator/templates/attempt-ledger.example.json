@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:<commit-identity>",
+      "evaluatorRevision": "001",
+      "resultPath": ".eval/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:<content-identity>",
+      "status": "FAIL"
+    }
+  ]
+}
