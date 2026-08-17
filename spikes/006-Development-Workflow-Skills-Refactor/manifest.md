@@ -66,3 +66,21 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
 - Files changed: 29 paths in the candidate working tree
 - Tests/checks: `npm run check` passed (typecheck, lint, Prettier check, 21 tests)
 - Other reliably available statistics: unavailable
+
+## Run 006 — Claude evaluator compatibility
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v2
+- Agent/tool: Claude Code 2.1.232
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: public candidate commit `e943b1bed4b609f685e52761db4e2d65183875ef`
+- Output: `claude-compatibility.md`
+- Checks: skill discovery, invalid-mode invocation, frontmatter and arguments,
+  project-root and mirrored hidden-sibling conventions, Codex-specific
+  assumption review
+- Private evaluator content inspected: none
+- Correction: removed one obsolete redundant permission rule from gitignored
+  local Claude settings
+- Limitation: no end-to-end evaluator mode was exercised
+- Other reliably available statistics: unavailable
