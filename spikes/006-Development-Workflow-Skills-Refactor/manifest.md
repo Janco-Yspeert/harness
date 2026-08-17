@@ -140,3 +140,17 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
   the same transient first-launch test-runner failure already recorded for the
   candidate revision
 - Other reliably available statistics: unavailable
+
+## Run 010 — Claude evaluator compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v2
+- Agent/tool: Claude Code 2.1.232
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: evaluator correction commit `cc9eebb`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, parsing, and invalid-mode gating
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
+- Other reliably available statistics: unavailable

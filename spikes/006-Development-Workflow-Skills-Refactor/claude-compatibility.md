@@ -57,3 +57,15 @@ body without changing its Claude-specific invocation fields.
 - Claude returned **PASS** for discovery, contract parsing, mode gating, and the
   unchanged path/environment conventions.
 - No full evaluator mode ran and no evaluator-private content was read.
+
+## Revalidation after evaluator review corrections
+
+The discovery and invocation exercise was repeated after commit `cc9eebb`, which
+added the diagnostic-probe contract and terminal drift handling.
+
+- Claude Code discovered and parsed `/evaluator` successfully.
+- It rejected `compatibility-check` under the skill's two-mode contract.
+- It returned the defined `prepare` and `verify` invocation forms.
+- No full evaluator mode ran and no evaluator-private content was read.
+
+Result: **PASS** for Claude discovery, parsing, and invocation compatibility.
