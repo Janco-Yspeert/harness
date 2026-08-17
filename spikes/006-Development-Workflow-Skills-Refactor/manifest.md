@@ -191,3 +191,17 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
 - Private evaluator content inspected: none
 - Limitation: no end-to-end evaluator mode was exercised
 - Measurement cutoff: immediately before this manifest update
+
+## Run 013 — Evaluator manifest-template version correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex
+- Result: evaluator private-manifest example aligned with the active contract
+- Input: `skills/evaluator/templates/manifest.example.json`
+- Output: example evaluator skill version corrected from v2 to v3
+- Privacy: only the public repository-owned template was inspected; no
+  evaluator-private material was read
+- Files changed before this entry: 1
+- Validation: Prettier and `git diff --check` passed
+- Measurement cutoff: immediately before this manifest update

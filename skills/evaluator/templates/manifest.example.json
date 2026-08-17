@@ -1,6 +1,6 @@
 {
   "evaluationRevision": 1,
-  "evaluatorSkill": { "name": "evaluator", "version": 2 },
+  "evaluatorSkill": { "name": "evaluator", "version": 3 },
   "inputs": {
     "brief": "sha256:<content-identity>",
     "designMap": "sha256:<content-identity>",
