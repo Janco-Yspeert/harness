@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "result": "PASS",
+  "passingAttempt": "003",
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:<commit-identity>",
+      "resultPath": "evaluation/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:<content-identity>",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:<freeze-metadata-content-identity>",
+      "freezePath": "evaluation/freeze/001.json",
+      "revisionPath": "evaluation/revisions/001",
+      "revisionDisposition": "copied"
+    },
+    {
+      "id": "002",
+      "implementation": "git:<commit-identity>",
+      "resultPath": "evaluation/attempts/002/eval-result.md",
+      "resultIdentity": "sha256:<content-identity>",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:<same-freeze-metadata-content-identity>",
+      "freezePath": "evaluation/freeze/001.json",
+      "revisionPath": "evaluation/revisions/001",
+      "revisionDisposition": "referenced"
+    },
+    {
+      "id": "003",
+      "implementation": "git:<commit-identity>",
+      "resultPath": "evaluation/attempts/003/eval-result.md",
+      "resultIdentity": "sha256:<content-identity>",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:<freeze-metadata-content-identity>",
+      "freezePath": null,
+      "revisionPath": null,
+      "revisionDisposition": "not-promoted"
+    }
+  ],
+  "historicalArtifacts": [
+    {
+      "sourceIdentity": "sha256:<content-identity>",
+      "publicPath": "evaluation/revisions/001/eval-spec.md",
+      "promotedIdentity": "sha256:<same-content-identity>",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:<same-content-identity>",
+      "publicPath": "evaluation/revisions/001/eval-spec.md",
+      "promotedIdentity": "sha256:<same-content-identity>",
+      "disposition": "referenced"
+    }
+  ],
+  "notPromotedRevisions": [
+    {
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:<freeze-metadata-content-identity>",
+      "disposition": "not-promoted"
+    }
+  ]
+}

@@ -154,8 +154,8 @@ Practices currently being explored include:
 - withholding selected executable evaluation tests from the implementation
   agent;
 - making assumptions required for fair evaluation visible to the implementer;
-- retaining every evaluation attempt privately and promoting the complete
-  attempt/revision history after an accepted pass;
+- retaining every evaluation attempt privately and promoting eligible exact
+  evidence immediately after evaluator `PASS`, before human acceptance;
 - explicitly recording what a spike demonstrated — and what it did not;
 - treating the development workflow itself as something that can be measured and
   improved.
@@ -267,8 +267,9 @@ At a high level:
    defect, ambiguity, infrastructure failure, or specification drift rather than
    merely attempting to make the result green.
 
-9. **Evaluation promotion** — After an accepted pass, the exact evaluator
-   revisions and complete attempt history are preserved with the spike.
+9. **Evaluation promotion** — Immediately after evaluator `PASS`, eligible exact
+   evaluator revisions and the complete attempt history are preserved with the
+   spike before the later human acceptance gate.
 
 10. **As-Built** — A fresh-context pass records material behavior and structure
     actually present and classifies discrepancies as Missing, Contradictory, or

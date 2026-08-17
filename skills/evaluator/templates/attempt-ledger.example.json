@@ -1,10 +1,11 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "attempts": [
     {
       "id": "001",
       "implementation": "git:<commit-identity>",
       "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:<freeze-metadata-content-identity>",
       "resultPath": ".eval/attempts/001/eval-result.md",
       "resultIdentity": "sha256:<content-identity>",
       "status": "FAIL"

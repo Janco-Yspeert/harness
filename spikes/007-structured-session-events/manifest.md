@@ -245,3 +245,83 @@ This append-only record preserves material workflow runs for Spike 007.
   manifest update; public working tree confirmed clean after staging only
   the promoted paths
 - Measurement cutoff: immediately before this manifest update
+
+## Run 008 — Evaluator promotion contract correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex
+- Result: evaluator contract revised from v6 to v7
+- Inputs: active evaluator v6 contract and templates, repository workflow
+  instructions, public Spike 006 methodology, and public Spike 007 promotion
+  history; no active evaluator-private workspace was inspected
+- Outputs: deterministic post-`PASS`, pre-human-acceptance promotion lifecycle;
+  canonical `evaluation/` layout; explicit attempt/revision identities and
+  copied/referenced/not-promoted metadata; byte-exact archival and hash-equality
+  rules; exact evaluator v6 historical archive
+- Related active documentation aligned: `AGENTS.md` and `README.md`
+- Historical Spike 007 finding: its Run 007 record expressly states that the
+  promoted `evaluation/attempt-ledger.json` changed `resultPath`; therefore that
+  ledger is not byte-identical to its private source under v7. Historical files
+  were not modified.
+- Independent review: initial review found four lifecycle/provenance procedure
+  defects; all were corrected. Final review found no remaining blocker and
+  determined all six required scenarios from the v7 contract without consulting
+  historical precedent.
+- Validation: Prettier passed; `git diff --check` passed; archived evaluator v6
+  SHA-256 matched the prior active contract; `npm run check` passed once with all
+  25 tests, then a later parallel test launch failed at worker level without
+  assertion output; isolated affected test and full serial suite both passed
+  (25/25). The generic `quick_validate.py` remains incompatible with the
+  evaluator's intentional Claude-specific frontmatter and rejected the unchanged
+  extra keys.
+- Unrelated worktree content preserved: untracked
+  `retrospectives/prepare-retrospective.md` was not modified.
+- Measurement cutoff: immediately before this manifest update
+
+## Run 009 — As-Built
+
+- Recorded: contemporaneously
+- Skill: `as-built` v2
+- Agent/tool: Codex
+- Result: complete; no **Missing** or **Contradictory** discrepancies; **Extra**
+  post-verification evaluator-contract and retrospective structure recorded
+- Inspected implementation revision:
+  `20f88674409e9e2a2f3fca83869206c8b2b67943`
+- Frozen brief content identity:
+  `sha256:39f0282af77befbe503cdbffb432ca108d30b1b6c05a3f37cba82fcb6635efe2`
+- Frozen Design Map content identity:
+  `sha256:f77725941c6e5b6c0658d4bee7406afa19a2f53bfb915c394e9efcdbbb10d421`
+- Public evaluation requirements content identity:
+  `sha256:160c87200ca3c534a31b9bc1d10d0f476088b3f99d2a8cd5b9ebb6c9b6b90a58`
+- Final verification inspected: attempt `001`, `PASS`, evaluator revision `1`
+- Additional repository state inspected: evaluator contract v7
+  (`sha256:ca26532a3011caef8de2f027c6bb32be81d46bd451cc855db1bd0ad8983fd238`)
+  and five Spike 007 retrospective/prompt artifacts
+- Output: `as-built.md`
+- Output content identity:
+  `sha256:412a67f8c4bdbc2fb7d08d0c43f9bf4e67bf424e67c8c277b9efa1f9d5a8a65d`
+- Repository evidence inspected: exact implementation diff and files at the
+  inspected revision, relevant pre-change host lifecycle code, visible event
+  integration tests, frozen brief, frozen Design Map, public evaluation
+  requirements, promoted final evaluation result, evaluator v7 correction and
+  templates, repository workflow documentation, five Spike 007
+  retrospective/prompt artifacts, and workflow manifest
+- Restricted evaluator material inspected: none; only promoted public
+  historical evaluation evidence was read
+- Checks: repository typecheck, lint, and formatting passed; changed-artifact
+  formatting passed; `git diff --check` passed; archived evaluator v6 matched
+  the prior active contract byte-for-byte
+- Evaluation: not rerun; the skill requires reconstruction of the already
+  verified revision rather than another evaluation pass
+- Runtime tests: a fresh sandboxed launch failed at the Node worker level
+  without assertion output because integration tests could not use loopback
+  sockets; `npm test` outside that sandbox passed all 25 tests
+- Implementation diff: 2 implementation files changed, 286 insertions and 3
+  deletions, excluding its contemporaneous manifest entry
+- As-Built lines: 106
+- Retrospective artifacts inspected: 5 files, 1,335 lines
+- Authorized checkpoint scope: evaluator v7 contract work, its Run 008 manifest
+  entry, five Spike 007 retrospective/prompt artifacts, this As-Built, and this
+  Run 009 entry
+- Measurement cutoff: immediately before this manifest update

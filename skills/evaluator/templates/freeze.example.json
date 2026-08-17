@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "001",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 7,
+    "identity": "sha256:<skill-content-identity>"
+  },
+  "inputs": {
+    "brief": "sha256:<content-identity>",
+    "designMap": "sha256:<content-identity>",
+    "evaluationRequirements": "sha256:<content-identity>"
+  },
+  "artifacts": {
+    "eval-spec.md": "sha256:<content-identity>",
+    ".hidden-test/manifest.json": "sha256:<content-identity>",
+    ".hidden-test/example.test.ts": "sha256:<content-identity>"
+  },
+  "integrityChecks": ["<mechanically-performed-check>"]
+}
