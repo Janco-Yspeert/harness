@@ -175,3 +175,39 @@ This append-only record preserves material workflow runs for Spike 007.
   every changed TypeScript file passed
 - Restricted evaluator material inspected: none
 - Measurement cutoff: immediately before this manifest update
+
+## Run 006 — Evaluator `verify`
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v6, mode `verify`
+- Agent/tool: Claude Code
+- Result: `PASS` (verification attempt `001`)
+- Implementation evaluated: branch `feat/spike-007`, commit `20f8867`
+- Evaluator revision used: `1` (unchanged from Run 004)
+- Frozen brief content identity:
+  `sha256:39f0282af77befbe503cdbffb432ca108d30b1b6c05a3f37cba82fcb6635efe2`
+- Frozen Design Map content identity:
+  `sha256:f77725941c6e5b6c0658d4bee7406afa19a2f53bfb915c394e9efcdbbb10d421`
+- Evaluation requirements content identity:
+  `sha256:160c87200ca3c534a31b9bc1d10d0f476088b3f99d2a8cd5b9ebb6c9b6b90a58`
+- Drift check: brief, Design Map, public evaluation requirements, private
+  eval-spec, case manifest, every hidden test and support file, and the
+  evaluator skill file were re-hashed against the Run 004 freeze record;
+  every identity matched exactly, confirming no specification drift
+- Mandatory evaluation cases: 12 of 12 passed (17 of 17 underlying mandatory
+  test bodies, run three times for determinism confidence; 0 failures across
+  all runs)
+- Required regression: public `npm test` passed (25/25) on the evaluated
+  commit
+- Evaluator defects found: none
+- Specification ambiguities found: none
+- Public feedback artifact: none emitted (only required on confirmed
+  implementation failure; this attempt passed)
+- Restricted evaluator material inspected/produced: private
+  `.eval/attempts/001/eval-result.md`, private attempt-ledger entry `001`
+- Runtime tests: hidden mandatory suite and public regression suite executed
+  as above; no implementation change was made during verification
+- Checks: `git diff --check` passed for the Spike 007 directory before this
+  manifest update; public working tree confirmed clean before and after
+  verification
+- Measurement cutoff: immediately before this manifest update
