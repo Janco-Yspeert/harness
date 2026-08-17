@@ -325,3 +325,35 @@ This append-only record preserves material workflow runs for Spike 007.
   entry, five Spike 007 retrospective/prompt artifacts, this As-Built, and this
   Run 009 entry
 - Measurement cutoff: immediately before this manifest update
+
+## Run 010 — Outcome
+
+- Recorded: contemporaneously
+- Skill: `outcome` v3
+- Agent/tool: Codex
+- Result: `PASS`; final historical synthesis complete
+- Implementation revision:
+  `20f88674409e9e2a2f3fca83869206c8b2b67943`
+- Accepted evaluation: attempt `001`, `PASS`, evaluator revision `1`
+- Promoted evaluation checkpoint:
+  `d2cee91fcb39c6ef2a2f6cd4c078d5dbe75f6587`
+- As-Built checkpoint:
+  `af87157e9b5c327bd008c5912f254fd552bac90f`
+- Output: `outcome.md`
+- Output content identity:
+  `sha256:75095fb2a8ae94d0f418b49bc3a2711888cd7d79e9d3b0e2207f1274da851248`
+- Evidence inspected: frozen brief, Design Map, public evaluation requirements,
+  workflow manifest, readiness feedback, As-Built, promoted freeze metadata,
+  promoted attempt ledger and result, promoted evaluation README, relevant Git
+  commits and ancestry, and selective prior public Outcomes
+- Restricted evaluator material inspected: promoted public historical evidence
+  for Spike 007 only; no active private evaluator workspace was inspected
+- Checks before this manifest update: recorded artifact identities matched
+  current files; implementation, promotion, and As-Built commits and ancestry
+  confirmed; Outcome passed Prettier; `git diff --check` passed
+- Runtime tests: not rerun; Outcome changes documentation only and relies on the
+  accepted evaluation and the fresh verification recorded by As-Built
+- Outcome lines: 173
+- Statistics omitted: token, context, duration, and agent-turn totals were not
+  reliably available
+- Measurement cutoff: immediately before this manifest update
