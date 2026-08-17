@@ -270,3 +270,17 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
 - Validator limitation: Codex `quick_validate.py` rejects the evaluator's
   intentional Claude-specific frontmatter, unchanged from earlier revisions
 - Measurement cutoff: immediately before this manifest update
+
+## Run 017 — Claude evaluator v4 compatibility revalidation
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v4
+- Agent/tool: Claude Code
+- Mode/stage: compatibility review; neither `prepare` nor `verify` was run
+- Result: `PASS`
+- Input: evaluator v4 correction commit `43b3eed`
+- Output: appended revalidation evidence in `claude-compatibility.md`
+- Checks: skill discovery, parsing, and invalid-mode gating
+- Private evaluator content inspected: none
+- Limitation: no end-to-end evaluator mode was exercised
+- Measurement cutoff: immediately before this manifest update

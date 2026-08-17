@@ -82,3 +82,16 @@ the final repository-content step.
 - Neither evaluator mode ran and no evaluator-private content was read.
 
 Result: **PASS** for Claude discovery, parsing, and invocation compatibility.
+
+## Revalidation after complete-attempt promotion correction
+
+The invalid-mode exercise was repeated after commit `43b3eed`, which versioned
+the evaluator contract to v4 and requires promotion of the complete immutable
+attempt/revision history after an accepted pass.
+
+- Claude Code discovered and parsed `/evaluator` successfully.
+- It rejected `compatibility-check` and returned only the defined `prepare` and
+  `verify` invocation forms.
+- Neither evaluator mode ran and no evaluator-private content was read.
+
+Result: **PASS** for Claude discovery, parsing, and invocation compatibility.
