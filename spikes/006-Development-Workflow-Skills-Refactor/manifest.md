@@ -364,3 +364,19 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
 - Worktree isolation: project-owner public attempt-history changes remained
   untouched and unstaged
 - Measurement cutoff: immediately before this manifest update
+
+## Run 022 — Superseded acceptance/Outcome archive
+
+- Recorded: contemporaneously
+- Workflow stage: public attempt-history preservation
+- Agent/tool: project-owner move verified and committed by Codex
+- Result: superseded acceptance and draft Outcome preserved under
+  `attempts/001/`; root Outcome removed pending final synthesis
+- Inputs: prior root `acceptance.md` and stale root `outcome.md`
+- Outputs: `attempts/001/acceptance.md` and `attempts/001/outcome.md`
+- Integrity: archived acceptance exactly matches the prior/root acceptance;
+  archived Outcome exactly matches the tracked stale Outcome
+- Root acceptance: retained for replacement by the next project-owner
+  acceptance checkpoint
+- Validation: Prettier and `git diff --check` passed
+- Measurement cutoff: immediately before this manifest update
