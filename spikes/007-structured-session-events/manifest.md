@@ -63,3 +63,35 @@ This append-only record preserves material workflow runs for Spike 007.
 - Feedback lines: 61
 - Preliminary snapshot: none, because the review passed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 003 — Design Map
+
+- Recorded: contemporaneously
+- Skill: `design-map` v2
+- Agent/tool: Codex
+- Result: `COMPLETE`
+- Frozen brief: `spike.md`
+- Frozen brief content identity:
+  `sha256:39f0282af77befbe503cdbffb432ca108d30b1b6c05a3f37cba82fcb6635efe2`
+- Frozen brief Git provenance: `b1a2ecc`
+- Output: `design-map.md`
+- Output content identity:
+  `sha256:f77725941c6e5b6c0658d4bee7406afa19a2f53bfb915c394e9efcdbbb10d421`
+- Conduit protocol reference:
+  `29ef1c88f8d2c805319f671c901872fb82036356`
+- Shared contracts established: exact minimal lifecycle envelope, Conduit schema
+  identity and root-event semantics, `/events/ws` transport boundary, Harness
+  lifecycle ownership, broadcast connection ownership, and existing public
+  evaluation seam
+- Repository evidence inspected: frozen brief and readiness history,
+  `AGENTS.md`, `GOALS.md`, `src/index.ts`, `src/session-backend.ts`, visible
+  lifecycle/backend tests, and workflow contracts
+- External evidence inspected: the pinned Conduit protocol README, canonical
+  JSON schema, minimal-event fixture, root-message fixture, and conformance
+  documentation
+- Restricted evaluator material inspected: none
+- Checks: Design Map formatting passed; `git diff --check` passed for the Spike
+  007 directory before this manifest update
+- Runtime tests: not run because no implementation changed
+- Design Map lines: 112
+- Measurement cutoff: immediately before this manifest update
