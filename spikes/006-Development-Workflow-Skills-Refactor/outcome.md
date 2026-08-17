@@ -2,15 +2,20 @@
 
 ## Result and exact provenance
 
-**COMPLETE — PROCESS EXCEPTION**
+**DRAFT — ACCEPTANCE INVALIDATED BY POST-ACCEPTANCE CONTRACT REVISION**
+
+The project owner identified an incomplete evaluation-promotion rule after the
+Outcome commit. Evaluator v4 now requires complete attempt-history preservation
+and promotion after an accepted pass. This revision materially changes candidate
+`ace7212…`; the substitute acceptance gate and final Outcome must therefore be
+repeated before Spike 006 is complete.
 
 - Accepted candidate: `ace7212bbd464343a300b46b1e6ea2f916064172`
 - Acceptance checkpoint: `21c229b`
 - Brief identity:
   `sha256:6d198b292cbf79adca122cf79e910abfcd19ac7a39c3f93e5f2a89b1e1485b80`
 - Branch: `feat/spike-006`
-- Final delivery: the commit containing this Outcome and Manifest Run 015 is
-  pushed to `feat/spike-006`.
+- Prior Outcome checkpoint: `24acf70` (now superseded)
 
 Spike 006 changed methodology, skills, templates, and workflow documentation.
 It made no Harness product/runtime change and did not alter the product roadmap.
@@ -91,8 +96,10 @@ evaluator changes.
 - Evaluation failures are classified before implementation is blamed. Frozen
   evaluation changes only for a demonstrated evaluator/specification issue, and
   superseded material revisions remain historical evidence.
-- Promotion copies the exact successful evaluator evidence; it does not rebuild
-  a cleaner-looking past.
+- Every evaluation attempt remains immutable and private during the active loop.
+  After an accepted pass, promotion preserves the exact evaluator revisions and
+  complete implementation/evaluator attempt history; it neither duplicates an
+  unchanged suite nor curates a cleaner-looking past.
 - No framework, database, centralized workflow engine, or package-style skill
   versioning was introduced.
 
@@ -121,11 +128,11 @@ ouroboros, not observability.
 - Agent neutrality remains deliberately deferred. Claude-specific evaluator
   invocation and Codex skill packaging coexist without a generic agent/plugin
   abstraction.
-- The archived index describes the original v1 replacements, but intermediate
-  v2 contracts created during Spike 006 were not copied into dedicated history
-  files before the active contracts advanced again. Their Git provenance
-  remains available; future skill revisions should preserve each replaced
-  contract before version advancement.
+- The archived index describes the original v1 replacements and evaluator v3.
+  Other intermediate v2 contracts created during Spike 006 were not copied into
+  dedicated history files before the active contracts advanced again. Their Git
+  provenance remains available; future skill revisions should preserve each
+  replaced contract before version advancement.
 - The repeated first-launch Node test-runner collapse remains observable: the
   affected runs died before assertions, while immediate reruns and subsequent
   full checks passed all 21 tests. Spike 006 did not investigate this unrelated

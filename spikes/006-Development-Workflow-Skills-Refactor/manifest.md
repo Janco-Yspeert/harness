@@ -244,3 +244,29 @@ Unavailable runtime telemetry is recorded as unavailable rather than invented.
 - Output lines: 151
 - Validation: Prettier and `git diff --check` passed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 016 — Complete evaluator-attempt promotion correction
+
+- Recorded: contemporaneously
+- Skill: `skill-creator` (system skill)
+- Agent/tool: Codex, applying project-owner review
+- Result: candidate revised; prior acceptance and Outcome invalidated pending a
+  repeated substitute acceptance gate and final Outcome
+- Prior accepted candidate: `ace7212bbd464343a300b46b1e6ea2f916064172`
+- Inputs: public evaluator v3 contract/templates, repository workflow rules,
+  Spike 006 brief, and Outcome wording
+- Outputs: evaluator v4; immutable private result/ledger requirement; mandatory
+  promotion of the complete attempt and evaluator-revision history after an
+  accepted pass; aligned public documentation and templates; archived exact
+  evaluator v3 contract
+- New brief content identity:
+  `sha256:1d5885f27d6e0b499f2090cf6b7c1ee97e0d6cb80582e84f9955e23bdf0f564d`
+- Privacy: only public contracts and repository-owned templates were inspected;
+  no evaluator-private material was read
+- Files changed before this entry: 9
+- Evaluator skill lines after correction: 228
+- Validation: evaluator v3 archive exactly matches commit `24acf70`; formatting
+  and `git diff --check` passed; `npm run check` passed with all 21 tests
+- Validator limitation: Codex `quick_validate.py` rejects the evaluator's
+  intentional Claude-specific frontmatter, unchanged from earlier revisions
+- Measurement cutoff: immediately before this manifest update

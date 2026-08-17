@@ -154,8 +154,8 @@ Practices currently being explored include:
 - withholding selected executable evaluation tests from the implementation
   agent;
 - making assumptions required for fair evaluation visible to the implementer;
-- retaining failed or superseded attempts when they provide useful engineering
-  evidence;
+- retaining every evaluation attempt privately and promoting the complete
+  attempt/revision history after an accepted pass;
 - explicitly recording what a spike demonstrated — and what it did not;
 - treating the development workflow itself as something that can be measured and
   improved.
@@ -223,9 +223,9 @@ materially affect what constitutes a fair implementation.
 “Hidden” describes the tests' relationship to the implementation agent **during
 evaluation**, not their permanent visibility.
 
-After successful verification, the exact evaluation artefacts used to reach that
-result can be promoted into the repository as part of the spike's historical
-record.
+After successful verification, the exact evaluator revisions and complete
+attempt/result history from that evaluation cycle can be promoted into the
+repository as part of the spike's historical record.
 
 That means a reader can inspect not only the implementation, but also the
 evidence used to verify it.
@@ -267,8 +267,8 @@ At a high level:
    defect, ambiguity, infrastructure failure, or specification drift rather than
    merely attempting to make the result green.
 
-9. **Evaluation promotion** — Successful evaluation evidence is preserved with
-   the spike as part of its historical record.
+9. **Evaluation promotion** — After an accepted pass, the exact evaluator
+   revisions and complete attempt history are preserved with the spike.
 
 10. **As-Built** — A fresh-context pass records material behavior and structure
     actually present and classifies discrepancies as Missing, Contradictory, or

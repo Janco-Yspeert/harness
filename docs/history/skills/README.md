@@ -6,6 +6,7 @@ discovery paths. The copies are historical evidence, not executable skills.
 | Historical contract    | Version | Replaced by                          |
 | ---------------------- | ------: | ------------------------------------ |
 | `evaluator/v1.md`      |       1 | `skills/evaluator/SKILL.md` v2       |
+| `evaluator/v3.md`      |       3 | `skills/evaluator/SKILL.md` v4       |
 | `implementation/v1.md` |       1 | `skills/implementation/SKILL.md` v2  |
 | `outcome/v1.md`        |       1 | `skills/outcome/SKILL.md` v2         |
 | `spike-review/v1.md`   |       1 | `skills/brief-readiness/SKILL.md` v2 |

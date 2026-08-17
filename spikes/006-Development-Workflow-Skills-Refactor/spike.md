@@ -1121,6 +1121,8 @@ Evaluator revision 1
 ```
 
 This does not require three separately promoted copies of the evaluator suite.
+It does require three immutable verification results, each linked to its exact
+implementation identity and evaluator revision in a private attempt ledger.
 
 By contrast:
 
@@ -1142,19 +1144,25 @@ Promotion occurs only after the active evaluation cycle has reached an accepted 
 Promotion must:
 
 - preserve the exact final frozen evaluator artifacts actually used for successful verification;
-- preserve their result and provenance;
+- preserve every superseded frozen evaluator revision from the completed cycle;
+- preserve the complete verification-attempt ledger and every immutable result,
+  including failures caused by implementation, evaluator, specification,
+  infrastructure, or drift;
+- preserve each attempt's exact implementation/evaluator provenance;
 - never rebuild hidden tests as part of promotion;
 - never regenerate evaluation from the brief merely because promotion has begun;
 - never replace exact evaluated tests with cleaned-up or recreated equivalents;
-- preserve superseded evaluator revisions when they are material to understanding evaluator defects, specification corrections, or evaluation history.
+- never replace full private results with sanitized public feedback or an
+  Outcome summary.
 
-Earlier private verification results caused only by implementation failure do not automatically need public promotion.
-
-Public implementation feedback and Outcome may preserve the useful history of those retries.
+An unchanged evaluator suite should be promoted once and referenced by every
+attempt that used it. If the active cycle does not reach accepted success, its
+history remains private and promotion is forbidden.
 
 The essential invariants are:
 
-> Promotion preserves evidence. It does not recreate it.
+> Promotion preserves the complete evidence chain. It does not curate a cleaner
+> past.
 
 > Correcting frozen evaluation creates history. It does not erase history.
 
@@ -1445,7 +1453,10 @@ Spike 006 is successful when all of the following are true:
 
 36. Frozen evaluator revisions are never silently destroyed when corrected.
 
-37. Promotion preserves exact evaluated artifacts and material superseded evaluator revisions rather than rebuilding or replacing them.
+37. Promotion after an accepted pass preserves exact evaluator revisions, the
+complete immutable verification-attempt history—including implementation and
+evaluator failures—and their provenance rather than rebuilding, replacing, or
+selectively omitting evidence.
 
 38. A bounded `as-built` skill exists and distinguishes actual implementation facts from evaluation and code-quality judgment.
 

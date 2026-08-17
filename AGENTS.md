@@ -162,9 +162,12 @@ the version for material responsibility, input, output, permission, lifecycle,
 safety, or procedure changes; editorial corrections do not require a bump.
 Preserve replaced contracts outside active skill-discovery paths.
 
-Evaluation promotion copies the exact successful frozen evidence; it never
-rebuilds or cleans it up. Preserve superseded evaluator revisions when they are
-material historical evidence.
+Evaluation preserves an immutable private result for every attempt. After an
+accepted pass, promotion copies the exact final evaluator revision, every
+superseded revision from the cycle, and the complete attempt/result history with
+implementation/evaluator provenance. An unchanged evaluator suite is stored
+once and referenced by multiple attempts. Promotion never rebuilds, cleans up,
+or selectively omits failed attempts to manufacture a tidier history.
 
 ## Git workflow
 

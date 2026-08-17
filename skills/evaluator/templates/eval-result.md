@@ -9,8 +9,9 @@ PASS, FAIL, or BLOCKED.
 
 ## Evaluation Source
 
-Record the immutable implementation identity and frozen evaluator revision:
+Record the immutable attempt, implementation, and evaluator identities:
 
+- verification-attempt identifier;
 - project commit evaluated (branch + commit hash), if the implementation is a
   clean commit;
 - refuse evaluation represented partly by uncommitted changes;
@@ -19,6 +20,10 @@ Record the immutable implementation identity and frozen evaluator revision:
 - Design Map and public evaluation-requirements identities;
 - evaluator revision and skill version;
 - evaluation timestamp when available.
+
+State the private attempt-ledger path. This result is immutable after the
+attempt completes and must remain linked from that ledger whether it passes,
+fails, or blocks.
 
 ## Summary
 
