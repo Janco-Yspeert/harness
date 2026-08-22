@@ -125,3 +125,24 @@ This append-only record preserves material workflow runs for Spike 008.
   manifest update
 - Runtime tests: not run because this was a contract review
 - Measurement cutoff: immediately before this manifest update
+
+## Run 007 — Design Map
+
+- Recorded: contemporaneously
+- Skill: `design-map` v2
+- Agent/tool: Codex
+- Result: `COMPLETE`
+- Frozen brief content identity:
+  `sha256:15a6c7b432ae6fe1ffb876867d41506f5571b64427ed377f0d4d62cbefaa8c9b`
+- Frozen brief Git provenance: `5a1d303`
+- Output: `design-map.md`
+- Output content identity:
+  `sha256:b57bfb2e8bb302717eff8549da56f23c85089e1f72e1165bf17264dc1be3d8fd`
+- Shared contracts established: ignored local operational state, durable
+  detached jobs for both providers, explicit completion, and bounded job
+  status/cancellation.
+- Restricted evaluator material inspected: none
+- Checks: `git diff --check` passed for the Spike 008 directory before this
+  manifest update
+- Runtime tests: not run because no implementation changed
+- Measurement cutoff: immediately before this manifest update
