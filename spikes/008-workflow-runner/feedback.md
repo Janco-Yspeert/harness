@@ -2,9 +2,8 @@
 
 ## Findings
 
-None. The revised brief makes executor lifetime independent of the invoking
-terminal while retaining explicit completion, evaluator privacy, artifact
-authority, and human acceptance with the existing workflow contracts.
+None. The revised brief makes detached-job output local and ignored, leaving
+`manifest.md` as the privacy-preserving public workflow record.
 
 ## Review scope
 

@@ -105,3 +105,23 @@ This append-only record preserves material workflow runs for Spike 008.
   manifest update
 - Runtime tests: not run because this was a contract review
 - Measurement cutoff: immediately before this manifest update
+
+## Run 006 — Brief Readiness
+
+- Recorded: contemporaneously
+- Skill: `brief-readiness` v3
+- Agent/tool: Codex
+- Result: `Ready to freeze`
+- Input: revised `spike.md`
+- Input content identity:
+  `sha256:15a6c7b432ae6fe1ffb876867d41506f5571b64427ed377f0d4d62cbefaa8c9b`
+- Output: `feedback.md`
+- Output content identity:
+  `sha256:4e9cac7264eebec18a13119f74f49ff1a6d9b11aeb40d9108a61d52217f4c14e`
+- Findings: none. Detached job output is local and Git-ignored, preserving the
+  repository's no-secret-logging rule.
+- Restricted evaluator material inspected: none
+- Checks: `git diff --check` passed for the Spike 008 directory before this
+  manifest update
+- Runtime tests: not run because this was a contract review
+- Measurement cutoff: immediately before this manifest update

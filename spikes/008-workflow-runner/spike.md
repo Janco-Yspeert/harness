@@ -16,7 +16,7 @@ The runner must:
 - define the canonical phases and their responsible agent: Codex for Brief
   Readiness, Design Map, implementation, As-Built, and Outcome; Claude for
   evaluator prepare and verify;
-- create an append-only, public `.workflow/state.json` in the target spike
+- create an append-only, local `.workflow/state.json` in the target spike
   which records initialization, dispatched phases, and explicitly recorded
   phase outcomes;
 - reject an unknown phase, a non-spike path, a transition that skips a prior
@@ -31,14 +31,16 @@ The runner must:
 - by default, print the selected executor command without starting it;
 - start the installed Codex or Claude CLI only when `--execute` is supplied,
   as a detached local child rather than a child of the runner invocation;
-- write each detached job's combined output to a public per-spike log and
+- write each detached job's combined output to a local ignored per-spike log and
   record its PID, command, log path, and launch time in state;
 - invoke Codex using `codex exec --cd <repository-root>` and Claude using
   `claude -p --permission-mode manual`, each with the rendered prompt; and
 - make no Git commit, push, branch, merge, evaluator-private read, hidden
   workspace creation, permission bypass, or automatic phase-success claim.
 
-The runner's state is dispatch bookkeeping, not workflow authority. Frozen
+The `.workflow/` directory is ignored by Git and may contain agent output; it
+is operational state, not public workflow evidence. The runner's state is
+dispatch bookkeeping, not workflow authority. Frozen
 artifact identities, manifests, Git provenance, evaluation results, and human
 acceptance remain governed by their existing contracts.
 
@@ -79,7 +81,7 @@ normal workflow governs this spike; a process exception is not requested.
 
 ## Acceptance criteria
 
-1. The four commands implement the stated validation and state semantics.
+1. The five commands implement the stated validation and state semantics.
 2. The default dispatch is demonstrably dry-run; `--execute` launches only the
    selected command with the stated safe flags.
 3. Tests cover valid progression, the permitted retry transition,
