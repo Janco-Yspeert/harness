@@ -179,3 +179,32 @@ This append-only record preserves material workflow runs for Spike 008.
   outside the test framework; `git diff --check` passed for the Spike 008
   directory before this manifest update
 - Measurement cutoff: immediately before this manifest update
+
+## Run 009 — Implementation attempt 001
+
+- Recorded: contemporaneously
+- Skill: `implementation` v3
+- Agent/tool: Codex
+- Result: candidate complete; independent evaluator verification pending
+- Inputs: frozen `spike.md`, `design-map.md`, `eval-requirements.md`, and
+  `AGENTS.md`
+- Input content identities:
+  - `spike.md`:
+    `sha256:15a6c7b432ae6fe1ffb876867d41506f5571b64427ed377f0d4d62cbefaa8c9b`
+  - `design-map.md`:
+    `sha256:b57bfb2e8bb302717eff8549da56f23c85089e1f72e1165bf17264dc1be3d8fd`
+  - `eval-requirements.md`:
+    `sha256:449873a0355cc377294d0ca1fa144a2d7d77347c4e96e4dd72b18bdea422a53a`
+- Input Git provenance: `5a1d303` (brief), `3ac7c20` (Design Map), and
+  `e53ecd3` (evaluation requirements)
+- Output: repository-local `workflow` CLI, ignored `.workflow/` state/log
+  paths, and visible workflow-runner tests
+- Output content identity (implementation files, immediately before this
+  manifest update):
+  `sha256:185edbf36a174bfb447f817a8d4737eedef27e3e4e4207a2d7396cea827fd7b0`
+- Restricted evaluator material inspected: none
+- Checks: `npm test` passed (27 tests) with localhost binding permitted; `npm
+  run typecheck`, `npm run lint -- src/workflow.ts test/workflow.test.ts`,
+  `npx prettier --check src/workflow.ts test/workflow.test.ts package.json`,
+  `git diff --check`, and `git check-ignore` for state and log paths passed
+- Measurement cutoff: immediately before this manifest update

@@ -3,6 +3,7 @@ dist/
 node_modules/
 .claude/
 .agents/
+.workflow/
 *.log
 .env
 .env.*
