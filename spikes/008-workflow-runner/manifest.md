@@ -84,3 +84,24 @@ This append-only record preserves material workflow runs for Spike 008.
   manifest update
 - Runtime tests: not run because this was a documentation correction
 - Measurement cutoff: immediately before this manifest update
+
+## Run 005 — Brief Readiness
+
+- Recorded: contemporaneously
+- Skill: `brief-readiness` v3
+- Agent/tool: Codex
+- Result: `Ready to freeze`
+- Input: revised `spike.md`
+- Input content identity:
+  `sha256:933537330e679a9489fab467c8c4c0149f57739811cb5c53f5d94ff2ca2225bd`
+- Output: `feedback.md`
+- Output content identity:
+  `sha256:b4ae478bfdf518b0e9a9640f88a2d6ac382bd9ed0d060d9affa0312dde5afc29`
+- Findings: none. The executor lifecycle is explicit and detached for both
+  Codex and Claude; the prior Design Map and attempted evaluator preparation
+  are invalidated by this material contract revision.
+- Restricted evaluator material inspected: none
+- Checks: `git diff --check` passed for the Spike 008 directory before this
+  manifest update
+- Runtime tests: not run because this was a contract review
+- Measurement cutoff: immediately before this manifest update

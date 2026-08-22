@@ -29,7 +29,10 @@ The runner must:
   corresponding repository skill, without embedding evaluator-private paths or
   test mechanics;
 - by default, print the selected executor command without starting it;
-- start the installed Codex or Claude CLI only when `--execute` is supplied;
+- start the installed Codex or Claude CLI only when `--execute` is supplied,
+  as a detached local child rather than a child of the runner invocation;
+- write each detached job's combined output to a public per-spike log and
+  record its PID, command, log path, and launch time in state;
 - invoke Codex using `codex exec --cd <repository-root>` and Claude using
   `claude -p --permission-mode manual`, each with the rendered prompt; and
 - make no Git commit, push, branch, merge, evaluator-private read, hidden
@@ -46,13 +49,16 @@ npm run workflow -- init <spike>
 npm run workflow -- status <spike>
 npm run workflow -- dispatch <phase> <spike> [--execute]
 npm run workflow -- record <phase> <spike> <complete|blocked|failed>
+npm run workflow -- cancel <phase> <spike>
 ```
 
 `init` creates the state file. `dispatch` requires the prior phase to have a
 `complete` outcome, except for the first phase. It writes a dispatch record
 before optionally launching the executor. `record` is a separate explicit
 operation because a process exiting successfully does not prove the skill did
-its job. A failed evaluator verify opens the next implementation attempt;
+its job. `status` reports recorded job metadata and liveness without parsing
+agent output; `cancel` sends a termination signal only to the recorded live job.
+A failed evaluator verify opens the next implementation attempt;
 otherwise no earlier phase can be reopened. `status` prints the current phase
 records as JSON.
 
@@ -78,6 +84,7 @@ normal workflow governs this spike; a process exception is not requested.
    selected command with the stated safe flags.
 3. Tests cover valid progression, the permitted retry transition,
    skipped/unknown/duplicate rejection, prompt ownership, and command
-   construction without invoking real agents.
+   construction, detached-job metadata, and cancellation without invoking real
+   agents.
 4. `npm test`, `npm run typecheck`, linting of changed files, Prettier, and
    `git diff --check` pass.

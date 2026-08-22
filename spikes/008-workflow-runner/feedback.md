@@ -2,15 +2,16 @@
 
 ## Findings
 
-None. The revised brief defines the only permitted retry transition and leaves
-artifact authority, evaluator privacy, and human acceptance with the existing
-workflow contracts.
+None. The revised brief makes executor lifetime independent of the invoking
+terminal while retaining explicit completion, evaluator privacy, artifact
+authority, and human acceptance with the existing workflow contracts.
 
 ## Review scope
 
 Read `spikes/008-workflow-runner/spike.md`, `AGENTS.md`, the active
-implementation and evaluator skill contracts, `package.json`, and the public
-Spike 007 manifest/outcome. No evaluator-private material was inspected.
+implementation and evaluator skill contracts, package tooling, Node's
+child-process interface, and the public Spike 007 manifest/outcome. No
+evaluator-private material was inspected.
 
 ## Checks
 
