@@ -62,3 +62,25 @@ This append-only record preserves material workflow runs for Spike 008.
   manifest update
 - Runtime tests: not run because no implementation changed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 004 — Brief Readiness correction
+
+- Recorded: contemporaneously
+- Skill: `brief-readiness` v3
+- Agent/tool: Codex
+- Result: `Ready to freeze`
+- Input: unchanged frozen `spike.md`
+- Input content identity:
+  `sha256:9fb8edd3dd7da1e8f640dc5b93f23e6e99131371f69af5ace054f4cd5b02da7a`
+- Output: corrected `feedback.md`
+- Output content identity:
+  `sha256:bd8ccc9a0f904042e613c53ed419cb130916423497d5627e392a035fb6b09c76`
+- Correction: Run 002's content stated no findings and its manifest recorded
+  `Ready to freeze`, but its verdict line was accidentally left as `Not ready
+  to freeze`. The brief and Design Map were unchanged; no evaluator revision
+  was frozen or artifact written before the inconsistency was discovered.
+- Restricted evaluator material inspected: none
+- Checks: `git diff --check` passed for the Spike 008 directory before this
+  manifest update
+- Runtime tests: not run because this was a documentation correction
+- Measurement cutoff: immediately before this manifest update
