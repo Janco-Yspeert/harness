@@ -20,7 +20,11 @@ The runner must:
   which records initialization, dispatched phases, and explicitly recorded
   phase outcomes;
 - reject an unknown phase, a non-spike path, a transition that skips a prior
-  phase, and a duplicate terminal outcome for the same phase;
+  phase, and a duplicate terminal outcome for the same numbered phase attempt;
+- model the implementation/evaluator retry loop as monotonically numbered
+  attempts: a failed evaluator verify may open the next implementation attempt
+  against the same frozen evaluation; evaluator prepare cannot be repeated by
+  this runner;
 - render a phase-specific prompt that names the target spike and the
   corresponding repository skill, without embedding evaluator-private paths or
   test mechanics;
@@ -48,7 +52,9 @@ npm run workflow -- record <phase> <spike> <complete|blocked|failed>
 `complete` outcome, except for the first phase. It writes a dispatch record
 before optionally launching the executor. `record` is a separate explicit
 operation because a process exiting successfully does not prove the skill did
-its job. `status` prints the current phase records as JSON.
+its job. A failed evaluator verify opens the next implementation attempt;
+otherwise no earlier phase can be reopened. `status` prints the current phase
+records as JSON.
 
 For this spike, the runner need not dispatch itself through the runner. The
 normal workflow governs this spike; a process exception is not requested.
@@ -56,7 +62,7 @@ normal workflow governs this spike; a process exception is not requested.
 ## Non-goals
 
 - no daemon, service, persistence outside the target spike, scheduling,
-  web UI, remote execution, task queue, retries, concurrency, or provider
+  web UI, remote execution, task queue, concurrency, or provider
   abstraction;
 - no parsing of Codex or Claude output, automated quality judgment, or agent
   session resumption;
@@ -70,7 +76,8 @@ normal workflow governs this spike; a process exception is not requested.
 1. The four commands implement the stated validation and state semantics.
 2. The default dispatch is demonstrably dry-run; `--execute` launches only the
    selected command with the stated safe flags.
-3. Tests cover valid progression, skipped/unknown/duplicate rejection, prompt
-   ownership, and command construction without invoking real agents.
+3. Tests cover valid progression, the permitted retry transition,
+   skipped/unknown/duplicate rejection, prompt ownership, and command
+   construction without invoking real agents.
 4. `npm test`, `npm run typecheck`, linting of changed files, Prettier, and
    `git diff --check` pass.
