@@ -146,3 +146,36 @@ This append-only record preserves material workflow runs for Spike 008.
   manifest update
 - Runtime tests: not run because no implementation changed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 008 — Evaluator Prepare
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v7
+- Agent/tool: Claude
+- Mode: `prepare`
+- Result: evaluation revision `001` frozen
+- Frozen brief content identity:
+  `sha256:15a6c7b432ae6fe1ffb876867d41506f5571b64427ed377f0d4d62cbefaa8c9b`
+- Frozen brief Git provenance: `5a1d303`
+- Frozen Design Map content identity:
+  `sha256:b57bfb2e8bb302717eff8549da56f23c85089e1f72e1165bf17264dc1be3d8fd`
+- Frozen Design Map Git provenance: `3ac7c20`
+- Output: `eval-requirements.md`
+- Output content identity:
+  `sha256:449873a0355cc377294d0ca1fa144a2d7d77347c4e96e4dd72b18bdea422a53a`
+- Evaluation revision identity:
+  `sha256:ee62552f957408e3cc64ee09040503f87dbbb194d9b165d03baf98655f21b333`
+- Repository evidence inspected: frozen brief, frozen Design Map, active
+  evaluator skill contract, package tooling and `tsconfig.json`, public
+  Spike 007 workflow evidence
+- Checks: `tsc --noEmit` against the frozen evaluation suite (using the
+  public project's own compiler options) passed with zero errors; `node
+  --test` executed the frozen suite against the unmodified public
+  repository (no `workflow` script exists yet) and every failure was
+  attributable to the absent implementation, not a broken oracle; `npx
+  prettier --check` passed for this output and every frozen private
+  artifact; the `PATH` bare-name process-resolution assumption and the
+  `git check-ignore` oracle mechanism were each validated empirically
+  outside the test framework; `git diff --check` passed for the Spike 008
+  directory before this manifest update
+- Measurement cutoff: immediately before this manifest update
