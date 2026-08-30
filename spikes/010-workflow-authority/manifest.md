@@ -44,3 +44,24 @@ This append-only record preserves material workflow runs for Spike 010.
   this manifest update
 - Runtime tests: not run because no implementation changed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 003 — Evaluator Prepare
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v8
+- Agent/tool: Codex (independent evaluator role)
+- Mode: `prepare`
+- Result: evaluator revision `001` frozen
+- Frozen brief identity: `sha256:a3e81619e2bca965eac7b40789cbc7b98f5a29f5be7ef98b7c14714d85e5ddb4`
+- Frozen Design Map identity:
+  `sha256:8f6185794278d0b2c6fc9d725367e548bf664a662d2d7389ece6cf0fd200e800`
+- Output: `eval-requirements.md`,
+  `sha256:e61c4a578a2eaf21261df77b72e4d1d4feebe450225254bcd3567531c3e6966d`
+- Evaluation revision identity:
+  `sha256:7ef1fee50feabdc64a4b748664a36ce2061589598b6c10ed5bf611f07d6aea28`
+- Coverage: public-regression evidence only; no hidden suite was frozen because
+  the public authority CLI and visible state-transition tests are the stable
+  black-box seam and private duplication would add no fair coverage
+- Restricted evaluator material produced: private specification, case manifest,
+  freeze metadata, and attempt ledger
+- Measurement cutoff: immediately before this manifest update
