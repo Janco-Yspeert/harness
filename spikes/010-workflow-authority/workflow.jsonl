@@ -2,3 +2,4 @@
 {"transition":"design-map-frozen","at":"2026-08-30T16:14:20.332Z","evidence":{"path":"design-map.md","identity":"sha256:8f6185794278d0b2c6fc9d725367e548bf664a662d2d7389ece6cf0fd200e800","commit":"8239dc1"}}
 {"transition":"evaluation-prepared","at":"2026-08-30T16:14:20.445Z","evidence":{"path":"eval-requirements.md","identity":"sha256:e61c4a578a2eaf21261df77b72e4d1d4feebe450225254bcd3567531c3e6966d","commit":"7ff7b51","evaluatorRevision":"001"}}
 {"transition":"implementation-handoff","at":"2026-08-30T16:15:20.215Z","evidence":{"attempt":1,"commit":"e4be145fd17def9e46d42587c2804f3ff08a778c"}}
+{"transition":"verification-allocated","at":"2026-08-30T16:15:32.270Z","evidence":{"attempt":1,"implementationAttempt":1,"commit":"e4be145fd17def9e46d42587c2804f3ff08a778c","evaluatorRevision":"001"}}
