@@ -519,8 +519,9 @@ function validateAuthority(
       execFileSync("git", ["cat-file", "-e", `${commit}^{commit}`], {
         cwd: repositoryRoot,
       });
-    } catch {
-      fail("Implementation commit is invalid");
+    } catch (error: unknown) {
+      if ((error as NodeJS.ErrnoException & { status?: number }).status !== 0)
+        fail("Implementation commit is invalid");
     }
     const prior = events.filter(
       (event) => event.transition === transition,

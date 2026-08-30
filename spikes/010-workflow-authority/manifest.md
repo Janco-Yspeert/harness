@@ -105,3 +105,18 @@ This append-only record preserves material workflow runs for Spike 010.
   conversational provenance checks had concealed; its guarded validation made
   the failure explicit before canonical state changed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 006 — Pre-handoff commit-probe correction
+
+- Recorded: contemporaneously
+- Skill: `implementation` v3
+- Agent/tool: Codex
+- Result: corrected candidate; canonical implementation handoff remains absent
+- Defect: the Git commit-existence probe treated the same successful sandboxed
+  child-process result as invalid
+- Correction: accept a zero-status child result; retained the valid
+  repository-relative provenance regression and reran the public suite
+- Canonical implementation attempt remains `001`
+- Checks: `npm run typecheck`, `npm run lint`, `npm test` (29 passing), and
+  `git diff --check` passed
+- Measurement cutoff: immediately before this manifest update
