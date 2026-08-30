@@ -1,0 +1,109 @@
+{
+  "evaluationRevision": 2,
+  "evaluatorSkill": { "name": "evaluator", "version": 7 },
+  "inputs": {
+    "brief": "sha256:15a6c7b432ae6fe1ffb876867d41506f5571b64427ed377f0d4d62cbefaa8c9b",
+    "designMap": "sha256:b57bfb2e8bb302717eff8549da56f23c85089e1f72e1165bf17264dc1be3d8fd",
+    "evaluationRequirements": "sha256:449873a0355cc377294d0ca1fa144a2d7d77347c4e96e4dd72b18bdea422a53a"
+  },
+  "support": [
+    "support/cli.ts",
+    "support/spike-fixture.ts",
+    "support/fixture-bin.ts",
+    "support/progress.ts",
+    "support/phases.ts"
+  ],
+  "cases": {
+    "E1": {
+      "requirements": ["R2", "R16"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["state-and-init.test.ts"]
+    },
+    "E2": {
+      "requirements": ["R1", "R3", "R6"],
+      "invariants": ["I1", "I3"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["valid-progression.test.ts"]
+    },
+    "E3": {
+      "requirements": ["R8"],
+      "invariants": ["I3"],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["retry-loop.test.ts"]
+    },
+    "E4": {
+      "requirements": ["R9"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["retry-loop.test.ts"]
+    },
+    "E5": {
+      "requirements": ["R4", "R5", "R6", "R7"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["rejections.test.ts"]
+    },
+    "E6": {
+      "requirements": ["R11"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": ["A2"],
+      "tests": ["dry-run.test.ts"]
+    },
+    "E7": {
+      "requirements": ["R12", "R13", "R14", "R16"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": ["A2", "A3", "A4"],
+      "tests": ["execute-detached-jobs.test.ts"]
+    },
+    "E8": {
+      "requirements": ["R12", "R13", "R14", "R16"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": ["A2", "A3", "A4"],
+      "tests": ["execute-detached-jobs.test.ts"]
+    },
+    "E9": {
+      "requirements": ["R15"],
+      "invariants": ["I2"],
+      "negativeRequirements": ["N1"],
+      "assumptions": [],
+      "tests": ["execute-detached-jobs.test.ts"]
+    },
+    "E10": {
+      "requirements": ["R16"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": ["A1"],
+      "tests": ["status-liveness-and-cancel.test.ts"]
+    },
+    "E11": {
+      "requirements": ["R17"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": ["A1"],
+      "tests": ["status-liveness-and-cancel.test.ts"]
+    },
+    "E12": {
+      "requirements": ["R1", "R10"],
+      "invariants": ["I1"],
+      "negativeRequirements": ["N1"],
+      "assumptions": [],
+      "tests": ["prompt-ownership.test.ts"]
+    },
+    "E13": {
+      "requirements": ["R14", "R18"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "tests": ["gitignore.test.ts"]
+    }
+  }
+}

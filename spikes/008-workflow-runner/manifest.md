@@ -208,3 +208,79 @@ This append-only record preserves material workflow runs for Spike 008.
   `npx prettier --check src/workflow.ts test/workflow.test.ts package.json`,
   `git diff --check`, and `git check-ignore` for state and log paths passed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 010 — Evaluator Verify attempt 001
+
+- Recorded: retrospectively from the immutable private attempt result
+- Skill: `evaluator` v7
+- Agent/tool: Claude
+- Mode: `verify`
+- Result: `BLOCKED`
+- Implementation evaluated: `e147e0f` (working tree clean)
+- Evaluator revision: `001`, revision identity:
+  `sha256:ee62552f957408e3cc64ee09040503f87dbbb194d9b165d03baf98655f21b333`
+- Mandatory cases: 13 of 13 run; 12 passed; 1 evaluator-defective (E4's
+  second sub-case in `retry-loop.test.ts`)
+- Classification: `EVALUATOR_DEFECT` — the case's action script recorded two
+  differing terminal outcomes for the same numbered phase+attempt, itself
+  contradicting the independently frozen and independently verified R7
+- Follow-up: evaluator revision `001` corrected under a distinguishable
+  revision `002` (retry-loop.test.ts split into two non-contradictory
+  cases preserving full R9 coverage; only that test file and this spike's
+  private `eval-spec.md` Revision History changed); revision `001` archived
+  unchanged before correction; regressions deferred to the attempt against
+  the corrected revision per the shared verify procedure
+- Private result: `.eval/attempts/001/eval-result.md`, result identity
+  `sha256:2dad9be01529ba74144eaa5beef9fe4a7982b619f82b40cb9790c326f0aefb46`
+- Measurement cutoff: immediately before this manifest update
+
+## Run 011 — Evaluator Verify attempt 002
+
+- Recorded: retrospectively from the immutable private attempt result
+- Skill: `evaluator` v7
+- Agent/tool: Claude
+- Mode: `verify`
+- Result: `PASS`
+- Implementation evaluated: `e147e0f` (unchanged from attempt 001; working
+  tree clean)
+- Evaluator revision: `002` (corrects `001`), revision identity:
+  `sha256:eaf93d47ef02ade7ba27ebddaf3ff15b855cc85b1f302dd778f117333ae828f3`
+- Mandatory cases: 13 of 13 passed (20 individual test blocks across 9
+  hidden test files); 0 evaluator defects against revision `002`; no
+  specification drift detected
+- Regressions: `npm run typecheck`, `npm run lint`, `npm run format:check`,
+  `npm test` (27/27, the project's own pre-existing suite), and
+  `git diff --check` all passed clean against `e147e0f`
+- Private result: `.eval/attempts/002/eval-result.md`, result identity
+  `sha256:d062636b0871eb09339edbee5dec6d7adc974fe591699eeb523817391cfa2fb6`
+- Measurement cutoff: immediately before this manifest update
+
+## Run 012 — Evaluator Promotion (attempt 002 PASS)
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v7
+- Agent/tool: Claude
+- Mode: `verify` (promotion procedure following a finalized `PASS`)
+- Result: promoted
+- Independent re-verification performed before promoting: reran all 9 frozen
+  hidden test files (20/20 passing) against unchanged implementation
+  `e147e0f`, and recomputed the content identity of `spike.md`,
+  `design-map.md`, `eval-requirements.md`, private `eval-spec.md`, and every
+  hidden test/support file, confirming exact agreement with the frozen
+  identities before promoting
+- Promoted: private attempt ledger and both attempts' immutable results,
+  unchanged, to `evaluation/`; evaluator revision `002`'s exact frozen
+  bundle (`eval-spec.md`, `.hidden-test/**`) and freeze metadata to
+  `evaluation/revisions/002/` and `evaluation/freeze/002.json`
+- Not promoted: evaluator revision `001` (recorded by revision identity and
+  `not-promoted` disposition only in `evaluation/promotion.json`) — its
+  `retry-loop.test.ts` could not pass against any correct implementation, so
+  it provides no durable public regression coverage
+- Checks: `prettier --check` across the entire promoted `evaluation/` tree
+  passed clean; `git diff --check` passed clean; every promoted historical
+  file's recomputed content identity matched its recorded source identity
+- Output: `evaluation/promotion.json`, `evaluation/attempt-ledger.json`,
+  `evaluation/attempts/001/eval-result.md`,
+  `evaluation/attempts/002/eval-result.md`, `evaluation/freeze/002.json`,
+  `evaluation/revisions/002/**`
+- Measurement cutoff: immediately before this manifest update
