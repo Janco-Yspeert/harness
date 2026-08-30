@@ -17,6 +17,12 @@ For each item include:
 - source or justification
 - implementation impact
 
+Do not create a testability requirement merely to make hidden testing
+convenient when the frozen behavior can be fairly verified through existing
+public/manual evidence. If a stable public seam is genuinely necessary for fair
+independent evaluation, expose it here before implementation rather than
+inventing it privately.
+
 If none, state that there are no additional testability requirements.
 
 ## Evaluator Assumptions
