@@ -2,22 +2,22 @@
 
 ## Shared contracts
 
-- Evaluator freeze metadata gains a public-safe criterion coverage map keyed by
-  frozen acceptance-criterion identifiers. Each entry declares evidence mode,
-  evaluator requirement/case reference, and a reason; verification supplies a
-  terminal result for every required entry.
-- The authority receives the evaluator revision's public coverage summary as
-  transition evidence and structurally rejects PASS unless every required
-  criterion is terminally satisfied. It does not read private evaluator files
-  or judge evidence semantics.
-- `human-rejected` is a public guarded transition with a bounded classification
-  and provenance-validated acceptance artifact. It preserves all prior events
-  and closes accepted completion for that spike.
-- Successor initialization records the rejected predecessor spike identifier and
-  immutable predecessor reference in the successor's public authority history;
-  attempts remain local to the successor.
-- Workflow skills invoke the authority for every transition it supports; their
-  prose/manifest artifacts are supplementary execution history.
+- Evaluator preparation commits public-safe `coverage-map.json` beside
+  `eval-requirements.md`: `{ criteria: [{ id, mode, requirement, cases,
+  required, reason }] }`. Every material frozen acceptance criterion has one
+  entry. `BLOCKED` prevents an ordinary PASS.
+- `evaluation-prepared` cites that map with ordinary artifact provenance.
+  `verification-finalized` carries a `coverageResults` object keyed by map ids;
+  `PASS` requires every required entry to be `SATISFIED`.
+- `human-rejected` is guarded, provenance-validated public evidence with one of
+  `IMPLEMENTATION_GAP`, `EVALUATOR_COVERAGE_DEFECT`,
+  `SPECIFICATION_CHANGE`, or `OTHER_HUMAN_REJECTION`. It is later than, and
+  never mutates, the technical PASS/promotion/As-Built evidence.
+- A successor records `successor-linked` in its own append-only authority
+  history with predecessor path and rejection-artifact provenance. This leaves
+  Spike 010 untouched; attempts and evaluator revisions are local.
+- Workflow skills invoke the authority for each applicable canonical boundary;
+  manifests remain supplementary history.
 
 ## Invariants
 
@@ -25,9 +25,10 @@
 - Human rejection never rewrites a technical PASS, evaluator attempt, promotion,
   or As-Built.
 - No criterion may be absent from a frozen evaluator coverage disposition.
+- A finalized verification allocation is immutable; a later result needs a
+  later allocation.
 
 ## Implementation freedom
 
-- JSON field names, CLI subcommands, coverage vocabulary spelling, and reducer
-  implementation are free provided public status exposes the required state and
-  visible tests exercise the frozen paths.
+- The CLI may add `successor-linked`; the reducer remains append-only JSONL.
+  No generic cycle framework is introduced.
