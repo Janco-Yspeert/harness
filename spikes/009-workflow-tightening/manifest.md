@@ -163,3 +163,22 @@ This append-only record preserves material workflow runs for Spike 009.
   revision `002` suite copied to `evaluation/`; all recorded public artifact
   hashes equal their private source identities
 - Measurement cutoff: immediately before this manifest update
+
+## Run 008 — As-Built
+
+- Recorded: contemporaneously
+- Skill: `as-built` v2
+- Agent/tool: Codex
+- Result: complete; no missing, contradictory, or extra material behavior
+- Inspected implementation revision:
+  `f5a657dc11e77ed7fc8d46c06280daa9df41c56e`
+- Inputs: frozen brief, frozen Design Map, visible implementation/tests, and
+  promoted evaluation evidence
+- Output: `as-built.md`
+- Output content identity:
+  `sha256:b2f958884ec9a5ab1042b3d0d5615f62625f6867c0fa005a36e3f1e7e658f366`
+- Checks: `git diff --check -- spikes/009-workflow-tightening` passed before
+  this manifest update
+- Runtime tests: not rerun; final evaluator verification and public regression
+  suite had already passed against the inspected implementation revision
+- Measurement cutoff: immediately before this manifest update
