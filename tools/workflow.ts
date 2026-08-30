@@ -62,6 +62,8 @@ type AuthorityTransition =
   | "promotion-recorded"
   | "as-built-recorded"
   | "human-accepted"
+  | "human-rejected"
+  | "successor-linked"
   | "outcome-recorded";
 interface AuthorityEvent {
   readonly transition: AuthorityTransition;
@@ -86,7 +88,7 @@ function targetFrom(value: string | undefined): Target {
     value === undefined ||
     isAbsolute(value) ||
     normalize(value) !== value ||
-    !/^spikes\/\d{3}-[^/]+$/.test(value)
+    !/^spikes\/\d{3}[a-z]*-[^/]+$/.test(value)
   ) {
     return fail("Spike path must be a normalized spikes/NNN-*/ path");
   }
@@ -417,6 +419,8 @@ const authorityTransitions: AuthorityTransition[] = [
   "promotion-recorded",
   "as-built-recorded",
   "human-accepted",
+  "human-rejected",
+  "successor-linked",
   "outcome-recorded",
 ];
 function authorityPath(target: Target): string {
@@ -477,6 +481,35 @@ function latest(
 ): AuthorityEvent | undefined {
   return [...events].reverse().find((event) => event.transition === transition);
 }
+interface CoverageEntry {
+  readonly id: string;
+  readonly mode: string;
+  readonly required: boolean;
+}
+function preparedCoverage(target: Target, events: AuthorityEvent[]): CoverageEntry[] {
+  const prepared = latest(events, "evaluation-prepared");
+  if (!prepared) return [];
+  const path = prepared.evidence.path;
+  if (typeof path !== "string") return [];
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(resolve(target.path, path), "utf8"));
+    if (
+      typeof parsed === "object" && parsed !== null && "criteria" in parsed &&
+      Array.isArray(parsed.criteria)
+    ) {
+      return parsed.criteria.filter(
+        (item): item is CoverageEntry =>
+          typeof item === "object" && item !== null &&
+          typeof (item as CoverageEntry).id === "string" &&
+          typeof (item as CoverageEntry).mode === "string" &&
+          typeof (item as CoverageEntry).required === "boolean",
+      );
+    }
+  } catch {
+    return [];
+  }
+  return [];
+}
 function authorityState(target: Target) {
   const events = authorityEvents(target);
   const finalized = events.filter(
@@ -487,8 +520,22 @@ function authorityState(target: Target) {
   const promoted = latest(events, "promotion-recorded") !== undefined;
   const asBuilt = latest(events, "as-built-recorded") !== undefined;
   const accepted = latest(events, "human-accepted") !== undefined;
+  const rejectedEvent = latest(events, "human-rejected");
+  const rejected = rejectedEvent !== undefined;
   const outcome = latest(events, "outcome-recorded") !== undefined;
-  return { events, passed, promoted, asBuilt, accepted, outcome };
+  const successor = latest(events, "successor-linked");
+  return {
+    events,
+    passed,
+    promoted,
+    asBuilt,
+    accepted,
+    rejected,
+    rejectedEvent,
+    successor,
+    outcome,
+    coverage: preparedCoverage(target, events),
+  };
 }
 function validateAuthority(
   target: Target,
@@ -510,6 +557,14 @@ function validateAuthority(
   }
   if (transition === "evaluation-prepared") {
     requireEvent("design-map-frozen");
+    const coverage = preparedCoverage(target, [
+      ...events,
+      { transition, at: "", evidence },
+    ]);
+    if (coverage.length === 0 || new Set(coverage.map((item) => item.id)).size !== coverage.length)
+      fail("evaluation-prepared requires a complete unique coverage map");
+    if (coverage.some((item) => item.mode === "BLOCKED"))
+      fail("evaluation-prepared cannot complete with blocked coverage");
     return;
   }
   if (transition === "implementation-handoff") {
@@ -554,6 +609,14 @@ function validateAuthority(
       Number(evidence.attempt) !== Number(allocation.evidence.attempt)
     )
       fail("Verification result requires matching allocation");
+    if (
+      events.some(
+        (event) =>
+          event.transition === "verification-finalized" &&
+          Number(event.evidence.attempt) === Number(evidence.attempt),
+      )
+    )
+      fail("Verification attempt is already finalized");
     const result = value(evidence, "result");
     const classification = evidence.classification;
     if (!["PASS", "FAIL", "BLOCKED"].includes(result))
@@ -571,6 +634,22 @@ function validateAuthority(
       ].includes(String(classification))
     )
       fail("Invalid verification classification");
+    const coverage = state.coverage;
+    const results = evidence.coverageResults;
+    if (typeof results !== "object" || results === null || Array.isArray(results))
+      fail("verification-finalized requires coverageResults");
+    const keys = Object.keys(results);
+    if (keys.length !== coverage.length || !coverage.every((item) => keys.includes(item.id)))
+      fail("Verification coverage results do not match prepared map");
+    if (
+      result === "PASS" &&
+      coverage.some(
+        (item) =>
+          item.required &&
+          (results as Record<string, unknown>)[item.id] !== "SATISFIED",
+      )
+    )
+      fail("PASS requires every required criterion to be SATISFIED");
     return;
   }
   if (transition === "promotion-recorded") {
@@ -583,9 +662,27 @@ function validateAuthority(
   }
   if (transition === "human-accepted") {
     if (!state.asBuilt) fail("human-accepted requires as-built-recorded");
+    if (state.rejected) fail("human decision is already rejected");
     return;
   }
-  if (!state.accepted) fail("outcome-recorded requires human-accepted");
+  if (transition === "human-rejected") {
+    if (!state.asBuilt) fail("human-rejected requires as-built-recorded");
+    if (state.accepted || state.rejected) fail("human decision is already recorded");
+    if (![
+      "IMPLEMENTATION_GAP",
+      "EVALUATOR_COVERAGE_DEFECT",
+      "SPECIFICATION_CHANGE",
+      "OTHER_HUMAN_REJECTION",
+    ].includes(value(evidence, "classification"))) fail("Invalid human rejection classification");
+    return;
+  }
+  if (transition === "successor-linked") {
+    if (!value(evidence, "predecessor").startsWith("spikes/"))
+      fail("successor-linked requires predecessor spike path");
+    return;
+  }
+  if (!state.accepted || state.rejected)
+    fail("outcome-recorded requires human-accepted");
 }
 function authority(
   target: Target,
@@ -604,7 +701,7 @@ function authority(
       }
     });
     process.stdout.write(
-      `${JSON.stringify({ history: state.events, legalTransitions: legal, humanAcceptanceRequired: state.asBuilt && !state.accepted, outcomeComplete: state.outcome })}\n`,
+      `${JSON.stringify({ history: state.events, legalTransitions: legal, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected, outcomeComplete: state.outcome })}\n`,
     );
     return;
   }
