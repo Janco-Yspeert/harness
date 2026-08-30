@@ -284,3 +284,28 @@ This append-only record preserves material workflow runs for Spike 008.
   `evaluation/attempts/002/eval-result.md`, `evaluation/freeze/002.json`,
   `evaluation/revisions/002/**`
 - Measurement cutoff: immediately before this manifest update
+
+## Run 013 — As-Built
+
+- Recorded: contemporaneously
+- Skill: `as-built` v2
+- Agent/tool: Codex
+- Result: complete; no missing, contradictory, or extra material behavior or
+  structure found against the frozen brief and Design Map
+- Inspected implementation revision: `e147e0f`
+- Inputs:
+  - frozen `spike.md`:
+    `sha256:15a6c7b432ae6fe1ffb876867d41506f5571b64427ed377f0d4d62cbefaa8c9b`
+  - frozen `design-map.md`:
+    `sha256:b57bfb2e8bb302717eff8549da56f23c85089e1f72e1165bf17264dc1be3d8fd`
+  - public `eval-requirements.md`:
+    `sha256:449873a0355cc377294d0ca1fa144a2d7d77347c4e96e4dd72b18bdea422a53a`
+  - final promoted evaluator result: attempt `002`, revision `002`, `PASS`
+- Output: `as-built.md`, content identity
+  `sha256:b3868e5f8dd3cc3c596deff3c1b821308265f52beb5d69fdc69a6e10a7e7a9c5`
+- Repository evidence inspected: exact implementation diff, `src/workflow.ts`,
+  `test/workflow.test.ts`, root `.gitignore`, package script, frozen public
+  contracts, and promoted evaluation results
+- Checks: `git diff --check` passed for the As-Built artifact before this
+  manifest update
+- Measurement cutoff: immediately before this manifest update
