@@ -44,3 +44,25 @@ This append-only record preserves material workflow runs for Spike 009.
   this manifest update
 - Runtime tests: not run because no implementation changed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 003 — Design Map refinement
+
+- Recorded: contemporaneously
+- Skill: `design-map` v2
+- Agent/tool: Codex
+- Result: `COMPLETE`
+- Frozen brief content identity:
+  `sha256:eadf808bcc083c2810c119d916f58f906ca2930e5ac5bc04eca62851b674ce89`
+- Supersedes Design Map identity:
+  `sha256:0b099fa2e97e3e73b44d8d8abd95293b09f1747a155277afc4021690adc8ee76`
+- Output: revised `design-map.md`
+- Output content identity:
+  `sha256:46d2822e9a8498b9bd470a73afd151fd907b594f3c652f8fa064d131780c726a`
+- Correction: fixed the two environment-variable names needed for independent,
+  black-box evaluation of executor selection; all other prior shared contracts
+  remain unchanged
+- Restricted evaluator material inspected: none
+- Checks: `git diff --check -- spikes/009-workflow-tightening` passed before
+  this manifest update
+- Runtime tests: not run because no implementation changed
+- Measurement cutoff: immediately before this manifest update

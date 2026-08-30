@@ -11,10 +11,11 @@
   Readiness, Design Map, implementation, As-Built, and Outcome; independent
   work is evaluator prepare and evaluator verify.
 - Public and evaluator roles each select an executor independently through
-  explicit repository-tool environment settings. The defaults remain Codex for
-  public work and Claude for evaluator work. The supported selection is limited
-  to the existing Codex and Claude command profiles; this is a bounded command
-  choice, not a provider abstraction.
+  `HARNESS_WORKFLOW_PUBLIC_EXECUTOR` and
+  `HARNESS_WORKFLOW_EVALUATOR_EXECUTOR`. The defaults remain Codex for public
+  work and Claude for evaluator work. The supported selection is limited to the
+  existing Codex and Claude command profiles; this is a bounded command choice,
+  not a provider abstraction.
 - Implementation attempts and evaluator-verification attempts have separate,
   monotonically increasing identity spaces. Each evaluator-verification
   dispatch/record explicitly carries the completed implementation attempt it
@@ -45,8 +46,8 @@
 
 ## Implementation freedom
 
-- The state-file schema, environment-variable names, event names for retained
-  launch failures, command-profile construction, process-launch plumbing, and
-  exact permissions API are implementation choices.
+- The state-file schema, event names for retained launch failures,
+  command-profile construction, process-launch plumbing, and exact permissions
+  API are implementation choices.
 - Selection may reject an unsupported executor clearly; no general provider or
   plugin registration mechanism is required.
