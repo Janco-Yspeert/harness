@@ -450,20 +450,26 @@ function verifyPublicEvidence(target: Target, evidence: Evidence): void {
   const current = resolve(target.path, path);
   if (!existsSync(current) || identity(readFileSync(current)) !== claimed)
     fail("Public artifact identity does not match working tree");
+  let committed: Buffer;
   try {
-    if (
-      identity(
-        execFileSync(
-          "git",
-          ["show", `${commit}:${relative(repositoryRoot, current)}`],
-          { cwd: repositoryRoot },
-        ),
-      ) !== claimed
-    )
-      fail("Public artifact identity does not match claimed commit");
-  } catch {
-    fail("Claimed Git provenance is invalid");
+    committed = execFileSync(
+      "git",
+      ["show", `${commit}:${relative(repositoryRoot, current)}`],
+      { cwd: repositoryRoot },
+    );
+  } catch (error: unknown) {
+    const processError = error as NodeJS.ErrnoException & {
+      status?: number;
+      stdout?: Buffer;
+    };
+    if (processError.status === 0 && processError.stdout !== undefined) {
+      committed = processError.stdout;
+    } else {
+      fail("Claimed Git provenance is invalid");
+    }
   }
+  if (identity(committed) !== claimed)
+    fail("Public artifact identity does not match claimed commit");
 }
 function latest(
   events: AuthorityEvent[],

@@ -175,3 +175,24 @@ void test("execute records a detached job and cancel terminates it", (t) => {
   assert.equal(run(["cancel", "brief-readiness", spike]).status, 0);
   jobPid = undefined;
 });
+
+void test("authority accepts valid repository-relative provenance", () => {
+  const evidence = JSON.stringify({
+    path: "spike.md",
+    identity:
+      "sha256:a3e81619e2bca965eac7b40789cbc7b98f5a29f5be7ef98b7c14714d85e5ddb4",
+    commit: "51d020b",
+  });
+  const result = run([
+    "authority",
+    "validate",
+    "spikes/010-workflow-authority",
+    "brief-frozen",
+    evidence,
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    allowed: true,
+    recorded: false,
+  });
+});

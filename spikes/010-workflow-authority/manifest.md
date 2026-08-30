@@ -83,3 +83,25 @@ This append-only record preserves material workflow runs for Spike 010.
   can submit those facts to guarded transitions rather than relying only on
   conversational discipline
 - Measurement cutoff: immediately before this manifest update
+
+## Run 005 — Pre-handoff authority correction
+
+- Recorded: contemporaneously
+- Skill: `implementation` v3
+- Agent/tool: Codex
+- Result: corrected candidate; no canonical implementation handoff had been
+  recorded
+- Superseded pre-handoff candidate: `9c7dc06`
+- Defect: valid repository-relative Git provenance was rejected in this
+  sandbox because Node surfaced a successful `git show` with usable stdout as a
+  spawn error; the validator treated every caught error as invalid provenance
+- Correction: preserve successful stdout when the child reported status zero;
+  add visible regression coverage for the valid `spike.md` provenance claim
+- Canonical attempt numbering: the next accepted implementation handoff remains
+  attempt `001`, because no prior handoff or verification allocation exists
+- Checks: `npm run typecheck`, `npm run lint`, `npm test` (29 passing), and
+  `git diff --check` passed
+- Observation: the authority exposed a host/sandbox integration wrinkle that
+  conversational provenance checks had concealed; its guarded validation made
+  the failure explicit before canonical state changed
+- Measurement cutoff: immediately before this manifest update
