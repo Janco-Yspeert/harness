@@ -309,3 +309,25 @@ This append-only record preserves material workflow runs for Spike 008.
 - Checks: `git diff --check` passed for the As-Built artifact before this
   manifest update
 - Measurement cutoff: immediately before this manifest update
+
+## Run 014 — Outcome
+
+- Recorded: contemporaneously
+- Skill: `outcome` v3
+- Agent/tool: Codex
+- Result: `COMPLETE` — independent evaluator attempt `002` accepted by the
+  human for implementation `e147e0f`
+- Preconditions confirmed: committed implementation `e147e0f`; promoted
+  evaluator `PASS` in `d18d2fa`; completed As-Built in `d6ac17c`; explicit
+  human acceptance recorded on 2026-08-30
+- Inputs: frozen brief, frozen Design Map, public evaluation requirements,
+  promoted evaluation history and result, As-Built, Git provenance, and this
+  manifest
+- Output: `outcome.md`, content identity
+  `sha256:3bebbc54440bf709631cedc1a830be10a9bcee20167ae62eba3a35bb5cddbb1a`
+- Material history: evaluator revision `001` was retained as an
+  `EVALUATOR_DEFECT`; corrected frozen revision `002` passed against unchanged
+  implementation `e147e0f`
+- Checks: `git diff --check` passed for `outcome.md` before this manifest
+  update
+- Measurement cutoff: immediately before this manifest update
