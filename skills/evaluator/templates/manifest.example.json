@@ -1,6 +1,6 @@
 {
   "evaluationRevision": 1,
-  "evaluatorSkill": { "name": "evaluator", "version": 7 },
+  "evaluatorSkill": { "name": "evaluator", "version": 8 },
   "inputs": {
     "brief": "sha256:<content-identity>",
     "designMap": "sha256:<content-identity>",
@@ -13,7 +13,17 @@
       "invariants": ["I2"],
       "negativeRequirements": [],
       "assumptions": ["A1"],
+      "coverage": "executable",
       "tests": ["session-isolation.test.ts"]
+    },
+    "E8": {
+      "requirements": ["R4"],
+      "invariants": [],
+      "negativeRequirements": [],
+      "assumptions": [],
+      "coverage": "public-evidence",
+      "tests": [],
+      "reason": "No stable implementation-independent hidden-test seam is established by the frozen contract; verify through the frozen public evidence plan."
     }
   }
 }
