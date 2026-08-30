@@ -196,3 +196,23 @@ void test("authority accepts valid repository-relative provenance", () => {
     recorded: false,
   });
 });
+
+void test("authority recognizes successor spike identifiers and exposes coverage state", () => {
+  const result = run([
+    "authority",
+    "status",
+    "spikes/010a-evaluation-coverage-human-rejection-recovery",
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  const status = JSON.parse(result.stdout) as {
+    history: Array<{ transition: string }>;
+    humanDecision: string;
+    technicalVerification: string;
+  };
+  assert.deepEqual(
+    status.history.map((event) => event.transition),
+    ["brief-frozen", "design-map-frozen", "evaluation-prepared"],
+  );
+  assert.equal(status.technicalVerification, "NOT_PASSED");
+  assert.equal(status.humanDecision, "NOT_READY");
+});

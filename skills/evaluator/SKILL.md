@@ -183,6 +183,13 @@ cases list their hidden test files. Non-executable cases use an empty test list,
 state their coverage mode, and record why executable hidden coverage is not
 justified.
 
+For authority-enabled spikes, also commit a public-safe `coverage-map.json` with
+one explicit entry for every material frozen acceptance criterion. Each entry
+declares criterion id, evidence mode, evaluator requirement/cases, required
+flag, and reason. Record `evaluation-prepared` through the authority after the
+public checkpoint; do not complete preparation with missing or blocked required
+coverage.
+
 Exercise every mandatory executable case against controlled positive and
 negative conditions before freeze. Confirm setup, teardown, helper integrity,
 determinism, and that failure oracles fail for the intended reason. For

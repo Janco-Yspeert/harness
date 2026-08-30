@@ -35,3 +35,6 @@ that update. Capture a start baseline only for a directly measurable value; do
 not create a provisional entry, estimate metrics, or measure the entry itself.
 Commit the artifact and manifest entry separately from implementation, and push
 the checkpoint before Outcome when another context will consume it.
+
+For authority-enabled spikes, record `as-built-recorded` only after this
+committed artifact checkpoint and a canonical promotion.

@@ -486,20 +486,28 @@ interface CoverageEntry {
   readonly mode: string;
   readonly required: boolean;
 }
-function preparedCoverage(target: Target, events: AuthorityEvent[]): CoverageEntry[] {
+function preparedCoverage(
+  target: Target,
+  events: AuthorityEvent[],
+): CoverageEntry[] {
   const prepared = latest(events, "evaluation-prepared");
   if (!prepared) return [];
   const path = prepared.evidence.path;
   if (typeof path !== "string") return [];
   try {
-    const parsed: unknown = JSON.parse(readFileSync(resolve(target.path, path), "utf8"));
+    const parsed: unknown = JSON.parse(
+      readFileSync(resolve(target.path, path), "utf8"),
+    );
     if (
-      typeof parsed === "object" && parsed !== null && "criteria" in parsed &&
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "criteria" in parsed &&
       Array.isArray(parsed.criteria)
     ) {
       return parsed.criteria.filter(
         (item): item is CoverageEntry =>
-          typeof item === "object" && item !== null &&
+          typeof item === "object" &&
+          item !== null &&
           typeof (item as CoverageEntry).id === "string" &&
           typeof (item as CoverageEntry).mode === "string" &&
           typeof (item as CoverageEntry).required === "boolean",
@@ -561,7 +569,10 @@ function validateAuthority(
       ...events,
       { transition, at: "", evidence },
     ]);
-    if (coverage.length === 0 || new Set(coverage.map((item) => item.id)).size !== coverage.length)
+    if (
+      coverage.length === 0 ||
+      new Set(coverage.map((item) => item.id)).size !== coverage.length
+    )
       fail("evaluation-prepared requires a complete unique coverage map");
     if (coverage.some((item) => item.mode === "BLOCKED"))
       fail("evaluation-prepared cannot complete with blocked coverage");
@@ -636,17 +647,25 @@ function validateAuthority(
       fail("Invalid verification classification");
     const coverage = state.coverage;
     const results = evidence.coverageResults;
-    if (typeof results !== "object" || results === null || Array.isArray(results))
+    if (
+      typeof results !== "object" ||
+      results === null ||
+      Array.isArray(results)
+    )
       fail("verification-finalized requires coverageResults");
     const keys = Object.keys(results);
-    if (keys.length !== coverage.length || !coverage.every((item) => keys.includes(item.id)))
+    if (
+      keys.length !== coverage.length ||
+      !coverage.every((item) => keys.includes(item.id))
+    )
       fail("Verification coverage results do not match prepared map");
     if (
       result === "PASS" &&
       coverage.some(
         (item) =>
           item.required &&
-          (results as Record<string, unknown>)[item.id] !== "SATISFIED",
+          (results as { readonly [key: string]: unknown })[item.id] !==
+            "SATISFIED",
       )
     )
       fail("PASS requires every required criterion to be SATISFIED");
@@ -667,13 +686,17 @@ function validateAuthority(
   }
   if (transition === "human-rejected") {
     if (!state.asBuilt) fail("human-rejected requires as-built-recorded");
-    if (state.accepted || state.rejected) fail("human decision is already recorded");
-    if (![
-      "IMPLEMENTATION_GAP",
-      "EVALUATOR_COVERAGE_DEFECT",
-      "SPECIFICATION_CHANGE",
-      "OTHER_HUMAN_REJECTION",
-    ].includes(value(evidence, "classification"))) fail("Invalid human rejection classification");
+    if (state.accepted || state.rejected)
+      fail("human decision is already recorded");
+    if (
+      ![
+        "IMPLEMENTATION_GAP",
+        "EVALUATOR_COVERAGE_DEFECT",
+        "SPECIFICATION_CHANGE",
+        "OTHER_HUMAN_REJECTION",
+      ].includes(value(evidence, "classification"))
+    )
+      fail("Invalid human rejection classification");
     return;
   }
   if (transition === "successor-linked") {

@@ -76,3 +76,7 @@ through immediately before that update. Capture a start baseline only for a
 directly measurable value; do not create a provisional entry, estimate metrics,
 or measure the entry itself. Commit Outcome with that final manifest update and
 push it to the spike branch.
+
+For authority-enabled spikes, require canonical `human-accepted` before
+recording `outcome-recorded`; a human rejection is historical evidence, never a
+successful Outcome path.
