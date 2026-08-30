@@ -144,18 +144,18 @@ If the Design Map deliberately leaves a seam as implementation freedom, preserve
 that freedom.
 
 A requirement may legitimately have no executable hidden test when public or
-manual observable evidence already provides adequate verification, when a
-hidden test would merely duplicate that evidence without increasing
-falsifiability, or when no stable implementation-independent observable seam
-exists before implementation.
+manual observable evidence already provides adequate verification, when a hidden
+test would merely duplicate that evidence without increasing falsifiability, or
+when no stable implementation-independent observable seam exists before
+implementation.
 
 For every such case, record the coverage mode and reason in the private
 evaluation specification and case manifest. Absence of a hidden test is not an
 evaluator defect when it preserves deliberate implementation freedom.
 
-If a material requirement cannot be fairly verified at all without a public
-seam that the frozen contract has not established, do not invent that seam.
-Block preparation and return to the Design Map or brief as appropriate before
+If a material requirement cannot be fairly verified at all without a public seam
+that the frozen contract has not established, do not invent that seam. Block
+preparation and return to the Design Map or brief as appropriate before
 implementation begins.
 
 Do not weaken, omit, or reinterpret an underlying requirement merely because
@@ -188,8 +188,8 @@ negative conditions before freeze. Confirm setup, teardown, helper integrity,
 determinism, and that failure oracles fail for the intended reason. For
 non-executable mandatory cases, confirm before freeze that the stated
 public/manual evidence plan can fairly establish the frozen criterion without
-requiring a candidate-specific interpretation. Diagnostic or helper tests do
-not count as Harness coverage.
+requiring a candidate-specific interpretation. Diagnostic or helper tests do not
+count as Harness coverage.
 
 ### 4. Freeze
 
@@ -357,13 +357,13 @@ Perform promotion in this order without consulting prior spikes:
 5. For every eligible evaluator revision used by an attempt, establish its
    canonical directory as `evaluation/revisions/NNN/`. The revision number and
    identity are those in `freeze.json` and the ledger; never infer them from
-   directory order. Copy the exact frozen artifact bundle: specification, case manifest, and all
-   hidden tests and support files present in that revision. The separately preserved
-   freeze metadata proves its identity. A corrected revision gets its own
-   canonical directory, and every superseded revision used in the cycle is
-   preserved. For the current top-level private revision, copy directly from the
-   frozen top-level sources; for a superseded revision, copy from its
-   pre-correction archive.
+   directory order. Copy the exact frozen artifact bundle: specification, case
+   manifest, and all hidden tests and support files present in that revision.
+   The separately preserved freeze metadata proves its identity. A corrected
+   revision gets its own canonical directory, and every superseded revision used
+   in the cycle is preserved. For the current top-level private revision, copy
+   directly from the frozen top-level sources; for a superseded revision, copy
+   from its pre-correction archive.
 6. If the same revision identity is already present canonically, hash its files
    and reference that directory; do not duplicate it. First-attempt and
    later-attempt `PASS` use the same procedure. An unchanged suite is stored

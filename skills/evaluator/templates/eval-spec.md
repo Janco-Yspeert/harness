@@ -27,8 +27,8 @@ Record, before setting Status to Frozen:
 
 - shared helpers identified and how each was independently validated;
 - for each mandatory executable evaluation case, confirmation that its oracle
-  measures the intended behaviour and is falsifiable (positive/negative
-  controls used, where applicable);
+  measures the intended behaviour and is falsifiable (positive/negative controls
+  used, where applicable);
 - for each mandatory non-executable case, confirmation that its frozen
   public/manual evidence plan can establish the criterion fairly and why no
   stable implementation-independent hidden-test seam is justified;
