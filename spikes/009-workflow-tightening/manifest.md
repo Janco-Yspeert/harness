@@ -66,3 +66,31 @@ This append-only record preserves material workflow runs for Spike 009.
   this manifest update
 - Runtime tests: not run because no implementation changed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 004 — Evaluator Prepare
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v7
+- Agent/tool: Codex (independent evaluator role)
+- Mode: `prepare`
+- Result: evaluator revision `001` frozen
+- Frozen brief content identity:
+  `sha256:eadf808bcc083c2810c119d916f58f906ca2930e5ac5bc04eca62851b674ce89`
+- Frozen brief Git provenance: `8d3b517`
+- Frozen Design Map content identity:
+  `sha256:46d2822e9a8498b9bd470a73afd151fd907b594f3c652f8fa064d131780c726a`
+- Frozen Design Map Git provenance: `01b9f24`
+- Output: `eval-requirements.md`
+- Output content identity:
+  `sha256:7cdff1c201e9a514348f805c9a14dc152832646eb18a89b8915c869de9cc5386`
+- Evaluation revision identity:
+  `sha256:a9eec04a60eeaf05c1f6c30f6e7cd6001886163c3bc593cad8cd499bbdb59fcd`
+- Blocking questions: none
+- Restricted evaluator material produced: private specification, case manifest,
+  frozen hidden suite, integrity metadata, and attempt ledger in the mirrored
+  evaluator workspace
+- Checks: formatted private and public artifacts; every mandatory hidden case
+  executed on the unimplemented baseline and failed for the intended absent
+  behavior; `git diff --check -- spikes/009-workflow-tightening` passed before
+  this manifest update
+- Measurement cutoff: immediately before this manifest update
