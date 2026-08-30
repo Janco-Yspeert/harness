@@ -120,3 +120,16 @@ This append-only record preserves material workflow runs for Spike 010.
 - Checks: `npm run typecheck`, `npm run lint`, `npm test` (29 passing), and
   `git diff --check` passed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 007 — Evaluator provenance stop
+
+- Recorded: contemporaneously
+- Result: promotion blocked; no evaluator PASS is claimed by this entry
+- Observation: public authority verification allocation existed, but the
+  required private evaluator attempt-ledger allocation was omitted before
+  candidate evaluation
+- Consequence: do not backdate private evidence, promote the authority PASS as
+  evaluator evidence, or continue to As-Built/acceptance on that basis
+- Research record: `research.md` preserves this and the premature host-yield
+  observation as non-transition evidence
+- Measurement cutoff: immediately before this manifest update
