@@ -95,6 +95,30 @@ Treat Harness as a remote code-execution control surface.
 
 ## Development workflow
 
+### Autonomous orchestration
+
+A phase boundary is not a human gate. Before returning control, determine
+whether a valid next workflow action can be performed without human authority.
+If it can, perform it. Progress reports are observational and do not transfer
+control. Do not describe an action as running after returning control unless
+runtime state exposes a real asynchronous execution.
+
+Yield only for an explicit human gate, a material decision reserved to a human,
+information that cannot be obtained autonomously, a genuine unrecoverable
+block, or a terminal workflow state. Evaluator defects, implementation defects,
+attempt allocation, ordinary phase completion, and BLOCKED results with a
+prescribed recovery all continue autonomously.
+
+When an evaluator is corrected after implementation exposure, every material
+change must cite frozen pre-implementation authority, preserve the prior
+revision, and confirm that no implementation-specific behavior became an
+acceptance requirement. An implementation failure fixes implementation; a
+missing frozen requirement starts a new brief cycle rather than rewriting the
+evaluator. After two post-implementation evaluator corrections in one cycle,
+explicitly classify the next issue as evaluator defect, specification defect,
+or methodology/evidence-model defect before another correction. Do not revise
+the evaluator indefinitely.
+
 Ordinary implementation spikes use this order:
 
 1. draft the brief;

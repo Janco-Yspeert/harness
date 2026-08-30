@@ -15,7 +15,7 @@ compatibility:
 
 # Evaluator
 
-Contract version: 8
+Contract version: 9
 
 Mode: `$mode`
 
@@ -258,6 +258,20 @@ not let a probe substitute for a broken mandatory case or change a
 defect that requires preserving the prior revision, correcting and refreezing
 the evaluator, and rerunning `verify` against the unchanged implementation.
 Record every probe and its non-authoritative role in the private result.
+
+### Post-implementation evaluator repair
+
+After implementation exposure, repair only an evaluator defect traceable to the
+frozen brief, Design Map, public requirements, or an already-authoritative
+public interface. Preserve the prior revision and record the exact source, why
+it failed, confirmation that acceptance semantics did not change, and
+confirmation that no implementation-shaped seam was adopted.
+
+Behavior absent from frozen authority is a specification defect requiring a new
+brief cycle, not an evaluator repair. Do not change the evaluator because it
+found an implementation defect. After two post-implementation evaluator
+corrections in one cycle, explicitly classify any further issue as evaluator,
+specification, or methodology/evidence-model defect before another correction.
 
 Before classifying `IMPLEMENTATION_FAILURE`, rerun the relevant case in
 isolation, confirm helper/oracle integrity and setup/teardown, and rule out
