@@ -65,3 +65,21 @@ This append-only record preserves material workflow runs for Spike 010.
 - Restricted evaluator material produced: private specification, case manifest,
   freeze metadata, and attempt ledger
 - Measurement cutoff: immediately before this manifest update
+
+## Run 004 — Implementation attempt 001
+
+- Recorded: contemporaneously
+- Skill: `implementation` v3
+- Agent/tool: Codex
+- Result: candidate complete; independent verification pending
+- Inputs: frozen brief, Design Map, public evaluation requirements, and active
+  repository instructions
+- Output: guarded public authority commands and `workflow.jsonl` canonical
+  record alongside preserved operational dispatch tooling
+- Checks: `npm run typecheck`, `npm run lint`, `npm test` (28 passing), and
+  `git diff --check` passed
+- Observation: until the authority is committed, the host still manually
+  sequences frozen handoffs and evaluator preparation; after this checkpoint it
+  can submit those facts to guarded transitions rather than relying only on
+  conversational discipline
+- Measurement cutoff: immediately before this manifest update

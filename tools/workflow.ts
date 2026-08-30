@@ -1,6 +1,10 @@
 import { spawn } from "node:child_process";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   closeSync,
+  appendFileSync,
+  existsSync,
   mkdirSync,
   openSync,
   readFileSync,
@@ -47,6 +51,25 @@ interface Target {
   readonly path: string;
   readonly statePath: string;
   readonly workflowPath: string;
+}
+type AuthorityTransition =
+  | "brief-frozen"
+  | "design-map-frozen"
+  | "evaluation-prepared"
+  | "implementation-handoff"
+  | "verification-allocated"
+  | "verification-finalized"
+  | "promotion-recorded"
+  | "as-built-recorded"
+  | "human-accepted"
+  | "outcome-recorded";
+interface AuthorityEvent {
+  readonly transition: AuthorityTransition;
+  readonly at: string;
+  readonly evidence: Evidence;
+}
+interface Evidence {
+  readonly [key: string]: unknown;
 }
 
 function fail(message: string): never {
@@ -384,8 +407,237 @@ function cancel(target: Target, phase: Phase): void {
     fail(`No live job for ${phase}`);
   kill(jobRecord.job.pid, "SIGTERM");
 }
+const authorityTransitions: AuthorityTransition[] = [
+  "brief-frozen",
+  "design-map-frozen",
+  "evaluation-prepared",
+  "implementation-handoff",
+  "verification-allocated",
+  "verification-finalized",
+  "promotion-recorded",
+  "as-built-recorded",
+  "human-accepted",
+  "outcome-recorded",
+];
+function authorityPath(target: Target): string {
+  return resolve(target.path, "workflow.jsonl");
+}
+function authorityEvents(target: Target): AuthorityEvent[] {
+  const path = authorityPath(target);
+  if (!existsSync(path)) return [];
+  return readFileSync(path, "utf8")
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as AuthorityEvent);
+}
+function value(evidence: Evidence, name: string): string {
+  const result = evidence[name];
+  if (typeof result !== "string" || result.length === 0)
+    fail(`Evidence requires ${name}`);
+  return result;
+}
+function identity(contents: string | Buffer): string {
+  return `sha256:${createHash("sha256").update(contents).digest("hex")}`;
+}
+function verifyPublicEvidence(target: Target, evidence: Evidence): void {
+  if (!("path" in evidence)) return;
+  const path = value(evidence, "path");
+  const commit = value(evidence, "commit");
+  const claimed = value(evidence, "identity");
+  if (path.startsWith("/") || path.includes(".."))
+    fail("Evidence path must be repository-relative");
+  const current = resolve(target.path, path);
+  if (!existsSync(current) || identity(readFileSync(current)) !== claimed)
+    fail("Public artifact identity does not match working tree");
+  try {
+    if (
+      identity(
+        execFileSync(
+          "git",
+          ["show", `${commit}:${relative(repositoryRoot, current)}`],
+          { cwd: repositoryRoot },
+        ),
+      ) !== claimed
+    )
+      fail("Public artifact identity does not match claimed commit");
+  } catch {
+    fail("Claimed Git provenance is invalid");
+  }
+}
+function latest(
+  events: AuthorityEvent[],
+  transition: AuthorityTransition,
+): AuthorityEvent | undefined {
+  return [...events].reverse().find((event) => event.transition === transition);
+}
+function authorityState(target: Target) {
+  const events = authorityEvents(target);
+  const finalized = events.filter(
+    (event) => event.transition === "verification-finalized",
+  );
+  const lastVerification = finalized.at(-1);
+  const passed = lastVerification?.evidence.result === "PASS";
+  const promoted = latest(events, "promotion-recorded") !== undefined;
+  const asBuilt = latest(events, "as-built-recorded") !== undefined;
+  const accepted = latest(events, "human-accepted") !== undefined;
+  const outcome = latest(events, "outcome-recorded") !== undefined;
+  return { events, passed, promoted, asBuilt, accepted, outcome };
+}
+function validateAuthority(
+  target: Target,
+  transition: AuthorityTransition,
+  evidence: Evidence,
+): void {
+  if (!authorityTransitions.includes(transition))
+    fail(`Unknown authority transition: ${transition}`);
+  const state = authorityState(target);
+  const events = state.events;
+  if (transition !== "human-accepted") verifyPublicEvidence(target, evidence);
+  const requireEvent = (name: AuthorityTransition) => {
+    if (!latest(events, name)) fail(`${transition} requires ${name}`);
+  };
+  if (transition === "brief-frozen") return;
+  if (transition === "design-map-frozen") {
+    requireEvent("brief-frozen");
+    return;
+  }
+  if (transition === "evaluation-prepared") {
+    requireEvent("design-map-frozen");
+    return;
+  }
+  if (transition === "implementation-handoff") {
+    requireEvent("evaluation-prepared");
+    const commit = value(evidence, "commit");
+    try {
+      execFileSync("git", ["cat-file", "-e", `${commit}^{commit}`], {
+        cwd: repositoryRoot,
+      });
+    } catch {
+      fail("Implementation commit is invalid");
+    }
+    const prior = events.filter(
+      (event) => event.transition === transition,
+    ).length;
+    if (Number(evidence.attempt) !== prior + 1)
+      fail("Implementation attempt is not next");
+    return;
+  }
+  if (transition === "verification-allocated") {
+    const handoff = latest(events, "implementation-handoff");
+    if (!handoff)
+      fail("verification-allocated requires implementation-handoff");
+    if (
+      value(evidence, "commit") !== value(handoff.evidence, "commit") ||
+      Number(evidence.implementationAttempt) !==
+        Number(handoff.evidence.attempt)
+    )
+      fail("Verification must bind current implementation handoff");
+    if (
+      Number(evidence.attempt) !==
+      events.filter((event) => event.transition === transition).length + 1
+    )
+      fail("Verification attempt is not next");
+    return;
+  }
+  if (transition === "verification-finalized") {
+    const allocation = latest(events, "verification-allocated");
+    if (
+      !allocation ||
+      Number(evidence.attempt) !== Number(allocation.evidence.attempt)
+    )
+      fail("Verification result requires matching allocation");
+    const result = value(evidence, "result");
+    const classification = evidence.classification;
+    if (!["PASS", "FAIL", "BLOCKED"].includes(result))
+      fail("Invalid verification result");
+    if (result === "PASS" && classification !== undefined)
+      fail("PASS cannot carry a failure classification");
+    if (
+      result !== "PASS" &&
+      ![
+        "IMPLEMENTATION_FAILURE",
+        "EVALUATOR_DEFECT",
+        "SPECIFICATION_AMBIGUITY",
+        "INFRASTRUCTURE_FAILURE",
+        "SPECIFICATION_DRIFT",
+      ].includes(String(classification))
+    )
+      fail("Invalid verification classification");
+    return;
+  }
+  if (transition === "promotion-recorded") {
+    if (!state.passed) fail("promotion-recorded requires PASS");
+    return;
+  }
+  if (transition === "as-built-recorded") {
+    if (!state.promoted) fail("as-built-recorded requires promotion-recorded");
+    return;
+  }
+  if (transition === "human-accepted") {
+    if (!state.asBuilt) fail("human-accepted requires as-built-recorded");
+    return;
+  }
+  if (!state.accepted) fail("outcome-recorded requires human-accepted");
+}
+function authority(
+  target: Target,
+  mode: string | undefined,
+  transition?: string,
+  json?: string,
+): void {
+  if (mode === "status") {
+    const state = authorityState(target);
+    const legal = authorityTransitions.filter((item) => {
+      try {
+        validateAuthority(target, item, {});
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    process.stdout.write(
+      `${JSON.stringify({ history: state.events, legalTransitions: legal, humanAcceptanceRequired: state.asBuilt && !state.accepted, outcomeComplete: state.outcome })}\n`,
+    );
+    return;
+  }
+  if (
+    (mode !== "validate" && mode !== "record") ||
+    transition === undefined ||
+    json === undefined
+  )
+    fail(
+      "Usage: workflow authority <status|validate|record> <spike> [transition evidence-json]",
+    );
+  const parsed: unknown = JSON.parse(json);
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
+    fail("Evidence must be a JSON object");
+  validateAuthority(
+    target,
+    transition as AuthorityTransition,
+    parsed as Evidence,
+  );
+  if (mode === "record")
+    appendFileSync(
+      authorityPath(target),
+      `${JSON.stringify({ transition, at: new Date().toISOString(), evidence: parsed })}\n`,
+      { mode: 0o600 },
+    );
+  process.stdout.write(
+    `${JSON.stringify({ allowed: true, recorded: mode === "record" })}\n`,
+  );
+}
 async function main(args: string[]): Promise<void> {
   const [command, ...rest] = args;
+  if (command === "authority") {
+    const [mode, spike, transition, json] = rest;
+    if (spike === undefined)
+      fail(
+        "Usage: workflow authority <status|validate|record> <spike> [transition evidence-json]",
+      );
+    authority(targetFrom(spike), mode, transition, json);
+    return;
+  }
   if (command === "init" && rest.length === 1) {
     init(targetFrom(rest[0]));
     return;
