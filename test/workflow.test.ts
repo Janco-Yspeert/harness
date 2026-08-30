@@ -364,4 +364,17 @@ void test("authority preserves a complete PASS through human rejection", (t) => 
     ]).status,
     0,
   );
+  assert.notEqual(
+    run([
+      "authority",
+      "record",
+      fixture,
+      "successor-linked",
+      JSON.stringify({
+        predecessor: fixture,
+        predecessorEvidence: evidence("acceptance.md"),
+      }),
+    ]).status,
+    0,
+  );
 });

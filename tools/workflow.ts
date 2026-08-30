@@ -700,8 +700,21 @@ function validateAuthority(
     return;
   }
   if (transition === "successor-linked") {
-    if (!value(evidence, "predecessor").startsWith("spikes/"))
-      fail("successor-linked requires predecessor spike path");
+    const predecessor = targetFrom(value(evidence, "predecessor"));
+    if (predecessor.path === target.path)
+      fail("successor-linked cannot reference itself");
+    if (!authorityState(predecessor).rejected)
+      fail("successor-linked requires a human-rejected predecessor");
+    const predecessorEvidence = evidence.predecessorEvidence;
+    if (
+      typeof predecessorEvidence !== "object" ||
+      predecessorEvidence === null ||
+      Array.isArray(predecessorEvidence)
+    )
+      fail("successor-linked requires predecessor rejection evidence");
+    verifyPublicEvidence(predecessor, predecessorEvidence as Evidence);
+    if (latest(events, "successor-linked"))
+      fail("successor lineage is already recorded");
     return;
   }
   if (!state.accepted || state.rejected)
