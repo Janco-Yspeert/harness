@@ -182,3 +182,23 @@ This append-only record preserves material workflow runs for Spike 009.
 - Runtime tests: not rerun; final evaluator verification and public regression
   suite had already passed against the inspected implementation revision
 - Measurement cutoff: immediately before this manifest update
+
+## Run 009 — Outcome
+
+- Recorded: contemporaneously
+- Skill: `outcome` v3
+- Agent/tool: Codex
+- Result: `COMPLETE` — independently evaluated PASS accepted by the user
+- Implementation provenance:
+  `f5a657dc11e77ed7fc8d46c06280daa9df41c56e`
+- Evaluation provenance: attempt `001`, evaluator revision `002`, promoted in
+  `e3f812c`
+- As-Built provenance: `2c40652`
+- Output: `outcome.md`
+- Output content identity:
+  `sha256:919c29447333975e7aded0d43ef7c294297634f6d7a47d1ccbea01bfc41091fb`
+- Checks: `git diff --check -- spikes/009-workflow-tightening` passed before
+  this manifest update
+- Runtime tests: not rerun; Outcome is historical synthesis over already
+  accepted evidence
+- Measurement cutoff: immediately before this manifest update
