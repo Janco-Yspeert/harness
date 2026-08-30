@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   chmodSync,
   mkdtempSync,
@@ -25,6 +26,47 @@ function run(args: string[], environment: NodeJS.ProcessEnv = process.env) {
     env: cleanEnvironment,
     stdio: ["ignore", "pipe", "pipe"],
   });
+}
+
+function git(args: string[], input?: string): string {
+  const result = spawnSync("git", args, {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+    input,
+    env: {
+      ...process.env,
+      GIT_AUTHOR_NAME: "Harness test",
+      GIT_AUTHOR_EMAIL: "harness-test@example.invalid",
+      GIT_COMMITTER_NAME: "Harness test",
+      GIT_COMMITTER_EMAIL: "harness-test@example.invalid",
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout.trim();
+}
+
+function provenanceCommit(
+  files: Record<string, string>,
+  fixture: string,
+): {
+  commit: string;
+  identities: Record<string, string>;
+} {
+  const identities: Record<string, string> = {};
+  const entries = Object.entries(files).map(([name, contents]) => {
+    identities[name] =
+      `sha256:${createHash("sha256").update(contents).digest("hex")}`;
+    return `100644 blob ${git(["hash-object", "-w", "--stdin"], contents)}\t${name}`;
+  });
+  const leaf = git(["mktree"], `${entries.join("\n")}\n`);
+  const spikeDirectory = fixture.split("/")[1];
+  assert.ok(spikeDirectory);
+  const spikes = git(["mktree"], `040000 tree ${leaf}\t${spikeDirectory}\n`);
+  const root = git(["mktree"], `040000 tree ${spikes}\tspikes\n`);
+  return {
+    commit: git(["commit-tree", root, "-m", "workflow fixture"]),
+    identities,
+  };
 }
 
 function complete(phase: string): void {
@@ -210,9 +252,86 @@ void test("authority recognizes successor spike identifiers and exposes coverage
     technicalVerification: string;
   };
   assert.deepEqual(
-    status.history.map((event) => event.transition),
+    status.history.slice(0, 3).map((event) => event.transition),
     ["brief-frozen", "design-map-frozen", "evaluation-prepared"],
   );
   assert.equal(status.technicalVerification, "NOT_PASSED");
   assert.equal(status.humanDecision, "NOT_READY");
+});
+
+void test("authority preserves a complete PASS through human rejection", (t) => {
+  const fixture = `spikes/998a-authority-fixture-${String(process.pid)}`;
+  const path = join(repositoryRoot, fixture);
+  const coverage = JSON.stringify({
+    criteria: [
+      { id: "AC01", mode: "PUBLIC_REGRESSION", required: true },
+      { id: "AC02", mode: "MANUAL_PUBLIC_EVIDENCE", required: true },
+    ],
+  });
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": `${coverage}\n`,
+    "acceptance.md": "rejected\n",
+  };
+  mkdirSync(path, { recursive: true });
+  for (const [name, contents] of Object.entries(files)) {
+    writeFileSync(join(path, name), contents);
+  }
+  t.after(() => {
+    rmSync(path, { recursive: true, force: true });
+  });
+  const provenance = provenanceCommit(files, fixture);
+  const evidence = (name: string) => ({
+    path: name,
+    identity: provenance.identities[name],
+    commit: provenance.commit,
+  });
+  const record = (transition: string, data: object) => {
+    const result = run([
+      "authority",
+      "record",
+      fixture,
+      transition,
+      JSON.stringify(data),
+    ]);
+    assert.equal(result.status, 0, result.stderr);
+  };
+  record("brief-frozen", evidence("spike.md"));
+  record("design-map-frozen", evidence("design-map.md"));
+  record("evaluation-prepared", evidence("coverage-map.json"));
+  record("implementation-handoff", { commit: provenance.commit, attempt: 1 });
+  record("verification-allocated", {
+    commit: provenance.commit,
+    implementationAttempt: 1,
+    attempt: 1,
+  });
+  const results = { AC01: "SATISFIED", AC02: "SATISFIED" };
+  record("verification-finalized", {
+    attempt: 1,
+    result: "PASS",
+    coverageResults: results,
+  });
+  record("promotion-recorded", {});
+  record("as-built-recorded", {});
+  const before = readFileSync(join(path, "workflow.jsonl"), "utf8");
+  record("human-rejected", {
+    ...evidence("acceptance.md"),
+    classification: "EVALUATOR_COVERAGE_DEFECT",
+  });
+  const status = JSON.parse(run(["authority", "status", fixture]).stdout) as {
+    technicalVerification: string;
+    humanDecision: string;
+    successorPermitted: boolean;
+  };
+  assert.equal(status.technicalVerification, "PASS");
+  assert.equal(status.humanDecision, "REJECTED");
+  assert.equal(status.successorPermitted, true);
+  assert.ok(
+    readFileSync(join(path, "workflow.jsonl"), "utf8").startsWith(before),
+  );
+  assert.notEqual(
+    run(["authority", "record", fixture, "outcome-recorded", "{} "]).status,
+    0,
+  );
 });
