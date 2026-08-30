@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "result": "PASS",
+  "passingAttempt": "001",
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:e4be145fd17def9e46d42587c2804f3ff08a778c",
+      "resultPath": "evaluation/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:e547e427485bb436ec2f0c20e1d6701ddd393addd36e3b05abc897c2534ef73b",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:7ef1fee50feabdc64a4b748664a36ce2061589598b6c10ed5bf611f07d6aea28",
+      "freezePath": "evaluation/freeze/001.json",
+      "revisionPath": "evaluation/revisions/001",
+      "revisionDisposition": "copied"
+    }
+  ],
+  "historicalArtifacts": [],
+  "notPromotedRevisions": []
+}
