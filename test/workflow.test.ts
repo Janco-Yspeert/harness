@@ -306,6 +306,26 @@ void test("authority preserves a complete PASS through human rejection", (t) => 
     implementationAttempt: 1,
     attempt: 1,
   });
+  const beforeMissingResult = readFileSync(
+    join(path, "workflow.jsonl"),
+    "utf8",
+  );
+  const incompletePass = run([
+    "authority",
+    "record",
+    fixture,
+    "verification-finalized",
+    JSON.stringify({
+      attempt: 1,
+      result: "PASS",
+      coverageResults: { AC01: "SATISFIED" },
+    }),
+  ]);
+  assert.notEqual(incompletePass.status, 0);
+  assert.equal(
+    readFileSync(join(path, "workflow.jsonl"), "utf8"),
+    beforeMissingResult,
+  );
   const results = { AC01: "SATISFIED", AC02: "SATISFIED" };
   record("verification-finalized", {
     attempt: 1,
@@ -332,6 +352,16 @@ void test("authority preserves a complete PASS through human rejection", (t) => 
   );
   assert.notEqual(
     run(["authority", "record", fixture, "outcome-recorded", "{} "]).status,
+    0,
+  );
+  assert.notEqual(
+    run([
+      "authority",
+      "record",
+      fixture,
+      "human-accepted",
+      JSON.stringify(evidence("acceptance.md")),
+    ]).status,
     0,
   );
 });
