@@ -94,3 +94,51 @@ This append-only record preserves material workflow runs for Spike 009.
   behavior; `git diff --check -- spikes/009-workflow-tightening` passed before
   this manifest update
 - Measurement cutoff: immediately before this manifest update
+
+## Run 005 — Evaluator Prepare correction
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v7
+- Agent/tool: Codex (independent evaluator role)
+- Mode: `prepare`
+- Result: evaluator revision `002` frozen; revision `001` preserved unchanged
+- Superseded evaluator revision identity:
+  `sha256:a9eec04a60eeaf05c1f6c30f6e7cd6001886163c3bc593cad8cd499bbdb59fcd`
+- Corrected evaluator revision identity:
+  `sha256:e486eafc8bd49f3fed5c3965f75b590106550cbb7f5e8f9f3edcab66b7cd0e0b`
+- Classification: `EVALUATOR_DEFECT` — the first revision's unavailable-
+  executor fixture accidentally retained its fixture executable on `PATH`, so
+  it did not exercise the claimed failure path
+- Correction: archived revision `001` byte-for-byte, then refroze revision
+  `002` with a PATH containing no executable; implementation contract and
+  public evaluation requirements are unchanged
+- Restricted evaluator material inspected/produced: private archived revision,
+  corrected suite, and freeze metadata in the mirrored evaluator workspace
+- Checks: corrected suite passed all 5 mandatory cases against the candidate;
+  no evaluator-private detail is included here
+- Measurement cutoff: immediately before this manifest update
+
+## Run 006 — Implementation attempt 001
+
+- Recorded: contemporaneously
+- Skill: `implementation` v3
+- Agent/tool: Codex
+- Result: candidate complete; independent evaluator verification pending
+- Inputs: frozen `spike.md`, `design-map.md`, `eval-requirements.md`, and
+  `AGENTS.md`
+- Input content identities:
+  - brief: `sha256:eadf808bcc083c2810c119d916f58f906ca2930e5ac5bc04eca62851b674ce89`
+  - Design Map: `sha256:46d2822e9a8498b9bd470a73afd151fd907b594f3c652f8fa064d131780c726a`
+  - evaluation requirements: `sha256:7cdff1c201e9a514348f805c9a14dc152832646eb18a89b8915c869de9cc5386`
+- Input Git provenance: `8d3b517` (brief), `01b9f24` (Design Map), and
+  `6e1f099` (evaluation requirements)
+- Output: repository tooling workflow runner with independent verification
+  identities, role-level executor selection, retryable launch failure, and
+  owner-restricted local state/log files
+- Output content identity (implementation files immediately before this
+  manifest update):
+  `sha256:010cbb066ddfae3cdad22116f6317b1b9fd3e8b54ed023b87fe26ed14659fa84`
+- Restricted evaluator material inspected: none during implementation
+- Checks: `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm
+  test` (28 passing), and `git diff --check` passed
+- Measurement cutoff: immediately before this manifest update

@@ -19,7 +19,7 @@ const spikePath = join(repositoryRoot, spike);
 function run(args: string[], environment: NodeJS.ProcessEnv = process.env) {
   const cleanEnvironment = { ...environment };
   delete cleanEnvironment.NODE_TEST_CONTEXT;
-  return spawnSync("node", ["src/workflow.ts", ...args], {
+  return spawnSync("node", ["tools/workflow.ts", ...args], {
     cwd: repositoryRoot,
     encoding: "utf8",
     env: cleanEnvironment,
@@ -46,7 +46,7 @@ function waitForLog(logPath: string): string {
   assert.fail("fixture did not write its log");
 }
 
-void test("workflow runner enforces progression, retries, and append-only outcomes", (t) => {
+void test("workflow runner independently numbers verification attempts", (t) => {
   mkdirSync(spikePath, { recursive: true });
   t.after(() => {
     rmSync(spikePath, { recursive: true, force: true });
@@ -87,6 +87,48 @@ void test("workflow runner enforces progression, retries, and append-only outcom
     state.records.some(
       (record) => record.phase === "implementation" && record.attempt === 2,
     ),
+  );
+  const verifies = state.records.filter(
+    (record) => record.phase === "evaluator-verify",
+  );
+  assert.ok(verifies.some((record) => record.attempt === 1));
+  assert.ok(verifies.some((record) => record.attempt === 2));
+});
+
+void test("blocked verification retries the unchanged implementation", (t) => {
+  mkdirSync(spikePath, { recursive: true });
+  t.after(() => {
+    rmSync(spikePath, { recursive: true, force: true });
+  });
+  assert.equal(run(["init", spike]).status, 0);
+  complete("brief-readiness");
+  complete("design-map");
+  complete("evaluator-prepare");
+  complete("implementation");
+  assert.equal(run(["dispatch", "evaluator-verify", spike]).status, 0);
+  assert.equal(run(["record", "evaluator-verify", spike, "blocked"]).status, 0);
+  assert.equal(run(["dispatch", "evaluator-verify", spike]).status, 0);
+  const state = JSON.parse(
+    readFileSync(join(spikePath, ".workflow", "state.json"), "utf8"),
+  ) as {
+    records: Array<{
+      event: string;
+      phase: string;
+      attempt: number;
+      implementationAttempt?: number;
+    }>;
+  };
+  assert.deepEqual(
+    state.records
+      .filter(
+        (record) =>
+          record.phase === "evaluator-verify" && record.event === "dispatch",
+      )
+      .map((record) => [record.attempt, record.implementationAttempt]),
+    [
+      [1, 1],
+      [2, 1],
+    ],
   );
 });
 
