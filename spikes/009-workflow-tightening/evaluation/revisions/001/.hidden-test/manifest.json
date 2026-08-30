@@ -1,0 +1,17 @@
+{
+  "evaluationRevision": 1,
+  "evaluatorSkill": { "name": "evaluator", "version": 7 },
+  "inputs": {
+    "brief": "sha256:eadf808bcc083c2810c119d916f58f906ca2930e5ac5bc04eca62851b674ce89",
+    "designMap": "sha256:46d2822e9a8498b9bd470a73afd151fd907b594f3c652f8fa064d131780c726a",
+    "evaluationRequirements": "sha256:7cdff1c201e9a514348f805c9a14dc152832646eb18a89b8915c869de9cc5386"
+  },
+  "support": ["support/fixture.ts"],
+  "cases": {
+    "E1": { "requirements": ["R1"], "invariants": ["I1"], "negativeRequirements": [], "assumptions": [], "tests": ["attempt-recovery.test.ts"] },
+    "E2": { "requirements": ["R2"], "invariants": ["I2"], "negativeRequirements": [], "assumptions": ["A1"], "tests": ["executor-selection.test.ts"] },
+    "E3": { "requirements": ["R3"], "invariants": ["I3"], "negativeRequirements": [], "assumptions": ["A3"], "tests": ["launch-and-permissions.test.ts"] },
+    "E4": { "requirements": ["R4"], "invariants": ["I4"], "negativeRequirements": [], "assumptions": ["A2"], "tests": ["launch-and-permissions.test.ts"] },
+    "E5": { "requirements": ["R5"], "invariants": ["I5"], "negativeRequirements": ["N1"], "assumptions": [], "tests": ["launch-and-permissions.test.ts"] }
+  }
+}

@@ -142,3 +142,24 @@ This append-only record preserves material workflow runs for Spike 009.
 - Checks: `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm
   test` (28 passing), and `git diff --check` passed
 - Measurement cutoff: immediately before this manifest update
+
+## Run 007 — Evaluator Verify and Promotion
+
+- Recorded: contemporaneously
+- Skill: `evaluator` v7
+- Agent/tool: Codex (independent evaluator role)
+- Mode: `verify`
+- Result: `PASS`; promotion complete (human acceptance pending)
+- Implementation evaluated: `f5a657dc11e77ed7fc8d46c06280daa9df41c56e`
+- Evaluator revision: `002`,
+  `sha256:e486eafc8bd49f3fed5c3965f75b590106550cbb7f5e8f9f3edcab66b7cd0e0b`
+- Verification attempt: `001`, result identity:
+  `sha256:f7d91eeda554f53f97b3d12e51694e297b28da925327f66317e1e47b123ef812`
+- Mandatory cases: 5 passed; 0 failed; no specification drift, evaluator
+  defects, ambiguities, or infrastructure failures in revision `002`
+- Regressions: `npm run typecheck`, `npm run lint`, `npm run format:check`,
+  `npm test` (28 passing), and `git diff --check` passed
+- Promotion: immutable ledger, result, revision `001` correction history, and
+  revision `002` suite copied to `evaluation/`; all recorded public artifact
+  hashes equal their private source identities
+- Measurement cutoff: immediately before this manifest update
