@@ -33,16 +33,17 @@ judge of evaluator quality.
 
 Spike 010b remains immutable historical evidence.
 
-Its canonical public state currently records:
+Its canonical public state currently records technical verification `PASS`,
+promotion complete, and As-Built complete. Human review has now determined that
+the cycle should be rejected for evaluator coverage/integrity reasons.
 
-```text
-technical verification PASS
-→ promotion recorded
-→ As-Built recorded
-→ human decision pending
-```
+Before Spike 010c is frozen, that decision must be recorded canonically on
+Spike 010b as `human-rejected` with classification
+`EVALUATOR_COVERAGE_DEFECT`. The rejection records the human judgement; it
+does not rewrite the prior PASS, promotion, As-Built, evaluator result, workflow
+note, or authority history.
 
-Human review subsequently identified two evaluator-integrity concerns:
+Human review identified two evaluator-integrity concerns:
 
 1. the visible regression used to support the missing-procedure criterion proves
    that the authority rejects a failed readiness attestation, but does not itself
@@ -273,18 +274,26 @@ candidate exposure.
 
 ## Process-successor lineage
 
-Spike 010c is a corrective successor to Spike 010b based on human review of the
-010b evidence chain.
+Spike 010c is a corrective successor to Spike 010b based on the explicit human
+rejection of the 010b evidence chain.
 
-Do not fabricate a `human-rejected`, `verification-finalized`, or
-`successor-linked` event in Spike 010b merely to permit this draft to exist.
+Before Spike 010c is frozen:
 
-If the canonical authority cannot yet represent a process successor from the
-current 010b state, the committed Spike 010c brief and its Git provenance are the
-bootstrap lineage evidence for this corrective cycle.
+1. record the real Spike 010b human decision as `human-rejected` with
+   classification `EVALUATOR_COVERAGE_DEFECT`;
+2. preserve all prior Spike 010b evidence unchanged; and
+3. record the ordinary `successor-linked` transition from Spike 010c to the
+   rejected Spike 010b predecessor using the canonical authority.
 
-This exception does not define general successor semantics. Broader workflow
-lineage belongs to later methodology work.
+Do not fabricate or backdate any rejection, verification result, or lineage
+event. The rejection and successor link must be normal forward-only authority
+events reflecting the actual human decision.
+
+No Git-only substitute lineage or process exception is required once the
+canonical human rejection exists.
+
+This section does not broaden general successor semantics beyond the authority
+behavior already established for a human-rejected predecessor.
 
 ## Non-goals
 
@@ -350,40 +359,48 @@ lineage belongs to later methodology work.
     prepared; the integrity validator does not force executable coverage where
     no fair executable seam exists.
 
-15. Spike 010b remains unchanged as historical evidence.
+15. Spike 010b's prior PASS, promotion, As-Built, evaluator result, workflow
+    note, and existing authority history remain unchanged as historical evidence;
+    only the real forward-only human rejection and successor linkage may be
+    appended.
 
-16. Any use of the Spike 010c-produced evaluator-integrity mechanism during its
+16. Spike 010c does not freeze until the canonical Spike 010b
+    `human-rejected` decision and ordinary `successor-linked` lineage are
+    recorded.
+
+17. Any use of the Spike 010c-produced evaluator-integrity mechanism during its
     own verification is explicitly recorded as bootstrap/self-hosting
     provenance and does not change frozen evaluation semantics.
 
-17. Preparation-integrity validation itself requires no additional model
+18. Preparation-integrity validation itself requires no additional model
     invocation; it is locally executable deterministic tooling.
 
-18. A pre-freeze integrity failure remains within the same unfrozen evaluator
+19. A pre-freeze integrity failure remains within the same unfrozen evaluator
     preparation draft and does not allocate a new evaluator revision or
     verification attempt.
 
-19. Where practical, one validator run reports all independently detectable
+20. Where practical, one validator run reports all independently detectable
     structural failures together rather than deliberately exposing them
     one-at-a-time.
 
-20. Repository validation passes: tests, typecheck, lint, formatting, and
+21. Repository validation passes: tests, typecheck, lint, formatting, and
     `git diff --check`.
 
 ## Expected workflow
 
 1. commit this draft on `feat/spike-010c`;
-2. run Brief Readiness;
-3. resolve findings and freeze the brief;
-4. create and freeze the Design Map;
-5. prepare and freeze evaluation under the declared bootstrap exception;
-6. implement the integrity validator and accounting correction;
-7. verify against the already-frozen evaluation;
-8. preserve any bootstrap/self-hosting executor/mechanism provenance;
-9. promote only after a trustworthy PASS;
-10. create As-Built;
-11. obtain human acceptance or rejection; and
-12. create Outcome.
+2. record the explicit Spike 010b human rejection and ordinary successor link;
+3. run Brief Readiness;
+4. resolve findings and freeze the brief;
+5. create and freeze the Design Map;
+6. prepare and freeze evaluation under the declared bootstrap exception;
+7. implement the integrity validator and accounting correction;
+8. verify against the already-frozen evaluation;
+9. preserve any bootstrap/self-hosting executor/mechanism provenance;
+10. promote only after a trustworthy PASS;
+11. create As-Built;
+12. obtain human acceptance or rejection; and
+13. create Outcome.
 
 Do not use Spike 010c to solve the broader orchestrator/agent-neutrality or
 deterministic-phase architecture. Those are explicit follow-on methodology work.
