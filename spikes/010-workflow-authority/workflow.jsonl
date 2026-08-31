@@ -1,0 +1,10 @@
+{"transition":"brief-frozen","at":"2026-08-30T16:14:20.215Z","evidence":{"path":"spike.md","identity":"sha256:a3e81619e2bca965eac7b40789cbc7b98f5a29f5be7ef98b7c14714d85e5ddb4","commit":"51d020b"}}
+{"transition":"design-map-frozen","at":"2026-08-30T16:14:20.332Z","evidence":{"path":"design-map.md","identity":"sha256:8f6185794278d0b2c6fc9d725367e548bf664a662d2d7389ece6cf0fd200e800","commit":"8239dc1"}}
+{"transition":"evaluation-prepared","at":"2026-08-30T16:14:20.445Z","evidence":{"path":"eval-requirements.md","identity":"sha256:e61c4a578a2eaf21261df77b72e4d1d4feebe450225254bcd3567531c3e6966d","commit":"7ff7b51","evaluatorRevision":"001"}}
+{"transition":"implementation-handoff","at":"2026-08-30T16:15:20.215Z","evidence":{"attempt":1,"commit":"e4be145fd17def9e46d42587c2804f3ff08a778c"}}
+{"transition":"verification-allocated","at":"2026-08-30T16:15:32.270Z","evidence":{"attempt":1,"implementationAttempt":1,"commit":"e4be145fd17def9e46d42587c2804f3ff08a778c","evaluatorRevision":"001"}}
+{"transition":"verification-finalized","at":"2026-08-30T16:16:08.528Z","evidence":{"attempt":1,"result":"PASS"}}
+{"transition":"verification-allocated","at":"2026-08-30T16:24:19.528Z","evidence":{"attempt":2,"implementationAttempt":1,"commit":"e4be145fd17def9e46d42587c2804f3ff08a778c","evaluatorRevision":"001","evaluatorPrivateAttempt":"001"}}
+{"transition":"verification-finalized","at":"2026-08-30T16:25:27.035Z","evidence":{"attempt":2,"result":"PASS","evaluatorPrivateAttempt":"001"}}
+{"transition":"promotion-recorded","at":"2026-08-30T16:26:18.040Z","evidence":{"path":"evaluation/promotion.json","identity":"sha256:c0246b962dd4be2650ffb645fb73b0f9bdc52e9d378d8e07b83b422d02cd0bff","commit":"0104d13"}}
+{"transition":"as-built-recorded","at":"2026-08-30T16:26:52.405Z","evidence":{"path":"as-built.md","identity":"sha256:d44b0fa01a1ebf8a52a23d12f97c8a702452d04027ebde959cc811bfd192e334","commit":"2419d04"}}

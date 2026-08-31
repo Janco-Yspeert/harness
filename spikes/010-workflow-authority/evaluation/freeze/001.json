@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "001",
+  "evaluatorSkill": { "name": "evaluator", "version": 8, "identity": "sha256:ec65436154180c24df5142de6ffeadb870a17170a5ca90b2381150675894a4cc" },
+  "inputs": { "brief": "sha256:a3e81619e2bca965eac7b40789cbc7b98f5a29f5be7ef98b7c14714d85e5ddb4", "designMap": "sha256:8f6185794278d0b2c6fc9d725367e548bf664a662d2d7389ece6cf0fd200e800", "evaluationRequirements": "sha256:e61c4a578a2eaf21261df77b72e4d1d4feebe450225254bcd3567531c3e6966d" },
+  "artifacts": { "eval-spec.md": "sha256:2cd0eb74d4bdf56c10840b00099490753a2956985d84301b2c404c147b907edb", ".hidden-test/manifest.json": "sha256:800ee455c1bff5b605a1f25e0185e1ccf960ff325a291875d497f14cc8ae04fb" },
+  "integrityChecks": ["formatted evaluator artifacts", "justified public-regression-only mandatory coverage before implementation"]
+}

@@ -3,7 +3,7 @@
   "evaluatorRevision": "001",
   "evaluatorSkill": {
     "name": "evaluator",
-    "version": 7,
+    "version": 8,
     "identity": "sha256:<skill-content-identity>"
   },
   "inputs": {

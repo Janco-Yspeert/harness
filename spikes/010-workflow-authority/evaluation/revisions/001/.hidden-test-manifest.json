@@ -1,0 +1,13 @@
+{
+  "evaluationRevision": 1,
+  "evaluatorSkill": { "name": "evaluator", "version": 8 },
+  "inputs": {
+    "brief": "sha256:a3e81619e2bca965eac7b40789cbc7b98f5a29f5be7ef98b7c14714d85e5ddb4",
+    "designMap": "sha256:8f6185794278d0b2c6fc9d725367e548bf664a662d2d7389ece6cf0fd200e800",
+    "evaluationRequirements": "sha256:e61c4a578a2eaf21261df77b72e4d1d4feebe450225254bcd3567531c3e6966d"
+  },
+  "support": [],
+  "cases": {
+    "E1": { "requirements": ["R1", "R2", "R3", "R4", "R5"], "invariants": ["I1", "I2", "I3", "I4"], "negativeRequirements": ["N1"], "assumptions": ["A1", "A2"], "tests": [], "coverageMode": "public-regression", "reason": "The frozen public CLI and visible transition suite are the stable black-box seam; duplicating it privately would add no independent structural contract." }
+  }
+}

@@ -26,9 +26,12 @@ Record:
 Record, before setting Status to Frozen:
 
 - shared helpers identified and how each was independently validated;
-- for each mandatory evaluation case, confirmation that its oracle measures the
-  intended behaviour and is falsifiable (positive/negative controls used, where
-  applicable);
+- for each mandatory executable evaluation case, confirmation that its oracle
+  measures the intended behaviour and is falsifiable (positive/negative controls
+  used, where applicable);
+- for each mandatory non-executable case, confirmation that its frozen
+  public/manual evidence plan can establish the criterion fairly and why no
+  stable implementation-independent hidden-test seam is justified;
 - material runtime/OS/library/protocol assumptions validated, and how;
 - confirmation the harness itself parses, compiles, and executes.
 
@@ -66,6 +69,10 @@ For each case include:
 - action or scenario;
 - expected observable outcome;
 - whether the case is mandatory;
+- coverage mode;
+- corresponding hidden test files when executable;
+- when not executable, why hidden coverage is not justified and what frozen
+  public/manual evidence will be used instead;
 - any relevant evaluator assumption.
 
 Do not prescribe internal implementation unless required by the contract.
@@ -78,7 +85,9 @@ For each mandatory requirement, invariant, and negative requirement, identify:
 
 - the evaluation case or cases that cover it;
 - whether coverage is executable or manual;
-- the corresponding hidden test file or files when executable coverage exists.
+- the corresponding hidden test file or files when executable coverage exists;
+- the frozen reason and evidence plan when executable hidden coverage does not
+  exist.
 
 This mapping must agree with `.hidden-test/manifest.json`. Any mismatch between
 the evaluation specification, manifest, and executable hidden tests is an

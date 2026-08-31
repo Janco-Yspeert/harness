@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   chmodSync,
   mkdtempSync,
@@ -174,4 +175,32 @@ void test("execute records a detached job and cancel terminates it", (t) => {
   assert.match(waitForLog(job.logPath), /fixture started/);
   assert.equal(run(["cancel", "brief-readiness", spike]).status, 0);
   jobPid = undefined;
+});
+
+void test("authority accepts valid repository-relative provenance", () => {
+  const path = "spikes/010-workflow-authority/spike.md";
+  const commit = spawnSync("git", ["rev-parse", "HEAD"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  });
+  assert.equal(commit.status, 0, commit.stderr);
+  const evidence = JSON.stringify({
+    path: "spike.md",
+    identity: `sha256:${createHash("sha256")
+      .update(readFileSync(join(repositoryRoot, path)))
+      .digest("hex")}`,
+    commit: commit.stdout.trim(),
+  });
+  const result = run([
+    "authority",
+    "validate",
+    "spikes/010-workflow-authority",
+    "brief-frozen",
+    evidence,
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    allowed: true,
+    recorded: false,
+  });
 });
