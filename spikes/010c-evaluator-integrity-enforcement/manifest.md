@@ -90,3 +90,52 @@
   `npm run format:check`; and `git diff --check` passed before this manifest
   update
 - Measurement cutoff: immediately before this manifest update
+
+## Run 005 — Evaluator Verify + Promotion
+
+- Skill: `evaluator` contract version 10 (verify mode) + Spike 010c bootstrap
+  process exception (`spike.md` section "Bootstrap process exception")
+- Mode: `verify`
+- Result: `PASS` — the committed implementation satisfies the frozen
+  machine-verifiable evaluation contract; evaluation promoted. Human product
+  acceptance remains a separate later gate.
+- Implementation evaluated: `git:29159c6bb3416022bad93eda646269b415d057be`
+  ("feat: enforce evaluator preparation integrity"); clean commit, no
+  working-tree changes to evaluated code
+- Frozen inputs: brief
+  `sha256:adf1e47d5b6142e2a69a50f79c1e3f9af2cc3263edc99145cce8ab93f3c29d50`;
+  Design Map
+  `sha256:3276a4278e237c30b7466cb4ea6523a4f239858ee4c6b2e7afa791bee1a56521`;
+  public `eval-requirements.md`
+  `sha256:88f82f9be608645f1652f695510d4f5f23841e93cb6d70a0b5cc0955f5298ca5`;
+  public `coverage-map.json`
+  `sha256:398250a93dbabd5d83648e5a7e5da7ec952c1f498bac78f95199ef877408c10a`
+- Evaluator revision: `001`, identity
+  `sha256:8296429ae865ac3c02014635ca90b03c0d1113f539b7ba741b27e70afc75a442`;
+  frozen skill identity
+  `sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b`
+- Verification attempt: `001`; immutable result identity
+  `sha256:4b5aba0b582869af62a921a69978770c34b8f53f9397224cc55ae88f4cf16257`
+- Specification drift: none — every frozen input, public artifact, and private
+  bundle identity matched
+- Aggregates: 17 of 17 frozen mandatory cases established (S1–S3, A1, E1–E8,
+  P1–P5); all 21 acceptance criteria `AC01`–`AC21` `SATISFIED`; 0 failed cases;
+  0 evaluator defects; 0 specification ambiguities; 0 infrastructure failures
+- Restricted evaluator material inspected: frozen private bundle
+  (evaluator-owned), as required by `verify`; not exposed here
+- Bootstrap / self-hosting: the Spike 010c-produced integrity mechanism was not
+  used as an evaluator grading instrument during verification; frozen acceptance
+  semantics unchanged
+- Authority events recorded: `verification-allocated`, `verification-finalized`
+  (`PASS`), `promotion-recorded`; `technicalVerification` `PASS`,
+  `promotionComplete` `true`
+- Promotion: passing attempt `001` promoted; evaluator revision `001` bundle
+  `not-promoted` (freezes no evaluator-authored executable hidden test — durable
+  executable coverage is the implementation's own visible suite). Promoted
+  byte-for-byte: `evaluation/attempt-ledger.json`,
+  `evaluation/attempts/001/eval-result.md`; `evaluation/promotion.json` written
+  last with all historical-artifact identities re-verified equal
+- Checks: `npm test` (42 passed); `npm run typecheck`; `npm run lint`;
+  `npm run format:check`; and `git diff --check` passed before this manifest
+  update
+- Measurement cutoff: immediately before this manifest update

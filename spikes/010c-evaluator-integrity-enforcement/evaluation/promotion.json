@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "result": "PASS",
+  "passingAttempt": "001",
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:29159c6bb3416022bad93eda646269b415d057be",
+      "resultPath": "evaluation/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:4b5aba0b582869af62a921a69978770c34b8f53f9397224cc55ae88f4cf16257",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:8296429ae865ac3c02014635ca90b03c0d1113f539b7ba741b27e70afc75a442",
+      "freezePath": null,
+      "revisionPath": null,
+      "revisionDisposition": "not-promoted"
+    }
+  ],
+  "historicalArtifacts": [
+    {
+      "sourceIdentity": "sha256:ae4ebd6ac9fe4af166c5298b29c092412897cc1a3bca3edbf3d1609e1f3b45cf",
+      "publicPath": "evaluation/attempt-ledger.json",
+      "promotedIdentity": "sha256:ae4ebd6ac9fe4af166c5298b29c092412897cc1a3bca3edbf3d1609e1f3b45cf",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:4b5aba0b582869af62a921a69978770c34b8f53f9397224cc55ae88f4cf16257",
+      "publicPath": "evaluation/attempts/001/eval-result.md",
+      "promotedIdentity": "sha256:4b5aba0b582869af62a921a69978770c34b8f53f9397224cc55ae88f4cf16257",
+      "disposition": "copied"
+    }
+  ],
+  "notPromotedRevisions": [
+    {
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:8296429ae865ac3c02014635ca90b03c0d1113f539b7ba741b27e70afc75a442",
+      "disposition": "not-promoted"
+    }
+  ]
+}
