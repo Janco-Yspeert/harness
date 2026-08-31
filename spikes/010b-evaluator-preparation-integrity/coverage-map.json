@@ -1,0 +1,257 @@
+{
+  "spike": "010b-evaluator-preparation-integrity",
+  "evaluationRequirements": "sha256:533f1f3abd36e1a7fc52af0d6607e9c3e72fbc267df1f485c654c415595253a5",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 9,
+    "bootstrapException": "spike.md section 'Bootstrap evaluator exception for Spike 010b'",
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:998700a3dfa889f2b1f67a2b627ee785e590b8a1ed8d6dbeea3a91de8289dc09",
+    "privateInventoryIdentity": "sha256:1ac56bcef55b109a804b35eae3757db2d2faa498f808b950bacc821c540856b3",
+    "integrityValidation": "PASS",
+    "integrityValidatedAt": "695b5e371d48d40bf8b3338ab29fba8a3846b3a4",
+    "criterionRecordCount": 30
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; Design Map 'Evaluator v10 preparation owns the private bundle'",
+      "mode": "STATIC_INSPECTION",
+      "required": true,
+      "procedures": ["S1"],
+      "sufficiency": "The evaluator contract is a public repository artifact; confirming it names an explicit, deterministic pre-freeze integrity step upstream of freeze is the direct and only fair check that the step exists."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; Design Map shared contract 1",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["A1", "E1", "S1"],
+      "sufficiency": "A1 confirms the frozen map holds one record per criterion; E1 confirms the authority rejects a map with a missing or duplicate record; S1 confirms the contract makes per-criterion records mandatory before freeze."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03",
+      "mode": "ARTIFACT_INSPECTION",
+      "required": true,
+      "procedures": ["A1"],
+      "sufficiency": "Frozen-authority provenance and criterion-specific reasoning are textual properties of each record; inspecting the frozen coverage-map records is the exact evidence."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; Design Map shared contract 1",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["A1", "E4"],
+      "sufficiency": "A1 shows shared procedure identifiers with distinct per-record reasoning; E4 shows the authority accepts shared evidence only when each criterion keeps its own record and rejects bare grouping."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; brief scope 2",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "E2"],
+      "sufficiency": "S1 confirms the contract requires executable procedures to be materialized before freeze; E2 is the visible regression proving a draft referencing a missing executable procedure cannot freeze or prepare."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; brief scope 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "E5"],
+      "sufficiency": "S1 confirms the contract requires non-executable procedures to be concretely defined and resolvable before freeze; E5 shows a valid prepared evaluator whose evidence is non-executable and explicitly defined."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "E3"],
+      "sufficiency": "S1 confirms the contract requires bidirectional traceability; E3 shows a map with a broken forward or back link is rejected before allocation."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["P1", "S3"],
+      "sufficiency": "P1 recomputes every identity in the frozen freeze inventory from the on-disk bundle and requires the inventory to list every dependency; S3 confirms the public side consumes the inventory identity only as an opaque hash."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09; Design Map shared contract 2",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "E1"],
+      "sufficiency": "S1 confirms the contract requires a public/private structural-consistency check before freeze; E1 exercises the authority half of that check on the public map and attestation."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "P2"],
+      "sufficiency": "S1 confirms the contract requires controlled pre-implementation exercise of mandatory executable cases; P2 records that this cycle performed the permitted pre-implementation baseline and used no candidate behavior."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "P2"],
+      "sufficiency": "S1 confirms the contract preserves the evaluator-v9 prohibition on shaping the frozen evaluator with candidate inspection; P2 records that no implementation commit existed at freeze and none was consulted."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "E2"],
+      "sufficiency": "S1 confirms the contract makes freeze strictly downstream of a passing integrity check; E2 is the visible regression proving a failed check blocks freeze."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; Design Map shared contract 3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "E1"],
+      "sufficiency": "S1 confirms the contract blocks evaluation-prepared completion on a failed check; E1 exercises the authority rejecting a map without a passing attestation."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md AC14",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "E1"],
+      "sufficiency": "S1 confirms the contract forbids implementation from an unvalidated revision; E1 shows implementation-handoff is unreachable while evaluation-prepared is rejected."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md AC15; Design Map shared contract 4",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "E3", "E6"],
+      "sufficiency": "S1 confirms the contract; E3 shows allocation cannot precede a passing integrity boundary; E6 shows allocation binds the attested evaluator revision."
+    },
+    {
+      "id": "AC16",
+      "frozenAuthority": "spike.md AC16; brief non-goals",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "A1", "E5"],
+      "sufficiency": "S1 confirms hidden tests stay optional; A1 shows this frozen revision itself uses no evaluator-authored hidden test; E5 shows a fully non-executable prepared evaluator is valid."
+    },
+    {
+      "id": "AC17",
+      "frozenAuthority": "spike.md AC17",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "A1", "E5"],
+      "sufficiency": "S1 confirms non-executable evidence stays first-class when prepared and criterion-specific; A1 shows this map's static/artifact/provenance records are criterion-specific; E5 exercises the accepted path."
+    },
+    {
+      "id": "AC18",
+      "frozenAuthority": "spike.md AC18; Design Map shared contract 4",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "E6"],
+      "sufficiency": "S1 confirms the contract classifies post-allocation bundle incompleteness as an evaluator/integrity condition; E6 is the visible regression proving the terminal result is not IMPLEMENTATION_FAILURE."
+    },
+    {
+      "id": "AC19",
+      "frozenAuthority": "spike.md AC19",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["E6"],
+      "sufficiency": "E6 asserts the allocation, implementation identity, and evaluator-revision identity survive and that no candidate coverage results are fabricated."
+    },
+    {
+      "id": "AC20",
+      "frozenAuthority": "spike.md AC20; brief scope 10",
+      "mode": "STATIC_INSPECTION",
+      "required": true,
+      "procedures": ["S2"],
+      "sufficiency": "The churn threshold is a contract rule in the evaluator skill and AGENTS.md; confirming both require classify-then-stop after the threshold is the direct check."
+    },
+    {
+      "id": "AC21",
+      "frozenAuthority": "spike.md AC21; brief scope 11",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["S1", "S3", "E1"],
+      "sufficiency": "S1 and S3 confirm the validator checks structure, materialization, traceability, and readiness only; E1 confirms the authority half operates purely on public JSON shape."
+    },
+    {
+      "id": "AC22",
+      "frozenAuthority": "spike.md AC22",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["E2"],
+      "sufficiency": "AC22 explicitly demands visible regression coverage for the missing-executable-procedure case; E2 is that scenario in test/workflow.test.ts."
+    },
+    {
+      "id": "AC23",
+      "frozenAuthority": "spike.md AC23",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["E3"],
+      "sufficiency": "AC23 explicitly demands visible regression coverage for the structurally-incomplete-map-before-allocation case; E3 is that scenario."
+    },
+    {
+      "id": "AC24",
+      "frozenAuthority": "spike.md AC24",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["E4"],
+      "sufficiency": "AC24 explicitly demands visible regression coverage for legitimate shared evidence with retained traceability; E4 is that scenario."
+    },
+    {
+      "id": "AC25",
+      "frozenAuthority": "spike.md AC25",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["E5"],
+      "sufficiency": "AC25 explicitly demands visible regression coverage for a non-executable procedure in a valid prepared evaluator; E5 is that scenario."
+    },
+    {
+      "id": "AC26",
+      "frozenAuthority": "spike.md AC26",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["E6"],
+      "sufficiency": "AC26 explicitly demands visible regression coverage for forward-only handling of a post-allocation integrity failure; E6 is that scenario."
+    },
+    {
+      "id": "AC27",
+      "frozenAuthority": "spike.md AC27; brief 'Process-successor exception'",
+      "mode": "PROVENANCE_INSPECTION",
+      "required": true,
+      "procedures": ["P3"],
+      "sufficiency": "Byte-for-byte preservation is a git diff property against the 16ee4ed lineage base; P3 performs exactly that comparison."
+    },
+    {
+      "id": "AC28",
+      "frozenAuthority": "spike.md AC28; brief non-goals",
+      "mode": "PROVENANCE_INSPECTION",
+      "required": true,
+      "procedures": ["P3"],
+      "sufficiency": "Absence of a synthetic rejection, verification result, or successor event is an inspection of both spikes' workflow.jsonl; P3 performs it."
+    },
+    {
+      "id": "AC29",
+      "frozenAuthority": "spike.md AC29; brief bootstrap evaluator exception",
+      "mode": "PROVENANCE_INSPECTION",
+      "required": true,
+      "procedures": ["P2"],
+      "sufficiency": "The bootstrap obligations and their completion-before-implementation ordering are recorded in the private pre-freeze integrity checklist and workflow.jsonl; P2 inspects both."
+    },
+    {
+      "id": "AC30",
+      "frozenAuthority": "spike.md AC30",
+      "mode": "PROVENANCE_INSPECTION",
+      "required": true,
+      "procedures": ["P4"],
+      "sufficiency": "Repository validation is a set of command exit codes at the evaluated commit; P4 records npm test, typecheck, lint, format:check, and git diff --check."
+    }
+  ]
+}
