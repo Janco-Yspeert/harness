@@ -1,5 +1,15 @@
 # Spike 010b — Workflow Manifest
 
+## Run 005 — As-Built
+
+- Skill: `as-built` v2
+- Result: implementation `fd956874da6805ad202af4a2bdee185d28b64823`
+  matches the frozen public contract; no material discrepancies observed
+- Inputs: frozen brief, Design Map, promoted evaluation, and implementation
+  handoff
+- Output: `as-built.md`
+- Measurement cutoff: immediately before this manifest update
+
 ## Run 005 — Evaluator Verify
 
 - Skill: `evaluator` v10 (verify mode); frozen evaluator revision prepared
