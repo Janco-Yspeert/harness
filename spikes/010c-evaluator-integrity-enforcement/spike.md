@@ -212,6 +212,35 @@ Do not modify the validator merely to make the current implementation pass.
 A missing acceptance semantic is a specification/process successor issue, not a
 validator patch.
 
+## Cost and repair-loop discipline
+
+The preparation-integrity validator is evaluator lint, not another evaluator
+phase.
+
+It must be locally executable and deterministic without requiring an additional
+model invocation merely to perform structural integrity validation.
+
+A pre-freeze validator failure:
+
+- does not create or increment an evaluator revision;
+- does not allocate a verification attempt;
+- does not require a new candidate implementation;
+- keeps the evaluator in the same unfrozen preparation draft; and
+- should return all independently detectable structural failures in one run where
+  practical, rather than forcing one-error-at-a-time repair cycles.
+
+The evaluator may use the resulting diagnostics to correct the same unfrozen
+draft and rerun the validator until it passes.
+
+This requirement is specifically intended to move cheap structural failures
+left of freeze and reduce expensive post-implementation evaluator
+fail/correct/refreeze/reverify cycles.
+
+The validator must remain bounded to mechanically decidable structural
+properties such as identities, existence, mappings, inventories, required
+fields, hashes, and accounting consistency. It must not introduce another
+model-mediated semantic review layer.
+
 ## Bootstrap process exception
 
 Spike 010c changes the evaluator preparation-integrity mechanism that would
@@ -327,7 +356,18 @@ lineage belongs to later methodology work.
     own verification is explicitly recorded as bootstrap/self-hosting
     provenance and does not change frozen evaluation semantics.
 
-17. Repository validation passes: tests, typecheck, lint, formatting, and
+17. Preparation-integrity validation itself requires no additional model
+    invocation; it is locally executable deterministic tooling.
+
+18. A pre-freeze integrity failure remains within the same unfrozen evaluator
+    preparation draft and does not allocate a new evaluator revision or
+    verification attempt.
+
+19. Where practical, one validator run reports all independently detectable
+    structural failures together rather than deliberately exposing them
+    one-at-a-time.
+
+20. Repository validation passes: tests, typecheck, lint, formatting, and
     `git diff --check`.
 
 ## Expected workflow
