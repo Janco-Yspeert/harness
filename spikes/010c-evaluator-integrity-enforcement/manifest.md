@@ -70,3 +70,23 @@
   spikes/010c-evaluator-integrity-enforcement`; and authority status passed
   before this manifest update
 - Measurement cutoff: immediately before this manifest update
+
+## Run 004 — Implementation
+
+- Skill: `implementation` v3
+- Result: candidate implementation ready for evaluator handoff
+- Inputs: frozen `spike.md`
+  `sha256:adf1e47d5b6142e2a69a50f79c1e3f9af2cc3263edc99145cce8ab93f3c29d50`
+  at `1f7d4cb`; frozen `design-map.md`
+  `sha256:3276a4278e237c30b7466cb4ea6523a4f239858ee4c6b2e7afa791bee1a56521`
+  at `4eb4800`; public `eval-requirements.md` and `coverage-map.json` at
+  `a7c1cfa`; public `evaluation-prepared` record at `f51ae6c`
+- Output: deterministic local prepared-evaluator integrity validator, PASS-only
+  public-safe readiness production, opaque validator-result binding enforcement
+  in the public authority, and visible regression coverage; candidate Git tree
+  `9f66cae7a6166ffa859447cc36a32fc0bd673a63` before this manifest update
+- Restricted evaluator material inspected: none
+- Checks: `npm test` (42 passed); `npm run typecheck`; `npm run lint`;
+  `npm run format:check`; and `git diff --check` passed before this manifest
+  update
+- Measurement cutoff: immediately before this manifest update

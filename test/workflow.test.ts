@@ -92,6 +92,7 @@ function coverageMap(
   readiness: Record<string, unknown> | null = {
     evaluatorRevision: "001",
     privateInventoryIdentity: `sha256:${"0".repeat(64)}`,
+    validatorResultBinding: `sha256:${"1".repeat(64)}`,
     integrityValidation: "PASS",
   },
 ): string {
@@ -480,6 +481,7 @@ void test("a draft without a passing readiness attestation cannot reach a prepar
     "coverage-map.json": coverageMap([criterion("AC01"), criterion("AC02")], {
       evaluatorRevision: "001",
       privateInventoryIdentity: `sha256:${"a".repeat(64)}`,
+      validatorResultBinding: `sha256:${"b".repeat(64)}`,
       integrityValidation: "FAIL",
     }),
   };
@@ -501,6 +503,27 @@ void test("a draft without a passing readiness attestation cannot reach a prepar
   });
   assert.notEqual(noAllocation.status, 0);
   assert.equal(authorityHistory(f), historyBefore);
+});
+
+void test("a readiness attestation requires an opaque validator-result binding", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01")], {
+      evaluatorRevision: "001",
+      privateInventoryIdentity: `sha256:${"a".repeat(64)}`,
+      integrityValidation: "PASS",
+    }),
+  };
+  const f = authorityFixture("-e2-binding", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+
+  const { result, historyBefore, historyAfter } = attemptPrepared(f);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /validatorResultBinding/);
+  assert.equal(historyAfter, historyBefore);
 });
 
 void test("a criterion-complete map with an incomplete evidence reference is rejected before allocation", (t) => {

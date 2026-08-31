@@ -529,6 +529,7 @@ interface CriterionRecord {
 interface ReadinessAttestation {
   readonly evaluatorRevision: string;
   readonly privateInventoryIdentity: string;
+  readonly validatorResultBinding: string;
 }
 interface PreparedMap {
   readonly readiness: ReadinessAttestation;
@@ -622,10 +623,19 @@ function validatePreparedMap(document: unknown): PreparedMap {
     "privateInventoryIdentity",
     "Readiness attestation",
   );
+  const validatorResultBinding = requiredText(
+    attestation,
+    "validatorResultBinding",
+    "Readiness attestation",
+  );
   if (attestation.integrityValidation !== "PASS")
     fail("evaluation-prepared requires a passing readiness attestation");
   return {
-    readiness: { evaluatorRevision, privateInventoryIdentity },
+    readiness: {
+      evaluatorRevision,
+      privateInventoryIdentity,
+      validatorResultBinding,
+    },
     criteria: records,
   };
 }
