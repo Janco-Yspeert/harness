@@ -139,3 +139,30 @@
   `npm run format:check`; and `git diff --check` passed before this manifest
   update
 - Measurement cutoff: immediately before this manifest update
+
+## Run 006 — As-Built
+
+- Skill: `as-built` v2
+- Result: completed; no Missing, Contradictory, or Extra material behavior or
+  structure identified against the frozen brief and Design Map
+- Inspected implementation: `git:29159c6bb3416022bad93eda646269b415d057be`
+  (`feat: enforce evaluator preparation integrity`)
+- Inputs: frozen `spike.md`
+  `sha256:adf1e47d5b6142e2a69a50f79c1e3f9af2cc3263edc99145cce8ab93f3c29d50`;
+  frozen `design-map.md`
+  `sha256:3276a4278e237c30b7466cb4ea6523a4f239858ee4c6b2e7afa791bee1a56521`;
+  public `eval-requirements.md`
+  `sha256:88f82f9be608645f1652f695510d4f5f23841e93cb6d70a0b5cc0955f5298ca5`;
+  public `coverage-map.json`
+  `sha256:398250a93dbabd5d83648e5a7e5da7ec952c1f498bac78f95199ef877408c10a`;
+  promoted attempt `001` result
+  `sha256:4b5aba0b582869af62a921a69978770c34b8f53f9397224cc55ae88f4cf16257`
+- Output: `as-built.md`
+  `sha256:a73612fddba4bab6def6f7f2c1ac3a9e113f9679bd4fdd479d3c418fccf74bb4`
+- Restricted evaluator material inspected: none; inspection used only the final
+  public implementation revision, public frozen contract and Design Map, public
+  tests, and promoted evaluation evidence
+- Checks: `npm test` (42 passed); `npm run typecheck`; `npm run lint`;
+  `npm run format:check`; and `git diff --check` passed before this manifest
+  update
+- Measurement cutoff: immediately before this manifest update
