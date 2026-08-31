@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:f5a657dc11e77ed7fc8d46c06280daa9df41c56e",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:e486eafc8bd49f3fed5c3965f75b590106550cbb7f5e8f9f3edcab66b7cd0e0b",
+      "resultPath": ".eval/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:f7d91eeda554f53f97b3d12e51694e297b28da925327f66317e1e47b123ef812",
+      "status": "PASS"
+    }
+  ]
+}

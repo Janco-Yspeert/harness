@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "result": "PASS",
+  "passingAttempt": "002",
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:e147e0f757699552d8d6e02a15618996174770a3",
+      "resultPath": "evaluation/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:2dad9be01529ba74144eaa5beef9fe4a7982b619f82b40cb9790c326f0aefb46",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:ee62552f957408e3cc64ee09040503f87dbbb194d9b165d03baf98655f21b333",
+      "freezePath": null,
+      "revisionPath": null,
+      "revisionDisposition": "not-promoted"
+    },
+    {
+      "id": "002",
+      "implementation": "git:e147e0f757699552d8d6e02a15618996174770a3",
+      "resultPath": "evaluation/attempts/002/eval-result.md",
+      "resultIdentity": "sha256:d062636b0871eb09339edbee5dec6d7adc974fe591699eeb523817391cfa2fb6",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:eaf93d47ef02ade7ba27ebddaf3ff15b855cc85b1f302dd778f117333ae828f3",
+      "freezePath": "evaluation/freeze/002.json",
+      "revisionPath": "evaluation/revisions/002",
+      "revisionDisposition": "copied"
+    }
+  ],
+  "historicalArtifacts": [
+    {
+      "sourceIdentity": "sha256:474b779bf240dad22b8ed6ac5bd3a269dc8da00b3a77317a6ea76872435f866a",
+      "publicPath": "evaluation/revisions/002/eval-spec.md",
+      "promotedIdentity": "sha256:474b779bf240dad22b8ed6ac5bd3a269dc8da00b3a77317a6ea76872435f866a",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:b308965dcd18374e10b0c400471760004d2cff7e1cd9ac7cedf223fee97cd954",
+      "publicPath": "evaluation/revisions/002/.hidden-test/manifest.json",
+      "promotedIdentity": "sha256:b308965dcd18374e10b0c400471760004d2cff7e1cd9ac7cedf223fee97cd954",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:c487f23d3749330557430dba8f0bd2993e5861063ea2e72e6f4b5ad50853a691",
+      "publicPath": "evaluation/revisions/002/.hidden-test/dry-run.test.ts",
+      "promotedIdentity": "sha256:c487f23d3749330557430dba8f0bd2993e5861063ea2e72e6f4b5ad50853a691",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:b947f82dad868a0c123dda613451d8700abfacaf565fc2b04c9157aecec6bc10",
+      "publicPath": "evaluation/revisions/002/.hidden-test/execute-detached-jobs.test.ts",
+      "promotedIdentity": "sha256:b947f82dad868a0c123dda613451d8700abfacaf565fc2b04c9157aecec6bc10",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:2a7a097514050a934d1fe9640ce9a430c9d89291fdc23bdd861daf61c1fab388",
+      "publicPath": "evaluation/revisions/002/.hidden-test/gitignore.test.ts",
+      "promotedIdentity": "sha256:2a7a097514050a934d1fe9640ce9a430c9d89291fdc23bdd861daf61c1fab388",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:3b308fb1249b42dff3bb7fbb6dfecf6a0e316ebda2553ffbce14a3be83a8b132",
+      "publicPath": "evaluation/revisions/002/.hidden-test/prompt-ownership.test.ts",
+      "promotedIdentity": "sha256:3b308fb1249b42dff3bb7fbb6dfecf6a0e316ebda2553ffbce14a3be83a8b132",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:e5638ba8982ad9ef64b74499a046ebab145669f046b09d225a35ac629c71a8ec",
+      "publicPath": "evaluation/revisions/002/.hidden-test/rejections.test.ts",
+      "promotedIdentity": "sha256:e5638ba8982ad9ef64b74499a046ebab145669f046b09d225a35ac629c71a8ec",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:af7600f8b71d8ce2281bae9de91a31be14382870aadf742cae9eb1232c8bd88c",
+      "publicPath": "evaluation/revisions/002/.hidden-test/retry-loop.test.ts",
+      "promotedIdentity": "sha256:af7600f8b71d8ce2281bae9de91a31be14382870aadf742cae9eb1232c8bd88c",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:e72278c1f08d2db888c6cfdbbff41156741d1f3b0a0f31878026d43de8d6df80",
+      "publicPath": "evaluation/revisions/002/.hidden-test/state-and-init.test.ts",
+      "promotedIdentity": "sha256:e72278c1f08d2db888c6cfdbbff41156741d1f3b0a0f31878026d43de8d6df80",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:5ff03363ca91befa91b7c5271b7aa04cad86bb42f337a00741a20bf0db264f4a",
+      "publicPath": "evaluation/revisions/002/.hidden-test/status-liveness-and-cancel.test.ts",
+      "promotedIdentity": "sha256:5ff03363ca91befa91b7c5271b7aa04cad86bb42f337a00741a20bf0db264f4a",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:c23f9c01c4ffd301334133f337976e8b18bcc57231c50eb66c2104f01ab8b2de",
+      "publicPath": "evaluation/revisions/002/.hidden-test/valid-progression.test.ts",
+      "promotedIdentity": "sha256:c23f9c01c4ffd301334133f337976e8b18bcc57231c50eb66c2104f01ab8b2de",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:146ce64653f8fc2a4b344ef955e65cc45668ef82a52cfe6af5e7184ebb3af326",
+      "publicPath": "evaluation/revisions/002/.hidden-test/support/cli.ts",
+      "promotedIdentity": "sha256:146ce64653f8fc2a4b344ef955e65cc45668ef82a52cfe6af5e7184ebb3af326",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:679b061b1eea531b9f2386c22c11f2de4e6e368b0cca2bbfe6ff17163e68af80",
+      "publicPath": "evaluation/revisions/002/.hidden-test/support/fixture-bin.ts",
+      "promotedIdentity": "sha256:679b061b1eea531b9f2386c22c11f2de4e6e368b0cca2bbfe6ff17163e68af80",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:f321e01c8f869d963f957fea3c4459a1584d93b685c0c73462b359781c9662d9",
+      "publicPath": "evaluation/revisions/002/.hidden-test/support/phases.ts",
+      "promotedIdentity": "sha256:f321e01c8f869d963f957fea3c4459a1584d93b685c0c73462b359781c9662d9",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:3b1a40bc2a8e2a1e16d9b0b860b5cf9c6442fc20af0707ae7b5b5f5b8be29e4e",
+      "publicPath": "evaluation/revisions/002/.hidden-test/support/progress.ts",
+      "promotedIdentity": "sha256:3b1a40bc2a8e2a1e16d9b0b860b5cf9c6442fc20af0707ae7b5b5f5b8be29e4e",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:2143e04a3c565cb2ce192269b9d0d6b6f16cdf5161f73dd21084f9eeaede78bc",
+      "publicPath": "evaluation/revisions/002/.hidden-test/support/spike-fixture.ts",
+      "promotedIdentity": "sha256:2143e04a3c565cb2ce192269b9d0d6b6f16cdf5161f73dd21084f9eeaede78bc",
+      "disposition": "copied"
+    }
+  ],
+  "notPromotedRevisions": [
+    {
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:ee62552f957408e3cc64ee09040503f87dbbb194d9b165d03baf98655f21b333",
+      "disposition": "not-promoted"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "002",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 7,
+    "identity": "sha256:ca26532a3011caef8de2f027c6bb32be81d46bd451cc855db1bd0ad8983fd238"
+  },
+  "inputs": {
+    "brief": "sha256:eadf808bcc083c2810c119d916f58f906ca2930e5ac5bc04eca62851b674ce89",
+    "designMap": "sha256:46d2822e9a8498b9bd470a73afd151fd907b594f3c652f8fa064d131780c726a",
+    "evaluationRequirements": "sha256:7cdff1c201e9a514348f805c9a14dc152832646eb18a89b8915c869de9cc5386"
+  },
+  "artifacts": {
+    "eval-spec.md": "sha256:63b72485996da6f8cb6d3c5a59e8af2cfab8a4f439ae179985b685f92805f56d",
+    ".hidden-test/manifest.json": "sha256:59f7aef5ef70fdf8e03e42eb71c0170bd31a3da124e57843261f40200ac5490b",
+    ".hidden-test/attempt-recovery.test.ts": "sha256:f3b5f318b04d2bc243390c9a2752be23a1a95108d8e56914d887e8bfe7169de3",
+    ".hidden-test/executor-selection.test.ts": "sha256:316854ffae0750156b8253cee58777c3fbdb5812cf603d155e8aef98c805d9a9",
+    ".hidden-test/launch-and-permissions.test.ts": "sha256:4a0ed970fc57d8cd3a394750d231ace42227721fd033abdd8903f3ef1dc9f26a",
+    ".hidden-test/support/fixture.ts": "sha256:ccdd2ad1b66f4dfab95b54b3d857e8a80657618bd8eb65e6bd7d22c3c0dd03cd"
+  },
+  "integrityChecks": [
+    "formatted all private artifacts with Prettier",
+    "archived evaluator revision 001 unchanged after its E3 fixture defect; executed every mandatory test against the unimplemented baseline and confirmed each failure is attributable to an absent Spike 009 behavior",
+    "confirmed fresh temporary state, fixture executor, and POSIX mode test setup"
+  ]
+}

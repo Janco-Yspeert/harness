@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "002",
+  "correctsRevision": "001",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 7,
+    "identity": "sha256:ca26532a3011caef8de2f027c6bb32be81d46bd451cc855db1bd0ad8983fd238"
+  },
+  "inputs": {
+    "brief": "sha256:15a6c7b432ae6fe1ffb876867d41506f5571b64427ed377f0d4d62cbefaa8c9b",
+    "designMap": "sha256:b57bfb2e8bb302717eff8549da56f23c85089e1f72e1165bf17264dc1be3d8fd",
+    "evaluationRequirements": "sha256:449873a0355cc377294d0ca1fa144a2d7d77347c4e96e4dd72b18bdea422a53a"
+  },
+  "artifacts": {
+    "eval-spec.md": "sha256:474b779bf240dad22b8ed6ac5bd3a269dc8da00b3a77317a6ea76872435f866a",
+    ".hidden-test/manifest.json": "sha256:b308965dcd18374e10b0c400471760004d2cff7e1cd9ac7cedf223fee97cd954",
+    ".hidden-test/dry-run.test.ts": "sha256:c487f23d3749330557430dba8f0bd2993e5861063ea2e72e6f4b5ad50853a691",
+    ".hidden-test/execute-detached-jobs.test.ts": "sha256:b947f82dad868a0c123dda613451d8700abfacaf565fc2b04c9157aecec6bc10",
+    ".hidden-test/gitignore.test.ts": "sha256:2a7a097514050a934d1fe9640ce9a430c9d89291fdc23bdd861daf61c1fab388",
+    ".hidden-test/prompt-ownership.test.ts": "sha256:3b308fb1249b42dff3bb7fbb6dfecf6a0e316ebda2553ffbce14a3be83a8b132",
+    ".hidden-test/rejections.test.ts": "sha256:e5638ba8982ad9ef64b74499a046ebab145669f046b09d225a35ac629c71a8ec",
+    ".hidden-test/retry-loop.test.ts": "sha256:af7600f8b71d8ce2281bae9de91a31be14382870aadf742cae9eb1232c8bd88c",
+    ".hidden-test/state-and-init.test.ts": "sha256:e72278c1f08d2db888c6cfdbbff41156741d1f3b0a0f31878026d43de8d6df80",
+    ".hidden-test/status-liveness-and-cancel.test.ts": "sha256:5ff03363ca91befa91b7c5271b7aa04cad86bb42f337a00741a20bf0db264f4a",
+    ".hidden-test/valid-progression.test.ts": "sha256:c23f9c01c4ffd301334133f337976e8b18bcc57231c50eb66c2104f01ab8b2de",
+    ".hidden-test/support/cli.ts": "sha256:146ce64653f8fc2a4b344ef955e65cc45668ef82a52cfe6af5e7184ebb3af326",
+    ".hidden-test/support/fixture-bin.ts": "sha256:679b061b1eea531b9f2386c22c11f2de4e6e368b0cca2bbfe6ff17163e68af80",
+    ".hidden-test/support/phases.ts": "sha256:f321e01c8f869d963f957fea3c4459a1584d93b685c0c73462b359781c9662d9",
+    ".hidden-test/support/progress.ts": "sha256:3b1a40bc2a8e2a1e16d9b0b860b5cf9c6442fc20af0707ae7b5b5f5b8be29e4e",
+    ".hidden-test/support/spike-fixture.ts": "sha256:2143e04a3c565cb2ce192269b9d0d6b6f16cdf5161f73dd21084f9eeaede78bc"
+  },
+  "integrityChecks": [
+    "corrects an EVALUATOR_DEFECT found during verify attempt 001 against implementation git:e147e0f757699552d8d6e02a15618996174770a3: the second test(...) case in retry-loop.test.ts (E4/R9) recorded evaluator-prepare attempt 1 blocked then attempted to record it complete for the same phase+attempt, contradicting R7 (a second terminal outcome for the same numbered phase+attempt is always rejected, regardless of value) which is independently frozen and independently, correctly verified by rejections.test.ts (E5)",
+    "split the single fixture into two independent fixtures/test cases in retry-loop.test.ts (one recording evaluator-prepare blocked, one recording it complete with no prior outcome on that attempt), preserving full R9 coverage (both outcome values, and the retry-loop persistence claim) without violating R7; only retry-loop.test.ts and this eval-spec.md (Explicit Requirements E4 text and Revision History) changed from revision 001 — every other hidden test, support file, manifest field other than evaluationRevision, brief, Design Map, and evaluation-requirements identity are unchanged, as shown by unchanged content identities above",
+    "archived revision 001's exact frozen bundle (eval-spec.md, .hidden-test/**, freeze.json as they stood at revision 001) unchanged to .eval/revisions/001/ before this correction, verified byte-identical via diff -r",
+    "tsc --noEmit against the full corrected .hidden-test/**/*.ts using the public project's own tsconfig.json compiler options (scratch include-only config): zero errors",
+    "npx prettier --check on the changed files (eval-spec.md, .hidden-test/manifest.json, .hidden-test/retry-loop.test.ts): all three already match the project's Prettier configuration",
+    "node --test retry-loop.test.ts run twice in isolation against the unchanged implementation git:e147e0f757699552d8d6e02a15618996174770a3: all 3 cases pass deterministically both runs, with no leftover spikes/999-* fixture directories after either run",
+    "node --test executed against every retained hidden test file individually against the same implementation commit under revision 002 (all 13 mandatory cases across 9 files): 12 passed under revision 001 unchanged from that prior run, plus the corrected retry-loop.test.ts's 3 cases (previously 1 pass + 1 evaluator-defective) now all pass"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 2,
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:e147e0f757699552d8d6e02a15618996174770a3",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:ee62552f957408e3cc64ee09040503f87dbbb194d9b165d03baf98655f21b333",
+      "resultPath": ".eval/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:2dad9be01529ba74144eaa5beef9fe4a7982b619f82b40cb9790c326f0aefb46",
+      "status": "BLOCKED"
+    },
+    {
+      "id": "002",
+      "implementation": "git:e147e0f757699552d8d6e02a15618996174770a3",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:eaf93d47ef02ade7ba27ebddaf3ff15b855cc85b1f302dd778f117333ae828f3",
+      "resultPath": ".eval/attempts/002/eval-result.md",
+      "resultIdentity": "sha256:d062636b0871eb09339edbee5dec6d7adc974fe591699eeb523817391cfa2fb6",
+      "status": "PASS"
+    }
+  ]
+}
