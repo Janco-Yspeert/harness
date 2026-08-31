@@ -1,5 +1,39 @@
 # Spike 010b — Workflow Manifest
 
+## Run 005 — Evaluator Verify
+
+- Skill: `evaluator` v10 (verify mode); frozen evaluator revision prepared
+  under `evaluator` v9 plus the Spike 010b bootstrap evaluator exception
+- Mode: `verify`
+- Result: verification attempt `001` — `PASS`. `technicalVerification` is
+  `PASS`; human product acceptance remains a separate later gate
+- Implementation evaluated: `fd956874da6805ad202af4a2bdee185d28b64823` (clean
+  commit; no working-tree changes)
+- Inputs (frozen identities, all matched — no specification drift): brief
+  `sha256:299504652c890dbfe2624f0319603c4797ace9707979c8595d7b080df0482d98`;
+  Design Map
+  `sha256:7ee841df27b8a0ec5a2f3050a2a1b3597eeb6bfb74a1a7c5004ef9dbe228302a`;
+  public `eval-requirements.md`
+  `sha256:533f1f3abd36e1a7fc52af0d6607e9c3e72fbc267df1f485c654c415595253a5`;
+  `coverage-map.json`
+  `sha256:fb8295fb156a92aa16901a7ffee03a3ad510ce53020718744a5e4cac0d5c4d55`;
+  evaluator revision `001` identity
+  `sha256:998700a3dfa889f2b1f67a2b627ee785e590b8a1ed8d6dbeea3a91de8289dc09`
+- Aggregate coverage: 30 of 30 frozen acceptance criteria (AC01–AC30)
+  `SATISFIED`; every frozen mandatory case established its criteria; 0 findings,
+  0 evaluator defects, 0 specification ambiguities, 0 infrastructure failures
+- Repository validation at the evaluated commit: `npm test` (36 tests, 36
+  pass), `npm run typecheck`, `npm run lint`, `npm run format:check`, and
+  `git diff --check` each exit 0
+- Promotion: `evaluation/attempt-ledger.json` and
+  `evaluation/attempts/001/eval-result.md` copied byte-for-byte from the
+  private evidence chain; `evaluation/promotion.json` records overall `PASS`
+  and evaluator revision `001` with a `not-promoted` disposition (no
+  evaluator-authored executable hidden tests exist; durable regression coverage
+  is the already-public `test/workflow.test.ts`); promoted-file identities
+  recomputed equal to source
+- Measurement cutoff: immediately before this manifest update
+
 ## Run 004 — Implementation
 
 - Skill: `implementation` v3
