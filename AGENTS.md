@@ -95,13 +95,59 @@ Treat Harness as a remote code-execution control surface.
 
 ## Development workflow
 
+### Autonomous orchestration
+
+A phase boundary is not a human gate. Before returning control, determine
+whether a valid next workflow action can be performed without human authority.
+If it can, perform it. Progress reports are observational and do not transfer
+control. Do not describe an action as running after returning control unless
+runtime state exposes a real asynchronous execution.
+
+Yield only for an explicit human gate, a material decision reserved to a human,
+information that cannot be obtained autonomously, a genuine unrecoverable
+block, or a terminal workflow state. Evaluator defects, implementation defects,
+attempt allocation, ordinary phase completion, and BLOCKED results with a
+prescribed recovery all continue autonomously.
+
+When an evaluator is corrected after implementation exposure, every material
+change must cite frozen pre-implementation authority, preserve the prior
+revision, and confirm that no implementation-specific behavior became an
+acceptance requirement. An implementation failure fixes implementation; a
+missing frozen requirement starts a new brief cycle rather than rewriting the
+evaluator. After two post-implementation evaluator corrections in one cycle,
+explicitly classify the next issue as evaluator defect, specification defect,
+or methodology/evidence-model defect before another correction. Once that
+threshold is reached, automatic in-cycle evaluator revision stops: finalize the
+allocated attempt with its terminal non-PASS result and take the process or
+specification successor path instead of revising this cycle's evaluator again.
+Do not revise the evaluator indefinitely.
+
+Evaluator preparation must pass a deterministic pre-freeze integrity validation
+before the private revision is frozen and before `evaluation-prepared` is
+recorded. That validation confirms, without inspecting the candidate
+implementation, that every material frozen criterion has its own explicit
+criterion evidence record with frozen-authority provenance and a
+criterion-specific sufficiency reason, that every referenced evaluator case or
+procedure is materialized, that mandatory executable cases passed a controlled
+implementation-independent exercise, that every non-executable procedure is
+concretely defined and resolvable, that forward and reverse traceability between
+criteria and procedures is complete, that the freeze inventory lists every
+dependency, and that the public coverage map and private bundle are mutually
+consistent. A failed validation keeps preparation pre-freeze: no frozen
+evaluator revision, no `evaluation-prepared`, no implementation, no verification
+allocation. A frozen-evaluator bundle-integrity defect discovered after a
+verification attempt is allocated is finalized forward-only as `BLOCKED` /
+`EVALUATOR_DEFECT`, preserving the allocation and the implementation and
+evaluator identities, and is never recorded as an implementation failure.
+
 Ordinary implementation spikes use this order:
 
 1. draft the brief;
 2. run Brief Readiness;
 3. resolve findings and freeze the brief;
 4. create and freeze the Design Map;
-5. run evaluator `prepare` and freeze evaluation;
+5. run evaluator `prepare`, and freeze evaluation only after its pre-freeze
+   integrity validation passes;
 6. implement;
 7. run evaluator `verify`, retrying implementation when required;
 8. create As-Built; and
@@ -123,6 +169,11 @@ Material changes create a new frozen revision and invalidate dependent work.
 Implementation failure never permits the evaluator contract to move. Evaluator
 defects may create a corrected revision only when the prior revision and attempt
 provenance are preserved.
+
+For authority-enabled spikes, `evaluation-prepared` means the evaluator passed
+its required pre-freeze integrity validation, projected publicly through the
+`coverage-map.json` readiness attestation; a verification attempt is never
+allocated against an evaluator revision that lacks a passing attestation.
 
 Use `feat/spike-NNN` as the normal spike branch. Commit and push stable public
 handoff boundaries. Never include evaluator-private material merely to satisfy

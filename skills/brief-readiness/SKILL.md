@@ -26,6 +26,9 @@ product decisions on the author's behalf.
 
 ## Review
 
+For authority-enabled spikes, record `brief-frozen` after the committed frozen
+brief checkpoint. A manifest is execution history, not canonical state.
+
 Trace material requirements to repository contracts. Report only issues that
 change scope, implementation, fair evaluation, feasibility, lifecycle,
 concurrency, failure behavior, ownership, public behavior, or cost materially.

@@ -78,3 +78,5 @@ not create a provisional entry, estimate metrics, or measure the entry itself.
 Commit and push the resulting checkpoint before evaluator preparation. A
 material revision requires a new identity and invalidates downstream evaluation
 where affected.
+
+For authority-enabled spikes, record `design-map-frozen` after this checkpoint.

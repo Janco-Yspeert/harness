@@ -62,6 +62,8 @@ type AuthorityTransition =
   | "promotion-recorded"
   | "as-built-recorded"
   | "human-accepted"
+  | "human-rejected"
+  | "successor-linked"
   | "outcome-recorded";
 interface AuthorityEvent {
   readonly transition: AuthorityTransition;
@@ -86,7 +88,7 @@ function targetFrom(value: string | undefined): Target {
     value === undefined ||
     isAbsolute(value) ||
     normalize(value) !== value ||
-    !/^spikes\/\d{3}-[^/]+$/.test(value)
+    !/^spikes\/\d{3}[a-z]*-[^/]+$/.test(value)
   ) {
     return fail("Spike path must be a normalized spikes/NNN-*/ path");
   }
@@ -417,6 +419,8 @@ const authorityTransitions: AuthorityTransition[] = [
   "promotion-recorded",
   "as-built-recorded",
   "human-accepted",
+  "human-rejected",
+  "successor-linked",
   "outcome-recorded",
 ];
 function authorityPath(target: Target): string {
@@ -477,6 +481,154 @@ function latest(
 ): AuthorityEvent | undefined {
   return [...events].reverse().find((event) => event.transition === transition);
 }
+interface CoverageEntry {
+  readonly id: string;
+  readonly mode: string;
+  readonly required: boolean;
+}
+function preparedCoverage(
+  target: Target,
+  events: AuthorityEvent[],
+): CoverageEntry[] {
+  const prepared = latest(events, "evaluation-prepared");
+  if (!prepared) return [];
+  const path = prepared.evidence.path;
+  if (typeof path !== "string") return [];
+  try {
+    const parsed: unknown = JSON.parse(
+      readFileSync(resolve(target.path, path), "utf8"),
+    );
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "criteria" in parsed &&
+      Array.isArray(parsed.criteria)
+    ) {
+      return parsed.criteria.filter(
+        (item): item is CoverageEntry =>
+          typeof item === "object" &&
+          item !== null &&
+          typeof (item as CoverageEntry).id === "string" &&
+          typeof (item as CoverageEntry).mode === "string" &&
+          typeof (item as CoverageEntry).required === "boolean",
+      );
+    }
+  } catch {
+    return [];
+  }
+  return [];
+}
+interface CriterionRecord {
+  readonly id: string;
+  readonly frozenAuthority: string;
+  readonly mode: string;
+  readonly required: boolean;
+  readonly procedures: readonly string[];
+  readonly sufficiency: string;
+}
+interface ReadinessAttestation {
+  readonly evaluatorRevision: string;
+  readonly privateInventoryIdentity: string;
+}
+interface PreparedMap {
+  readonly readiness: ReadinessAttestation;
+  readonly criteria: readonly CriterionRecord[];
+}
+function preparedMapText(target: Target, events: AuthorityEvent[]): unknown {
+  const prepared = latest(events, "evaluation-prepared");
+  if (!prepared || typeof prepared.evidence.path !== "string") return undefined;
+  try {
+    return JSON.parse(
+      readFileSync(resolve(target.path, prepared.evidence.path), "utf8"),
+    );
+  } catch {
+    return undefined;
+  }
+}
+function requiredText(
+  container: { readonly [key: string]: unknown },
+  name: string,
+  context: string,
+): string {
+  const raw = container[name];
+  if (typeof raw !== "string" || raw.trim().length === 0)
+    fail(`${context} is missing ${name}`);
+  return raw;
+}
+// Deterministic public structural check that stands behind `evaluation-prepared`
+// and `verification-allocated`: every material criterion carries its own record
+// with frozen-authority provenance, an evidence-procedure link, and a
+// criterion-specific sufficiency reason, and the map carries a passing
+// pre-freeze readiness attestation. It never inspects private evaluator content.
+function validatePreparedMap(document: unknown): PreparedMap {
+  if (
+    typeof document !== "object" ||
+    document === null ||
+    Array.isArray(document)
+  )
+    fail("evaluation-prepared requires a readable coverage map");
+  const map = document as { readonly [key: string]: unknown };
+  const criteria = map.criteria;
+  if (!Array.isArray(criteria) || criteria.length === 0)
+    fail("evaluation-prepared requires at least one criterion record");
+  const records = criteria.map((entry): CriterionRecord => {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry))
+      fail("Each criterion record must be an object");
+    const record = entry as { readonly [key: string]: unknown };
+    const id = requiredText(record, "id", "Criterion record");
+    const context = `Criterion record ${id}`;
+    const frozenAuthority = requiredText(record, "frozenAuthority", context);
+    const mode = requiredText(record, "mode", context);
+    const sufficiency = requiredText(record, "sufficiency", context);
+    if (typeof record.required !== "boolean")
+      fail(`${context} is missing a required disposition`);
+    const procedures = record.procedures;
+    if (
+      !Array.isArray(procedures) ||
+      procedures.length === 0 ||
+      !procedures.every(
+        (item) => typeof item === "string" && item.trim().length > 0,
+      )
+    )
+      fail(`${context} is missing evidence procedure traceability`);
+    if (mode === "BLOCKED") fail(`${context} has blocked coverage`);
+    return {
+      id,
+      frozenAuthority,
+      mode,
+      required: record.required,
+      procedures: procedures as string[],
+      sufficiency,
+    };
+  });
+  const ids = records.map((record) => record.id);
+  if (new Set(ids).size !== ids.length)
+    fail("evaluation-prepared requires unique criterion records");
+  const readiness = map.readiness;
+  if (
+    typeof readiness !== "object" ||
+    readiness === null ||
+    Array.isArray(readiness)
+  )
+    fail("evaluation-prepared requires a readiness attestation");
+  const attestation = readiness as { readonly [key: string]: unknown };
+  const evaluatorRevision = requiredText(
+    attestation,
+    "evaluatorRevision",
+    "Readiness attestation",
+  );
+  const privateInventoryIdentity = requiredText(
+    attestation,
+    "privateInventoryIdentity",
+    "Readiness attestation",
+  );
+  if (attestation.integrityValidation !== "PASS")
+    fail("evaluation-prepared requires a passing readiness attestation");
+  return {
+    readiness: { evaluatorRevision, privateInventoryIdentity },
+    criteria: records,
+  };
+}
 function authorityState(target: Target) {
   const events = authorityEvents(target);
   const finalized = events.filter(
@@ -487,8 +639,22 @@ function authorityState(target: Target) {
   const promoted = latest(events, "promotion-recorded") !== undefined;
   const asBuilt = latest(events, "as-built-recorded") !== undefined;
   const accepted = latest(events, "human-accepted") !== undefined;
+  const rejectedEvent = latest(events, "human-rejected");
+  const rejected = rejectedEvent !== undefined;
   const outcome = latest(events, "outcome-recorded") !== undefined;
-  return { events, passed, promoted, asBuilt, accepted, outcome };
+  const successor = latest(events, "successor-linked");
+  return {
+    events,
+    passed,
+    promoted,
+    asBuilt,
+    accepted,
+    rejected,
+    rejectedEvent,
+    successor,
+    outcome,
+    coverage: preparedCoverage(target, events),
+  };
 }
 function validateAuthority(
   target: Target,
@@ -510,6 +676,9 @@ function validateAuthority(
   }
   if (transition === "evaluation-prepared") {
     requireEvent("design-map-frozen");
+    validatePreparedMap(
+      preparedMapText(target, [...events, { transition, at: "", evidence }]),
+    );
     return;
   }
   if (transition === "implementation-handoff") {
@@ -534,6 +703,12 @@ function validateAuthority(
     const handoff = latest(events, "implementation-handoff");
     if (!handoff)
       fail("verification-allocated requires implementation-handoff");
+    const prepared = validatePreparedMap(preparedMapText(target, events));
+    if (
+      value(evidence, "evaluatorRevision") !==
+      prepared.readiness.evaluatorRevision
+    )
+      fail("verification-allocated must bind the attested evaluator revision");
     if (
       value(evidence, "commit") !== value(handoff.evidence, "commit") ||
       Number(evidence.implementationAttempt) !==
@@ -554,6 +729,14 @@ function validateAuthority(
       Number(evidence.attempt) !== Number(allocation.evidence.attempt)
     )
       fail("Verification result requires matching allocation");
+    if (
+      events.some(
+        (event) =>
+          event.transition === "verification-finalized" &&
+          Number(event.evidence.attempt) === Number(evidence.attempt),
+      )
+    )
+      fail("Verification attempt is already finalized");
     const result = value(evidence, "result");
     const classification = evidence.classification;
     if (!["PASS", "FAIL", "BLOCKED"].includes(result))
@@ -571,6 +754,30 @@ function validateAuthority(
       ].includes(String(classification))
     )
       fail("Invalid verification classification");
+    const coverage = state.coverage;
+    const results = evidence.coverageResults;
+    if (
+      typeof results !== "object" ||
+      results === null ||
+      Array.isArray(results)
+    )
+      fail("verification-finalized requires coverageResults");
+    const keys = Object.keys(results);
+    if (
+      keys.length !== coverage.length ||
+      !coverage.every((item) => keys.includes(item.id))
+    )
+      fail("Verification coverage results do not match prepared map");
+    if (
+      result === "PASS" &&
+      coverage.some(
+        (item) =>
+          item.required &&
+          (results as { readonly [key: string]: unknown })[item.id] !==
+            "SATISFIED",
+      )
+    )
+      fail("PASS requires every required criterion to be SATISFIED");
     return;
   }
   if (transition === "promotion-recorded") {
@@ -583,9 +790,44 @@ function validateAuthority(
   }
   if (transition === "human-accepted") {
     if (!state.asBuilt) fail("human-accepted requires as-built-recorded");
+    if (state.rejected) fail("human decision is already rejected");
     return;
   }
-  if (!state.accepted) fail("outcome-recorded requires human-accepted");
+  if (transition === "human-rejected") {
+    if (!state.asBuilt) fail("human-rejected requires as-built-recorded");
+    if (state.accepted || state.rejected)
+      fail("human decision is already recorded");
+    if (
+      ![
+        "IMPLEMENTATION_GAP",
+        "EVALUATOR_COVERAGE_DEFECT",
+        "SPECIFICATION_CHANGE",
+        "OTHER_HUMAN_REJECTION",
+      ].includes(value(evidence, "classification"))
+    )
+      fail("Invalid human rejection classification");
+    return;
+  }
+  if (transition === "successor-linked") {
+    const predecessor = targetFrom(value(evidence, "predecessor"));
+    if (predecessor.path === target.path)
+      fail("successor-linked cannot reference itself");
+    if (!authorityState(predecessor).rejected)
+      fail("successor-linked requires a human-rejected predecessor");
+    const predecessorEvidence = evidence.predecessorEvidence;
+    if (
+      typeof predecessorEvidence !== "object" ||
+      predecessorEvidence === null ||
+      Array.isArray(predecessorEvidence)
+    )
+      fail("successor-linked requires predecessor rejection evidence");
+    verifyPublicEvidence(predecessor, predecessorEvidence as Evidence);
+    if (latest(events, "successor-linked"))
+      fail("successor lineage is already recorded");
+    return;
+  }
+  if (!state.accepted || state.rejected)
+    fail("outcome-recorded requires human-accepted");
 }
 function authority(
   target: Target,
@@ -604,7 +846,7 @@ function authority(
       }
     });
     process.stdout.write(
-      `${JSON.stringify({ history: state.events, legalTransitions: legal, humanAcceptanceRequired: state.asBuilt && !state.accepted, outcomeComplete: state.outcome })}\n`,
+      `${JSON.stringify({ history: state.events, legalTransitions: legal, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected, outcomeComplete: state.outcome })}\n`,
     );
     return;
   }

@@ -68,3 +68,6 @@ Report branch, commit hash, changes, decisions, visible tests, checks, skipped
 checks, assumptions, and limitations. Do not claim independent evaluation has
 passed. The committed revision, not uncommitted residue, is the evaluator's
 input.
+
+For authority-enabled spikes, record `implementation-handoff` after the pushed
+candidate checkpoint; its commit and attempt are the canonical handoff.
