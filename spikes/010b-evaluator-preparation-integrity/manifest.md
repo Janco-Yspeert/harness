@@ -1,5 +1,66 @@
 # Spike 010b — Workflow Manifest
 
+## Run 004 — Implementation
+
+- Skill: `implementation` v3
+- Result: implementation attempt `001` candidate prepared; `implementation-handoff`
+  pending the committed and pushed public checkpoint
+- Inputs: frozen brief
+  `sha256:299504652c890dbfe2624f0319603c4797ace9707979c8595d7b080df0482d98`
+  at `20e35fb`; frozen Design Map
+  `sha256:7ee841df27b8a0ec5a2f3050a2a1b3597eeb6bfb74a1a7c5004ef9dbe228302a`
+  at `7a37c08`; public `eval-requirements.md`
+  `sha256:533f1f3abd36e1a7fc52af0d6607e9c3e72fbc267df1f485c654c415595253a5`
+  at `55e8aae`; `AGENTS.md`; no evaluator-private material inspected
+- Outputs (content identities immediately before this manifest update):
+  - `tools/workflow.ts`
+    `sha256:27ef0020c099e8a0231f1f202e049f4a9e37df8fa512a31d1c542b5e20cfd656`
+    — the `evaluation-prepared` authority validation now parses the
+    `coverage-map.json` criterion-evidence records (criterion identity,
+    frozen-authority source, evidence mode, required disposition, procedure
+    identifiers, criterion-specific sufficiency) and the public-safe readiness
+    attestation, rejecting a map with an absent, duplicate, or under-specified
+    record or without a passing attestation and leaving `workflow.jsonl`
+    unchanged on rejection; `verification-allocated` now binds the attested
+    evaluator revision and is refused without a passing attestation
+  - `skills/evaluator/SKILL.md`
+    `sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b`
+    — contract version 9 → 10: explicit deterministic pre-freeze
+    preparation-integrity validation step upstream of freeze, criterion-evidence
+    record and readiness-attestation obligations, freeze-inventory completeness,
+    forward-only post-allocation `BLOCKED` / `EVALUATOR_DEFECT` handling, and a
+    hard stop on evaluator-revision churn once the repeated-correction threshold
+    is reached
+  - `AGENTS.md`
+    `sha256:7fb5556317bcd97c1f85050e53d9272a7402fab35d94d7cb1f3fc767e1827b3e`
+    — autonomous-orchestration guidance states the pre-freeze integrity
+    obligations, the `evaluation-prepared` meaning, the allocation precondition,
+    and the threshold-reached stop as binding contract language
+  - `test/workflow.test.ts`
+    `sha256:24408b698a99bb54d5de8bdf28fe585aca87727e3f2bbaff84cc2c8e83d36cba`
+    — visible regression coverage against the `workflow authority` CLI for
+    AC22–AC26 (missing-attestation draft cannot prepare; structurally
+    incomplete evidence reference rejected before allocation; shared evidence
+    with retained per-criterion traceability accepted; non-executable evidence
+    procedure accepted; forward-only post-allocation evaluator-integrity
+    failure), plus the existing PASS-through-rejection fixture updated to the
+    richer map
+  - `skills/evaluator/history/v9/SKILL.md`
+    `sha256:c68b39a8675d8af3a0cedfdf418172ecd41610de21d7ecab71d4c0f2a5cabd5f`
+    — replaced evaluator v9 contract archived outside the active skill path
+- Decisions: `coverage-map.json` remains the single public authority artifact;
+  the deterministic preparation-integrity validator stays evaluator-owned and
+  the public authority validates only attestation and map shape; `preparedCoverage`
+  retained for `verification-finalized` coverage matching
+- Non-goals honored: Spike 010a untouched (no path under
+  `spikes/010a-*/` changed); no synthetic `human-rejected`,
+  `verification-finalized`, or `successor-linked` event; no hidden tests added;
+  no semantic evaluator-quality judgement in Harness
+- Checks: `npm run check` (`tsc --noEmit`, `eslint .`, `prettier --check .`,
+  `node --test test/*.test.ts`) exit 0; 36/36 tests pass; `git diff --check`
+  clean
+- Measurement cutoff: immediately before this manifest update
+
 ## Run 003 — Evaluator Prepare
 
 - Skill: `evaluator` v9 (prepare mode) + Spike 010b bootstrap evaluator exception

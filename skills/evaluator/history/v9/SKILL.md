@@ -15,7 +15,7 @@ compatibility:
 
 # Evaluator
 
-Contract version: 10
+Contract version: 9
 
 Mode: `$mode`
 
@@ -183,20 +183,12 @@ cases list their hidden test files. Non-executable cases use an empty test list,
 state their coverage mode, and record why executable hidden coverage is not
 justified.
 
-For authority-enabled spikes, also commit a public-safe `coverage-map.json`. It
-carries exactly one explicit criterion evidence record for every material frozen
-acceptance criterion. Each record declares the criterion identity, its
-frozen-authority source, the evidence mode, the required disposition, the
-referenced evidence procedure/case identifiers, and a criterion-specific
-sufficiency reason that explains why that evidence establishes that criterion.
-Several records may name the same procedure, but a broad grouping never replaces
-a per-criterion record and reason. The map also carries a public-safe readiness
-attestation binding the prepared evaluator revision to its deterministic private
-inventory identity and declaring that pre-freeze integrity validation passed; it
-exposes no private paths, cases, fixtures, or grader logic. Record
-`evaluation-prepared` through the authority after the public checkpoint; do not
-complete preparation with missing, duplicate, or blocked required coverage, or
-without a passing readiness attestation.
+For authority-enabled spikes, also commit a public-safe `coverage-map.json` with
+one explicit entry for every material frozen acceptance criterion. Each entry
+declares criterion id, evidence mode, evaluator requirement/cases, required
+flag, and reason. Record `evaluation-prepared` through the authority after the
+public checkpoint; do not complete preparation with missing or blocked required
+coverage.
 
 Exercise every mandatory executable case against controlled positive and
 negative conditions before freeze. Confirm setup, teardown, helper integrity,
@@ -206,53 +198,17 @@ public/manual evidence plan can fairly establish the frozen criterion without
 requiring a candidate-specific interpretation. Diagnostic or helper tests do not
 count as Harness coverage.
 
-### 4. Validate preparation integrity
+### 4. Freeze
 
-Before any private revision may be frozen, run a deterministic pre-freeze
-integrity validation over the candidate evaluator bundle and record its result
-in the private freeze metadata. This validation is structural and
-implementation-independent; it never inspects or tunes against the candidate
-implementation and never judges whether the evaluator's substantive reasoning is
-correct. It must establish that:
-
-- every material frozen criterion has exactly one explicit criterion evidence
-  record, or another Design-Map-approved unambiguous representation;
-- every required criterion has a non-missing evidence disposition and a
-  criterion-specific sufficiency reason;
-- every referenced evaluator requirement, case, or procedure exists in the
-  candidate bundle;
-- every declared executable case names actual frozen evaluator files, and every
-  mandatory executable case has passed its controlled positive and negative
-  pre-implementation exercise;
-- every declared non-executable procedure is concretely defined and resolvable
-  without inventing candidate-specific semantics after implementation;
-- every frozen case or procedure maps back to the criterion or criteria it
-  establishes, and no required evidence reference is orphaned;
-- the private freeze inventory lists every file the frozen bundle depends on;
-  and
-- the public-safe coverage representation and the private bundle are mutually
-  consistent.
-
-If the validation fails, preparation stays pre-freeze: do not freeze the
-revision, do not record `evaluation-prepared`, do not begin implementation, and
-do not allocate verification. Correct the evaluator while still in preparation
-and revalidate. Preserve any required preparation diagnostics without producing
-public evidence that claims a valid frozen evaluator. A draft that never passed
-this validation has no frozen evaluator revision.
-
-### 5. Freeze
-
-Freeze occurs only after the step 4 integrity validation passes. Freeze the
-private evaluator revision using deterministic content identities. Private
-`freeze.json` metadata must identify:
+Freeze the private evaluator revision using deterministic content identities.
+Private `freeze.json` metadata must identify:
 
 - evaluator revision and evaluator skill version;
 - brief and Design Map identities;
 - exact public evaluation-requirements content identity;
 - private specification and case-manifest identities;
-- every hidden test and support-file identity that exists;
-- every other file the frozen bundle depends on (the freeze inventory); and
-- the pre-freeze integrity checks performed and their passing result.
+- every hidden test and support-file identity that exists; and
+- integrity checks performed.
 
 Confirm the frozen public content identity, then follow **Final execution
 record** below. Commit and push the exact public requirements and safe public
@@ -289,18 +245,6 @@ plan as an evaluator defect; if the missing information is actually an
 insufficient or ambiguous public contract, classify it as
 `SPECIFICATION_AMBIGUITY` and block rather than inventing the missing seam.
 
-If, after the verification attempt was validly allocated, a frozen evaluator
-case, procedure, or support file the frozen bundle depends on is discovered to
-be missing or unresolvable, this is a frozen-evaluator bundle-integrity defect.
-Finalize the allocated attempt forward-only: terminal `BLOCKED` classified
-`EVALUATOR_DEFECT`, retaining the allocated implementation identity and
-evaluator revision identity, recording whether candidate evaluation had begun,
-and fabricating no candidate coverage results for cases that did not actually
-run. Never classify a missing evaluator procedure as `IMPLEMENTATION_FAILURE`,
-and never leave the attempt without a terminal disposition merely because the
-evaluator could not run. Then follow the post-implementation repair and
-threshold rules before any corrected revision.
-
 Diagnostics may clarify a failure but cannot replace broken mandatory evidence
 or retroactively rewrite what a test established.
 
@@ -328,15 +272,6 @@ brief cycle, not an evaluator repair. Do not change the evaluator because it
 found an implementation defect. After two post-implementation evaluator
 corrections in one cycle, explicitly classify any further issue as evaluator,
 specification, or methodology/evidence-model defect before another correction.
-
-Once that threshold is reached, ordinary evaluator-revision churn stops. Do not
-apply another automatic in-cycle correction. Finalize the allocated attempt with
-its terminal non-PASS result, record the classification in the immutable attempt
-result and the private revision history, and require the appropriate process or
-specification successor path — a new brief cycle for a specification or
-methodology/evidence-model defect — rather than continuing to revise this
-cycle's evaluator. A repeated preparation-integrity failure is a
-methodology/evidence-model defect, not an implementation failure.
 
 Before classifying `IMPLEMENTATION_FAILURE`, rerun the relevant case in
 isolation, confirm helper/oracle integrity and setup/teardown, and rule out

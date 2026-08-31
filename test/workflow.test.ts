@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   chmodSync,
+  existsSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -67,6 +68,64 @@ function provenanceCommit(
     commit: git(["commit-tree", root, "-m", "workflow fixture"]),
     identities,
   };
+}
+
+type CriterionOverrides = Record<string, unknown>;
+
+function criterion(
+  id: string,
+  overrides: CriterionOverrides = {},
+): Record<string, unknown> {
+  return {
+    id,
+    frozenAuthority: `spike.md ${id}`,
+    mode: "PUBLIC_REGRESSION",
+    required: true,
+    procedures: ["E1"],
+    sufficiency: `${id} is established by procedure E1.`,
+    ...overrides,
+  };
+}
+
+function coverageMap(
+  criteria: Array<Record<string, unknown>>,
+  readiness: Record<string, unknown> | null = {
+    evaluatorRevision: "001",
+    privateInventoryIdentity: `sha256:${"0".repeat(64)}`,
+    integrityValidation: "PASS",
+  },
+): string {
+  const map: Record<string, unknown> = { criteria };
+  if (readiness !== null) map.readiness = readiness;
+  return `${JSON.stringify(map, null, 2)}\n`;
+}
+
+function authorityFixture(
+  suffix: string,
+  files: Record<string, string>,
+): {
+  fixture: string;
+  path: string;
+  provenance: ReturnType<typeof provenanceCommit>;
+  evidence: (name: string) => object;
+  record: (transition: string, data: object) => ReturnType<typeof run>;
+} {
+  const fixture = `spikes/998a-authority-fixture-${String(process.pid)}${suffix}`;
+  const path = join(repositoryRoot, fixture);
+  rmSync(path, { recursive: true, force: true });
+  mkdirSync(path, { recursive: true });
+  for (const [name, contents] of Object.entries(files)) {
+    writeFileSync(join(path, name), contents);
+  }
+  const provenance = provenanceCommit(files, fixture);
+  const evidence = (name: string) => ({
+    path: name,
+    identity: provenance.identities[name],
+    commit: provenance.commit,
+  });
+  const record = (transition: string, data: object) =>
+    run(["authority", "record", fixture, transition, JSON.stringify(data)]);
+  return { fixture, path, provenance, evidence, record };
 }
 
 function complete(phase: string): void {
@@ -262,16 +321,14 @@ void test("authority recognizes successor spike identifiers and exposes coverage
 void test("authority preserves a complete PASS through human rejection", (t) => {
   const fixture = `spikes/998a-authority-fixture-${String(process.pid)}`;
   const path = join(repositoryRoot, fixture);
-  const coverage = JSON.stringify({
-    criteria: [
-      { id: "AC01", mode: "PUBLIC_REGRESSION", required: true },
-      { id: "AC02", mode: "MANUAL_PUBLIC_EVIDENCE", required: true },
-    ],
-  });
+  const coverage = coverageMap([
+    criterion("AC01"),
+    criterion("AC02", { mode: "MANUAL_PUBLIC_EVIDENCE" }),
+  ]);
   const files = {
     "spike.md": "brief\n",
     "design-map.md": "map\n",
-    "coverage-map.json": `${coverage}\n`,
+    "coverage-map.json": coverage,
     "acceptance.md": "rejected\n",
   };
   mkdirSync(path, { recursive: true });
@@ -305,6 +362,7 @@ void test("authority preserves a complete PASS through human rejection", (t) => 
     commit: provenance.commit,
     implementationAttempt: 1,
     attempt: 1,
+    evaluatorRevision: "001",
   });
   const beforeMissingResult = readFileSync(
     join(path, "workflow.jsonl"),
@@ -377,4 +435,235 @@ void test("authority preserves a complete PASS through human rejection", (t) => 
     ]).status,
     0,
   );
+});
+
+function authorityHistory(
+  fixture: ReturnType<typeof authorityFixture>,
+): string {
+  const path = join(fixture.path, "workflow.jsonl");
+  return existsSync(path) ? readFileSync(path, "utf8") : "";
+}
+
+function attemptPrepared(fixture: ReturnType<typeof authorityFixture>): {
+  result: ReturnType<typeof run>;
+  historyBefore: string;
+  historyAfter: string;
+} {
+  assert.equal(
+    fixture.record("brief-frozen", fixture.evidence("spike.md")).status,
+    0,
+  );
+  assert.equal(
+    fixture.record("design-map-frozen", fixture.evidence("design-map.md"))
+      .status,
+    0,
+  );
+  const historyBefore = authorityHistory(fixture);
+  const result = fixture.record(
+    "evaluation-prepared",
+    fixture.evidence("coverage-map.json"),
+  );
+  return { result, historyBefore, historyAfter: authorityHistory(fixture) };
+}
+
+void test("a draft without a passing readiness attestation cannot reach a prepared state", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01"), criterion("AC02")], {
+      evaluatorRevision: "001",
+      privateInventoryIdentity: `sha256:${"a".repeat(64)}`,
+      integrityValidation: "FAIL",
+    }),
+  };
+  const f = authorityFixture("-e2", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+
+  const { result, historyBefore, historyAfter } = attemptPrepared(f);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /readiness attestation/);
+  assert.equal(historyAfter, historyBefore);
+
+  const noAllocation = f.record("verification-allocated", {
+    commit: f.provenance.commit,
+    implementationAttempt: 1,
+    attempt: 1,
+    evaluatorRevision: "001",
+  });
+  assert.notEqual(noAllocation.status, 0);
+  assert.equal(authorityHistory(f), historyBefore);
+});
+
+void test("a criterion-complete map with an incomplete evidence reference is rejected before allocation", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([
+      criterion("AC01"),
+      criterion("AC02", { procedures: [] }),
+    ]),
+  };
+  const f = authorityFixture("-e3", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+
+  const { result, historyBefore, historyAfter } = attemptPrepared(f);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /AC02 is missing evidence procedure/);
+  assert.equal(historyAfter, historyBefore);
+
+  assert.notEqual(
+    f.record("verification-allocated", {
+      commit: f.provenance.commit,
+      implementationAttempt: 1,
+      attempt: 1,
+      evaluatorRevision: "001",
+    }).status,
+    0,
+  );
+  assert.equal(authorityHistory(f), historyBefore);
+});
+
+void test("shared evidence supports multiple criterion records when each keeps its own traceability", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([
+      criterion("AC01", {
+        mode: "STATIC_INSPECTION",
+        procedures: ["S1"],
+        sufficiency: "AC01 is a textual property checked by inspection S1.",
+      }),
+      criterion("AC02", {
+        mode: "STATIC_INSPECTION",
+        procedures: ["S1"],
+        sufficiency:
+          "AC02 relies on the same S1 inspection for a distinct clause.",
+      }),
+    ]),
+  };
+  const f = authorityFixture("-e4", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+
+  const { result } = attemptPrepared(f);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(
+    readFileSync(join(f.path, "workflow.jsonl"), "utf8"),
+    /"transition":"evaluation-prepared"/,
+  );
+});
+
+void test("a non-executable evidence procedure participates in a valid prepared evaluator", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([
+      criterion("AC01", {
+        mode: "STATIC_INSPECTION",
+        procedures: ["S1"],
+        sufficiency:
+          "AC01 is established by inspecting the frozen contract text (S1).",
+      }),
+      criterion("AC02", {
+        mode: "PROVENANCE_INSPECTION",
+        procedures: ["P1"],
+        sufficiency:
+          "AC02 is a git-provenance property verified by inspection P1.",
+      }),
+    ]),
+  };
+  const f = authorityFixture("-e5", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+
+  const { result } = attemptPrepared(f);
+  assert.equal(result.status, 0, result.stderr);
+
+  const status = JSON.parse(run(["authority", "status", f.fixture]).stdout) as {
+    history: Array<{ transition: string }>;
+  };
+  assert.deepEqual(
+    status.history.map((event) => event.transition),
+    ["brief-frozen", "design-map-frozen", "evaluation-prepared"],
+  );
+});
+
+void test("a post-allocation evaluator-integrity failure is forward-only and preserves identities", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01"), criterion("AC02")]),
+  };
+  const f = authorityFixture("-e6", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+
+  assert.equal(attemptPrepared(f).result.status, 0);
+  assert.equal(
+    f.record("implementation-handoff", {
+      commit: f.provenance.commit,
+      attempt: 1,
+    }).status,
+    0,
+  );
+  assert.equal(
+    f.record("verification-allocated", {
+      commit: f.provenance.commit,
+      implementationAttempt: 1,
+      attempt: 1,
+      evaluatorRevision: "001",
+    }).status,
+    0,
+  );
+
+  const coverageResults = { AC01: "UNEVALUATED", AC02: "UNEVALUATED" };
+  const finalized = f.record("verification-finalized", {
+    attempt: 1,
+    result: "BLOCKED",
+    classification: "EVALUATOR_DEFECT",
+    coverageResults,
+  });
+  assert.equal(finalized.status, 0, finalized.stderr);
+
+  const status = JSON.parse(run(["authority", "status", f.fixture]).stdout) as {
+    technicalVerification: string;
+    promotionComplete: boolean;
+    history: Array<{ transition: string; evidence: Record<string, unknown> }>;
+  };
+  assert.equal(status.technicalVerification, "NOT_PASSED");
+  assert.equal(status.promotionComplete, false);
+
+  const allocation = status.history.find(
+    (event) => event.transition === "verification-allocated",
+  );
+  assert.ok(allocation);
+  assert.equal(allocation.evidence.commit, f.provenance.commit);
+  assert.equal(allocation.evidence.evaluatorRevision, "001");
+
+  const handoff = status.history.find(
+    (event) => event.transition === "implementation-handoff",
+  );
+  assert.ok(handoff);
+  assert.equal(handoff.evidence.commit, f.provenance.commit);
+
+  const result = status.history.find(
+    (event) => event.transition === "verification-finalized",
+  );
+  assert.ok(result);
+  assert.equal(result.evidence.classification, "EVALUATOR_DEFECT");
+  assert.deepEqual(result.evidence.coverageResults, coverageResults);
+  assert.ok(
+    Object.values(
+      result.evidence.coverageResults as Record<string, string>,
+    ).every((value) => value === "UNEVALUATED"),
+  );
+
+  assert.notEqual(f.record("promotion-recorded", {}).status, 0);
 });

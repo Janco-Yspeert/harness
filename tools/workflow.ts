@@ -518,6 +518,117 @@ function preparedCoverage(
   }
   return [];
 }
+interface CriterionRecord {
+  readonly id: string;
+  readonly frozenAuthority: string;
+  readonly mode: string;
+  readonly required: boolean;
+  readonly procedures: readonly string[];
+  readonly sufficiency: string;
+}
+interface ReadinessAttestation {
+  readonly evaluatorRevision: string;
+  readonly privateInventoryIdentity: string;
+}
+interface PreparedMap {
+  readonly readiness: ReadinessAttestation;
+  readonly criteria: readonly CriterionRecord[];
+}
+function preparedMapText(target: Target, events: AuthorityEvent[]): unknown {
+  const prepared = latest(events, "evaluation-prepared");
+  if (!prepared || typeof prepared.evidence.path !== "string") return undefined;
+  try {
+    return JSON.parse(
+      readFileSync(resolve(target.path, prepared.evidence.path), "utf8"),
+    );
+  } catch {
+    return undefined;
+  }
+}
+function requiredText(
+  container: { readonly [key: string]: unknown },
+  name: string,
+  context: string,
+): string {
+  const raw = container[name];
+  if (typeof raw !== "string" || raw.trim().length === 0)
+    fail(`${context} is missing ${name}`);
+  return raw;
+}
+// Deterministic public structural check that stands behind `evaluation-prepared`
+// and `verification-allocated`: every material criterion carries its own record
+// with frozen-authority provenance, an evidence-procedure link, and a
+// criterion-specific sufficiency reason, and the map carries a passing
+// pre-freeze readiness attestation. It never inspects private evaluator content.
+function validatePreparedMap(document: unknown): PreparedMap {
+  if (
+    typeof document !== "object" ||
+    document === null ||
+    Array.isArray(document)
+  )
+    fail("evaluation-prepared requires a readable coverage map");
+  const map = document as { readonly [key: string]: unknown };
+  const criteria = map.criteria;
+  if (!Array.isArray(criteria) || criteria.length === 0)
+    fail("evaluation-prepared requires at least one criterion record");
+  const records = criteria.map((entry): CriterionRecord => {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry))
+      fail("Each criterion record must be an object");
+    const record = entry as { readonly [key: string]: unknown };
+    const id = requiredText(record, "id", "Criterion record");
+    const context = `Criterion record ${id}`;
+    const frozenAuthority = requiredText(record, "frozenAuthority", context);
+    const mode = requiredText(record, "mode", context);
+    const sufficiency = requiredText(record, "sufficiency", context);
+    if (typeof record.required !== "boolean")
+      fail(`${context} is missing a required disposition`);
+    const procedures = record.procedures;
+    if (
+      !Array.isArray(procedures) ||
+      procedures.length === 0 ||
+      !procedures.every(
+        (item) => typeof item === "string" && item.trim().length > 0,
+      )
+    )
+      fail(`${context} is missing evidence procedure traceability`);
+    if (mode === "BLOCKED") fail(`${context} has blocked coverage`);
+    return {
+      id,
+      frozenAuthority,
+      mode,
+      required: record.required,
+      procedures: procedures as string[],
+      sufficiency,
+    };
+  });
+  const ids = records.map((record) => record.id);
+  if (new Set(ids).size !== ids.length)
+    fail("evaluation-prepared requires unique criterion records");
+  const readiness = map.readiness;
+  if (
+    typeof readiness !== "object" ||
+    readiness === null ||
+    Array.isArray(readiness)
+  )
+    fail("evaluation-prepared requires a readiness attestation");
+  const attestation = readiness as { readonly [key: string]: unknown };
+  const evaluatorRevision = requiredText(
+    attestation,
+    "evaluatorRevision",
+    "Readiness attestation",
+  );
+  const privateInventoryIdentity = requiredText(
+    attestation,
+    "privateInventoryIdentity",
+    "Readiness attestation",
+  );
+  if (attestation.integrityValidation !== "PASS")
+    fail("evaluation-prepared requires a passing readiness attestation");
+  return {
+    readiness: { evaluatorRevision, privateInventoryIdentity },
+    criteria: records,
+  };
+}
 function authorityState(target: Target) {
   const events = authorityEvents(target);
   const finalized = events.filter(
@@ -565,17 +676,9 @@ function validateAuthority(
   }
   if (transition === "evaluation-prepared") {
     requireEvent("design-map-frozen");
-    const coverage = preparedCoverage(target, [
-      ...events,
-      { transition, at: "", evidence },
-    ]);
-    if (
-      coverage.length === 0 ||
-      new Set(coverage.map((item) => item.id)).size !== coverage.length
-    )
-      fail("evaluation-prepared requires a complete unique coverage map");
-    if (coverage.some((item) => item.mode === "BLOCKED"))
-      fail("evaluation-prepared cannot complete with blocked coverage");
+    validatePreparedMap(
+      preparedMapText(target, [...events, { transition, at: "", evidence }]),
+    );
     return;
   }
   if (transition === "implementation-handoff") {
@@ -600,6 +703,12 @@ function validateAuthority(
     const handoff = latest(events, "implementation-handoff");
     if (!handoff)
       fail("verification-allocated requires implementation-handoff");
+    const prepared = validatePreparedMap(preparedMapText(target, events));
+    if (
+      value(evidence, "evaluatorRevision") !==
+      prepared.readiness.evaluatorRevision
+    )
+      fail("verification-allocated must bind the attested evaluator revision");
     if (
       value(evidence, "commit") !== value(handoff.evidence, "commit") ||
       Number(evidence.implementationAttempt) !==
