@@ -1,0 +1,2 @@
+{"transition":"successor-linked","at":"2026-08-31T13:56:13.557Z","evidence":{"predecessor":"spikes/010b-evaluator-preparation-integrity","predecessorEvidence":{"path":"acceptance.md","identity":"sha256:1fda7dd135338a9a432be412888e6b818f77faa8868db2de08f0beb79cda0e43","commit":"bddccf248538d78b140405a007baccecd2c04292","classification":"EVALUATOR_COVERAGE_DEFECT"}}}
+{"transition":"brief-frozen","at":"2026-08-31T13:56:13.606Z","evidence":{"path":"spike.md","identity":"sha256:adf1e47d5b6142e2a69a50f79c1e3f9af2cc3263edc99145cce8ab93f3c29d50","commit":"1f7d4cb"}}
