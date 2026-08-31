@@ -278,11 +278,18 @@ void test("execute records a detached job and cancel terminates it", (t) => {
 });
 
 void test("authority accepts valid repository-relative provenance", () => {
+  const path = "spikes/010-workflow-authority/spike.md";
+  const commit = spawnSync("git", ["rev-parse", "HEAD"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  });
+  assert.equal(commit.status, 0, commit.stderr);
   const evidence = JSON.stringify({
     path: "spike.md",
-    identity:
-      "sha256:a3e81619e2bca965eac7b40789cbc7b98f5a29f5be7ef98b7c14714d85e5ddb4",
-    commit: "51d020b",
+    identity: `sha256:${createHash("sha256")
+      .update(readFileSync(join(repositoryRoot, path)))
+      .digest("hex")}`,
+    commit: commit.stdout.trim(),
   });
   const result = run([
     "authority",

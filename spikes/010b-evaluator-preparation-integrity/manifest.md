@@ -1,5 +1,21 @@
 # Spike 010b — Workflow Manifest
 
+## Run 006 — Human Rejection
+
+- Decision: rejected; classification: `EVALUATOR_COVERAGE_DEFECT`
+- Evidence: `acceptance.md`
+  `sha256:1fda7dd135338a9a432be412888e6b818f77faa8868db2de08f0beb79cda0e43`
+  at `bddccf248538d78b140405a007baccecd2c04292`
+- Rationale: the promoted evaluation proves the public authority rejects a
+  failed readiness attestation, but does not adequately establish mechanical
+  detection during evaluator preparation of a declared required procedure whose
+  underlying material is absent. Its mandatory-case accounting is also
+  inconsistent.
+- Preservation: the frozen evaluator, implementation, verification, promotion,
+  and As-Built records remain historical evidence without alteration. Corrective
+  work continues in Spike 010c.
+- Measurement cutoff: immediately before this manifest update
+
 ## Run 005 — As-Built
 
 - Skill: `as-built` v2
