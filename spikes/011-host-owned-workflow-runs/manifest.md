@@ -92,3 +92,52 @@
 - Restricted evaluator material inspected: this cycle's own private bundle only
 - Blocking questions: none
 - Measurement cutoff: immediately before this manifest update
+
+## Run 005 - Implementation
+
+- Skill: `implementation` v3
+- Result: clean candidate on `feat/spike-011`; not independently verified
+- Frozen inputs: `spike.md`
+  `sha256:ba7f7c0a2110e6bb5e144d5c9596e2ced5464d562c373db34e0bd1be1a580455`
+  (`9af63ce`), `design-map.md`
+  `sha256:22f01566e2c34a3e9a0b98a5e47a78310a4d8351c17307d8c5c23f4c68f0a97b`
+  (`3689964`), public `eval-requirements.md`
+  `sha256:16766fafeba18217e5a97b90de97079ab0447878b919705381a6f397fa9f9af7`
+  and `coverage-map.json`
+  `sha256:3dd7ef05391c28880896bffe7fa4ab8b4b3ed17443f05146d3e9a776f8345ec3`
+- Change: the existing `startHarnessHost` runtime now owns a host-lifetime
+  workflow-run registry (`src/workflow-run.ts`) beside its session state, with an
+  HTTP surface (`POST/GET /workflow-runs`, `GET /workflow-runs/:id`,
+  `GET /workflow-runs/:id/log`, `POST /workflow-runs/:id/cancel`,
+  `POST /workflow-runs/:id/replace`), a test-substitutable workflow
+  backend/factory seam (`createWorkflowBackend`), a bounded non-bypass local
+  adapter (`src/workflow-backend.ts`), normalized lifecycle events on the
+  existing `/events/ws` envelope, per-run diagnostic-log retention, host-derived
+  accounting, and named `repo-local-worker` / `evaluator` permission profiles.
+  `tools/workflow.ts` `--execute` is now an HTTP client of that surface: it
+  spawns no detached worker, fails explicitly when no host is reachable, and
+  binds a phase `complete` record to the terminal `completed` state of the
+  canonical run allocated for that phase/attempt.
+- Visible tests: new `test/workflow-run.integration.test.ts` (11 cases:
+  client-detachment/inspection, run-record fields, duplicate/concurrent-start
+  prevention, replacement ordering and provenance, lifecycle-event envelope
+  reuse, diagnostic-log/non-canonical separation, bounded/named permission
+  profiles, accounting, host co-location, and `tools/workflow.ts`
+  completion-binding); `test/workflow.test.ts` gains an absent-host dispatch
+  case and drops the superseded detached-job case
+- Checks: `npm test` 53/53 pass; `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, and `git diff --check` clean
+- Decisions within Design Map freedom: route names and JSON field spellings as
+  above; duplicate allocation returns `200` with the existing run and
+  `duplicate: true`; `randomUUID` run ids; in-memory per-run log buffer exposed
+  at `/workflow-runs/:id/log`; replacement of an active run is one host
+  operation that terminalizes the prior execution `replaced` before allocating
+  the next attempt
+- Known limitations: the real provider adapter is not exercised by the visible
+  suite (per A3); AC14's routine-operation coverage is demonstrated as the
+  bounded, non-interactive, non-bypass executor invocation the adapter builds
+  plus the capability/workspace profile recorded on the run, not a live agent
+  performing shell work; daemon-restart persistence is not implemented (not
+  required)
+- Restricted evaluator material inspected: none
+- Measurement cutoff: immediately before this manifest update

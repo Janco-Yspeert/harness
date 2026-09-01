@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { createServer, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from "node:http";
 import type { AddressInfo } from "node:net";
 
 import { WebSocket, WebSocketServer, type RawData } from "ws";
@@ -11,6 +15,16 @@ import type {
   SessionBackend,
   SessionBackendFactory,
 } from "./session-backend.ts";
+import { createLocalWorkflowBackend } from "./workflow-backend.ts";
+import {
+  parseWorkflowReplaceRequest,
+  parseWorkflowRunRequest,
+  WorkflowRunConflictError,
+  WorkflowRunNotFoundError,
+  WorkflowRunRegistry,
+  WorkflowRunRequestError,
+  type WorkflowRunBackendFactory,
+} from "./workflow-run.ts";
 
 export type {
   BackendInputResult,
@@ -18,6 +32,21 @@ export type {
   SessionBackend,
   SessionBackendFactory,
 } from "./session-backend.ts";
+export {
+  buildExecutorCommand,
+  createLocalWorkflowBackend,
+} from "./workflow-backend.ts";
+export type {
+  ResolvedWorkflowRunSpec,
+  WorkflowInvocationMode,
+  WorkflowPermissionProfile,
+  WorkflowRunBackend,
+  WorkflowRunBackendContext,
+  WorkflowRunBackendFactory,
+  WorkflowRunExitOutcome,
+  WorkflowRunRecord,
+  WorkflowRunStatus,
+} from "./workflow-run.ts";
 
 const LOOPBACK_HOST = "127.0.0.1";
 const DEFAULT_PORT = 3000;
@@ -47,18 +76,18 @@ interface InputMessage {
 
 type SessionEventType = "session.started" | "session.ended";
 
-interface SessionEvent {
+interface HarnessEvent {
   readonly meta: {
     readonly id: string;
     readonly kind: "event";
-    readonly type: SessionEventType;
+    readonly type: string;
     readonly version: "1.0.0";
     readonly streamId: string;
     readonly correlationId: string;
     readonly timestamp: string;
     readonly source: "harness";
   };
-  readonly data: Record<string, never>;
+  readonly data: Record<string, unknown>;
 }
 
 interface Session {
@@ -76,6 +105,7 @@ export interface HarnessHost {
 
 export interface HarnessHostOptions {
   createBackend?: SessionBackendFactory;
+  createWorkflowBackend?: WorkflowRunBackendFactory;
 }
 
 function sendError(socket: WebSocket | undefined, error: HarnessErrorMessage) {
@@ -141,6 +171,34 @@ async function serveStatic(
   }
 }
 
+async function readJsonBody(request: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of request) {
+    const buffer = chunk as Buffer;
+    size += buffer.length;
+    if (size > 1_000_000) {
+      throw new SyntaxError("request body is too large");
+    }
+    chunks.push(buffer);
+  }
+  if (chunks.length === 0) return undefined;
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
+
+function sendJson(
+  response: ServerResponse,
+  status: number,
+  payload: unknown,
+): void {
+  const body = JSON.stringify(payload);
+  response.writeHead(status, {
+    "content-type": "application/json",
+    "content-length": Buffer.byteLength(body),
+  });
+  response.end(body);
+}
+
 function rejectUpgrade(
   socket: import("node:stream").Duplex,
   status: 404 | 409,
@@ -164,29 +222,143 @@ export async function startHarnessHost(
   let creatingSession = false;
   let closed = false;
 
-  function publishSessionEvent(
-    type: SessionEventType,
-    sessionId: string,
+  function publishEvent(
+    type: string,
+    streamId: string,
+    data: Record<string, unknown>,
   ): void {
     const id = randomUUID();
-    const event: SessionEvent = {
+    const event: HarnessEvent = {
       meta: {
         id,
         kind: "event",
         type,
         version: "1.0.0",
-        streamId: sessionId,
+        streamId,
         correlationId: id,
         timestamp: new Date().toISOString(),
         source: "harness",
       },
-      data: {},
+      data,
     };
     const message = JSON.stringify(event);
 
     for (const socket of eventSockets) {
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(message);
+      }
+    }
+  }
+
+  function publishSessionEvent(
+    type: SessionEventType,
+    sessionId: string,
+  ): void {
+    publishEvent(type, sessionId, {});
+  }
+
+  const workflowRuns = new WorkflowRunRegistry({
+    createBackend: options.createWorkflowBackend ?? createLocalWorkflowBackend,
+    publishEvent,
+  });
+
+  async function handleWorkflowRequest(
+    request: IncomingMessage,
+    response: ServerResponse,
+    pathname: string,
+  ): Promise<void> {
+    const method = request.method ?? "GET";
+    try {
+      if (pathname === "/workflow-runs") {
+        if (method === "POST") {
+          const { run, duplicate } = await workflowRuns.allocate(
+            parseWorkflowRunRequest(await readJsonBody(request)),
+          );
+          sendJson(response, duplicate ? 200 : 201, { run, duplicate });
+          return;
+        }
+        if (method === "GET") {
+          sendJson(response, 200, { runs: workflowRuns.list() });
+          return;
+        }
+        response.writeHead(405).end("Method not allowed\n");
+        return;
+      }
+
+      const runMatch = pathname.match(
+        /^\/workflow-runs\/([^/]+)(\/log|\/cancel|\/replace)?$/,
+      );
+      if (runMatch === null) {
+        response.writeHead(404).end("Not found\n");
+        return;
+      }
+      const runId = decodeURIComponent(runMatch[1] ?? "");
+      const suffix = runMatch[2];
+
+      if (suffix === undefined && method === "GET") {
+        const run = workflowRuns.get(runId);
+        if (run === undefined) {
+          response.writeHead(404).end("Not found\n");
+          return;
+        }
+        sendJson(response, 200, { run });
+        return;
+      }
+      if (suffix === "/log" && method === "GET") {
+        const log = workflowRuns.log(runId);
+        if (log === undefined) {
+          response.writeHead(404).end("Not found\n");
+          return;
+        }
+        response.writeHead(200, {
+          "content-type": "text/plain; charset=utf-8",
+          "x-content-type-options": "nosniff",
+        });
+        response.end(log);
+        return;
+      }
+      if (suffix === "/cancel" && method === "POST") {
+        const body = await readJsonBody(request);
+        const reason =
+          typeof body === "object" &&
+          body !== null &&
+          "reason" in body &&
+          typeof body.reason === "string"
+            ? body.reason
+            : undefined;
+        sendJson(response, 200, {
+          run: await workflowRuns.cancel(runId, reason),
+        });
+        return;
+      }
+      if (suffix === "/replace" && method === "POST") {
+        const replacement = await workflowRuns.replace(
+          runId,
+          parseWorkflowReplaceRequest(await readJsonBody(request)),
+        );
+        sendJson(response, 201, replacement);
+        return;
+      }
+      response.writeHead(405).end("Method not allowed\n");
+    } catch (error) {
+      if (
+        error instanceof WorkflowRunRequestError ||
+        error instanceof SyntaxError
+      ) {
+        sendJson(response, 400, { error: error.message });
+        return;
+      }
+      if (error instanceof WorkflowRunNotFoundError) {
+        sendJson(response, 404, { error: error.message });
+        return;
+      }
+      if (error instanceof WorkflowRunConflictError) {
+        sendJson(response, 409, { error: error.message });
+        return;
+      }
+      console.error("Failed to handle workflow-run request", error);
+      if (!response.headersSent) {
+        response.writeHead(500).end("Internal server error\n");
       }
     }
   }
@@ -259,6 +431,14 @@ export async function startHarnessHost(
 
   server.on("request", (request, response) => {
     const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
+
+    if (
+      pathname === "/workflow-runs" ||
+      pathname.startsWith("/workflow-runs/")
+    ) {
+      void handleWorkflowRequest(request, response, pathname);
+      return;
+    }
 
     if (request.method === "POST" && pathname === "/sessions") {
       if (closed || creatingSession || activeSession !== undefined) {
@@ -434,6 +614,8 @@ export async function startHarnessHost(
         return;
       }
       closed = true;
+
+      await workflowRuns.close();
 
       if (activeSession !== undefined) {
         await endSession(activeSession);
