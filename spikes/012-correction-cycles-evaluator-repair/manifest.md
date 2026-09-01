@@ -126,3 +126,30 @@
 - Restricted evaluator material inspected: this cycle's own private bundle only.
 - Blocking questions: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 005 — Implementation
+
+- Skill: `implementation` v3.
+- Frozen inputs: `spike.md`
+  `sha256:8f54bcb361aae9aff1093159c3459da6f21d84470161de651c11118c09d67e94`;
+  `design-map.md`
+  `sha256:50a5e771a55f49bbc6082b66e7957a37261302022784b90dd2cd97b52983e4d4`;
+  `eval-requirements.md`
+  `sha256:1ac745acfc52bdc9dcee9da38de34dfe9c33a898a7465de1b9002f9891c0d05c`;
+  public `coverage-map.json`
+  `sha256:3af9e8ccaa25f0f1767c11170556f169676e182be20d05fe68b1384ff6f8976c`.
+- Result: implemented pinned Spike-012 bootstrap evaluator invocation,
+  correction-cycle authority, and evaluator repair v11.
+- Bootstrap authority: deterministic command resolution rehashes the committed
+  v10 snapshot `sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b`
+  and its source commit `b7f442aed5d5cfe2722aec40f2fab0eb059e2884`, supplies
+  that material as host-run verification authority, and does not resolve the
+  current evaluator skill for Spike 012 prepare/verify.
+- Visible regression coverage: bootstrap provenance/invocation, legacy Cycle
+  001 interpretation, repairable Cycle 002 opening and cycle-local completion
+  state, and evaluator-defect-triggered revision repair lineage.
+- Checks: `npm run typecheck`, `npm run lint`, `npm run format:check`,
+  `npm test` (56 passing), and `git diff --check`.
+- Restricted evaluator material inspected: none. No implementation handoff or
+  `.workflow` history was created.
+- Measurement cutoff: immediately before this manifest update.

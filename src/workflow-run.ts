@@ -70,6 +70,7 @@ export interface WorkflowRunRequest {
   readonly evaluatorWorkspace?: string | undefined;
   readonly skill?: string | undefined;
   readonly skillVersion?: string | undefined;
+  readonly verificationAuthority?: Record<string, unknown> | undefined;
   readonly orchestrator?: string | undefined;
   readonly prompt?: string | undefined;
 }
@@ -90,6 +91,7 @@ export interface ResolvedWorkflowRunSpec {
   readonly permissionProfile: WorkflowPermissionProfile;
   readonly skill: string | null;
   readonly skillVersion: string | null;
+  readonly verificationAuthority: Record<string, unknown> | null;
   readonly orchestrator: string | null;
   readonly prompt: string | null;
 }
@@ -114,6 +116,7 @@ export interface WorkflowRunRecord {
   readonly role: string;
   readonly skill: string | null;
   readonly skillVersion: string | null;
+  readonly verificationAuthority: Record<string, unknown> | null;
   readonly executor: string;
   readonly invocationMode: WorkflowInvocationMode;
   readonly replacementReason: string | null;
@@ -242,6 +245,18 @@ export function parseWorkflowRunRequest(body: unknown): WorkflowRunRequest {
     ),
     skill: optionalString(raw.skill, "skill"),
     skillVersion: optionalString(raw.skillVersion, "skillVersion"),
+    verificationAuthority:
+      typeof raw.verificationAuthority === "object" &&
+      raw.verificationAuthority !== null &&
+      !Array.isArray(raw.verificationAuthority)
+        ? (raw.verificationAuthority as Record<string, unknown>)
+        : raw.verificationAuthority === undefined
+          ? undefined
+          : (() => {
+              throw new WorkflowRunRequestError(
+                "verificationAuthority must be a JSON object",
+              );
+            })(),
     orchestrator: optionalString(raw.orchestrator, "orchestrator"),
     prompt: optionalString(raw.prompt, "prompt"),
   };
@@ -302,6 +317,7 @@ function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
     permissionProfile,
     skill: request.skill ?? null,
     skillVersion: request.skillVersion ?? null,
+    verificationAuthority: request.verificationAuthority ?? null,
     orchestrator: request.orchestrator ?? null,
     prompt: request.prompt ?? null,
   };
@@ -366,6 +382,7 @@ class InternalRun {
       role: this.spec.role,
       skill: this.spec.skill,
       skillVersion: this.spec.skillVersion,
+      verificationAuthority: this.spec.verificationAuthority,
       executor: this.spec.executor,
       invocationMode: this.spec.invocationMode,
       replacementReason: this.meta.replacementReason,

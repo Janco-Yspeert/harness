@@ -544,6 +544,7 @@ void test("the default local backend uses a bounded, non-interactive executor mo
     },
     skill: null,
     skillVersion: null,
+    verificationAuthority: null,
     orchestrator: null,
     prompt: "do the work",
   });

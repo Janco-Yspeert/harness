@@ -18,6 +18,7 @@ const phases = [
   "brief-readiness",
   "design-map",
   "evaluator-prepare",
+  "evaluator-repair",
   "implementation",
   "evaluator-verify",
   "as-built",
@@ -68,6 +69,8 @@ type AuthorityTransition =
   | "as-built-recorded"
   | "human-accepted"
   | "human-rejected"
+  | "correction-cycle-opened"
+  | "evaluator-repair-recorded"
   | "successor-linked"
   | "outcome-recorded";
 interface AuthorityEvent {
@@ -188,6 +191,7 @@ function canDispatch(
   state: WorkflowState,
   phase: Phase,
   attempt: number,
+  target?: Target,
 ): void {
   if (
     recordsFor(state, phase, attempt).some(
@@ -200,7 +204,15 @@ function canDispatch(
   }
   if (phase === "brief-readiness") return;
   if (phase === "implementation") {
-    if (attempt > 1 && !failedVerificationFor(state, attempt - 1)) {
+    const correctionPermitsImplementation =
+      target !== undefined &&
+      authorityState(target).current.opened?.evidence
+        .implementationCorrection === true;
+    if (
+      attempt > 1 &&
+      !failedVerificationFor(state, attempt - 1) &&
+      !correctionPermitsImplementation
+    ) {
       fail("Implementation retry requires a failed evaluator verify");
     }
     if (
@@ -209,6 +221,17 @@ function canDispatch(
     ) {
       fail("Implementation requires the prior phase to be complete");
     }
+    return;
+  }
+  if (phase === "evaluator-repair") {
+    if (target === undefined)
+      fail("Evaluator repair requires authority context");
+    const current = authorityState(target).current;
+    if (
+      current.verification?.evidence.classification !== "EVALUATOR_DEFECT" &&
+      current.opened?.evidence.evaluatorRepair !== true
+    )
+      fail("Evaluator repair requires authoritative evaluator-defect evidence");
     return;
   }
   if (phase === "evaluator-verify") {
@@ -247,18 +270,87 @@ function executorFor(phase: Phase): Executor {
   }
   return selected;
 }
-function promptFor(phase: Phase, spike: string): string {
+interface BootstrapAuthority {
+  readonly name: string;
+  readonly contractVersion: number;
+  readonly sourceCommit: string;
+  readonly sourcePath: string;
+  readonly identity: string;
+  readonly snapshotPath: string;
+}
+function bootstrapAuthority(
+  target: Target,
+  phase: Phase,
+): BootstrapAuthority | undefined {
+  if (
+    (phase !== "evaluator-prepare" && phase !== "evaluator-verify") ||
+    !target.path.endsWith("/012-correction-cycles-evaluator-repair")
+  )
+    return undefined;
+  const authorityPath = resolve(
+    target.path,
+    "bootstrap/evaluator-authority.json",
+  );
+  const raw: unknown = JSON.parse(readFileSync(authorityPath, "utf8"));
+  const item = readField(raw, "evaluatorSkill");
+  const name = readField(item, "name");
+  const contractVersion = readField(item, "contractVersion");
+  const sourceCommit = readField(item, "sourceCommit");
+  const sourcePath = readField(item, "sourcePath");
+  const claimed = readField(item, "identity");
+  const snapshotPath = readField(item, "snapshotPath");
+  if (
+    name !== "evaluator" ||
+    contractVersion !== 10 ||
+    sourceCommit !== "b7f442aed5d5cfe2722aec40f2fab0eb059e2884" ||
+    claimed !==
+      "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b" ||
+    typeof sourcePath !== "string" ||
+    typeof snapshotPath !== "string"
+  )
+    fail("Spike 012 bootstrap evaluator authority is invalid");
+  const snapshot = resolve(target.path, snapshotPath);
+  if (identity(readFileSync(snapshot)) !== claimed)
+    fail(
+      "Spike 012 bootstrap evaluator snapshot identity does not match authority",
+    );
+  const committed = execFileSync(
+    "git",
+    ["show", `${sourceCommit}:${sourcePath}`],
+    { cwd: repositoryRoot },
+  );
+  if (identity(committed) !== claimed)
+    fail(
+      "Spike 012 bootstrap evaluator source provenance does not match authority",
+    );
+  return {
+    name,
+    contractVersion,
+    sourceCommit,
+    sourcePath,
+    identity: claimed,
+    snapshotPath,
+  };
+}
+function promptFor(phase: Phase, spike: string, target?: Target): string {
+  const bootstrap =
+    target === undefined ? undefined : bootstrapAuthority(target, phase);
+  if (bootstrap !== undefined) {
+    return `Use only the pinned evaluator instruction snapshot ${spike}/${bootstrap.snapshotPath} (SHA-256 ${bootstrap.identity}, source commit ${bootstrap.sourceCommit}) in ${phase === "evaluator-prepare" ? "prepare" : "verify"} mode for ${spike}. It is the verification authority. Do not resolve or use skills/evaluator/SKILL.md from the working tree.`;
+  }
   const skill = phase.startsWith("evaluator-") ? "evaluator" : phase;
   const mode =
     phase === "evaluator-prepare"
       ? " in prepare mode"
       : phase === "evaluator-verify"
         ? " in verify mode"
-        : "";
+        : phase === "evaluator-repair"
+          ? " in repair mode"
+          : "";
   return `Use the ${skill} repository skill${mode} for ${spike}. This is the ${phase} role in the canonical Harness workflow.`;
 }
-function commandFor(phase: Phase, spike: string): string[] {
-  const prompt = promptFor(phase, spike);
+function commandFor(phase: Phase, spike: string, target?: Target): string[] {
+  const prompt = promptFor(phase, spike, target);
   return executorFor(phase) === "codex"
     ? ["codex", "exec", "--cd", repositoryRoot, prompt]
     : ["claude", "-p", "--permission-mode", "manual", prompt];
@@ -352,8 +444,17 @@ async function allocateHostRun(
     invocationMode: "delegated",
     permissionProfile: useEvaluatorProfile ? "evaluator" : "repo-local-worker",
     ...(useEvaluatorProfile ? { evaluatorWorkspace } : {}),
-    skill: evaluator ? "evaluator" : phase,
-    prompt: promptFor(phase, spike),
+    skill: evaluator
+      ? (bootstrapAuthority(targetFrom(spike), phase)?.snapshotPath ??
+        "evaluator")
+      : phase,
+    skillVersion:
+      bootstrapAuthority(targetFrom(spike), phase)?.contractVersion ===
+      undefined
+        ? undefined
+        : String(bootstrapAuthority(targetFrom(spike), phase)?.contractVersion),
+    verificationAuthority: bootstrapAuthority(targetFrom(spike), phase),
+    prompt: promptFor(phase, spike, targetFrom(spike)),
     orchestrator: "codex-bootstrap",
   };
   let response: Response;
@@ -391,7 +492,7 @@ async function dispatch(
 ): Promise<void> {
   const state = readState(target);
   const attempt = attemptForDispatch(state, phase);
-  canDispatch(state, phase, attempt);
+  canDispatch(state, phase, attempt, target);
   const implementationAttempt =
     phase === "evaluator-verify" ? completedImplementation(state) : undefined;
   const implementationReference =
@@ -407,7 +508,9 @@ async function dispatch(
         ...implementationReference,
       }),
     );
-    process.stdout.write(`${JSON.stringify(commandFor(phase, spike))}\n`);
+    process.stdout.write(
+      `${JSON.stringify(commandFor(phase, spike, target))}\n`,
+    );
     return;
   }
   const job = await allocateHostRun(spike, phase, attempt);
@@ -522,6 +625,8 @@ const authorityTransitions: AuthorityTransition[] = [
   "as-built-recorded",
   "human-accepted",
   "human-rejected",
+  "correction-cycle-opened",
+  "evaluator-repair-recorded",
   "successor-linked",
   "outcome-recorded",
 ];
@@ -741,32 +846,129 @@ function validatePreparedMap(document: unknown): PreparedMap {
     criteria: records,
   };
 }
+interface CycleState {
+  readonly id: string;
+  readonly predecessor: string | null;
+  readonly opened: AuthorityEvent | null;
+  readonly events: readonly AuthorityEvent[];
+  readonly evaluatorRevision: string | null;
+  readonly implementation: AuthorityEvent | null;
+  readonly allocation: AuthorityEvent | null;
+  readonly verification: AuthorityEvent | null;
+  readonly promoted: boolean;
+  readonly asBuilt: boolean;
+  readonly accepted: boolean;
+  readonly rejectedEvent: AuthorityEvent | null;
+}
+function eventCycle(event: AuthorityEvent): string {
+  const cycle = event.evidence.cycle;
+  return typeof cycle === "string" && /^\d{3}$/.test(cycle) ? cycle : "001";
+}
 function authorityState(target: Target) {
   const events = authorityEvents(target);
-  const finalized = events.filter(
-    (event) => event.transition === "verification-finalized",
-  );
-  const lastVerification = finalized.at(-1);
-  const passed = lastVerification?.evidence.result === "PASS";
-  const promoted = latest(events, "promotion-recorded") !== undefined;
-  const asBuilt = latest(events, "as-built-recorded") !== undefined;
-  const accepted = latest(events, "human-accepted") !== undefined;
-  const rejectedEvent = latest(events, "human-rejected");
-  const rejected = rejectedEvent !== undefined;
-  const outcome = latest(events, "outcome-recorded") !== undefined;
-  const successor = latest(events, "successor-linked");
+  const ids = new Set<string>(["001"]);
+  for (const event of events)
+    if (event.transition === "correction-cycle-opened")
+      ids.add(value(event.evidence, "cycle"));
+  const cycles: CycleState[] = [...ids].sort().map((id) => {
+    const cycleEvents = events.filter((event) => eventCycle(event) === id);
+    const opened =
+      cycleEvents.find(
+        (event) => event.transition === "correction-cycle-opened",
+      ) ?? null;
+    const implementation =
+      [...cycleEvents]
+        .reverse()
+        .find((event) => event.transition === "implementation-handoff") ?? null;
+    const allocation =
+      [...cycleEvents]
+        .reverse()
+        .find((event) => event.transition === "verification-allocated") ?? null;
+    const verification =
+      [...cycleEvents]
+        .reverse()
+        .find((event) => event.transition === "verification-finalized") ?? null;
+    const rejectedEvent =
+      [...cycleEvents]
+        .reverse()
+        .find((event) => event.transition === "human-rejected") ?? null;
+    const repair = [...cycleEvents]
+      .reverse()
+      .find((event) => event.transition === "evaluator-repair-recorded");
+    const evaluatorRevision =
+      typeof repair?.evidence.resultingEvaluatorRevision === "string"
+        ? repair.evidence.resultingEvaluatorRevision
+        : typeof allocation?.evidence.evaluatorRevision === "string"
+          ? allocation.evidence.evaluatorRevision
+          : typeof opened?.evidence.inheritedEvaluatorRevision === "string"
+            ? opened.evidence.inheritedEvaluatorRevision
+            : null;
+    return {
+      id,
+      predecessor:
+        typeof opened?.evidence.priorCycle === "string"
+          ? opened.evidence.priorCycle
+          : null,
+      opened,
+      events: cycleEvents,
+      evaluatorRevision,
+      implementation,
+      allocation,
+      verification,
+      promoted: cycleEvents.some(
+        (event) => event.transition === "promotion-recorded",
+      ),
+      asBuilt: cycleEvents.some(
+        (event) => event.transition === "as-built-recorded",
+      ),
+      accepted: cycleEvents.some(
+        (event) => event.transition === "human-accepted",
+      ),
+      rejectedEvent,
+    };
+  });
+  const current = cycles.at(-1);
+  if (current === undefined) fail("Authority must contain legacy Cycle 001");
+  const passed = current.verification?.evidence.result === "PASS";
+  const rejected = current.rejectedEvent !== null;
+  const repairable = rejected
+    ? humanFindings(current.rejectedEvent.evidence).filter(
+        (item) =>
+          item === "IMPLEMENTATION_GAP" || item === "EVALUATOR_COVERAGE_DEFECT",
+      )
+    : [];
+  const correctionReason = !rejected
+    ? "current cycle has no human rejection"
+    : current.accepted
+      ? "current cycle was accepted"
+      : repairable.length === 0
+        ? "rejection requires successor lineage"
+        : "repairable human rejection";
   return {
     events,
+    cycles,
+    current,
     passed,
-    promoted,
-    asBuilt,
-    accepted,
+    promoted: current.promoted,
+    asBuilt: current.asBuilt,
+    accepted: current.accepted,
     rejected,
-    rejectedEvent,
-    successor,
-    outcome,
+    rejectedEvent: current.rejectedEvent ?? undefined,
+    successor: latest(events, "successor-linked"),
+    outcome: latest(events, "outcome-recorded") !== undefined,
     coverage: preparedCoverage(target, events),
+    correctionPermitted: repairable.length > 0 && !current.accepted,
+    correctionReason,
   };
+}
+function humanFindings(evidence: Evidence): string[] {
+  const raw = [evidence.classification, evidence.secondaryFinding];
+  if (Array.isArray(evidence.findings)) {
+    for (const finding of evidence.findings) raw.push(finding);
+  }
+  return [
+    ...new Set(raw.filter((item): item is string => typeof item === "string")),
+  ];
 }
 function validateAuthority(
   target: Target,
@@ -777,6 +979,22 @@ function validateAuthority(
     fail(`Unknown authority transition: ${transition}`);
   const state = authorityState(target);
   const events = state.events;
+  const cycleScoped: readonly AuthorityTransition[] = [
+    "implementation-handoff",
+    "verification-allocated",
+    "verification-finalized",
+    "promotion-recorded",
+    "as-built-recorded",
+    "human-accepted",
+    "human-rejected",
+    "evaluator-repair-recorded",
+  ];
+  if (
+    cycleScoped.includes(transition) &&
+    state.cycles.length > 1 &&
+    value(evidence, "cycle") !== state.current.id
+  )
+    fail(`${transition} must bind the current correction cycle`);
   if (transition !== "human-accepted") verifyPublicEvidence(target, evidence);
   const requireEvent = (name: AuthorityTransition) => {
     if (!latest(events, name)) fail(`${transition} requires ${name}`);
@@ -811,8 +1029,51 @@ function validateAuthority(
       fail("Implementation attempt is not next");
     return;
   }
+  if (transition === "correction-cycle-opened") {
+    const prior = value(evidence, "priorCycle");
+    const next = value(evidence, "cycle");
+    if (!/^\d{3}$/.test(next) || Number(next) !== Number(prior) + 1)
+      fail("Correction cycle identity must be the next zero-padded cycle");
+    const previous = state.cycles.find((cycle) => cycle.id === prior);
+    if (!previous || !previous.rejectedEvent || previous.accepted)
+      fail(
+        "correction-cycle-opened requires a closed human-rejected predecessor",
+      );
+    if (state.current.id !== prior)
+      fail("Only the current rejected cycle may be corrected");
+    if (!state.correctionPermitted) fail(state.correctionReason);
+    const brief = latest(events, "brief-frozen");
+    const design = latest(events, "design-map-frozen");
+    if (
+      !brief ||
+      !design ||
+      value(evidence, "briefIdentity") !== value(brief.evidence, "identity") ||
+      value(evidence, "designMapIdentity") !==
+        value(design.evidence, "identity")
+    )
+      fail(
+        "Correction cycle must bind unchanged frozen brief and Design Map identities",
+      );
+    const findings = humanFindings(previous.rejectedEvent.evidence);
+    if (
+      Boolean(evidence.implementationCorrection) !==
+        findings.includes("IMPLEMENTATION_GAP") ||
+      Boolean(evidence.evaluatorRepair) !==
+        findings.includes("EVALUATOR_COVERAGE_DEFECT")
+    )
+      fail(
+        "Correction requirements must match immutable human rejection findings",
+      );
+    if (
+      previous.evaluatorRevision !== null &&
+      value(evidence, "inheritedEvaluatorRevision") !==
+        previous.evaluatorRevision
+    )
+      fail("Correction cycle must inherit the predecessor evaluator revision");
+    return;
+  }
   if (transition === "verification-allocated") {
-    const handoff = latest(events, "implementation-handoff");
+    const handoff = state.current.implementation;
     if (!handoff)
       fail("verification-allocated requires implementation-handoff");
     const prepared = validatePreparedMap(preparedMapText(target, events));
@@ -835,7 +1096,7 @@ function validateAuthority(
     return;
   }
   if (transition === "verification-finalized") {
-    const allocation = latest(events, "verification-allocated");
+    const allocation = state.current.allocation;
     if (
       !allocation ||
       Number(evidence.attempt) !== Number(allocation.evidence.attempt)
@@ -910,14 +1171,75 @@ function validateAuthority(
     if (state.accepted || state.rejected)
       fail("human decision is already recorded");
     if (
-      ![
-        "IMPLEMENTATION_GAP",
-        "EVALUATOR_COVERAGE_DEFECT",
-        "SPECIFICATION_CHANGE",
-        "OTHER_HUMAN_REJECTION",
-      ].includes(value(evidence, "classification"))
+      !humanFindings(evidence).length ||
+      !humanFindings(evidence).every((finding) =>
+        [
+          "IMPLEMENTATION_GAP",
+          "EVALUATOR_COVERAGE_DEFECT",
+          "SPECIFICATION_CHANGE",
+          "OTHER_HUMAN_REJECTION",
+        ].includes(finding),
+      )
     )
       fail("Invalid human rejection classification");
+    return;
+  }
+  if (transition === "evaluator-repair-recorded") {
+    const triggerAttempt = evidence.triggerAttempt;
+    const triggerRejection = evidence.triggerRejectionCycle;
+    const defectFromVerification =
+      typeof triggerAttempt === "number" &&
+      state.current.events.some(
+        (event) =>
+          event.transition === "verification-finalized" &&
+          Number(event.evidence.attempt) === triggerAttempt &&
+          event.evidence.classification === "EVALUATOR_DEFECT",
+      );
+    const triggeringCycle =
+      typeof triggerRejection === "string"
+        ? state.cycles.find((cycle) => cycle.id === triggerRejection)
+        : undefined;
+    const defectFromHuman =
+      triggeringCycle?.rejectedEvent !== null &&
+      triggeringCycle?.rejectedEvent !== undefined &&
+      humanFindings(triggeringCycle.rejectedEvent.evidence).includes(
+        "EVALUATOR_COVERAGE_DEFECT",
+      ) &&
+      state.current.predecessor === triggerRejection;
+    if (!defectFromVerification && !defectFromHuman)
+      fail(
+        "evaluator-repair-recorded requires immutable evaluator-defect evidence",
+      );
+    if (
+      value(evidence, "sourceEvaluatorRevision") !==
+      (state.current.evaluatorRevision ??
+        value(evidence, "sourceEvaluatorRevision"))
+    )
+      fail("Repair source evaluator revision is not current");
+    if (
+      value(evidence, "resultingEvaluatorRevision") ===
+      value(evidence, "sourceEvaluatorRevision")
+    )
+      fail("Repair must create a distinguishable evaluator revision");
+    if (
+      evidence.integrityValidation !== "PASS" ||
+      evidence.acceptanceSemanticsPreserved !== true
+    )
+      fail(
+        "Repair requires integrity PASS and acceptance-semantics preservation",
+      );
+    const brief = latest(events, "brief-frozen");
+    const design = latest(events, "design-map-frozen");
+    if (
+      !brief ||
+      !design ||
+      value(evidence, "briefIdentity") !== value(brief.evidence, "identity") ||
+      value(evidence, "designMapIdentity") !==
+        value(design.evidence, "identity") ||
+      value(evidence, "evaluationRequirementsIdentity") !==
+        identity(readFileSync(resolve(target.path, "eval-requirements.md")))
+    )
+      fail("Repair must preserve frozen public authority identities");
     return;
   }
   if (transition === "successor-linked") {
@@ -958,7 +1280,7 @@ function authority(
       }
     });
     process.stdout.write(
-      `${JSON.stringify({ history: state.events, legalTransitions: legal, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected, outcomeComplete: state.outcome })}\n`,
+      `${JSON.stringify({ history: state.events, legalTransitions: legal, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.current.predecessor ?? state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected, outcomeComplete: state.outcome, currentCycle: { id: state.current.id, state: state.accepted || state.rejected ? "CLOSED" : "OPEN", evaluatorRevision: state.current.evaluatorRevision, implementationAttempt: state.current.implementation?.evidence.attempt ?? null, verification: state.current.verification?.evidence ?? null, promotionComplete: state.current.promoted, asBuiltComplete: state.current.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : "PENDING" }, cycles: state.cycles.map((cycle) => ({ id: cycle.id, predecessor: cycle.predecessor, evaluatorRevision: cycle.evaluatorRevision, implementationAttempt: cycle.implementation?.evidence.attempt ?? null, verification: cycle.verification?.evidence ?? null, promotionComplete: cycle.promoted, asBuiltComplete: cycle.asBuilt, humanDecision: cycle.rejectedEvent ? "REJECTED" : cycle.accepted ? "ACCEPTED" : "PENDING" })), correctionPermitted: state.correctionPermitted, correctionReason: state.correctionReason })}\n`,
     );
     return;
   }
@@ -990,6 +1312,20 @@ function authority(
 }
 async function main(args: string[]): Promise<void> {
   const [command, ...rest] = args;
+  if (command === "bootstrap-authority" && rest.length === 2) {
+    const [spike, phaseValue] = rest;
+    if (spike === undefined || phaseValue === undefined)
+      fail("Usage: workflow bootstrap-authority <spike> <evaluator-phase>");
+    const target = targetFrom(spike);
+    const phase = phaseFrom(phaseValue);
+    const authority = bootstrapAuthority(target, phase);
+    if (authority === undefined)
+      fail("No pinned bootstrap evaluator authority applies");
+    process.stdout.write(
+      `${JSON.stringify({ authority, command: commandFor(phase, spike, target) })}\n`,
+    );
+    return;
+  }
   if (command === "authority") {
     const [mode, spike, transition, json] = rest;
     if (spike === undefined)

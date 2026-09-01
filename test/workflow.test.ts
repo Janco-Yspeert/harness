@@ -659,3 +659,202 @@ void test("a post-allocation evaluator-integrity failure is forward-only and pre
 
   assert.notEqual(f.record("promotion-recorded", {}).status, 0);
 });
+
+void test("Spike 012 bootstrap evaluator dispatch is pinned to its committed v10 snapshot", () => {
+  const result = run([
+    "bootstrap-authority",
+    "spikes/012-correction-cycles-evaluator-repair",
+    "evaluator-verify",
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  const resolved = JSON.parse(result.stdout) as {
+    authority: {
+      identity: string;
+      sourceCommit: string;
+      snapshotPath: string;
+      contractVersion: number;
+    };
+    command: string[];
+  };
+  assert.equal(resolved.authority.contractVersion, 10);
+  assert.equal(
+    resolved.authority.sourceCommit,
+    "b7f442aed5d5cfe2722aec40f2fab0eb059e2884",
+  );
+  assert.equal(resolved.authority.snapshotPath, "bootstrap/evaluator-skill.md");
+  assert.equal(
+    resolved.authority.identity,
+    "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b",
+  );
+  assert.match(
+    resolved.command.at(-1) ?? "",
+    /Do not resolve or use skills\/evaluator\/SKILL\.md/,
+  );
+  assert.equal(
+    createHash("sha256")
+      .update(
+        readFileSync(
+          join(
+            repositoryRoot,
+            "spikes/012-correction-cycles-evaluator-repair/bootstrap/evaluator-skill.md",
+          ),
+        ),
+      )
+      .digest("hex"),
+    "fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b",
+  );
+});
+
+void test("correction cycles keep legacy history immutable and scope all completion facts", (t) => {
+  const coverage = coverageMap([criterion("AC01")]);
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverage,
+    "eval-requirements.md": "requirements\n",
+    "acceptance.md": "rejected\n",
+  };
+  const f = authorityFixture("-cycles", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+  const record = (transition: string, evidence: object) => {
+    assert.equal(f.record(transition, evidence).status, 0);
+  };
+  record("brief-frozen", f.evidence("spike.md"));
+  record("design-map-frozen", f.evidence("design-map.md"));
+  record("evaluation-prepared", f.evidence("coverage-map.json"));
+  record("implementation-handoff", { commit: f.provenance.commit, attempt: 1 });
+  record("verification-allocated", {
+    commit: f.provenance.commit,
+    implementationAttempt: 1,
+    attempt: 1,
+    evaluatorRevision: "001",
+  });
+  record("verification-finalized", {
+    attempt: 1,
+    result: "PASS",
+    coverageResults: { AC01: "SATISFIED" },
+  });
+  record("promotion-recorded", {});
+  record("as-built-recorded", {});
+  record("human-rejected", {
+    ...f.evidence("acceptance.md"),
+    classification: "IMPLEMENTATION_GAP",
+    secondaryFinding: "EVALUATOR_COVERAGE_DEFECT",
+  });
+  const before = authorityHistory(f);
+  record("correction-cycle-opened", {
+    cycle: "002",
+    priorCycle: "001",
+    briefIdentity: f.provenance.identities["spike.md"],
+    designMapIdentity: f.provenance.identities["design-map.md"],
+    implementationCorrection: true,
+    evaluatorRepair: true,
+    inheritedEvaluatorRevision: "001",
+  });
+  assert.notEqual(
+    f.record("correction-cycle-opened", {
+      cycle: "003",
+      priorCycle: "001",
+      briefIdentity: f.provenance.identities["spike.md"],
+      designMapIdentity: f.provenance.identities["design-map.md"],
+      implementationCorrection: true,
+      evaluatorRepair: true,
+      inheritedEvaluatorRevision: "001",
+    }).status,
+    0,
+  );
+  record("implementation-handoff", {
+    cycle: "002",
+    commit: f.provenance.commit,
+    attempt: 2,
+  });
+  const status = JSON.parse(run(["authority", "status", f.fixture]).stdout) as {
+    currentCycle: {
+      id: string;
+      promotionComplete: boolean;
+      asBuiltComplete: boolean;
+      implementationAttempt: number;
+    };
+    cycles: Array<{ id: string; humanDecision: string }>;
+  };
+  assert.equal(status.currentCycle.id, "002");
+  assert.equal(status.currentCycle.implementationAttempt, 2);
+  assert.equal(status.currentCycle.promotionComplete, false);
+  assert.equal(status.currentCycle.asBuiltComplete, false);
+  assert.deepEqual(
+    status.cycles.map((cycle) => [cycle.id, cycle.humanDecision]),
+    [
+      ["001", "REJECTED"],
+      ["002", "PENDING"],
+    ],
+  );
+  assert.ok(authorityHistory(f).startsWith(before));
+});
+
+void test("evaluator repair requires immutable defect evidence and preserves revision lineage", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01")]),
+    "eval-requirements.md": "requirements\n",
+  };
+  const f = authorityFixture("-repair", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+  const record = (transition: string, evidence: object) => {
+    assert.equal(f.record(transition, evidence).status, 0);
+  };
+  record("brief-frozen", f.evidence("spike.md"));
+  record("design-map-frozen", f.evidence("design-map.md"));
+  record("evaluation-prepared", f.evidence("coverage-map.json"));
+  record("implementation-handoff", { commit: f.provenance.commit, attempt: 1 });
+  record("verification-allocated", {
+    commit: f.provenance.commit,
+    implementationAttempt: 1,
+    attempt: 1,
+    evaluatorRevision: "001",
+  });
+  record("verification-finalized", {
+    attempt: 1,
+    result: "BLOCKED",
+    classification: "EVALUATOR_DEFECT",
+    coverageResults: { AC01: "UNEVALUATED" },
+  });
+  const repair = {
+    cycle: "001",
+    triggerAttempt: 1,
+    sourceEvaluatorRevision: "001",
+    resultingEvaluatorRevision: "002",
+    affectedCriteria: ["AC01"],
+    repairRecordIdentity: `sha256:${"2".repeat(64)}`,
+    briefIdentity: f.provenance.identities["spike.md"],
+    designMapIdentity: f.provenance.identities["design-map.md"],
+    evaluationRequirementsIdentity:
+      f.provenance.identities["eval-requirements.md"],
+    integrityValidation: "PASS",
+    acceptanceSemanticsPreserved: true,
+  };
+  record("evaluator-repair-recorded", repair);
+  const status = JSON.parse(run(["authority", "status", f.fixture]).stdout) as {
+    currentCycle: { evaluatorRevision: string };
+    history: Array<{ transition: string }>;
+  };
+  assert.equal(status.currentCycle.evaluatorRevision, "002");
+  assert.equal(
+    status.history.filter(
+      (event) => event.transition === "verification-finalized",
+    ).length,
+    1,
+  );
+  assert.notEqual(
+    f.record("evaluator-repair-recorded", {
+      ...repair,
+      resultingEvaluatorRevision: "003",
+      triggerAttempt: 99,
+    }).status,
+    0,
+  );
+});
