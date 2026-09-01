@@ -1,19 +1,17 @@
-import { spawn } from "node:child_process";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
-  closeSync,
   appendFileSync,
   existsSync,
   mkdirSync,
-  openSync,
   readFileSync,
   statSync,
   writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, normalize, relative, resolve } from "node:path";
-import { kill } from "node:process";
 import { fileURLToPath } from "node:url";
+
+const DEFAULT_HOST_URL = "http://127.0.0.1:3000";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const phases = [
@@ -28,10 +26,17 @@ const phases = [
 type Phase = (typeof phases)[number];
 type Outcome = "complete" | "blocked" | "failed";
 type Executor = "codex" | "claude";
+interface RunSlot {
+  readonly workflow: string;
+  readonly phase: string;
+  readonly methodologyAttempt: string;
+}
 interface Job {
-  readonly pid: number;
-  readonly command: string[];
-  readonly logPath: string;
+  readonly runId: string;
+  readonly hostUrl: string;
+  readonly executor: Executor;
+  readonly permissionProfile: string;
+  readonly slot: RunSlot;
   readonly launchedAt: string;
 }
 interface Record {
@@ -258,13 +263,47 @@ function commandFor(phase: Phase, spike: string): string[] {
     ? ["codex", "exec", "--cd", repositoryRoot, prompt]
     : ["claude", "-p", "--permission-mode", "manual", prompt];
 }
-function isLive(pid: number): boolean {
+function hostUrl(): string {
+  const configured = process.env.HARNESS_HOST_URL ?? DEFAULT_HOST_URL;
+  return configured.replace(/\/+$/, "");
+}
+function spikeName(spike: string): string {
+  const name = spike.split("/")[1];
+  if (name === undefined || name.length === 0)
+    return fail("Spike path must be a spikes/NNN-*/ path");
+  return name;
+}
+function readField(container: unknown, name: string): unknown {
+  return typeof container === "object" &&
+    container !== null &&
+    name in container
+    ? (container as { [key: string]: unknown })[name]
+    : undefined;
+}
+function runFrom(payload: unknown): { runId: string; status: string } {
+  const run = readField(payload, "run");
+  const runId = readField(run, "runId");
+  const runStatus = readField(run, "status");
+  if (
+    typeof runId !== "string" ||
+    runId.length === 0 ||
+    typeof runStatus !== "string"
+  )
+    return fail("Harness host returned an unrecognized workflow-run payload");
+  return { runId, status: runStatus };
+}
+async function fetchRun(
+  url: string,
+  runId: string,
+): Promise<{ runId: string; status: string } | undefined> {
+  let response: Response;
   try {
-    kill(pid, 0);
-    return true;
+    response = await fetch(`${url}/workflow-runs/${runId}`);
   } catch {
-    return false;
+    return undefined;
   }
+  if (!response.ok) return undefined;
+  return runFrom(await response.json());
 }
 function init(target: Target): void {
   try {
@@ -286,25 +325,63 @@ function init(target: Target): void {
     ],
   });
 }
-async function launch(command: string[], logPath: string): Promise<number> {
-  const [program, ...arguments_] = command;
-  if (program === undefined) fail("Executor command is empty");
-  const log = openSync(logPath, "a", 0o600);
-  const child = spawn(program, arguments_, {
-    detached: true,
-    stdio: ["ignore", log, log],
-  });
+// Canonical workflow-role execution is requested from the existing Harness
+// host, which owns the run lifecycle, identity, and process/session. This
+// runner never spawns or detaches a worker itself; an unreachable host is an
+// explicit dispatch failure, not permission to create a client-owned worker.
+async function allocateHostRun(
+  spike: string,
+  phase: Phase,
+  attempt: number,
+): Promise<Job> {
+  const url = hostUrl();
+  const evaluator = phase.startsWith("evaluator-");
+  const evaluatorWorkspace = process.env.HARNESS_EVALUATOR_WORKSPACE;
+  const useEvaluatorProfile = evaluator && evaluatorWorkspace !== undefined;
+  const executor = executorFor(phase);
+  const slot: RunSlot = {
+    workflow: spikeName(spike),
+    phase,
+    methodologyAttempt: String(attempt),
+  };
+  const requestBody = {
+    slot,
+    role: phase,
+    executor,
+    workspace: repositoryRoot,
+    invocationMode: "delegated",
+    permissionProfile: useEvaluatorProfile ? "evaluator" : "repo-local-worker",
+    ...(useEvaluatorProfile ? { evaluatorWorkspace } : {}),
+    skill: evaluator ? "evaluator" : phase,
+    prompt: promptFor(phase, spike),
+    orchestrator: "codex-bootstrap",
+  };
+  let response: Response;
   try {
-    await new Promise<void>((resolveLaunch, rejectLaunch) => {
-      child.once("spawn", resolveLaunch);
-      child.once("error", rejectLaunch);
+    response = await fetch(`${url}/workflow-runs`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(requestBody),
     });
-  } finally {
-    closeSync(log);
+  } catch {
+    return fail(
+      `Workflow dispatch failed: no Harness host reachable at ${url}`,
+    );
   }
-  if (child.pid === undefined) fail("Failed to launch executor");
-  child.unref();
-  return child.pid;
+  if (response.status !== 200 && response.status !== 201) {
+    return fail(
+      `Workflow dispatch rejected by the Harness host (HTTP ${String(response.status)})`,
+    );
+  }
+  const { runId } = runFrom(await response.json());
+  return {
+    runId,
+    hostUrl: url,
+    executor,
+    permissionProfile: requestBody.permissionProfile,
+    slot,
+    launchedAt: new Date().toISOString(),
+  };
 }
 async function dispatch(
   target: Target,
@@ -319,7 +396,6 @@ async function dispatch(
     phase === "evaluator-verify" ? completedImplementation(state) : undefined;
   const implementationReference =
     implementationAttempt === undefined ? {} : { implementationAttempt };
-  const command = commandFor(phase, spike);
   if (!execute) {
     writeState(
       target,
@@ -331,20 +407,15 @@ async function dispatch(
         ...implementationReference,
       }),
     );
-    process.stdout.write(`${JSON.stringify(command)}\n`);
+    process.stdout.write(`${JSON.stringify(commandFor(phase, spike))}\n`);
     return;
   }
-  const logPath = resolve(
-    target.workflowPath,
-    `${phase}-${String(attempt)}.log`,
-  );
-  const pid = await launch(command, logPath);
-  const launchedAt = new Date().toISOString();
+  const job = await allocateHostRun(spike, phase, attempt);
   const dispatched = append(state, {
     event: "dispatch",
     phase,
     attempt,
-    at: launchedAt,
+    at: job.launchedAt,
     ...implementationReference,
   });
   writeState(
@@ -353,29 +424,42 @@ async function dispatch(
       event: "job",
       phase,
       attempt,
-      at: launchedAt,
+      at: job.launchedAt,
       ...implementationReference,
-      job: { pid, command, logPath, launchedAt },
+      job,
     }),
   );
 }
-function record(
+async function record(
   target: Target,
   phase: Phase,
   outcome: string | undefined,
-): void {
+): Promise<void> {
   if (outcome !== "complete" && outcome !== "blocked" && outcome !== "failed")
     fail("Outcome must be complete, blocked, or failed");
   const state = readState(target);
   const attempt = maximumAttempt(state, phase);
-  if (
-    attempt === 0 ||
-    !recordsFor(state, phase, attempt).some((item) => item.event === "dispatch")
-  )
+  const phaseRecords = recordsFor(state, phase, attempt);
+  if (attempt === 0 || !phaseRecords.some((item) => item.event === "dispatch"))
     fail(`Phase ${phase} has not been dispatched`);
   if (hasOutcome(state, phase, attempt))
     fail(`Phase ${phase} attempt ${String(attempt)} already has an outcome`);
-  const implementationAttempt = recordsFor(state, phase, attempt).find(
+  // A phase is only complete when the canonical Harness-owned run allocated for
+  // this phase/attempt is terminally complete. A process launched outside this
+  // mechanism has no run identity here and cannot satisfy the binding.
+  const job = phaseRecords.find((item) => item.job !== undefined)?.job;
+  if (outcome === "complete" && job !== undefined) {
+    const run = await fetchRun(job.hostUrl, job.runId);
+    if (run === undefined)
+      fail(
+        `Cannot confirm completion: Harness run ${job.runId} is not reachable at ${job.hostUrl}`,
+      );
+    if (run.status !== "completed")
+      fail(
+        `Phase ${phase} canonical run ${job.runId} is ${run.status}, not completed`,
+      );
+  }
+  const implementationAttempt = phaseRecords.find(
     (item) => item.implementationAttempt !== undefined,
   )?.implementationAttempt;
   const implementationReference =
@@ -392,22 +476,40 @@ function record(
     }),
   );
 }
-function status(target: Target): void {
+async function status(target: Target): Promise<void> {
   const state = readState(target);
-  const records = state.records.map((record) =>
-    record.job === undefined
-      ? record
-      : { ...record, job: { ...record.job, live: isLive(record.job.pid) } },
+  const records = await Promise.all(
+    state.records.map(async (record) => {
+      if (record.job === undefined) return record;
+      const run = await fetchRun(record.job.hostUrl, record.job.runId);
+      return {
+        ...record,
+        job: { ...record.job, runStatus: run?.status ?? "unreachable" },
+      };
+    }),
   );
   process.stdout.write(`${JSON.stringify({ records })}\n`);
 }
-function cancel(target: Target, phase: Phase): void {
+async function cancel(target: Target, phase: Phase): Promise<void> {
   const jobRecord = [...readState(target).records]
     .reverse()
     .find((record) => record.phase === phase && record.job !== undefined);
-  if (jobRecord?.job === undefined || !isLive(jobRecord.job.pid))
-    fail(`No live job for ${phase}`);
-  kill(jobRecord.job.pid, "SIGTERM");
+  if (jobRecord?.job === undefined) fail(`No dispatched run for ${phase}`);
+  const { hostUrl: url, runId } = jobRecord.job;
+  let response: Response;
+  try {
+    response = await fetch(`${url}/workflow-runs/${runId}/cancel`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
+  } catch {
+    return fail(`Cannot cancel: Harness host unreachable at ${url}`);
+  }
+  if (!response.ok)
+    fail(
+      `Harness host refused to cancel run ${runId} (HTTP ${String(response.status)})`,
+    );
 }
 const authorityTransitions: AuthorityTransition[] = [
   "brief-frozen",
@@ -529,6 +631,7 @@ interface CriterionRecord {
 interface ReadinessAttestation {
   readonly evaluatorRevision: string;
   readonly privateInventoryIdentity: string;
+  readonly validatorResultBinding: string;
 }
 interface PreparedMap {
   readonly readiness: ReadinessAttestation;
@@ -622,10 +725,19 @@ function validatePreparedMap(document: unknown): PreparedMap {
     "privateInventoryIdentity",
     "Readiness attestation",
   );
+  const validatorResultBinding = requiredText(
+    attestation,
+    "validatorResultBinding",
+    "Readiness attestation",
+  );
   if (attestation.integrityValidation !== "PASS")
     fail("evaluation-prepared requires a passing readiness attestation");
   return {
-    readiness: { evaluatorRevision, privateInventoryIdentity },
+    readiness: {
+      evaluatorRevision,
+      privateInventoryIdentity,
+      validatorResultBinding,
+    },
     criteria: records,
   };
 }
@@ -892,7 +1004,7 @@ async function main(args: string[]): Promise<void> {
     return;
   }
   if (command === "status" && rest.length === 1) {
-    status(targetFrom(rest[0]));
+    await status(targetFrom(rest[0]));
     return;
   }
   if (command === "dispatch") {
@@ -912,11 +1024,11 @@ async function main(args: string[]): Promise<void> {
     );
   }
   if (command === "record" && rest.length === 3) {
-    record(targetFrom(rest[1]), phaseFrom(rest[0]), rest[2]);
+    await record(targetFrom(rest[1]), phaseFrom(rest[0]), rest[2]);
     return;
   }
   if (command === "cancel" && rest.length === 2) {
-    cancel(targetFrom(rest[1]), phaseFrom(rest[0]));
+    await cancel(targetFrom(rest[1]), phaseFrom(rest[0]));
     return;
   }
   fail("Usage: workflow <init|status|dispatch|record|cancel> ...");

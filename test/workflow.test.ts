@@ -2,15 +2,12 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
-  chmodSync,
   existsSync,
-  mkdtempSync,
   mkdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
@@ -92,6 +89,7 @@ function coverageMap(
   readiness: Record<string, unknown> | null = {
     evaluatorRevision: "001",
     privateInventoryIdentity: `sha256:${"0".repeat(64)}`,
+    validatorResultBinding: `sha256:${"1".repeat(64)}`,
     integrityValidation: "PASS",
   },
 ): string {
@@ -131,20 +129,6 @@ function authorityFixture(
 function complete(phase: string): void {
   assert.equal(run(["dispatch", phase, spike]).status, 0);
   assert.equal(run(["record", phase, spike, "complete"]).status, 0);
-}
-
-function waitForLog(logPath: string): string {
-  const sleeper = new Int32Array(new SharedArrayBuffer(4));
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    try {
-      const output = readFileSync(logPath, "utf8");
-      if (output.includes("fixture started")) return output;
-    } catch (error: unknown) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-    }
-    Atomics.wait(sleeper, 0, 0, 10);
-  }
-  assert.fail("fixture did not write its log");
 }
 
 void test("workflow runner independently numbers verification attempts", (t) => {
@@ -233,48 +217,27 @@ void test("blocked verification retries the unchanged implementation", (t) => {
   );
 });
 
-void test("execute records a detached job and cancel terminates it", (t) => {
+void test("execute against an absent host fails and records no worker", (t) => {
   mkdirSync(spikePath, { recursive: true });
-  let jobPid: number | undefined;
   t.after(() => {
-    if (jobPid !== undefined) process.kill(jobPid, "SIGTERM");
     rmSync(spikePath, { recursive: true, force: true });
   });
-  const bin = mkdtempSync(join(tmpdir(), "harness-workflow-bin-"));
-  t.after(() => {
-    rmSync(bin, { recursive: true, force: true });
-  });
-  const codex = join(bin, "codex");
-  writeFileSync(
-    codex,
-    "#!/usr/bin/env node\nconsole.log('fixture started'); setInterval(() => {}, 1000);\n",
-  );
-  chmodSync(codex, 0o755);
 
   assert.equal(run(["init", spike]).status, 0);
-  const environment = {
-    ...process.env,
-    PATH: `${bin}:${process.env.PATH ?? ""}`,
-  };
-  assert.equal(
-    run(["dispatch", "brief-readiness", spike, "--execute"], environment)
-      .status,
-    0,
+  const before = readFileSync(
+    join(spikePath, ".workflow", "state.json"),
+    "utf8",
   );
-  const state = JSON.parse(
+  const dispatched = run(["dispatch", "brief-readiness", spike, "--execute"], {
+    ...process.env,
+    HARNESS_HOST_URL: "http://127.0.0.1:1",
+  });
+  assert.notEqual(dispatched.status, 0);
+  assert.match(dispatched.stderr, /no Harness host reachable/);
+  assert.equal(
     readFileSync(join(spikePath, ".workflow", "state.json"), "utf8"),
-  ) as {
-    records: Array<{
-      job?: { pid: number; command: string[]; logPath: string; live: boolean };
-    }>;
-  };
-  const job = state.records.find((record) => record.job !== undefined)?.job;
-  assert.ok(job);
-  jobPid = job.pid;
-  assert.equal(job.command[0], "codex");
-  assert.match(waitForLog(job.logPath), /fixture started/);
-  assert.equal(run(["cancel", "brief-readiness", spike]).status, 0);
-  jobPid = undefined;
+    before,
+  );
 });
 
 void test("authority accepts valid repository-relative provenance", () => {
@@ -480,6 +443,7 @@ void test("a draft without a passing readiness attestation cannot reach a prepar
     "coverage-map.json": coverageMap([criterion("AC01"), criterion("AC02")], {
       evaluatorRevision: "001",
       privateInventoryIdentity: `sha256:${"a".repeat(64)}`,
+      validatorResultBinding: `sha256:${"b".repeat(64)}`,
       integrityValidation: "FAIL",
     }),
   };
@@ -501,6 +465,27 @@ void test("a draft without a passing readiness attestation cannot reach a prepar
   });
   assert.notEqual(noAllocation.status, 0);
   assert.equal(authorityHistory(f), historyBefore);
+});
+
+void test("a readiness attestation requires an opaque validator-result binding", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01")], {
+      evaluatorRevision: "001",
+      privateInventoryIdentity: `sha256:${"a".repeat(64)}`,
+      integrityValidation: "PASS",
+    }),
+  };
+  const f = authorityFixture("-e2-binding", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+
+  const { result, historyBefore, historyAfter } = attemptPrepared(f);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /validatorResultBinding/);
+  assert.equal(historyAfter, historyBefore);
 });
 
 void test("a criterion-complete map with an incomplete evidence reference is rejected before allocation", (t) => {

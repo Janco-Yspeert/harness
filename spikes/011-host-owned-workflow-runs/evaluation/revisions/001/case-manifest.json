@@ -1,0 +1,196 @@
+{
+  "revision": "001",
+  "note": "Every case is mandatory. No evaluator-authored executable hidden test is frozen in this revision; the frozen Design Map leaves route names, JSON field spellings, UUID format, registry/backend classes, log storage, and the 200-vs-conflict choice as implementation freedom, and spike.md AC20 mandates visible in-repository regression coverage. Executable evidence is therefore the implementation's own visible suite run through `npm test`. Static and provenance cases use the modes and evidence plans frozen in eval-spec.md.",
+  "cases": [
+    {
+      "id": "E1",
+      "criteria": ["AC01", "AC02", "AC03", "AC20"],
+      "verifies": ["R1", "R2", "R3", "I1", "I4", "N1", "N2"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 1; AC01-AC03, AC20)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: a workflow run requested through the supported workflow/run interface is owned by the existing Harness host; the initiating client disconnects after launch; the run continues while the host is alive; its record and diagnostic output stay inspectable; a later client resolves and inspects the same run (active or terminal) by its stable Harness run identity; completion and failure remain observable after client disconnect.",
+      "decisionRule": "Scenario absent or failing => FAIL for the affected criteria unless traceable to an EVALUATOR_DEFECT or SPECIFICATION defect. A scenario in which client disconnect terminalizes or loses the run, or in which the initiating process owns the worker, is a FAIL for AC01/AC02."
+    },
+    {
+      "id": "E2",
+      "criteria": ["AC04", "AC17"],
+      "verifies": ["R4", "R17", "I4"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 2, 9; AC04, AC17)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: the canonical run record exposes, in a stable observable form, workflow/spike identity, workflow phase/role slot, methodology attempt where present, execution attempt identity, role, skill and skill version when known, actual executor/provider, invocation mode, retry/replacement/fallback reason when applicable, allowed workspace(s), permission-profile identity, created/started/last-activity/terminal timestamps, current lifecycle status, terminal disposition/reason, parent/orchestrator identity when reliably available, process id and/or provider session identity when available, and the diagnostic log/event location; unavailable provider/model metadata is not fabricated.",
+      "decisionRule": "A run record missing any listed field with no frozen-contract justification, or one that fabricates unavailable provider metadata, is a FAIL for AC04. A run record without a recorded permission-profile identity is a FAIL for AC17."
+    },
+    {
+      "id": "E3",
+      "criteria": ["AC05"],
+      "verifies": ["R5", "I4"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 3; AC05)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: replacing a worker process/session for a workflow slot creates a new operational execution attempt for that slot without manufacturing a new methodology/workflow attempt (e.g. no new frozen evaluator revision or verification attempt), and both the methodology attempt identity and the execution attempt identity are separately observable.",
+      "decisionRule": "Scenario absent or failing => FAIL for AC05. A design in which operational replacement is indistinguishable from, or silently mutates, the methodology attempt is a FAIL."
+    },
+    {
+      "id": "E4",
+      "criteria": ["AC06", "AC07", "AC20"],
+      "verifies": ["R6", "R7", "I2", "N3"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 4; AC06, AC07, AC20)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: two concurrent or repeated start requests for the same active workflow slot cause at most one child/provider execution; the duplicate request returns/identifies the existing active run or fails with an explicit conflict; the check and allocation are concurrency-safe within one Harness host, including across multiple clients or orchestrator turns.",
+      "decisionRule": "Any scenario in which a duplicate/concurrent start for an active slot spawns a second worker is a FAIL for AC06. A duplicate request that neither returns the existing run nor fails with an explicit conflict is a FAIL for AC07. The 200-vs-conflict choice itself is Design Map freedom and is not scored."
+    },
+    {
+      "id": "E5",
+      "criteria": ["AC08", "AC09", "AC20"],
+      "verifies": ["R8", "R9", "I3", "N4"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 5; AC08, AC09, AC20)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: a replacement execution cannot be allocated for a slot while its prior canonical execution is still active; allocating a replacement first gives the prior execution an explicit terminal disposition and records the prior execution identity, the new execution identity, the reason for replacement, and any executor/fallback change (for example role as-built, executor codex, mode fallback, reason 'delegated executor failed').",
+      "decisionRule": "Any path that allocates a replacement while the prior canonical execution is still active is a FAIL for AC08. A replacement record that does not preserve the prior identity, the new identity, the reason, or an executor change where applicable is a FAIL for AC09."
+    },
+    {
+      "id": "E6",
+      "criteria": ["AC10"],
+      "verifies": ["R10", "I6", "I7", "N1"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 6, 1A; AC10)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: the canonical tools/workflow.ts execution path (or its Design-Map-approved successor) requests or attaches to a run owned by the existing Harness host-owned run mechanism rather than spawning/detaching a worker itself or routing through a methodology-only process supervisor; when the configured host URL has no reachable host the dispatch is an explicit failure and no client-owned worker is created.",
+      "decisionRule": "A dispatch path that spawns or detaches the executor itself for a canonical workflow run, or that routes through a parallel methodology-specific daemon, is a FAIL for AC10. A missing host that is treated as permission to create a client-owned worker is a FAIL."
+    },
+    {
+      "id": "E7",
+      "criteria": ["AC11", "AC19", "AC20"],
+      "verifies": ["R11", "R19", "I7", "N7"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 6; AC11, AC19, AC20)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: the workflow runner cannot record a phase complete unless the canonical run allocated for that phase/attempt has a terminal completed disposition; a Codex/Claude process launched directly outside the Harness run mechanism has no usable canonical run identity for the slot and cannot satisfy the runner's completion requirement even when it writes plausible artifacts.",
+      "decisionRule": "A runner that records a phase complete without a terminally-complete matching canonical run is a FAIL for AC11. A directly launched external process that satisfies the completion requirement merely by writing artifacts is a FAIL for AC19."
+    },
+    {
+      "id": "E8",
+      "criteria": ["AC12", "AC20"],
+      "verifies": ["R12", "I5"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 7; AC12, AC20)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: Harness exposes structured run lifecycle events that distinguish equivalents of allocated, started/running, activity/output observed, terminal completion, terminal failure, cancellation, and replacement, sufficient to supervise the owned execution without treating raw terminal text as workflow state.",
+      "decisionRule": "Absence of a structured event for any of the seven listed lifecycle points, or a design that requires parsing raw terminal text to observe lifecycle, is a FAIL for AC12. Provider-specific events retained alongside the normalized lifecycle are permitted."
+    },
+    {
+      "id": "E9",
+      "criteria": ["AC13", "AC20"],
+      "verifies": ["R13", "I5", "N6"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 8; AC13, AC20)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: the run's stdout/stderr or provider text/event detail is retained, associated with the run, and inspectable for debugging/supervision, but is not turned into a frozen methodology artifact, is not automatically handed to a downstream role as context, and does not by itself drive workflow completion.",
+      "decisionRule": "Raw executor text automatically becoming a frozen methodology artifact, being auto-fed to a downstream role, or being used to infer completion from a phrase is a FAIL for AC13."
+    },
+    {
+      "id": "E10",
+      "criteria": ["AC14", "AC15", "AC16", "AC17"],
+      "verifies": ["R14", "R15", "R16", "R17", "I6", "N5"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 9, 10; AC14-AC17)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: a standard repository-local worker profile permits, within its allowed workspace(s), repository reads, role-authorized file creation/editing, arbitrary local computation including shell child processes, test/build/typecheck/lint/format commands, normal Git inspection, and role-permitted Git staging/commit, without per-command human prompts; an evaluator run may additionally declare a private evaluator workspace without arbitrary unrestricted host access; the applied permission profile is recorded on the run; and no routine path requires an unrestricted permission/sandbox bypass mode.",
+      "decisionRule": "Any routine in-workspace operation from the enumerated list that requires a per-command human prompt is a FAIL for AC14. An evaluator workspace grant that confers arbitrary host access is a FAIL for AC15. A routine path that needs an unrestricted bypass mode is a FAIL for AC16. A run without a recorded applied profile is a FAIL for AC17."
+    },
+    {
+      "id": "E11",
+      "criteria": ["AC18"],
+      "verifies": ["R18", "I1"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 11; AC18)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: the run records allocated/start/end timestamps, elapsed run time, executor/provider, the number of execution attempts/replacements for the slot, and the terminal disposition, all from directly observable facts; provider-native token/usage/cost statistics may be recorded when directly available but are never manually estimated and never block.",
+      "decisionRule": "A run missing elapsed time, executor, execution attempt/replacement count, or terminal disposition is a FAIL for AC18. Manually estimated token or cost figures, or unavailable usage data treated as a blocking requirement, is a FAIL."
+    },
+    {
+      "id": "E12",
+      "criteria": ["AC20"],
+      "verifies": ["R20", "I6"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (brief scope 1A; AC20)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: the E1, E4, E5, E7, E8, and E9 behaviours are exercised by the repository's visible test suite through an in-memory or otherwise substituted workflow backend supplied through the host's workflow backend/factory seam, with no live paid Codex/Claude provider call in the suite.",
+      "decisionRule": "A visible suite that can only demonstrate the AC20 behaviours by making live paid provider calls, or that has no backend/factory seam allowing an in-memory backend, is a FAIL for AC20."
+    },
+    {
+      "id": "S1",
+      "criteria": ["AC01", "AC10"],
+      "verifies": ["R1", "R10", "I1", "I4", "N1"],
+      "mode": "static inspection",
+      "executable": false,
+      "artifact": "Harness runtime under src/ and the implementation's workflow-run module (repository location is implementation freedom)",
+      "procedure": "At the evaluated commit, confirm the workflow-run registry and its lifecycle are created and owned by the existing Harness host (startHarnessHost or its Design-Map-approved evolution) rather than by a new long-lived methodology/workflow daemon, a second service process, or a parallel control plane; and that any shared lower-level execution/run abstraction is integrated into the existing host lifecycle rather than a separate control plane.",
+      "decisionRule": "A separate methodology-specific daemon, a second long-lived service beside the existing host, or a parallel control plane is a FAIL for AC01 (and jointly for AC10). A shared abstraction that is not integrated into the existing host lifecycle is a FAIL."
+    },
+    {
+      "id": "S2",
+      "criteria": ["AC15", "AC16", "AC17"],
+      "verifies": ["R15", "R16", "R17", "I6", "N5"],
+      "mode": "static inspection",
+      "executable": false,
+      "artifact": "default local workflow backend / permission-profile definition (repository location is implementation freedom)",
+      "procedure": "At the evaluated commit, confirm the default local workflow backend invokes supported executors with an explicitly named, workspace-bounded permission profile (a provider-native bounded sandbox/permission mode or another bounded local mechanism) and not Codex --dangerously-bypass-approvals-and-sandbox, Claude bypassPermissions, or an equivalent unrestricted-host mode; that the evaluator profile differs only by adding a declared private evaluator workspace; that any narrow bootstrap exception for a specific provider limitation is explicit in the Design Map and the execution record rather than the default; and that the applied profile is recorded on the run record.",
+      "decisionRule": "A default profile that uses an unrestricted permission/sandbox bypass mode is a FAIL for AC16. An evaluator profile that grants arbitrary unrestricted host access rather than an additional declared workspace is a FAIL for AC15. No recorded applied profile on the run is a FAIL for AC17. A bootstrap exception that is not explicit in the Design Map and execution record is a FAIL for AC16."
+    },
+    {
+      "id": "S3",
+      "criteria": ["AC10", "AC19"],
+      "verifies": ["R10", "R19", "I4", "I7", "N1", "N7"],
+      "mode": "static inspection",
+      "executable": false,
+      "artifact": "tools/workflow.ts (or its Design-Map-approved successor) and the session/run domain types",
+      "procedure": "At the evaluated commit, confirm tools/workflow.ts no longer directly owns detached child-process execution for canonical workflow runs (no direct spawn/detached of the executor for a canonical run) and instead requests/attaches to a host-owned run over the supported interface; and that an interactive user session and a workflow role execution are represented as distinct domain records rather than one collapsed object.",
+      "decisionRule": "tools/workflow.ts (or its successor) directly spawning/detaching the executor for a canonical workflow run is a FAIL for AC10. A direct external process that has a usable canonical run identity for the slot is a FAIL for AC19. Collapsing interactive session and workflow run into a single domain object contradicts brief scope 1A and is reported as a SPECIFICATION/EVALUATOR concern, not an implementation pass."
+    },
+    {
+      "id": "S4",
+      "criteria": ["AC12", "AC13"],
+      "verifies": ["R12", "R13", "I5", "N6"],
+      "mode": "static inspection",
+      "executable": false,
+      "artifact": "workflow event publication and per-run diagnostic-log handling (repository location is implementation freedom)",
+      "procedure": "At the evaluated commit, confirm the normalized workflow lifecycle events reuse the existing Harness structured-event/domain protocol (the same event envelope/stream family used for session events) rather than a second unrelated event system; and that raw executor output is retained as per-run diagnostic data that is not written into a frozen methodology artifact, not copied into a downstream role's context, and not used as a completion signal.",
+      "decisionRule": "A second unrelated event system invented for workflow lifecycle where the existing structured-event protocol fits naturally is a defect for AC12. Diagnostic-log handling that feeds raw output into methodology state, downstream role context, or completion detection is a FAIL for AC13."
+    },
+    {
+      "id": "P1",
+      "criteria": ["AC20", "AC21"],
+      "verifies": ["R20", "R21"],
+      "mode": "provenance inspection",
+      "executable": false,
+      "procedure": "At the evaluated commit run npm test, npm run typecheck, npm run lint, npm run format:check, and git diff --check; require each to exit 0; require the pre-existing session/backend suites (session-lifecycle, session-backend, session-events, codex-backend) to remain green.",
+      "decisionRule": "Any non-zero exit, or any newly failing pre-existing session/backend test, is a FAIL for AC21 (classified IMPLEMENTATION_FAILURE unless traceable to infrastructure). A visible suite that does not run green also fails AC20."
+    },
+    {
+      "id": "P2",
+      "criteria": [],
+      "verifies": ["N8"],
+      "mode": "provenance inspection",
+      "executable": false,
+      "procedure": "At the evaluated commit, require the public artifacts and promoted evaluation/** of Spikes 008, 009, 010, 010a, 010b, and 010c, and their workflow.jsonl timelines, to be byte-for-byte identical to their pre-Spike-011 state (git diff <pre-011-base>..<evaluated-commit> -- spikes/008-* spikes/009-* spikes/010-* spikes/010a-* spikes/010b-* spikes/010c-* shows no change); require no new verification result, rejection, or lineage event on any of those timelines.",
+      "decisionRule": "Any byte change to a Spike 008-010c public artifact, promoted evaluation record, or workflow.jsonl timeline introduced by Spike 011 is a FAIL for negative requirement N8 (classified IMPLEMENTATION_FAILURE unless the change is an independently authorized correction)."
+    }
+  ]
+}
