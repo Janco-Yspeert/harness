@@ -153,3 +153,33 @@
 - Restricted evaluator material inspected: none. No implementation handoff or
   `.workflow` history was created.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 006 — Implementation Attempt 002
+
+- Skill: `implementation` v3.
+- Frozen inputs: `spike.md`
+  `sha256:8f54bcb361aae9aff1093159c3459da6f21d84470161de651c11118c09d67e94`;
+  `design-map.md`
+  `sha256:50a5e771a55f49bbc6082b66e7957a37261302022784b90dd2cd97b52983e4d4`;
+  `eval-requirements.md`
+  `sha256:1ac745acfc52bdc9dcee9da38de34dfe9c33a898a7465de1b9002f9891c0d05c`.
+- Result: fixed the direct host `POST /workflow-runs` allocation path for
+  Spike 012 `evaluator-verify`. The host now reads and validates the committed
+  bootstrap authority and evaluator-skill snapshot, hashes the snapshot and
+  pinned Git source object, rejects caller authority/skill mismatches, and
+  persists the non-null canonical verification authority in its run record.
+- Outputs: `src/workflow-run.ts`
+  `sha256:748b633ca956238edf1819b6f175c9893cb8475988ec1962c1e48a0cd3084590`;
+  `test/workflow-run.integration.test.ts`
+  `sha256:a24ecc97c3ac85959024fea33379e56c488a53b7c1c7a1f6ad12f20557cc002d`.
+- Verification: provider-free direct-HTTP regression passed; full suite passed
+  serially as `npm test -- --test-concurrency=1` (57 passing); `npm run
+  typecheck`, `npm run lint`, `npm run format:check`, and `git diff --check`
+  passed. The default parallel `npm test` invocation could not complete in the
+  sandbox, where each test file failed during concurrent host startup without
+  diagnostics; the same complete suite passed under Node's supported serial
+  concurrency option.
+- Restricted evaluator material inspected: none. Attempt 001 remains finalized
+  FAIL; no evaluator repair/correction cycle, authority handoff, or `.workflow`
+  state was created.
+- Measurement cutoff: immediately before this manifest update.
