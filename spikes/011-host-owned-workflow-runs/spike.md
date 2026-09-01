@@ -63,10 +63,19 @@ results are repaired by this spike.
 
 ## Scope
 
-### 1. A long-lived Harness host owns workflow executions
+### 1. The existing Harness host/runtime owns workflow executions
 
-Workflow role executions must be owned by a long-lived Harness host process or
-equivalent host-side service.
+Workflow role executions must be owned by the existing Harness host/runtime
+architecture under `src/`.
+
+Spike 011 must not satisfy host ownership by creating a separate
+methodology-specific daemon, workflow daemon, or second long-lived service beside
+the existing Harness host.
+
+Shared lower-level execution/run abstractions may be introduced where interactive
+sessions and workflow runs require different domain semantics, but they must be
+integrated into the existing Harness host lifecycle rather than creating a
+parallel control plane.
 
 Starting a role execution through the supported workflow/run interface must not
 make the initiating Codex conversation, shell, browser, or CLI process the owner
@@ -82,6 +91,27 @@ alive:
 - a later client can reconnect and inspect the same run.
 
 Daemon-restart persistence is not required by this spike.
+
+### 1A. Reuse product runtime without collapsing domain concepts
+
+Spike 011 should reuse and generalize the existing Harness host/session/backend
+substrate where it is genuinely shared.
+
+It must not assume that an interactive user session and a workflow role execution
+are the same domain object merely because both are host-owned.
+
+The Design Map should make the smallest useful separation between:
+
+- shared execution concerns such as identity, lifecycle, backend/provider,
+  events, logs, cancellation, and process/session ownership;
+- interactive-session concerns such as client attachment and user input; and
+- workflow-run concerns such as role/phase slot, execution attempt, permission
+  profile, replacement semantics, and completion binding.
+
+The current single-active-session implementation may be generalized as required
+to support independently identifiable concurrent executions. That
+generalization should serve the broader Harness runtime rather than exist only
+inside methodology tooling.
 
 ### 2. Canonical workflow-run identity
 
@@ -186,13 +216,15 @@ reason: delegated executor failed
 rather than making the fallback indistinguishable from the originally intended
 execution path.
 
-### 6. Workflow dispatch uses the host-owned run mechanism
+### 6. Workflow dispatch uses the existing Harness host-owned run mechanism
 
 The existing methodology workflow runner must no longer directly own detached
 child-process execution for canonical workflow runs.
 
 The supported `tools/workflow.ts` execution path (or its Design-Map-approved
-successor) must request/attach to a Harness-owned run.
+successor) must request/attach to a run owned by the existing Harness host/runtime
+architecture. It must not dispatch through a methodology-only process supervisor
+that bypasses the product host.
 
 A directly launched Codex/Claude process outside this mechanism may exist on the
 host, but it is **not** a canonical execution for the workflow slot merely
@@ -359,6 +391,9 @@ are preserved.
 
 ## Non-goals
 
+- no wholesale rewrite of `GOALS.md` in this spike; product-language changes
+  should follow demonstrated implementation evidence from Spike 011 rather than
+  pre-empt it;
 - no correction of the remaining Spike 010c evaluator-integrity implementation
   gaps;
 - no fully deterministic methodology phase scheduler;
@@ -379,8 +414,8 @@ are preserved.
 ## Acceptance Criteria
 
 1. Canonical workflow role executions requested through the supported workflow
-   path are owned by a long-lived Harness host rather than by the initiating
-   client process.
+   path are owned by the existing Harness host/runtime architecture rather than
+   by the initiating client process or a new methodology-specific daemon.
 
 2. A client can disconnect after launch without terminating or losing the
    Harness-owned run while the host remains alive.
@@ -408,8 +443,9 @@ are preserved.
    reason and executor/fallback change where applicable.
 
 10. The canonical `tools/workflow.ts` execution path (or its approved successor)
-    uses the Harness-owned run mechanism rather than directly owning detached
-    workflow child processes.
+    uses the existing Harness host-owned run mechanism rather than directly
+    owning detached workflow child processes or routing through a parallel
+    methodology-specific daemon.
 
 11. A workflow phase cannot be recorded complete through that runner unless the
     canonical run for the matching phase/attempt is terminally complete.
