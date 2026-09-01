@@ -164,3 +164,31 @@
 - Restricted evaluator material inspected: this cycle's frozen private bundle
   only; eligible frozen artifacts were promoted after PASS
 - Measurement cutoff: immediately before this manifest update
+
+## Run 007 — As-Built
+
+- Skill: `as-built` v2
+- Result: recorded; no Missing, Contradictory, or Extra material behavior or
+  structure identified against the frozen brief and Design Map
+- Inspected implementation: `git:22c9d96db4eb2603494bb611a7ea02c5aaafc458`
+  (`feat: host-owned workflow runs (Spike 011)`)
+- Inputs: frozen `spike.md`
+  `sha256:ba7f7c0a2110e6bb5e144d5c9596e2ced5464d562c373db34e0bd1be1a580455`;
+  frozen `design-map.md`
+  `sha256:22f01566e2c34a3e9a0b98a5e47a78310a4d8351c17307d8c5c23f4c68f0a97b`;
+  public `eval-requirements.md`
+  `sha256:16766fafeba18217e5a97b90de97079ab0447878b919705381a6f397fa9f9af7`;
+  public `coverage-map.json`
+  `sha256:3dd7ef05391c28880896bffe7fa4ab8b4b3ed17443f05146d3e9a776f8345ec3`;
+  promoted attempt `001` result
+  `sha256:3775a1f582044b7eccbc2b8a458eea7db5fa473d125139e765a2467a0aad53ad`
+- Output: `as-built.md`
+  `sha256:b4312e50f411871d170296a1a74c637d033365d38d61deeb46e3ec4d9b2a1776`
+- Restricted evaluator material inspected: none; inspection used only the
+  public frozen contract, final implementation revision and visible tests, and
+  promoted public evaluation evidence
+- Checks: input/output SHA-256 identities recomputed; `npx prettier --check
+  spikes/011-host-owned-workflow-runs/as-built.md` and `git diff --check`
+  passed. Evaluation was not rerun; promoted verification attempt `001` is the
+  final PASS evidence.
+- Measurement cutoff: immediately before this manifest update
