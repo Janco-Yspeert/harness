@@ -36,8 +36,8 @@ export function buildExecutorCommand(
 
   let command: string[];
   if (spec.executor === "codex") {
-    // `workspace-write` keeps writes inside the declared workspace(s);
-    // `--approve-for-me` is the current bounded non-interactive Codex mode.
+    // `workspace-write` keeps writes inside the declared workspace(s). Current
+    // Codex releases reject `--approve-for-me` when a sandbox is selected.
     command = [
       "codex",
       "exec",
@@ -45,7 +45,6 @@ export function buildExecutorCommand(
       primary,
       "--sandbox",
       "workspace-write",
-      "--approve-for-me",
       ...extraWorkspaces.flatMap((workspace) => ["--add-dir", workspace]),
       prompt,
     ];
