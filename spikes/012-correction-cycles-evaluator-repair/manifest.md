@@ -50,3 +50,29 @@
 - The narrow workflow-backend compatibility repair is necessary before another
   host-owned evaluator execution can exist; it does not reconstruct runner
   state or change frozen methodology authority.
+
+## Run 003 — Evaluator Preparation Dispatch Blocked
+
+- Role: `evaluator-prepare`, direct Harness-host allocation under the approved
+  Spike-012 runner-state exception.
+- Bootstrap evaluator: `evaluator` v10 from
+  `b7f442aed5d5cfe2722aec40f2fab0eb059e2884`,
+  `sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b`.
+- Canonical Claude run `c47c7a56-14fe-496a-b7dd-56b46d08e5e8` completed with
+  no evaluator artifacts or authority transition. It followed replacement
+  `9c7d3201-915d-4df7-8fa7-44324d03f233`, which likewise completed without
+  preparing evaluation; both logs show the executor refusing to perform the
+  configured user-invoked evaluator role.
+- Earlier operational records remain preserved: Codex run
+  `2662cb4a-dc2f-4192-919d-6c2f031f9f78` failed on an obsolete CLI flag;
+  Claude run `86938621-621e-4479-af79-e35ae704cb13` failed on prompt parsing;
+  run `9b6293a6-4667-42a7-b2a3-f6d2752e0241` was cancelled after its child
+  exited without the old backend recording a terminal event.
+- Result: `BLOCKED` — repeated evaluator-executor policy refusal. No private
+  evaluator artifact, public evaluation artifact, `.workflow` history, or
+  `evaluation-prepared` authority event was fabricated.
+- Required recovery: invoke the evaluator through its configured user-triggered
+  entry point, or explicitly change that executor configuration. This is a
+  runner/executor integration finding, not a specification or implementation
+  failure.
+- Measurement cutoff: immediately before this manifest update.
