@@ -105,6 +105,19 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
             },
       );
     });
+    // A provider CLI may fail before the backend wrapper has attached its
+    // listeners. Preserve that immediate terminal disposition instead of
+    // leaving a host-owned run permanently marked running with a dead PID.
+    if (child.exitCode !== null || child.signalCode !== null) {
+      this.#settle(
+        child.exitCode === 0
+          ? { ok: true }
+          : {
+              ok: false,
+              reason: `executor exited (code ${String(child.exitCode)}, signal ${String(child.signalCode)})`,
+            },
+      );
+    }
   }
 
   onActivity(listener: (chunk: string) => void): void {
