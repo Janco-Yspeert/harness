@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "result": "PASS",
+  "passingAttempt": "001",
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:22c9d96db4eb2603494bb611a7ea02c5aaafc458",
+      "resultPath": "evaluation/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:3775a1f582044b7eccbc2b8a458eea7db5fa473d125139e765a2467a0aad53ad",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:dc34df32ab53996dd0cc965720359454928824035ca273986fa9068a6f474bbc",
+      "freezePath": "evaluation/freeze/001.json",
+      "revisionPath": "evaluation/revisions/001",
+      "revisionDisposition": "copied"
+    }
+  ],
+  "historicalArtifacts": [
+    {
+      "sourceIdentity": "sha256:1af9c1d0a89037246df4625c94ce96ee39fd4b51b5458f7164b256aa3d871a15",
+      "publicPath": "evaluation/attempt-ledger.json",
+      "promotedIdentity": "sha256:1af9c1d0a89037246df4625c94ce96ee39fd4b51b5458f7164b256aa3d871a15",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:3775a1f582044b7eccbc2b8a458eea7db5fa473d125139e765a2467a0aad53ad",
+      "publicPath": "evaluation/attempts/001/eval-result.md",
+      "promotedIdentity": "sha256:3775a1f582044b7eccbc2b8a458eea7db5fa473d125139e765a2467a0aad53ad",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:dc34df32ab53996dd0cc965720359454928824035ca273986fa9068a6f474bbc",
+      "publicPath": "evaluation/freeze/001.json",
+      "promotedIdentity": "sha256:dc34df32ab53996dd0cc965720359454928824035ca273986fa9068a6f474bbc",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:838c2ddc0c6010bc634a58854b16a876bfb57b34e15301f34940d5197ad3cb05",
+      "publicPath": "evaluation/revisions/001/manifest.json",
+      "promotedIdentity": "sha256:838c2ddc0c6010bc634a58854b16a876bfb57b34e15301f34940d5197ad3cb05",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:70a995a7604802cab4d598bc69c7211fecf6b380a3f8580c028db813603150d1",
+      "publicPath": "evaluation/revisions/001/case-manifest.json",
+      "promotedIdentity": "sha256:70a995a7604802cab4d598bc69c7211fecf6b380a3f8580c028db813603150d1",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:d6d47aabb85e47186cd1086cdf64ddfbfb2b61302ac0d4056349714ccddddd21",
+      "publicPath": "evaluation/revisions/001/criterion-records.md",
+      "promotedIdentity": "sha256:d6d47aabb85e47186cd1086cdf64ddfbfb2b61302ac0d4056349714ccddddd21",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:4d94c8b42a18ff9f80b93a43753bc56d2ee999a439afc0edd6bbb0895f0708e0",
+      "publicPath": "evaluation/revisions/001/eval-spec.md",
+      "promotedIdentity": "sha256:4d94c8b42a18ff9f80b93a43753bc56d2ee999a439afc0edd6bbb0895f0708e0",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:bbcf86d4223a066cd13b438e0f7ca9bd91edbcd3bc7fd77b21caae7d43042a11",
+      "publicPath": "evaluation/revisions/001/pre-freeze-integrity-checklist.md",
+      "promotedIdentity": "sha256:bbcf86d4223a066cd13b438e0f7ca9bd91edbcd3bc7fd77b21caae7d43042a11",
+      "disposition": "copied"
+    }
+  ],
+  "notPromotedRevisions": []
+}

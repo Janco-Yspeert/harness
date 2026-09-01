@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "001",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 10,
+    "identity": "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b"
+  },
+  "inputs": {
+    "brief": "sha256:ba7f7c0a2110e6bb5e144d5c9596e2ced5464d562c373db34e0bd1be1a580455",
+    "designMap": "sha256:22f01566e2c34a3e9a0b98a5e47a78310a4d8351c17307d8c5c23f4c68f0a97b",
+    "evaluationRequirements": "sha256:16766fafeba18217e5a97b90de97079ab0447878b919705381a6f397fa9f9af7"
+  },
+  "artifacts": {
+    ".hidden-test/manifest.json": "sha256:838c2ddc0c6010bc634a58854b16a876bfb57b34e15301f34940d5197ad3cb05",
+    "case-manifest.json": "sha256:70a995a7604802cab4d598bc69c7211fecf6b380a3f8580c028db813603150d1",
+    "criterion-records.md": "sha256:d6d47aabb85e47186cd1086cdf64ddfbfb2b61302ac0d4056349714ccddddd21",
+    "eval-spec.md": "sha256:4d94c8b42a18ff9f80b93a43753bc56d2ee999a439afc0edd6bbb0895f0708e0",
+    "pre-freeze-integrity-checklist.md": "sha256:bbcf86d4223a066cd13b438e0f7ca9bd91edbcd3bc7fd77b21caae7d43042a11"
+  },
+  "freezeInventory": [
+    ".hidden-test/manifest.json",
+    "case-manifest.json",
+    "criterion-records.md",
+    "eval-spec.md",
+    "pre-freeze-integrity-checklist.md"
+  ],
+  "privateInventoryIdentity": "sha256:395ff4d8222a99fa5280b3f18e99781b28c35999f6cd3b15aa7e4037be5d38ac",
+  "validatorResultBinding": "sha256:ad216955717bd5ce4f8cab2b9892d5107d1d451faf9969c5be6805f23d67b21c",
+  "preFreezeIntegrityValidation": {
+    "mode": "evaluator v10 step 4: mechanical tools/evaluator-integrity.ts prepareEvaluatorBundle over the prepared AC coverage bundle, plus the deterministic supplementary checklist pre-freeze-integrity-checklist.md for physical existence, content-hash recomputation, public/private consistency, and no-attempt-allocated",
+    "record": "pre-freeze-integrity-checklist.md",
+    "mechanicalTool": "tools/evaluator-integrity.ts",
+    "mechanicalResult": "PASS",
+    "result": "PASS"
+  },
+  "integrityChecks": [
+    "21 criterion records AC01-AC21 present exactly once in criterion-records.md, case-manifest.json (union of cases[].criteria for E1-E12,S1-S4,P1), and coverage-map.json",
+    "every referenced procedure identifier (E1-E12, S1-S4, P1, P2) is defined in case-manifest.json; no orphan procedure and no undefined reference; P2 establishes negative requirement N8 and maps to no numbered acceptance criterion",
+    "bidirectional traceability verified mechanically by tools/evaluator-integrity.ts validatePreparedEvaluatorBundle (status PASS, empty diagnostics) and by transpose equality between coverage-map.json (criterion -> procedures) and case-manifest.json (case -> criteria) restricted to E1-E12,S1-S4,P1",
+    "each criterion record carries id, frozenAuthority, mode, required=true, non-empty procedures, and a distinct criterion-specific sufficiency; shared procedures (E1,E2,E5,E7,E10,S1,S2,S3,S4,P1) keep per-record reasons",
+    "no evaluator-authored executable hidden test or helper frozen; E1-E12 declared materializedBy implementation per spike.md AC20 and brief scope 1-11; .hidden-test/manifest.json tests lists all empty",
+    "controlled pre-implementation baseline exercised at 52dc78e: npm test 42/42; typecheck/lint/format:check/git diff --check clean; src/index.ts, src/session-backend.ts, src/pty-backend.ts, and tools/workflow.ts confirmed to contain no host-owned workflow-run registry, no workflow-run HTTP surface, no normalized workflow lifecycle events, and no workflow backend/factory seam, and tools/workflow.ts still spawns detached child processes in launch()",
+    "no candidate implementation commit exists on feat/spike-011; none inspected or used to shape any frozen case, requirement, or decision rule",
+    "freeze inventory lists every file the frozen bundle depends on (5 files); .eval/inventory.txt is the path-sorted sha256 listing of exactly those files; readiness.privateInventoryIdentity equals sha256(.eval/inventory.txt) (content-binding); .eval/attempt-ledger.json initialized with an empty attempts array; no verification attempt allocated during prepare",
+    "mechanical tools/evaluator-integrity.ts prepareEvaluatorBundle also returned its own name-only identities privateInventoryIdentity sha256:e5aac1d1d1c9e7b31ecf5ef42e3ef5469b6613b337449d59de8d702710cde7e4 and validatorResultBinding sha256:737d9976bfd6512fba19b72eab5cd25bc5462c925e7c38ef34e0fac848f37188; the frozen readiness attestation uses the stronger content-binding inventory identity and a validator binding over {evaluatorRevision, privateInventoryIdentity, integrity, tool, contractVersion}",
+    "public/private consistency: coverage-map.json readiness binds this freeze.json content identity (evaluatorRevisionIdentity), the content-binding privateInventoryIdentity above, validatorResultBinding above, integrityValidation PASS, skillVersion 10, integrityValidatedAt 52dc78e, criterionRecordCount 21; coverage-map.json evaluationRequirements equals inputs.evaluationRequirements; no bootstrapException field (none applies)",
+    "Spike 008-010c public artifacts, promoted evaluation/**, and workflow.jsonl timelines confirmed unchanged by feat/spike-011 (git diff over spikes/008-* .. spikes/010c-* empty); Spike 011 does not rewrite or repair those histories (negative requirement N8)"
+  ]
+}

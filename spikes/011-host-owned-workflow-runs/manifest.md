@@ -141,3 +141,26 @@
   required)
 - Restricted evaluator material inspected: none
 - Measurement cutoff: immediately before this manifest update
+
+## Run 006 - Evaluator Verify and Promotion
+
+- Skill: `evaluator` v10 (verify mode)
+- Result: PASS; technical verification complete, pending separate human product
+  acceptance
+- Immutable inputs: implementation
+  `git:22c9d96db4eb2603494bb611a7ea02c5aaafc458`; evaluator revision `001`
+  `sha256:dc34df32ab53996dd0cc965720359454928824035ca273986fa9068a6f474bbc`;
+  frozen brief, Design Map, and public requirements identities matched their
+  committed provenance
+- Verification attempt: `001`, finalized PASS. All 18 frozen procedures passed:
+  12 visible executable regression procedures, 4 static procedures, and 2
+  provenance procedures; all 21 required acceptance criteria were satisfied
+- Checks: `npm test` (53 passed), `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, `git diff --check`, and the protected-spike provenance
+  diff all passed
+- Promotion: complete. The passing attempt ledger/result and the complete safe
+  evaluator revision `001` were archived byte-for-byte under `evaluation/`;
+  `evaluation/promotion.json` records identities and the copied disposition
+- Restricted evaluator material inspected: this cycle's frozen private bundle
+  only; eligible frozen artifacts were promoted after PASS
+- Measurement cutoff: immediately before this manifest update

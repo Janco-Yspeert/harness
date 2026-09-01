@@ -1,0 +1,24 @@
+{
+  "revision": "001",
+  "note": "No evaluator-authored executable hidden tests are frozen in this revision. The frozen Design Map deliberately leaves route names, JSON field spellings, UUID format, internal registry/backend classes, log storage representation, and the duplicate-allocation 200-vs-conflict choice as implementation freedom, so an evaluator-authored hidden test would have to invent that surface. spike.md AC20 mandates visible in-repository regression coverage for the host-owned-run behaviours, so executable evidence is the implementation's own visible regression suite (brief scope 1-11; AC01-AC09, AC11-AC20), run through `npm test`. Static and provenance cases use the modes and evidence plans frozen in eval-spec.md and case-manifest.json.",
+  "cases": [
+    { "id": "E1", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E2", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E3", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E4", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E5", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E6", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E7", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E8", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E9", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E10", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E11", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "E12", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "S1", "mode": "STATIC_INSPECTION", "tests": [] },
+    { "id": "S2", "mode": "STATIC_INSPECTION", "tests": [] },
+    { "id": "S3", "mode": "STATIC_INSPECTION", "tests": [] },
+    { "id": "S4", "mode": "STATIC_INSPECTION", "tests": [] },
+    { "id": "P1", "mode": "PROVENANCE_INSPECTION", "tests": [] },
+    { "id": "P2", "mode": "PROVENANCE_INSPECTION", "tests": [] }
+  ]
+}
