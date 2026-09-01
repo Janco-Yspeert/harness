@@ -1,0 +1,244 @@
+{
+  "spike": "011-host-owned-workflow-runs",
+  "evaluationRequirements": "sha256:16766fafeba18217e5a97b90de97079ab0447878b919705381a6f397fa9f9af7",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 10,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:dc34df32ab53996dd0cc965720359454928824035ca273986fa9068a6f474bbc",
+    "privateInventoryIdentity": "sha256:395ff4d8222a99fa5280b3f18e99781b28c35999f6cd3b15aa7e4037be5d38ac",
+    "validatorResultBinding": "sha256:ad216955717bd5ce4f8cab2b9892d5107d1d451faf9969c5be6805f23d67b21c",
+    "integrityValidation": "PASS",
+    "integrityValidatedAt": "52dc78e6654fc53fba466a5003a40fb22f56ac18",
+    "criterionRecordCount": 21
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; scope 1, 1A, 6; DM \"Shared contracts\", \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "S1"
+      ],
+      "sufficiency": "E1 shows a run requested through the supported path outliving its initiating client under host ownership; S1 confirms the registry and its lifecycle are created and owned by the existing Harness host, not a new daemon or parallel control plane. Together they establish host ownership behaviourally and structurally."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; scope 1; DM invariant 1",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E1"
+      ],
+      "sufficiency": "AC02 is the client-detachment claim; E1 disconnects the initiating client after launch and shows the Harness-owned run continues and is not lost while the host is alive - the direct falsification test."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03; scope 1; DM \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E1"
+      ],
+      "sufficiency": "AC03 is the reconnect-and-inspect claim; E1 has a later client resolve and inspect the same active or terminal run by its stable Harness run identity."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; scope 2; DM \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E2"
+      ],
+      "sufficiency": "AC04 enumerates the run-record contents; E2 asserts the canonical run record exposes each listed field (slot, execution attempt, role, executor, invocation mode, workspace, permission profile, lifecycle, timestamps, process/provider identity) in a stable observable form, and does not invent unavailable metadata."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; scope 3; DM \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E3"
+      ],
+      "sufficiency": "AC05 requires the methodology attempt and the execution attempt to be distinct and observable; E3 replaces a worker, creating a new execution attempt for the slot without a new methodology attempt, and shows both identities separately observable."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; scope 4; DM \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E4"
+      ],
+      "sufficiency": "AC06 is the single-active-execution claim; E4 issues two concurrent/repeated start requests for one active slot and shows at most one child/provider execution, with a concurrency-safe check and allocation."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07; scope 4; DM \"Implementation freedom\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E4"
+      ],
+      "sufficiency": "AC07 constrains the duplicate-request response; E4's decision rule requires the duplicate to return/identify the existing run or fail with an explicit conflict, never a second worker - the `200`-or-conflict choice itself is Design Map freedom."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08; scope 5, \"Failure and recovery semantics\"; DM \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E5"
+      ],
+      "sufficiency": "AC08 is the replacement-ordering precondition; E5 shows a replacement cannot be allocated while the prior canonical execution for the slot is still active."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09; scope 5; DM \"Shared contracts\", invariant 4",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E5"
+      ],
+      "sufficiency": "AC09 requires the replacement record to preserve prior identity, new identity, reason, and executor change; E5 allocates a replacement and asserts each of those is recorded, including the fallback-executor case."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10; scope 6, 1A; DM \"Shared contracts\", \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E6",
+        "S1",
+        "S3"
+      ],
+      "sufficiency": "E6 shows the canonical `tools/workflow.ts` path requesting/attaching to a host-owned run and failing explicitly when no host is reachable; S3 confirms it no longer directly owns detached child processes; S1 confirms the run mechanism is the existing host, not a parallel methodology daemon."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11; scope 6; DM \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E7"
+      ],
+      "sufficiency": "AC11 is the terminal-completion-binding claim; E7 shows the runner refusing to record a phase complete unless the canonical run for the matching phase/attempt is terminally `completed`."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12; scope 7; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E8",
+        "S4"
+      ],
+      "sufficiency": "E8 shows structured events distinguishing allocated, started, activity, completed, failed, cancelled, and replaced; S4 confirms those events reuse the existing Harness structured-event protocol rather than a second event system."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; scope 8; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E9",
+        "S4"
+      ],
+      "sufficiency": "E9 shows execution text/logs inspectable and tied to the run but not a frozen methodology artifact, downstream context, or completion signal; S4 confirms the diagnostic-log handling structurally keeps that separation."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md AC14; scope 9; DM invariant 5",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E10"
+      ],
+      "sufficiency": "AC14 enumerates the routine operations a standard worker must perform without per-command prompts; E10 exercises repository reads/writes, local computation including shell child processes, tests/checks, and role-permitted Git within the allowed workspace with no human prompt."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md AC15; scope 9; DM invariant 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E10",
+        "S2"
+      ],
+      "sufficiency": "E10 shows an evaluator run declaring an additional private evaluator workspace; S2 confirms that profile differs from the standard one only by adding that declared workspace and grants no arbitrary unrestricted host access."
+    },
+    {
+      "id": "AC16",
+      "frozenAuthority": "spike.md AC16; scope 10; DM \"Design decisions\", invariant 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E10",
+        "S2"
+      ],
+      "sufficiency": "S2 confirms the default local backend uses an explicitly named workspace-bounded profile and not an unrestricted-bypass mode, with any bootstrap exception explicit in the Design Map/execution record; E10 shows routine work completing without that mode."
+    },
+    {
+      "id": "AC17",
+      "frozenAuthority": "spike.md AC17; scope 9; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2",
+        "E10",
+        "S2"
+      ],
+      "sufficiency": "E2 asserts the permission-profile identity is a field on the run record; E10 shows it recorded for a concrete run; S2 confirms the recorded value names the applied bounded profile."
+    },
+    {
+      "id": "AC18",
+      "frozenAuthority": "spike.md AC18; scope 11; DM invariant 3",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E11"
+      ],
+      "sufficiency": "AC18 enumerates the cheap run metrics; E11 asserts the run records elapsed time, executor, execution attempt/replacement count, and terminal disposition from directly observable facts, omitting rather than estimating unavailable provider usage."
+    },
+    {
+      "id": "AC19",
+      "frozenAuthority": "spike.md AC19; scope 6; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E7",
+        "S3"
+      ],
+      "sufficiency": "E7 shows a directly launched process with no canonical run identity failing to satisfy the runner's completion requirement despite plausible artifacts; S3 confirms a direct external process has no usable run identity for the slot."
+    },
+    {
+      "id": "AC20",
+      "frozenAuthority": "spike.md AC20; scope 1A, 6, 7; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "E4",
+        "E5",
+        "E7",
+        "E8",
+        "E9",
+        "E12",
+        "P1"
+      ],
+      "sufficiency": "E1/E4/E5/E7/E8/E9 are the enumerated behaviours (client detachment, duplicate-launch prevention, replacement ordering, terminal-completion binding, event visibility, diagnostic-log/noncanonical separation); E12 shows them driven through an in-memory backend seam with no live paid provider call; P1 confirms the visible suite runs green."
+    },
+    {
+      "id": "AC21",
+      "frozenAuthority": "spike.md AC21",
+      "mode": "PROVENANCE_INSPECTION",
+      "required": true,
+      "procedures": [
+        "P1"
+      ],
+      "sufficiency": "AC21 is a set of command exit codes plus continued green pre-existing suites at the evaluated commit; P1 records `npm test`, typecheck, lint, `format:check`, `git diff --check`, and the session/backend suites."
+    }
+  ]
+}
