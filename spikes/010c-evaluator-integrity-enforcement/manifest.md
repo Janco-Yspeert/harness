@@ -166,3 +166,19 @@
   `npm run format:check`; and `git diff --check` passed before this manifest
   update
 - Measurement cutoff: immediately before this manifest update
+
+## Run 007 — Human Rejection
+
+- Decision: rejected; classification: `IMPLEMENTATION_GAP`
+- Evidence: `acceptance.md`
+  `sha256:0db6cacc80b1aa3274063d44a1472ba1238f2d868b7ea553c04d8e611e31536b`
+  at `adf07ef60773c388d9d4ceb9a840ee716e26d4ac`
+- Rationale: human acceptance found that the implementation validates supplied
+  metadata rather than the physical frozen evaluator bundle, and that
+  result-accounting validation is not enforced on the canonical evaluator-result
+  and promotion path. The validator is consequently not yet unavoidable in the
+  active evaluator workflow.
+- Preservation: the frozen evaluator, implementation handoff, technical
+  verification PASS, promotion, and As-Built records remain historical evidence
+  without alteration. Corrective work requires a successor cycle.
+- Measurement cutoff: immediately before this manifest update
