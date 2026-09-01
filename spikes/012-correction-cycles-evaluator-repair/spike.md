@@ -600,25 +600,96 @@ technical evaluation and human acceptance.
 
 ## Evaluator skill versioning and bootstrap
 
-Spike 012 changes the evaluator skill itself, so its own evaluation is a
+Spike 012 changes both the evaluator skill and the correction authority that
+would otherwise govern its own recovery, so its own evaluation is an explicit
 bootstrap case.
 
-The evaluator contract used to prepare and verify Spike 012 must be frozen from
-the pre-implementation evaluator semantics (v10 or the exact committed
-pre-implementation version).
+### Bootstrap process exception
 
-The newly implemented evaluator `repair` mode must **not** be used as the
-grading authority that proves its own correctness during this spike.
+Before Spike 012 implementation begins, the evaluator execution contract used
+for this spike must be pinned to the exact pre-implementation evaluator skill.
 
-The Design Map must make the bootstrap provenance explicit.
+The pinned bootstrap authority must identify at least:
+
+- evaluator skill name;
+- evaluator contract/version;
+- exact Git provenance;
+- deterministic content identity of the evaluator skill material used; and
+- the evaluator revision prepared under that skill contract.
+
+Both Spike 012 evaluator `prepare` and evaluator `verify` must execute
+according to that same pinned pre-implementation evaluator contract even after
+the implementation changes the repository's current evaluator skill.
+
+It is insufficient merely to record that the old evaluator was intended.
+The Design Map must define an operational mechanism by which the evaluator
+executor actually consumes the pinned skill material rather than implicitly
+reading the post-implementation `skills/evaluator/SKILL.md` from the working
+tree.
+
+Acceptable implementation shapes include an immutable committed snapshot,
+execution directly from the pinned Git object, or another mechanism that makes
+the exact pre-implementation skill content both executable and
+provenance-verifiable. The exact mechanism is Design Map freedom.
+
+The newly implemented evaluator `repair` mode and newly implemented
+correction-cycle authority must **not** be used as the grading or recovery
+authority that proves their own correctness during Spike 012.
+
+### Bootstrap evaluator defects
+
+If the pinned evaluator discovers an evaluator defect while verifying Spike 012,
+recovery must follow only the evaluator-correction semantics that existed in the
+pinned pre-implementation evaluator contract.
+
+In particular:
+
+```text
+Spike 012 verify under pinned evaluator
+→ evaluator defect discovered
+→ finalize/preserve evidence under pinned rules
+→ correct evaluator using only the pinned pre-012 correction semantics
+→ reverify under the pinned evaluator contract
+```
+
+Do **not** invoke the newly implemented `evaluator repair` mode to recover
+Spike 012 itself.
+
+The bootstrap evaluator may create a later evaluator revision if the pinned
+pre-implementation contract already authorizes that correction, but the process
+semantics governing the correction remain those of the pinned contract.
+
+### Bootstrap human rejection
+
+If Spike 012 reaches technical PASS and is then human-rejected, the
+pre-Spike-012 authority rules still govern its recovery.
+
+Do not use Spike 012's newly implemented same-spike correction-cycle mechanism
+to reopen Spike 012 itself before that mechanism has been human-accepted.
+
+A rejected Spike 012 therefore follows the predecessor authority's successor
+semantics, even if the rejection would have been same-spike repairable under
+the implementation being evaluated.
+
+The new correction-cycle and evaluator-repair mechanisms become authoritative
+for subsequent work only after Spike 012 human acceptance.
+
+### Verification of the bootstrap boundary
 
 Visible regression tests and static/provenance inspection may verify the new
 repair contract and authority behavior without requiring a live evaluator repair
 against Spike 012 itself.
 
-If Spike 012's own cycle is human-rejected before this change is accepted, the
-pre-Spike-012 authority rules still govern its recovery; do not retroactively use
-the implementation under evaluation to authorize its own same-spike correction.
+The final Spike 012 verification evidence must establish that:
+
+- evaluator prepare and verify were governed by the same pinned
+  pre-implementation evaluator skill identity;
+- post-implementation evaluator skill content was not substituted as Spike
+  012's grading authority;
+- no newly implemented `repair` operation was used to repair or certify the
+  Spike 012 evaluator cycle; and
+- no newly implemented correction-cycle transition was used to recover Spike
+  012 before human acceptance.
 
 ## Non-goals
 
@@ -726,14 +797,20 @@ the implementation under evaluation to authorize its own same-spike correction.
     not create an unnecessary human gate before the next acceptance/rejection
     decision.
 
-27. The Spike 012 implementation does not use its newly implemented evaluator
-    repair mode as the grading authority that proves that same repair mode.
+27. Spike 012 evaluator prepare and verify are both governed by an exact,
+    provenance-verifiable pre-implementation evaluator skill identity, and the
+    execution mechanism proves that the post-implementation evaluator skill was
+    not substituted as its grading authority.
 
-28. Visible deterministic regression coverage exercises the correction-cycle,
+28. The Spike 012 implementation does not use its newly implemented evaluator
+    repair mode or correction-cycle authority to grade, repair, recover, or
+    certify Spike 012 itself before human acceptance.
+
+29. Visible deterministic regression coverage exercises the correction-cycle,
     evaluator-repair, legacy-history, and successor-boundary behaviors without
     live paid-provider calls.
 
-29. Existing workflow authority/provenance tests, evaluator-integrity tests,
+30. Existing workflow authority/provenance tests, evaluator-integrity tests,
     host-owned workflow-run tests, session/backend tests, typecheck, lint,
     formatting, and `git diff --check` remain green.
 
