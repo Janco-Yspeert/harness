@@ -37,7 +37,7 @@ export function buildExecutorCommand(
   let command: string[];
   if (spec.executor === "codex") {
     // `workspace-write` keeps writes inside the declared workspace(s);
-    // `--ask-for-approval never` keeps routine role work non-interactive.
+    // `--approve-for-me` is the current bounded non-interactive Codex mode.
     command = [
       "codex",
       "exec",
@@ -45,8 +45,7 @@ export function buildExecutorCommand(
       primary,
       "--sandbox",
       "workspace-write",
-      "--ask-for-approval",
-      "never",
+      "--approve-for-me",
       ...extraWorkspaces.flatMap((workspace) => ["--add-dir", workspace]),
       prompt,
     ];
@@ -60,6 +59,7 @@ export function buildExecutorCommand(
       "--permission-mode",
       "acceptEdits",
       ...extraWorkspaces.flatMap((workspace) => ["--add-dir", workspace]),
+      "--",
       prompt,
     ];
   } else {

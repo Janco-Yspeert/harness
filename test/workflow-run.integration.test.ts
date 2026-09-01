@@ -550,7 +550,8 @@ void test("the default local backend uses a bounded, non-interactive executor mo
 
   const codex = buildExecutorCommand(spec("codex", ["/repo/harness"]));
   assert.ok(codex.includes("--sandbox") && codex.includes("workspace-write"));
-  assert.ok(codex.includes("--ask-for-approval") && codex.includes("never"));
+  assert.ok(codex.includes("--approve-for-me"));
+  assert.ok(!codex.includes("--ask-for-approval"));
   assert.ok(!codex.includes("--dangerously-bypass-approvals-and-sandbox"));
 
   const claude = buildExecutorCommand(
@@ -561,6 +562,7 @@ void test("the default local backend uses a bounded, non-interactive executor mo
   );
   assert.ok(claude.includes("--add-dir"));
   assert.ok(claude.includes("/repo/harness-evaluator"));
+  assert.equal(claude.at(-2), "--");
   assert.ok(!claude.includes("--dangerously-skip-permissions"));
   assert.ok(!claude.includes("bypassPermissions"));
 });
