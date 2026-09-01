@@ -76,3 +76,53 @@
   runner/executor integration finding, not a specification or implementation
   failure.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 004 — Evaluator Prepare
+
+- Skill: `evaluator` v10 (prepare mode), executed through the configured
+  user-triggered entry point under the frozen `spike.md` bootstrap process
+  exception. At the preparation commit
+  `6f46363053e4e8c48054599439e52747ba595239` the working-tree
+  `skills/evaluator/SKILL.md` is byte-identical to
+  `bootstrap/evaluator-skill.md`
+  (`sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b`),
+  so preparation already ran the pinned pre-implementation evaluator contract.
+- Result: evaluator revision `001` frozen; pre-freeze integrity validation
+  passed.
+- Frozen inputs: `spike.md`
+  `sha256:8f54bcb361aae9aff1093159c3459da6f21d84470161de651c11118c09d67e94`
+  (`a3742a8`) and `design-map.md`
+  `sha256:50a5e771a55f49bbc6082b66e7957a37261302022784b90dd2cd97b52983e4d4`
+  (`6b83954`).
+- Public outputs: `eval-requirements.md`
+  `sha256:1ac745acfc52bdc9dcee9da38de34dfe9c33a898a7465de1b9002f9891c0d05c`;
+  `coverage-map.json`
+  `sha256:3af9e8ccaa25f0f1767c11170556f169676e182be20d05fe68b1384ff6f8976c`
+  (30 criterion records AC01-AC30 + readiness attestation + bootstrap-authority
+  binding).
+- Evaluation shape: 32 evaluator procedures (23 public executable regression
+  materialized by the implementation's own visible suite per AC29, 6 static
+  inspection, 3 provenance inspection); 0 evaluator-authored executable hidden
+  tests — the frozen Design Map leaves the authority representation, status
+  shape, repair-record format, executor wiring, and fixture location as
+  implementation freedom and the brief mandates visible deterministic coverage.
+- Pre-freeze integrity validation: PASS. Mechanical
+  `tools/evaluator-integrity.ts` over the prepared coverage bundle (30 criteria,
+  32 procedures) returned `status: PASS` with empty diagnostics; a supplementary
+  deterministic checklist covered physical file existence, content-hash
+  recomputation, public/private consistency, and confirmed no verification
+  attempt was allocated during `prepare`.
+- Controlled pre-implementation baseline: `npm test` 53/53; `npm run typecheck`,
+  `npm run lint`, `npm run format:check`, `git diff --check` clean; no
+  correction-cycle authority transition, no `evaluator-repair-recorded`
+  transition, no cycle-scoped authority state, and no evaluator `repair` mode
+  exist at `6f46363`; Spikes 003-011 public artifacts and timelines unchanged by
+  `feat/spike-012`.
+- Bootstrap boundary: the frozen evaluator freeze binds the pinned
+  bootstrap-authority identity `sha256:fa8168a3...c38b` (`evaluator` v10, source
+  commit `b7f442ae`); the Spike 012 verification result must bind the same
+  identity, and the newly implemented `repair` mode / correction-cycle authority
+  are implementation under test, not Spike 012's grading authority.
+- Restricted evaluator material inspected: this cycle's own private bundle only.
+- Blocking questions: none.
+- Measurement cutoff: immediately before this manifest update.
