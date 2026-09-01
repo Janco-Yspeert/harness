@@ -192,3 +192,21 @@
   passed. Evaluation was not rerun; promoted verification attempt `001` is the
   final PASS evidence.
 - Measurement cutoff: immediately before this manifest update
+
+## Run 008 — Human Rejection and Same-Spike Correction Check
+
+- Result: human rejection recorded at `git:7e360ca` with primary classification
+  `IMPLEMENTATION_GAP` and secondary finding `EVALUATOR_COVERAGE_DEFECT`.
+- Rejection scope: AC14/E10 was not established. The Claude adapter's
+  `acceptEdits` invocation did not prove bounded unattended routine
+  repository-local execution, and verification attempt `001` overclaimed PASS
+  from command/profile construction and static inspection rather than executable
+  provider evidence.
+- Authority-model result: the existing public workflow authority state machine
+  has no legal transition from `human-rejected` to corrected evaluator
+  preparation, a new implementation handoff, or a fresh verification
+  allocation. It offers only the successor path. No `011a` successor or
+  replacement attempt was fabricated; the frozen brief and Design Map remain
+  unchanged.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.
