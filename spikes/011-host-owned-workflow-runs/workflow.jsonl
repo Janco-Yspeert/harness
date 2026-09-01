@@ -5,3 +5,4 @@
 {"transition":"verification-allocated","at":"2026-09-01T12:09:32.099Z","evidence":{"attempt":1,"commit":"22c9d96","implementationAttempt":1,"evaluatorRevision":"001"}}
 {"transition":"verification-finalized","at":"2026-09-01T12:13:18.335Z","evidence":{"attempt":1,"result":"PASS","coverageResults":{"AC01":"SATISFIED","AC02":"SATISFIED","AC03":"SATISFIED","AC04":"SATISFIED","AC05":"SATISFIED","AC06":"SATISFIED","AC07":"SATISFIED","AC08":"SATISFIED","AC09":"SATISFIED","AC10":"SATISFIED","AC11":"SATISFIED","AC12":"SATISFIED","AC13":"SATISFIED","AC14":"SATISFIED","AC15":"SATISFIED","AC16":"SATISFIED","AC17":"SATISFIED","AC18":"SATISFIED","AC19":"SATISFIED","AC20":"SATISFIED","AC21":"SATISFIED"}}}
 {"transition":"promotion-recorded","at":"2026-09-01T12:14:11.365Z","evidence":{}}
+{"transition":"as-built-recorded","at":"2026-09-01T13:09:53.754Z","evidence":{}}
