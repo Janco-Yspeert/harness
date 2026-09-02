@@ -346,3 +346,33 @@
   `format:check` / lint.
 - Promoted evaluation is committed and pushed separately from implementation.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 011 — As-Built
+
+- Skill: `as-built` v2.
+- Inspected implementation: `feat/spike-012` @
+  `8c379025b5c4f99b464e0d03c8c15773c5a84acc` (implementation attempt 3),
+  together with the subsequent authority-only handoff/allocation/finalization
+  records and the canonical promoted evaluation.
+- Inputs: frozen `spike.md`
+  `sha256:8f54bcb361aae9aff1093159c3459da6f21d84470161de651c11118c09d67e94`;
+  frozen `design-map.md`
+  `sha256:50a5e771a55f49bbc6082b66e7957a37261302022784b90dd2cd97b52983e4d4`;
+  promoted evaluator revision `001`
+  `sha256:db248e53dd0466d7d43ae682dbbb4f9fe08537b64a1536e971341d919bfd09f6`;
+  promoted verification attempt `003` PASS.
+- Result: `as-built.md` records the implemented correction-cycle authority,
+  evaluator v11 repair boundary, pinned-v10 bootstrap invocation path, visible
+  provider-free regression coverage, and the Spike 011 non-mutation boundary.
+  No Missing, Contradictory, or material Extra behavior was observed against the
+  promoted frozen contract.
+- Evidence retained: the promoted evaluation keeps verification attempt `002`
+  FAIL and attempt `003` PASS; it does not rewrite either result or evaluator
+  revision. The bootstrap runner-state adoption exception remains in force only
+  as recorded process evidence; no `.workflow` history was fabricated.
+- Restricted evaluator material inspected: promoted public evaluation artifacts
+  only.
+- Checks: inspected the exact candidate diff, surrounding authority/host/evaluator
+  sources, visible regression evidence, promoted verification result, and
+  promotion inventory; `git diff --check` passed.
+- Measurement cutoff: immediately before this manifest update.
