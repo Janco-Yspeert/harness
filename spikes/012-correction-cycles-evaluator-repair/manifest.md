@@ -267,3 +267,52 @@
   frozen authority, evaluation artifact, Spike 012 correction-cycle/repair
   event, or implementation handoff was changed or recorded.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 009 — Evaluator Verify (attempt 003)
+
+- Skill: `evaluator` verify mode, executed under the frozen `spike.md` bootstrap
+  process exception against the pinned pre-implementation evaluator contract
+  `evaluator` v10
+  (`sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b`,
+  source commit `b7f442aed5d5cfe2722aec40f2fab0eb059e2884`). The
+  post-implementation `skills/evaluator/SKILL.md` was inspected only as
+  implementation-under-test for the frozen static cases, never as grading
+  authority; the newly implemented `repair` mode and correction-cycle authority
+  were not used to grade, repair, recover, or certify this cycle.
+- Implementation evaluated: `feat/spike-012` @
+  `8c379025b5c4f99b464e0d03c8c15773c5a84acc`, implementation attempt 3.
+- Frozen evaluator revision: `001`, canonical identity
+  `sha256:db248e53dd0466d7d43ae682dbbb4f9fe08537b64a1536e971341d919bfd09f6`.
+- Frozen inputs verified byte-identical at the evaluated commit: `spike.md`
+  `sha256:8f54bcb361aae9aff1093159c3459da6f21d84470161de651c11118c09d67e94`;
+  `design-map.md`
+  `sha256:50a5e771a55f49bbc6082b66e7957a37261302022784b90dd2cd97b52983e4d4`;
+  `eval-requirements.md`
+  `sha256:1ac745acfc52bdc9dcee9da38de34dfe9c33a898a7465de1b9002f9891c0d05c`;
+  `coverage-map.json`
+  `sha256:3af9e8ccaa25f0f1767c11170556f169676e182be20d05fe68b1384ff6f8976c`. No
+  specification drift; no frozen evaluator material modified during
+  verification.
+- Result: **PASS**.
+- Aggregate: 30 frozen acceptance criteria, all 30 satisfied; 32 evaluation
+  procedures (E1–E23, S1–S6, P1–P3), all pass. 0 evaluator defects, 0
+  specification ambiguities, 0 infrastructure failures, 0 specification drift. 7
+  documented reservations concerning test-assertion depth within the frozen
+  Design Map's representation freedom; none meets a frozen decision rule for a
+  FAIL.
+- Repository validation at the evaluated commit (all green): `npm test`
+  (61 pass / 0 fail), `npm run typecheck`, `npm run lint`, `npm run
+  format:check`, `git diff --check` all exit 0; the pre-existing
+  workflow-authority, evaluator-integrity, host-owned workflow-run, and
+  session/backend suites remain green; the suite runs with no live paid provider
+  call. Spikes 003–011 public artifacts, promoted `evaluation/**`, and
+  `workflow.jsonl` timelines are byte-for-byte unchanged by `feat/spike-012`.
+- Closes the six criteria that attempt 002 recorded as `IMPLEMENTATION_FAILURE`
+  (`AC06`, `AC07`, `AC08`, `AC19`, `AC24`, `AC29`) via four new visible
+  deterministic tests plus a bounded blocked-repair authority path traceable to
+  frozen brief scope 9–11, 15.
+- Promotion: PASS is the evaluator-owned next step, held pending explicit user
+  confirmation per a standing instruction to ask before promotion. Human product
+  acceptance remains a separate, later gate.
+- Restricted evaluator material inspected: this cycle's own frozen bundle only.
+- Measurement cutoff: immediately before this manifest update.
