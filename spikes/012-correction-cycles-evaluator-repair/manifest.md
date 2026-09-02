@@ -376,3 +376,23 @@
   sources, visible regression evidence, promoted verification result, and
   promotion inventory; `git diff --check` passed.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 012 — Outcome
+
+- Skill: `outcome` v3.
+- Inputs: committed implementation attempt 3
+  `8c379025b5c4f99b464e0d03c8c15773c5a84acc`; promoted verification attempt
+  `003` PASS; promoted evaluator revision `001`
+  `sha256:db248e53dd0466d7d43ae682dbbb4f9fe08537b64a1536e971341d919bfd09f6`;
+  completed As-Built; and canonical human acceptance.
+- Result: `COMPLETE — independently evaluated PASS, accepted by the user.`
+- Material history: verification attempts 001 and 002 remain preserved as
+  non-PASS evidence; attempt 003 passed. No evaluator correction occurred.
+  The accepted authority records `PRE_VERIFICATION_ALLOCATION_EVIDENCE_GAP`,
+  `UNNECESSARY_PROMOTION_HUMAN_GATE`, `RUNNER_STATE_ADOPTION_GAP`, and
+  `CLAUDE_INVOCATION_MODEL_GAP` as follow-up findings.
+- Restricted evaluator material inspected: promoted public evaluation artifacts
+  only.
+- Checks: verified accepted authority, promoted PASS provenance, As-Built, and
+  manifest evidence; `git diff --check` passed.
+- Measurement cutoff: immediately before this manifest update.
