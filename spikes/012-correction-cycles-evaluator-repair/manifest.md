@@ -183,3 +183,59 @@
   FAIL; no evaluator repair/correction cycle, authority handoff, or `.workflow`
   state was created.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 007 — Evaluator Verify (attempt 002)
+
+- Skill: `evaluator` verify mode, executed under the frozen `spike.md` bootstrap
+  process exception against the pinned pre-implementation evaluator contract
+  `evaluator` v10
+  (`sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b`,
+  source commit `b7f442aed5d5cfe2722aec40f2fab0eb059e2884`). The
+  post-implementation `skills/evaluator/SKILL.md` was not used as grading
+  authority; the newly implemented `repair` mode and correction-cycle authority
+  were treated only as implementation under test.
+- Implementation evaluated: `feat/spike-012` @
+  `31be00bae7e76a314edc0cbdaecc0362bfd57814`, implementation attempt 2.
+- Frozen evaluator revision: `001`, canonical identity
+  `sha256:db248e53dd0466d7d43ae682dbbb4f9fe08537b64a1536e971341d919bfd09f6`.
+- Frozen inputs verified byte-identical at the evaluated commit: `spike.md`
+  `sha256:8f54bcb361aae9aff1093159c3459da6f21d84470161de651c11118c09d67e94`;
+  `design-map.md`
+  `sha256:50a5e771a55f49bbc6082b66e7957a37261302022784b90dd2cd97b52983e4d4`;
+  `eval-requirements.md`
+  `sha256:1ac745acfc52bdc9dcee9da38de34dfe9c33a898a7465de1b9002f9891c0d05c`;
+  `coverage-map.json`
+  `sha256:3af9e8ccaa25f0f1767c11170556f169676e182be20d05fe68b1384ff6f8976c`. No
+  specification drift; no frozen evaluator material modified during
+  verification.
+- Result: **FAIL**, classification `IMPLEMENTATION_FAILURE`.
+- Aggregate: 30 frozen acceptance criteria; 24 satisfied, 6 materially
+  unsatisfied (`AC06`, `AC07`, `AC08`, `AC19`, `AC24`, `AC29`). 0 evaluator
+  defects, 0 specification ambiguities, 0 infrastructure failures, 0
+  specification drift.
+- Repository validation at the evaluated commit (all green): `npm test`
+  (57 pass / 0 fail), `npm run typecheck`, `npm run lint`, `npm run
+  format:check`, `git diff --check` all exit 0; the pre-existing
+  workflow-authority, evaluator-integrity, host-owned workflow-run, and
+  session/backend suites remain green; the suite runs with no live paid provider
+  call. Spikes 003–011 public artifacts, promoted `evaluation/**`, and
+  `workflow.jsonl` timelines are byte-for-byte unchanged by `feat/spike-012`.
+- Failure summary: the correction-cycle authority, cycle-scoped completion
+  state, evaluator `repair` mode (skill contract version advanced to 11),
+  structured multi-finding human rejection, cycle-aware status surface, and the
+  Spike 012 evaluator bootstrap-authority binding are implemented, but the
+  visible deterministic regression suite omits coverage that frozen `spike.md`
+  scope 18, the "Spike 011 recovery proof" section, and `AC29` explicitly
+  require: no Spike 011 recovery-proof fixture (`AC06`); no executable coverage
+  that a `SPECIFICATION_CHANGE` / `OTHER_HUMAN_REJECTION` rejection cannot open a
+  correction cycle (`AC07`); no test that a human-accepted cycle cannot be
+  reopened (`AC08`); no executable coverage of the repair-blocks-to-successor
+  path (`AC19`); the corrected cycle's own PASS / promotion / As-Built /
+  fresh-human-decision sequence is not exercised (`AC24`); and consequently the
+  "successor-boundary" behaviour family has no visible deterministic coverage
+  (`AC29`).
+- Public feedback: `verification-feedback-002.md`.
+- Promotion: none (result is not PASS). Implementation retries against the
+  unchanged frozen evaluator revision `001`; `prepare` is not rerun.
+- Restricted evaluator material inspected: this cycle's own frozen bundle only.
+- Measurement cutoff: immediately before this manifest update.
