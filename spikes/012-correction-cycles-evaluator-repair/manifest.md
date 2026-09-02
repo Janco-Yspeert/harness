@@ -311,8 +311,38 @@
   (`AC06`, `AC07`, `AC08`, `AC19`, `AC24`, `AC29`) via four new visible
   deterministic tests plus a bounded blocked-repair authority path traceable to
   frozen brief scope 9–11, 15.
-- Promotion: PASS is the evaluator-owned next step, held pending explicit user
-  confirmation per a standing instruction to ask before promotion. Human product
+- Promotion: performed in Run 010 after explicit user confirmation. Human product
   acceptance remains a separate, later gate.
 - Restricted evaluator material inspected: this cycle's own frozen bundle only.
+- Measurement cutoff: immediately before this manifest update.
+
+## Run 010 — Evaluation Promotion
+
+- Trigger: finalized PASS of verification attempt `003` (Run 009), promoted with
+  explicit user confirmation. No new verification attempt was allocated.
+- Skill: `evaluator` (v10 pinned bootstrap contract) promotion procedure.
+- Overall promoted result: **PASS**; passing attempt `003`
+  (`git:8c379025b5c4f99b464e0d03c8c15773c5a84acc`).
+- Evaluator revision `001`
+  (`sha256:db248e53dd0466d7d43ae682dbbb4f9fe08537b64a1536e971341d919bfd09f6`):
+  eligible as an all-or-nothing bundle and promoted; `notPromotedRevisions`
+  empty.
+- Public layout under `spikes/012-correction-cycles-evaluator-repair/evaluation/`:
+  `attempt-ledger.json`; `attempts/002/eval-result.md` (FAIL, retained) and
+  `attempts/003/eval-result.md` (PASS), copied byte-for-byte; `freeze/001.json`
+  (byte-for-byte copy of the frozen evaluator-revision metadata);
+  `revisions/001/` (`eval-spec.md`, `criterion-records.md`, `case-manifest.json`,
+  `manifest.json`, `pre-freeze-integrity-checklist.md` — the exact frozen
+  bundle); and newly generated `promotion.json`.
+- Integrity check: the SHA-256 of every promoted historical file was recomputed
+  and equals its recorded source identity; the canonical revision identity
+  (`sha256` of `freeze/001.json`) equals both attempts' recorded
+  evaluator-revision identity and the private ledger; every `freeze/001.json`
+  artifact identity equals the corresponding `revisions/001/` file; every ledger
+  `resultIdentity` equals its promoted result file. No mismatch. `promotion.json`
+  is the only newly generated artifact; no historical artifact was edited,
+  normalized, or regenerated.
+- The `spikes/` tree is `.prettierignore`d; promoted artifacts are exempt from
+  `format:check` / lint.
+- Promoted evaluation is committed and pushed separately from implementation.
 - Measurement cutoff: immediately before this manifest update.

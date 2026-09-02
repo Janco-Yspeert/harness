@@ -1,0 +1,166 @@
+{
+  "revision": "001",
+  "note": "No evaluator-authored executable hidden tests are frozen in this revision. The frozen Design Map deliberately leaves the internal authority representation, the status JSON shape, the private repair-record format, executor command wiring, and the test fixture location as implementation freedom, so an evaluator-authored hidden test would have to invent that surface. spike.md AC29 mandates visible deterministic regression coverage for the correction-cycle, evaluator-repair, legacy-history, and successor-boundary behaviours, so executable evidence is the implementation's own visible regression suite (brief scope 1-18; AC01-AC26, AC29), run through `npm test`. Static and provenance cases use the modes and evidence plans frozen in eval-spec.md and case-manifest.json.",
+  "cases": [
+    {
+      "id": "E1",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E2",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E3",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E4",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E5",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E6",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E7",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E8",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E9",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E10",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E11",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E12",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E13",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E14",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E15",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E16",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E17",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E18",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E19",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E20",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E21",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E22",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "E23",
+      "mode": "PUBLIC_REGRESSION",
+      "tests": []
+    },
+    {
+      "id": "S1",
+      "mode": "STATIC_INSPECTION",
+      "tests": []
+    },
+    {
+      "id": "S2",
+      "mode": "STATIC_INSPECTION",
+      "tests": []
+    },
+    {
+      "id": "S3",
+      "mode": "STATIC_INSPECTION",
+      "tests": []
+    },
+    {
+      "id": "S4",
+      "mode": "STATIC_INSPECTION",
+      "tests": []
+    },
+    {
+      "id": "S5",
+      "mode": "STATIC_INSPECTION",
+      "tests": []
+    },
+    {
+      "id": "S6",
+      "mode": "STATIC_INSPECTION",
+      "tests": []
+    },
+    {
+      "id": "P1",
+      "mode": "PROVENANCE_INSPECTION",
+      "tests": []
+    },
+    {
+      "id": "P2",
+      "mode": "PROVENANCE_INSPECTION",
+      "tests": []
+    },
+    {
+      "id": "P3",
+      "mode": "PROVENANCE_INSPECTION",
+      "tests": []
+    }
+  ]
+}
