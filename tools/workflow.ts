@@ -937,6 +937,13 @@ function authorityState(target: Target) {
           item === "IMPLEMENTATION_GAP" || item === "EVALUATOR_COVERAGE_DEFECT",
       )
     : [];
+  const blockedRepair = [...current.events]
+    .reverse()
+    .find(
+      (event) =>
+        event.transition === "evaluator-repair-recorded" &&
+        event.evidence.outcome === "BLOCKED",
+    );
   const correctionReason = !rejected
     ? "current cycle has no human rejection"
     : current.accepted
@@ -954,6 +961,7 @@ function authorityState(target: Target) {
     accepted: current.accepted,
     rejected,
     rejectedEvent: current.rejectedEvent ?? undefined,
+    blockedRepair,
     successor: latest(events, "successor-linked"),
     outcome: latest(events, "outcome-recorded") !== undefined,
     coverage: preparedCoverage(target, events),
@@ -1216,6 +1224,32 @@ function validateAuthority(
         value(evidence, "sourceEvaluatorRevision"))
     )
       fail("Repair source evaluator revision is not current");
+    if (evidence.outcome === "BLOCKED") {
+      const brief = latest(events, "brief-frozen");
+      const design = latest(events, "design-map-frozen");
+      if (
+        !brief ||
+        !design ||
+        value(evidence, "briefIdentity") !==
+          value(brief.evidence, "identity") ||
+        value(evidence, "designMapIdentity") !==
+          value(design.evidence, "identity") ||
+        value(evidence, "evaluationRequirementsIdentity") !==
+          identity(readFileSync(resolve(target.path, "eval-requirements.md")))
+      )
+        fail("Blocked repair must preserve frozen public authority identities");
+      if (
+        !["SPECIFICATION_CHANGE", "METHODOLOGY_EVIDENCE_MODEL_DEFECT"].includes(
+          String(evidence.classification),
+        ) ||
+        evidence.successorRequired !== true ||
+        evidence.acceptanceSemanticsPreserved !== false
+      )
+        fail(
+          "Blocked repair requires successor classification and semantic-change attestation",
+        );
+      return;
+    }
     if (
       value(evidence, "resultingEvaluatorRevision") ===
       value(evidence, "sourceEvaluatorRevision")
@@ -1246,8 +1280,11 @@ function validateAuthority(
     const predecessor = targetFrom(value(evidence, "predecessor"));
     if (predecessor.path === target.path)
       fail("successor-linked cannot reference itself");
-    if (!authorityState(predecessor).rejected)
-      fail("successor-linked requires a human-rejected predecessor");
+    const predecessorState = authorityState(predecessor);
+    if (!predecessorState.rejected && !predecessorState.blockedRepair)
+      fail(
+        "successor-linked requires a human-rejected or terminally blocked-repair predecessor",
+      );
     const predecessorEvidence = evidence.predecessorEvidence;
     if (
       typeof predecessorEvidence !== "object" ||
@@ -1280,7 +1317,7 @@ function authority(
       }
     });
     process.stdout.write(
-      `${JSON.stringify({ history: state.events, legalTransitions: legal, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.current.predecessor ?? state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected, outcomeComplete: state.outcome, currentCycle: { id: state.current.id, state: state.accepted || state.rejected ? "CLOSED" : "OPEN", evaluatorRevision: state.current.evaluatorRevision, implementationAttempt: state.current.implementation?.evidence.attempt ?? null, verification: state.current.verification?.evidence ?? null, promotionComplete: state.current.promoted, asBuiltComplete: state.current.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : "PENDING" }, cycles: state.cycles.map((cycle) => ({ id: cycle.id, predecessor: cycle.predecessor, evaluatorRevision: cycle.evaluatorRevision, implementationAttempt: cycle.implementation?.evidence.attempt ?? null, verification: cycle.verification?.evidence ?? null, promotionComplete: cycle.promoted, asBuiltComplete: cycle.asBuilt, humanDecision: cycle.rejectedEvent ? "REJECTED" : cycle.accepted ? "ACCEPTED" : "PENDING" })), correctionPermitted: state.correctionPermitted, correctionReason: state.correctionReason })}\n`,
+      `${JSON.stringify({ history: state.events, legalTransitions: legal, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.current.predecessor ?? state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected || state.blockedRepair !== undefined, outcomeComplete: state.outcome, currentCycle: { id: state.current.id, state: state.accepted || state.rejected ? "CLOSED" : "OPEN", evaluatorRevision: state.current.evaluatorRevision, implementationAttempt: state.current.implementation?.evidence.attempt ?? null, verification: state.current.verification?.evidence ?? null, promotionComplete: state.current.promoted, asBuiltComplete: state.current.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : "PENDING" }, cycles: state.cycles.map((cycle) => ({ id: cycle.id, predecessor: cycle.predecessor, evaluatorRevision: cycle.evaluatorRevision, implementationAttempt: cycle.implementation?.evidence.attempt ?? null, verification: cycle.verification?.evidence ?? null, promotionComplete: cycle.promoted, asBuiltComplete: cycle.asBuilt, humanDecision: cycle.rejectedEvent ? "REJECTED" : cycle.accepted ? "ACCEPTED" : "PENDING" })), correctionPermitted: state.correctionPermitted, correctionReason: state.correctionReason })}\n`,
     );
     return;
   }

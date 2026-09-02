@@ -239,3 +239,31 @@
   unchanged frozen evaluator revision `001`; `prepare` is not rerun.
 - Restricted evaluator material inspected: this cycle's own frozen bundle only.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 008 — Implementation Attempt 003
+
+- Skill: `implementation` v3.
+- Frozen inputs remained unchanged: `spike.md`
+  `sha256:8f54bcb361aae9aff1093159c3459da6f21d84470161de651c11118c09d67e94`;
+  `design-map.md`
+  `sha256:50a5e771a55f49bbc6082b66e7957a37261302022784b90dd2cd97b52983e4d4`;
+  `eval-requirements.md`
+  `sha256:1ac745acfc52bdc9dcee9da38de34dfe9c33a898a7465de1b9002f9891c0d05c`.
+- Result: added provider-free deterministic authority regressions for the six
+  public verification findings: an isolated fixture reconstructed from public
+  Spike 011 Cycle 001 evidence; specification-changing and bare `OTHER` human
+  rejection refusal; accepted-cycle no-reopen; terminal blocked repair routed to
+  successor lineage while an evidence-procedure-only repair remains legal; and
+  Cycle 002's own handoff, verification PASS, promotion, As-Built, and fresh
+  human decision.
+- Output identities: `tools/workflow.ts`
+  `sha256:e3d8567eae1f32ba05724eebe5ebe9048fa58a592b021f21e6d479caa4b9e0db`;
+  `test/workflow.test.ts`
+  `sha256:c5b9675e3ee2708d7aac474fb829bcdd6a379f95b60e4d1cc86aeffea776fd64`.
+- Checks: `npm run typecheck`, `npm run lint`, `npm run format:check`,
+  `git diff --check`, and `npm test -- --test-concurrency=1` (61 passing) all
+  passed. No test requires a live provider.
+- Restricted evaluator material inspected: none. No evaluator revision,
+  frozen authority, evaluation artifact, Spike 012 correction-cycle/repair
+  event, or implementation handoff was changed or recorded.
+- Measurement cutoff: immediately before this manifest update.
