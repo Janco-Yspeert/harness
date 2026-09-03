@@ -1,77 +1,122 @@
 # Harness
 
-Harness is an experimental Ubuntu-hosted control plane for supervising AI coding
-agents.
+Harness is a Linux control plane for supervising coding agents, and a test bed
+for a structured way of building software with them.
 
-The long-term goal is to provide one place to start, observe, reconnect to, and
-interact with coding-agent sessions running on a development machine, with a
-clean boundary between the host that owns those sessions and the clients used to
-control them.
+## What is Harness?
 
-The current implementation is deliberately narrower. It is focused on proving
-the host/session model, backend abstraction, lifecycle behaviour,
-reconnectability, and native agent integration before attempting remote access
-or multi-agent orchestration.
+Harness began with a practical problem: coding agents were doing longer pieces
+of work on a Linux machine, while the person responsible for them could not
+comfortably leave the terminal.
 
-The broader product direction and architectural constraints are documented in
-[`GOALS.md`](./GOALS.md) and [`AGENTS.md`](./AGENTS.md).
+The original idea was to make those sessions belong to the host rather than to
+whichever client happened to be connected. A developer could start an agent,
+walk away, check it from a phone, answer a question, approve an action, and
+reconnect later without disturbing the underlying work. Harness would be more
+than a remote terminal: it would understand that an agent session has a
+lifecycle and occasionally needs a human.
 
-## Current Status
+Then Codex became capable of doing a surprising amount of the orchestration
+itself. From a higher-level conversation it could operate the development host,
+launch processes, inspect their output, and carry a workflow across multiple
+steps. The original runtime problem still mattered, but it was no longer the
+whole project.
 
-Harness is an experimental engineering project, not a production-ready
-remote-access tool.
+At the same time, Harness was becoming an experiment in AI-first development.
+Its skills already separated brief review, design, implementation, evaluation,
+As-Built inspection, and Outcome synthesis. The problem was that a sufficiently
+capable orchestrator could wear every hat. One Codex context could invoke the
+skills, implement the feature, understand the private evaluation machinery,
+judge the result, and manage the evidence saying those jobs were independent.
+Convenient, certainly. Convincing, less so.
 
-Development is progressing through focused implementation spikes. The completed
-work so far establishes:
+That gave the runtime a second job: execute methodology roles through distinct,
+host-owned agent runs and keep their identities, inputs, permissions, logs, and
+outcomes separate. The orchestrator can still decide what should happen next; it
+should not quietly become implementer, examiner, records clerk, and appeals
+court at the same time.
 
-- bidirectional browser-to-PTY control;
-- explicit session creation, attachment, deletion, and cleanup;
-- detach and reconnect behaviour;
-- browser recovery from stale sessions;
-- a backend abstraction separating session management from the controlled
-  process;
-- a native Codex backend using the Codex App Server protocol;
-- structured handling of agent events and turn lifecycle;
-- integration and lifecycle testing around both PTY and Codex-backed sessions.
+Harness now has two connected purposes:
 
-The current browser interface remains a minimal development client rather than
-the intended end-user experience.
+1. **Runtime supervision** — launch, observe, direct, detach from, reconnect to,
+   and recover agent work running on a Linux host.
+2. **Methodology execution** — run an evidence-producing development workflow
+   whose authority survives any one agent context.
 
-The host is deliberately local-first. Public-network exposure, daemon-restart
-persistence, a dedicated mobile client, and multi-agent orchestration are later
-concerns.
+The result is part control plane, part methodology laboratory. The two halves
+are still uneven, but they now solve parts of the same problem: how to let
+agents do substantial work without making their activity opaque or their claims
+self-authenticating.
 
-## Why Harness?
+The broader product direction lives in [`GOALS.md`](./GOALS.md). Repository-wide
+engineering and workflow rules live in [`AGENTS.md`](./AGENTS.md).
 
-Coding agents are increasingly capable of carrying out substantial engineering
-work, but interaction with them is still commonly tied to an individual terminal
-or application.
+## Current State
 
-Harness explores a different model:
+Harness is experimental. Individual capabilities have integration tests and
+preserved evaluation evidence; the whole is still a development system rather
+than a production remote-access product.
 
-- the **host owns the agent session**, rather than the client;
-- clients can attach and detach without necessarily owning the session lifetime;
-- agent backends can sit behind a common control boundary;
-- lifecycle and session state are explicit rather than implicit in a terminal
-  process;
-- clients can eventually be separated from the machine doing the engineering
-  work;
-- richer supervision and multi-agent coordination can be built above that
-  boundary later.
+### Runtime
 
-The immediate goal is not to design the complete system upfront.
+The current implementation provides:
 
-Harness is being developed incrementally through small spikes intended to expose
-architectural assumptions before increasingly complex behaviour is built on top
-of them.
+- a loopback-only HTTP and WebSocket host on Ubuntu;
+- a generic PTY backend and a native Codex backend using the Codex App Server
+  protocol;
+- browser-driven session creation, attachment, input, detachment, deletion, and
+  cleanup;
+- a live host-level structured event stream for session and workflow-run
+  lifecycle events;
+- host-owned workflow runs with stable identity, lifecycle state, diagnostic
+  logs, cancellation, explicit replacement, and execution-attempt provenance;
+- named workspace-oriented profiles and local executor commands for Codex and
+  Claude; and
+- a repository-local workflow CLI that handles phase order, local operational
+  state, public methodology authority, and canonical run dispatch.
 
-## Requirements
+Interactive sessions and methodology runs share the Harness host but remain
+different domain objects. An interactive session accepts client input. A
+workflow run instead records a role, phase, executor, workspace boundary,
+permission profile, attempt identity, lifecycle, and terminal disposition.
 
-- Ubuntu
-- Node.js 24.12 or newer
-- npm 11 or newer
+The host-owned workflow-run path is active prototype work. Spike 011 established
+the model and its integration surface, then failed human acceptance because the
+real Claude executor boundary had not been demonstrated strongly enough. The
+technical `PASS`, the human rejection, and the reason for it all remain in the
+repository. That is a useful miniature of the methodology doing its actual job.
+
+See the [Spike 011 manifest](./spikes/011-host-owned-workflow-runs/manifest.md)
+for the precise evidence and rejection record.
+
+### Development methodology
+
+The repository also contains a working set of versioned skills and supporting
+tools for:
+
+- reviewing a brief before it becomes binding;
+- freezing a small shared Design Map;
+- preparing evaluation before implementation;
+- implementing from the public frozen contract;
+- verifying through a separate evaluator role;
+- preserving evaluator revisions and every allocated attempt;
+- recording the system that was actually built;
+- keeping technical verification separate from human acceptance; and
+- synthesising the accepted result into an Outcome.
+
+The workflow has accumulated some ceremony, and much of it has a scar behind it:
+an evaluator moved, an attempt lost its identity, a technical `PASS` hid missing
+coverage, or an orchestrator crossed a boundary it was meant to supervise. The
+spike history keeps those failures visible instead of sanding them into a
+suspiciously perfect origin story.
 
 ## Running Harness
+
+Harness currently requires:
+
+- Ubuntu;
+- Node.js 24.12 or newer; and
+- npm 11 or newer.
 
 Install dependencies:
 
@@ -85,34 +130,28 @@ Start the host with the default PTY backend:
 npm start
 ```
 
-To use the native Codex backend instead:
+Use the native Codex backend:
 
 ```sh
 HARNESS_BACKEND=codex npm start
 ```
 
 The Codex backend uses the locally installed Codex CLI and its existing
-authentication. Harness does not manage Codex credentials. By default, Codex
-uses the directory from which Harness was started; set `HARNESS_CODEX_CWD` to
-use another working directory:
+authentication. By default it works in the directory from which Harness was
+started. Set a different working directory with:
 
 ```sh
 HARNESS_BACKEND=codex HARNESS_CODEX_CWD=/path/to/project npm start
 ```
 
-The development interface is available at:
+The development client is available at
+[`http://127.0.0.1:3000`](http://127.0.0.1:3000).
 
-```text
-http://127.0.0.1:3000
-```
+Harness binds its HTTP and WebSocket interfaces to `127.0.0.1`. There is no
+remote authentication boundary yet. Read [`SECURITY.md`](./SECURITY.md) before
+putting it anywhere near a tunnel, proxy, or shared machine.
 
-Harness currently binds its HTTP and WebSocket interfaces to `127.0.0.1`. This
-is intentional. The current security model is suitable for local development
-only and should not be treated as a complete trust boundary for remote access.
-
-## Development
-
-During development:
+### Development checks
 
 ```sh
 npm run dev
@@ -120,211 +159,147 @@ npm test
 npm run check
 ```
 
-Harness uses Node's native TypeScript type stripping at runtime.
+Harness uses Node's native TypeScript type stripping at runtime, so runtime
+TypeScript syntax must remain erasable. Static checking, linting, formatting,
+and tests are collected under `npm run check`.
 
-TypeScript syntax must therefore remain erasable, while static type checking is
-performed separately.
+### Workflow CLI
 
-The project also includes repository CI under
-[`.github/workflows/`](./.github/workflows/).
+The workflow runner operates on one `spikes/NNN-*/` directory at a time:
 
-## AI-First Development
+```text
+npm run workflow -- init <spike>
+npm run workflow -- status <spike>
+npm run workflow -- dispatch <phase> <spike> [--execute]
+npm run workflow -- record <phase> <spike> <complete|blocked|failed>
+npm run workflow -- cancel <phase> <spike>
+npm run workflow -- authority status <spike>
+```
 
-Harness is also an experiment in **AI-first software development**.
+Dispatch is a dry run unless `--execute` is supplied. Canonical execution uses
+the running Harness host; the CLI does not create a private substitute when the
+host is unavailable.
 
-AI is used as an active participant in planning, implementation, evaluation, and
-review rather than only as a code-generation tool.
+The CLI has two kinds of state:
 
-The development process is **not based on a prescribed methodology, course, or
-certification**. It has evolved through practical experimentation with coding
-agents and continues to change as those experiments reveal useful techniques,
-failures, and new problems.
+- ignored `.workflow/` data for local dispatch and run bookkeeping; and
+- committed `workflow.jsonl` evidence for guarded methodology transitions.
 
-The human remains responsible for deciding scope, resolving architectural
-questions, adjudicating ambiguity, and deciding what evidence is sufficient to
-accept an engineering result.
+Raw agent output is diagnostic. It does not become a completed phase merely by
+sounding pleased with itself.
 
-Practices currently being explored include:
+## The AI-First Workflow
 
-- separating implementation from evaluation;
-- freezing spike requirements before implementation;
-- giving implementation and evaluation agents different responsibilities and
-  context;
-- independently deriving evaluation from the frozen requirements;
-- withholding selected executable evaluation tests from the implementation
-  agent;
-- making assumptions required for fair evaluation visible to the implementer;
-- retaining every evaluation attempt privately and promoting eligible exact
-  evidence immediately after evaluator `PASS`, before human acceptance;
-- explicitly recording what a spike demonstrated — and what it did not;
-- treating the development workflow itself as something that can be measured and
-  improved.
+An ordinary implementation spike follows this shape:
 
-These are **working hypotheses rather than claimed best practices**.
+1. Draft the spike brief.
+2. Run **Brief Readiness**, resolve material findings, and freeze the brief with
+   committed provenance.
+3. Create and freeze the **Design Map**, which pins shared decisions while
+   leaving ordinary implementation freedom alone.
+4. Run evaluator **prepare**. It derives public evaluation requirements and a
+   private evaluation bundle from the frozen contract, validates their
+   integrity, and freezes them before implementation begins.
+5. Run **Implementation** in a separate role context using only the public
+   contract and public evaluation material.
+6. Run evaluator **verify** against the frozen evaluator revision. A failure is
+   classified before deciding whether implementation, evaluation, or the
+   specification must change.
+7. After evaluator `PASS`, promote the eligible evaluator history and attempt
+   results into the public spike record.
+8. Run **As-Built** against the final implementation and frozen contract.
+9. Ask for explicit human acceptance or rejection.
+10. After acceptance, run **Outcome** to record what the spike established,
+    discovered, and left unresolved.
 
-A technique working successfully during one spike is evidence about that spike.
-It is not automatically treated as proof that the technique is generally
-reliable.
+Routine transitions continue without a human ceremony break. Humans remain the
+authority for product acceptance, material scope decisions, and genuinely
+ambiguous recovery choices.
 
-Part of the purpose of Harness is to discover which practices actually improve
-reliability, efficiency, and human oversight when coding agents participate
-deeply in software development.
+### Separate roles, not costume changes
 
-### The Workflow Is Part of the Experiment
+Implementation and evaluation are authority-sensitive roles. They need distinct
+execution contexts and controlled access, especially while evaluator material is
+private. Starting a fresh prompt inside an otherwise omniscient orchestrator is
+a costume change, not separation.
 
-The AI-development process itself is treated as engineering work rather than
-invisible prompting infrastructure.
+The workflow runner and Harness host are intended to make that separation
+observable. A run has an executor, role, skill version, workspace boundary,
+attempt identity, and lifecycle independent of the conversation coordinating it.
 
-An early Harness spike was dedicated specifically to establishing the
-development and evaluation workflow. Subsequent spikes have exposed weaknesses
-in both implementations and the workflow used to evaluate them.
+### Hidden evaluation
 
-That distinction matters.
+Evaluator preparation happens before implementation and publishes the
+assumptions that affect a fair implementation. Executable evaluator tests may
+remain hidden from the implementer during the active cycle.
 
-An AI evaluator is not treated as a truth oracle. Evaluation infrastructure can
-itself contain incorrect assumptions, defective tests, infrastructure problems,
-or specification drift.
+Hidden tests are a tool, not a quota. If the frozen contract leaves no stable
+observable seam, a test written before implementation may simply guess the
+eventual representation. The evaluator can use visible tests, static inspection,
+provenance checks, or a concretely defined procedure instead. Whatever it uses
+must map back to the frozen criteria and survive pre-freeze integrity checks.
 
-The process therefore attempts to distinguish between:
+After `PASS`, eligible private evaluation material is promoted into the spike's
+public historical record. Failed attempts and superseded revisions stay in the
+chain. A green result is useful; a green result with a chain of custody is more
+useful.
 
-- implementation defects;
-- evaluator defects;
-- specification ambiguity;
-- infrastructure failures;
-- specification drift.
+### Technical verification and human acceptance
 
-The development artefacts used to reach those conclusions are kept alongside the
-implementation where useful, making the evolution of the project inspectable
-rather than leaving important engineering context only inside transient AI
-conversations.
+Evaluator `PASS` means the implementation satisfied the frozen,
+machine-verifiable evaluation contract. It does not settle every product or
+methodology judgement.
 
-## Independent Evaluation
+Human review has rejected technically passing Harness spikes after finding
+missing evaluator coverage or a gap between a constructed executor profile and
+its real behaviour. Those rejections preserve the original implementation,
+evaluation, promotion, and As-Built records. Material correction moves forward
+through a successor such as `010a` rather than editing history until it agrees
+with the latest conclusion.
 
-Some Harness spikes use independently prepared evaluation that is hidden from
-the implementation agent while implementation is in progress.
+### Evidence
 
-The implementation agent receives:
+Depending on the workflow generation, a spike may contain:
 
-- the frozen spike brief;
-- the frozen Design Map;
-- public evaluation requirements;
-- public feedback from prior confirmed implementation failures, if any;
-- relevant repository contracts and operating instructions.
+- `spike.md` — frozen intent and acceptance criteria;
+- `feedback.md` — Brief Readiness findings;
+- `design-map.md` — shared contracts and implementation freedom;
+- `eval-requirements.md` — public evaluation obligations;
+- `coverage-map.json` — criterion-level coverage and readiness attestation;
+- `manifest.md` — append-only execution history and available measurements;
+- `workflow.jsonl` — guarded public methodology transitions;
+- `evaluation/` — promoted revisions, attempts, results, and promotion metadata;
+- `as-built.md` — comparison of the final system with the frozen contract;
+- `acceptance.md` — the human decision where recorded; and
+- `outcome.md` — the accepted spike's historical synthesis.
 
-It does **not** receive the private evaluation specification or hidden
-executable tests.
+Exact layouts vary because the methodology evolved in public. Historical
+artefacts are left in the shape that was authoritative at the time.
 
-The purpose is not secrecy for its own sake.
-
-It reduces the opportunity for an implementation to optimise specifically for a
-known test suite while still requiring the evaluator to expose assumptions that
-materially affect what constitutes a fair implementation.
-
-“Hidden” describes the tests' relationship to the implementation agent **during
-evaluation**, not their permanent visibility.
-
-After successful verification, the exact evaluator revisions and complete
-attempt/result history from that evaluation cycle can be promoted into the
-repository as part of the spike's historical record.
-
-That means a reader can inspect not only the implementation, but also the
-evidence used to verify it.
-
-## Development Workflow
-
-Harness is developed incrementally through focused spikes.
-
-At a high level:
-
-1. **Spike design** — Human + AI work through the intended behaviour, scope, and
-   constraints of the next increment.
-
-2. **Brief Readiness** — A separate agent reviews the proposed brief against the
-   current repository and identifies ambiguities, contradictions, missing
-   decisions, and hidden implementation assumptions.
-
-3. **Brief freeze** — Those findings are resolved and the spike brief becomes
-   the implementation contract.
-
-4. **Design Map** — A compact shared contract records existing constraints and
-   establishes only the behavior-preserving seams that implementation and
-   evaluation must interpret consistently.
-
-5. **Independent evaluation preparation** — An evaluator derives public
-   evaluation requirements and private executable evaluation from the frozen
-   contract.
-
-6. **Implementation** — A separate implementation agent works from the frozen
-   brief, Design Map, public evaluation requirements, applicable repository
-   instructions, and sanitized feedback from confirmed earlier failures without
-   access to hidden evaluation.
-
-7. **Independent verification** — The evaluator runs the previously prepared
-   evaluation against the completed implementation.
-
-8. **Failure diagnosis and retry where necessary** — A failure is investigated
-   to determine whether it represents an implementation defect, evaluator
-   defect, ambiguity, infrastructure failure, or specification drift rather than
-   merely attempting to make the result green.
-
-9. **Evaluation promotion** — Immediately after evaluator `PASS`, eligible exact
-   evaluator revisions and the complete attempt history are preserved with the
-   spike before the later human acceptance gate.
-
-10. **As-Built** — A fresh-context pass records material behavior and structure
-    actually present and classifies discrepancies as Missing, Contradictory, or
-    Extra.
-
-11. **Outcome** — Evidence from the spike is synthesised into an explicit
-    outcome describing what was demonstrated, what failed, what changed, and
-    what remains unresolved.
-
-Additional independent code review can be performed where warranted by the scope
-or risk of the change.
-
-The separation is deliberate:
-
-- the implementer knows the contract but not the hidden evaluation;
-- the evaluator derives its tests independently of the implementation;
-- assumptions required for fair evaluation should be visible;
-- hidden tests should not silently impose undisclosed architecture;
-- failed implementations should not cause the evaluator to move the goalposts;
-- defects in the evaluator should not be misrepresented as defects in the
-  implementation.
-
-The detailed operational rules live in repository instructions, skills, and
-individual spike artefacts rather than in this README.
-
-## Repository Structure
-
-The high-level repository structure is intentionally fairly conventional:
+## Repository Map
 
 ```text
 harness/
-├── src/                 # Host, session and backend implementation
-├── test/                # Integration tests
-├── public/              # Minimal development browser client
-├── fixtures/            # Test fixtures and fake backends
+├── src/                  # Host, sessions, backends, events, workflow runs
+├── public/               # Minimal browser development client
+├── test/                 # Integration and workflow tests
+├── fixtures/             # Test processes and backend fixtures
+├── tools/
+│   ├── workflow.ts       # Workflow runner and public methodology authority
+│   └── evaluator-integrity.ts
 │
-├── skills/              # Canonical reusable AI workflows
-│   ├── as-built/
+├── skills/               # Active, versioned methodology roles
 │   ├── brief-readiness/
 │   ├── design-map/
 │   ├── evaluator/
 │   ├── implementation/
+│   ├── as-built/
 │   └── outcome/
-├── docs/history/skills/ # Immutable prior skill contracts
-│
-├── spikes/              # Incremental experiments and engineering evidence
+├── docs/history/skills/  # Replaced skill contracts
+├── spikes/               # Experiments, failures, evidence, and outcomes
 │   ├── 001-pty/
-│   ├── 002-ai-development-workflow/
-│   ├── 003-session-lifecycle/
-│   ├── 004-session-backend-abstraction/
-│   ├── 005-native-codex-backend/
-│   └── 006-Development-Workflow-Skills-Refactor/
-│
-├── .github/
-│   └── workflows/       # CI
+│   ├── ...
+│   └── 011-host-owned-workflow-runs/
 │
 ├── GOALS.md
 ├── AGENTS.md
@@ -332,202 +307,70 @@ harness/
 └── SECURITY.md
 ```
 
-### Spikes
+The active skill files are operational contracts for agents, so some are much
+more detailed than normal human-facing documentation. Tool-specific discovery
+directories can point to these canonical definitions without becoming a second
+copy of the methodology.
 
-[`spikes/`](./spikes/) contains the incremental engineering experiments used to
-develop Harness.
+## Current Limits
 
-Later spikes typically contain artefacts such as:
+The sharp edges are currently:
 
-```text
-spikes/
-└── NNN-example/
-    ├── spike.md
-    ├── feedback.md
-    ├── design-map.md
-    ├── eval-requirements.md
-    ├── manifest.md
-    ├── as-built.md
-    ├── outcome.md
-    ├── preliminary/
-    ├── attempts/
-    └── evaluation/
-        ├── eval-spec.md
-        ├── eval-result.md
-        └── hidden-tests/
-            ├── manifest.json
-            └── ...
-```
+- one active interactive session rather than the intended multi-session
+  supervisory view;
+- localhost-only operation with no remote authentication;
+- no dedicated phone client;
+- no persistence of sessions, workflow runs, event history, or logs across host
+  restart;
+- a live-only event stream with no replay or reconnect snapshot;
+- a minimal browser interface;
+- native interactive integration for Codex, while other tools still need PTY or
+  workflow-specific execution paths;
+- an unresolved proof gap around bounded unattended Claude workflow execution;
+- incomplete cost, token, context, and orchestration-time measurement; and
+- no general-purpose scheduling or agent-to-agent coordination layer.
 
-The exact structure has evolved with the development process rather than being
-retroactively normalised.
+Harness can execute separate methodology roles, but that is narrower than the
+eventual product goal of supervising many independent agents and projects from
+one place.
 
-Failed, blocked, preliminary, or superseded attempts may be retained where they
-provide useful evidence about how a requirement, implementation, or evaluation
-changed.
+## Direction
 
-The repository is intended to preserve useful parts of the **engineering
-trail**, not only the final green result.
+Near-term work falls into four threads:
 
-Spike 005 also contains the Codex App Server protocol schema against which the
-native Codex backend was developed and evaluated. Keeping that protocol baseline
-with the spike makes the integration and its evaluation reproducible against a
-known contract.
+1. **Make workflow execution trustworthy.** Close the real executor-boundary and
+   evaluator-integrity gaps exposed by human review.
+2. **Make the methodology portable.** Package the skills so they can be
+   installed into projects in different languages and used by different capable
+   agents.
+3. **Measure the trade.** Record reliable provider cost, agent effort, and Codex
+   orchestration time so the rigorous workflow can be compared with lighter
+   approaches.
+4. **Return the methodology's attention to the product.** Build multiple-session
+   supervision, meaningful attention states, reconnectable history, and a safe
+   remote/mobile experience.
 
-### Skills
+The methodology has recently been eating most of the project. That has produced
+useful machinery and several excellent failure records. It should now start
+paying rent by helping build the control plane it was created inside.
 
-Reusable AI workflows live under [`skills/`](./skills/).
+The order is provisional. Harness spikes have a habit of turning an apparently
+obvious next step into a more interesting problem.
 
-The `skills/` directory is deliberately part of the documented project
-structure.
+## Contributing
 
-These files are not intended to be transient prompts or AI conversation history.
-They contain task-specific operating instructions for repeatable agent
-responsibilities that would otherwise have to be reconstructed in individual
-prompts or placed in broader always-loaded agent instructions.
-
-Current skills include:
-
-- **Brief Readiness** — reviews a proposed brief before it is frozen.
-- **Design Map** — establishes the smallest shared design contract needed by
-  evaluator and implementation.
-- **Evaluator** — prepares and runs independent spike evaluation.
-- **Implementation** — implements a frozen spike from its public contract.
-- **As-Built** — records the material behavior and structure actually built.
-- **Outcome** — synthesises evidence and conclusions from a completed spike.
-
-Active skills carry monotonically increasing integer contract versions.
-Materially replaced contracts are preserved as non-executable historical
-documents under [`docs/history/skills/`](./docs/history/skills/) as well as in
-Git history. Spikes using the revised workflow record the skill versions that
-actually ran in their append-only `manifest.md`.
-
-Some skills are deliberately detailed. They act as operational contracts for
-coding agents rather than introductory documentation for human readers.
-
-The canonical definitions live under `skills/`.
-
-Local tool-specific discovery directories, such as those used by Codex or Claude
-tooling, can symlink to these canonical definitions where necessary. Those local
-adapter directories are gitignored and are not part of the public repository.
-
-One of the project's near-term goals is to make the canonical skills
-increasingly **CLI- and vendor-neutral**, so that they describe capabilities,
-responsibilities, permissions, inputs, and outputs rather than unnecessarily
-depending on a particular coding-agent interface.
-
-## Current Limitations
-
-Harness remains intentionally constrained while the core host/client and backend
-boundaries are being established.
-
-Current limitations include:
-
-- localhost-only operation; remote access is not implemented;
-- no authentication suitable for remote access;
-- sessions do not survive a host restart;
-- multi-agent orchestration is not yet implemented;
-- there is no dedicated mobile client;
-- the browser UI is a development client rather than the intended product
-  interface;
-- the current implementation still prioritises proving backend and lifecycle
-  behaviour over user-facing polish.
-
-These are deliberate sequencing decisions rather than descriptions of the
-intended final product.
-
-See [`GOALS.md`](./GOALS.md) for the broader direction and current non-goals.
-
-## Next Steps
-
-With the initial session architecture, backend abstraction, and native Codex
-integration established, the next phase includes improving both Harness itself
-and the AI-development process being used to build it.
-
-Near-term areas of investigation include:
-
-### Evaluator Performance
-
-Measure the cost and efficiency of the current evaluation workflow, particularly
-the Claude-based evaluator.
-
-This includes examining factors such as:
-
-- agent turns;
-- token and context growth;
-- file-read volume;
-- shell/tool output;
-- repeated repository discovery;
-- other significant sources of evaluation overhead.
-
-The aim is not simply to reduce token usage, but to identify where additional
-context or agent work contributes useful verification and where it represents
-avoidable process cost.
-
-### Evaluation and Promotion Lifecycle
-
-Refine the rules around how evaluation evidence becomes part of the permanent
-spike record.
-
-The current workflow already preserves successful evaluation evidence and
-selected failed or diagnostic attempts, but later work should make the lifecycle
-more explicit, particularly around:
-
-- failed evaluations;
-- corrected evaluator artefacts;
-- repeated implementation attempts;
-- evaluator defects;
-- diagnostic evidence;
-- which artefacts become canonical after eventual success.
-
-### CLI-Neutral Skills
-
-Reduce unnecessary assumptions about Codex, Claude, or any particular
-coding-agent CLI inside the reusable skills.
-
-The goal is for skills to describe the engineering role and contract — including
-permissions, inputs, outputs, responsibilities, and boundaries — while local
-adapters handle tool-specific discovery and invocation.
-
-### Context Efficiency
-
-Review the accumulated skill and agent instructions for:
-
-- duplicated rules;
-- obsolete constraints;
-- vendor-specific assumptions;
-- explanatory material that does not need to be loaded during execution;
-- context that could live in narrower task-specific documentation.
-
-The goal is **not simply shorter files**.
-
-It is to reduce unnecessary agent context while preserving the constraints and
-safeguards learned through previous spikes.
-
-### Further Control-Plane Development
-
-Continue incrementally toward the broader Harness product direction, including
-richer agent supervision, additional backend capabilities, detachable clients,
-and eventually multi-agent coordination.
-
-These are experimental directions rather than a fixed product roadmap.
-
-Their order may change as subsequent spikes expose new constraints or invalidate
-existing assumptions.
+Harness is a personal experimental project, but focused external contributions
+may be considered. Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) before investing
+in a substantial change. Changes go through focused branches and squash-merged
+pull requests; historical spike evidence is not tidied for presentation.
 
 ## License
 
 No license is currently granted for reuse or redistribution. The Harness source
 is public for demonstration and evaluation purposes.
 
-Third-party generated artefacts retain their upstream licences and are not
-subject to that restriction.
-
-In particular, the Codex App Server schemas under:
-
-```text
-spikes/005-native-codex-backend/protocol/app-server-schema/
-```
-
+Third-party generated artefacts retain their upstream licences. In particular,
+the Codex App Server schemas under
+[`spikes/005-native-codex-backend/protocol/app-server-schema/`](./spikes/005-native-codex-backend/protocol/app-server-schema/)
 are derived from OpenAI Codex and redistributed under the included
 [Apache License 2.0](./spikes/005-native-codex-backend/protocol/app-server-schema/LICENSE).
