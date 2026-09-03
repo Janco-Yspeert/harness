@@ -1,0 +1,605 @@
+{
+  "revision": "001",
+  "note": "Every case is mandatory. No evaluator-authored executable hidden test is frozen in this revision; the frozen Design Map leaves the internal authority representation, status JSON shape, private repair-record format, executor command wiring, and test fixture location as implementation freedom, and spike.md AC29 mandates visible deterministic regression coverage. Executable evidence is therefore the implementation's own visible suite run through `npm test`. Static (S1-S6) and provenance (P1-P3) cases use the modes and evidence plans frozen in eval-spec.md.",
+  "cases": [
+    {
+      "id": "E1",
+      "criteria": [
+        "AC01"
+      ],
+      "verifies": [
+        "R1",
+        "I1",
+        "N11"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: the authority represents a correction-cycle identity as its own identifier space; one cycle spans multiple implementation attempts and multiple verification attempts while the evaluator-revision identity and any executor/process-attempt identity stay separately observable and are never collapsed into the cycle identity.",
+      "decisionRule": "A design that has no cycle identifier distinct from implementation attempt, verification attempt, evaluator revision, and executor/process attempt, or that reuses one identifier space for another, is a FAIL for AC01."
+    },
+    {
+      "id": "E2",
+      "criteria": [
+        "AC02"
+      ],
+      "verifies": [
+        "R2",
+        "I1",
+        "I7",
+        "N9"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: a fixture carrying an unannotated pre-cycle workflow.jsonl history is interpreted by the updated authority as Cycle 001; the historical bytes are not rewritten; the authority derives Cycle 001 state from the append-only history rather than retrofitting cycle fields into legacy events; new cycle-scoped records carry an explicit cycle binding.",
+      "decisionRule": "Any interpretation that requires editing or retrofitting legacy events, or that fails to treat unannotated history as Cycle 001, is a FAIL for AC02."
+    },
+    {
+      "id": "E3",
+      "criteria": [
+        "AC03"
+      ],
+      "verifies": [
+        "R3",
+        "I2",
+        "I3",
+        "N1",
+        "N2"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: from a closed cycle whose human rejection is IMPLEMENTATION_GAP, opening a correction cycle succeeds exactly once, the opening evidence binds the unchanged frozen brief and Design Map identities, and a second opening from the same rejection is refused.",
+      "decisionRule": "More than one correction cycle opened from one rejection, or an opening that does not bind the unchanged frozen brief/Design Map identities, is a FAIL for AC03."
+    },
+    {
+      "id": "E4",
+      "criteria": [
+        "AC04"
+      ],
+      "verifies": [
+        "R4",
+        "I2",
+        "I5"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: from a closed cycle whose rejection contains EVALUATOR_COVERAGE_DEFECT, the correction-cycle opening records that evaluator repair is required.",
+      "decisionRule": "An opening from an EVALUATOR_COVERAGE_DEFECT rejection that does not record evaluator repair as required is a FAIL for AC04."
+    },
+    {
+      "id": "E5",
+      "criteria": [
+        "AC05"
+      ],
+      "verifies": [
+        "R5",
+        "I2"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: a rejection carrying both an implementation finding and an evaluator finding opens a correction cycle whose opening records both implementation correction and evaluator repair as required.",
+      "decisionRule": "An opening from a both-findings rejection that records only one correction requirement is a FAIL for AC05."
+    },
+    {
+      "id": "E6",
+      "criteria": [
+        "AC06"
+      ],
+      "verifies": [
+        "R6",
+        "I2",
+        "I3",
+        "I7",
+        "N9"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario (Spike 011 recovery fixture): a deterministic fixture built from Spike 011's public workflow.jsonl shows the post-Spike-012 authority (1) interprets Spike 011 events as Cycle 001, (2) treats its primary IMPLEMENTATION_GAP plus secondary EVALUATOR_COVERAGE_DEFECT rejection as eligible for same-spike Cycle 002, (3) determines a valid Cycle 002 opening requires both implementation correction and evaluator repair, and (4) keeps the Cycle 001 frozen brief and Design Map identities - with no write to spikes/011-host-owned-workflow-runs/**.",
+      "decisionRule": "A fixture that edits Spike 011, that does not reproduce all four required conclusions, or that fails to derive them from public preserved authority evidence, is a FAIL for AC06."
+    },
+    {
+      "id": "E7",
+      "criteria": [
+        "AC07"
+      ],
+      "verifies": [
+        "R7",
+        "I2",
+        "N1",
+        "N2",
+        "N3"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: a human rejection classified SPECIFICATION_CHANGE cannot open a same-spike correction cycle and the successor / new-brief path remains required; an unqualified OTHER_HUMAN_REJECTION likewise does not automatically authorize a correction cycle.",
+      "decisionRule": "A SPECIFICATION_CHANGE or unqualified OTHER_HUMAN_REJECTION rejection that opens a same-spike correction cycle is a FAIL for AC07."
+    },
+    {
+      "id": "E8",
+      "criteria": [
+        "AC08"
+      ],
+      "verifies": [
+        "R8",
+        "I2",
+        "I4"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: once a cycle is human-accepted, every correction-cycle opening from it is refused.",
+      "decisionRule": "Any correction cycle opened from a human-accepted cycle is a FAIL for AC08."
+    },
+    {
+      "id": "E9",
+      "criteria": [
+        "AC09"
+      ],
+      "verifies": [
+        "R9",
+        "I4"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: with Cycle 001 carrying PASS, promotion, As-Built, and a human decision, Cycle 002 still reports each of its own prerequisites as unmet until it satisfies them, and Cycle 001's historical state remains queryable and unchanged.",
+      "decisionRule": "Any Cycle 001 PASS/promotion/As-Built/human-decision fact that satisfies the corresponding Cycle 002 prerequisite is a FAIL for AC09."
+    },
+    {
+      "id": "E10",
+      "criteria": [
+        "AC10"
+      ],
+      "verifies": [
+        "R10",
+        "I1"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: in a correction cycle opened with an implementation-correction finding, a new implementation attempt is accepted without any preceding failed evaluator verification in that cycle.",
+      "decisionRule": "A runner that requires a fabricated failed evaluator verification before a post-rejection implementation attempt is a FAIL for AC10."
+    },
+    {
+      "id": "E11",
+      "criteria": [
+        "AC11"
+      ],
+      "verifies": [
+        "R11",
+        "I1"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: within one cycle, a failed technical verification still permits a further implementation attempt and re-verification.",
+      "decisionRule": "Loss of the existing in-cycle implementation retry after a genuine failed verification is a FAIL for AC11."
+    },
+    {
+      "id": "E12",
+      "criteria": [
+        "AC13"
+      ],
+      "verifies": [
+        "R13",
+        "I5",
+        "I7",
+        "N4"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: a verify attempt allocated against evaluator revision R stays bound to R; when it discovers a material evaluator defect it is finalized forward-only with a non-PASS result and the defect is recorded in the immutable attempt result/ledger, and no corrected revision is usable until a separate repair operation has run.",
+      "decisionRule": "A verify attempt that mutates the frozen evaluator it executes, or that leaves a discovered evaluator defect without a terminal disposition, or that lets a corrected revision be used before a separate repair, is a FAIL for AC13."
+    },
+    {
+      "id": "E13",
+      "criteria": [
+        "AC14"
+      ],
+      "verifies": [
+        "R14",
+        "I5",
+        "N5"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: a repair invoked with a binding to a finalized EVALUATOR_DEFECT verification attempt or a closed EVALUATOR_COVERAGE_DEFECT human cycle proceeds; a repair invoked with only a free-text reason and no authoritative trigger is refused.",
+      "decisionRule": "A repair that proceeds without a binding to immutable authoritative evaluator-defect evidence is a FAIL for AC14."
+    },
+    {
+      "id": "E14",
+      "criteria": [
+        "AC15",
+        "AC16",
+        "AC21"
+      ],
+      "verifies": [
+        "R15",
+        "R16",
+        "R21",
+        "I7",
+        "N8"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: a successful repair leaves the source evaluator revision byte-for-byte intact, creates a new revision with a distinct identifier and content identity, changes only defect-related artifacts (a diff of the two revisions shows unrelated artifacts identical in content identity), and every verification attempt still resolves to the exact revision it executed; revision and attempt identifiers are monotonic and never reused.",
+      "decisionRule": "A repair that overwrites the source revision, reuses an identifier, changes unrelated artifacts without structural need, or breaks an attempt-to-revision binding is a FAIL for AC15/AC16/AC21."
+    },
+    {
+      "id": "E15",
+      "criteria": [
+        "AC17"
+      ],
+      "verifies": [
+        "R17",
+        "I5"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: repair runs the complete deterministic evaluator-integrity validation over the entire resulting revision; a resulting revision that fails that validation is not recorded as current and the repair does not complete.",
+      "decisionRule": "A repaired revision that becomes current without the whole resulting revision passing structural integrity validation is a FAIL for AC17."
+    },
+    {
+      "id": "E16",
+      "criteria": [
+        "AC18",
+        "AC19"
+      ],
+      "verifies": [
+        "R18",
+        "R19",
+        "I3",
+        "I6",
+        "N1",
+        "N6",
+        "N7"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: a repair attempt that would change the frozen brief, Design Map, public eval-requirements.md, or acceptance semantics is refused; a repair that would require a materially new public testability seam or a new product requirement blocks and is classified onto the successor / methodology path; a repair that only swaps an insufficient evidence procedure for a stronger one establishing the same frozen criterion is allowed.",
+      "decisionRule": "A repair that changes frozen product/evaluation authority or acceptance semantics, or that silently adds a public seam instead of blocking, is a FAIL for AC18/AC19."
+    },
+    {
+      "id": "E17",
+      "criteria": [
+        "AC20"
+      ],
+      "verifies": [
+        "R20",
+        "I5"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: each completed or terminally blocked repair creates an immutable repair record and a public-safe binding carrying the repair identifier, trigger type and identity, source and resulting revision identifiers and identities, affected criterion/procedure identifiers, concise defect and correction descriptions, changed-artifact identities, the semantic-preservation attestation, the frozen brief/Design Map/evaluation-requirement identities, and the integrity-validation result.",
+      "decisionRule": "A repair that leaves no immutable record, or a record missing any enumerated binding, is a FAIL for AC20."
+    },
+    {
+      "id": "E18",
+      "criteria": [
+        "AC22"
+      ],
+      "verifies": [
+        "R22",
+        "I7"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: authority and promotion evidence can name and distinguish evaluator revision 001, a later revision 002, and the repair lineage between them, and promoting the later revision does not overwrite the earlier frozen or promoted evidence.",
+      "decisionRule": "Promotion or authority evidence that cannot distinguish revisions/repair lineage, or that overwrites earlier frozen/promoted evidence, is a FAIL for AC22."
+    },
+    {
+      "id": "E19",
+      "criteria": [
+        "AC23"
+      ],
+      "verifies": [
+        "R23",
+        "N11"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: a new human-rejection record carries a primary classification plus one or more additional typed findings, and the authority reads Spike 011's existing classification plus secondaryFinding record through the same normalized finding set without rewriting that event.",
+      "decisionRule": "A rejection model that forces a second finding into untyped prose, or that cannot read the legacy classification/secondaryFinding shape without rewriting it, is a FAIL for AC23."
+    },
+    {
+      "id": "E20",
+      "criteria": [
+        "AC24"
+      ],
+      "verifies": [
+        "R24",
+        "I4"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: after a legal correction-cycle opening, the new cycle records its own implementation handoff, verification allocation and PASS, promotion, As-Built, and a fresh human decision, each checked against that cycle's own prerequisites.",
+      "decisionRule": "A new cycle that cannot progress through its own implementation/verification/promotion/As-Built/human-decision sequence is a FAIL for AC24."
+    },
+    {
+      "id": "E21",
+      "criteria": [
+        "AC25"
+      ],
+      "verifies": [
+        "R25",
+        "I1",
+        "I4"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: the public authority status surface reports the current cycle identity and open/closed state, current evaluator revision, current implementation attempt, current/final verification state, current-cycle promotion/As-Built/human-decision state, whether same-spike correction is permitted and why, and predecessor/successor lineage, with historical cycles still distinguishable and no manual workflow.jsonl parsing required.",
+      "decisionRule": "A status surface that omits any enumerated field or forces a caller to parse workflow.jsonl by hand to determine cycle state is a FAIL for AC25."
+    },
+    {
+      "id": "E22",
+      "criteria": [
+        "AC26"
+      ],
+      "verifies": [
+        "R26",
+        "I9"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: a mechanically-authorized correction-cycle opening and an evaluator-defect-to-repair flow each proceed without a new human approval gate for the existence of the next cycle or the repair, while the next acceptance/rejection remains a human decision.",
+      "decisionRule": "An unnecessary human approval gate inserted before the next acceptance/rejection when the recovery is mechanically determined is a FAIL for AC26."
+    },
+    {
+      "id": "E23",
+      "criteria": [
+        "AC29"
+      ],
+      "verifies": [
+        "R29",
+        "I1"
+      ],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; brief scope 1-18)",
+      "tests": [
+        "test/*.test.ts (visible suite via npm test)"
+      ],
+      "procedure": "npm test scenario: the repository's visible test suite contains deterministic coverage for the correction-cycle, evaluator-repair, legacy-history, and successor-boundary behaviours (the brief scope 18 list) and runs to completion through npm test with no live paid Codex/Claude provider call.",
+      "decisionRule": "Missing deterministic visible coverage for any of the four behaviour families, or a suite that needs a live paid provider call, is a FAIL for AC29."
+    },
+    {
+      "id": "S1",
+      "criteria": [
+        "AC12"
+      ],
+      "verifies": [
+        "R12"
+      ],
+      "mode": "static inspection",
+      "executable": false,
+      "artifact": "skills/evaluator/SKILL.md (or its Design-Map-approved successor) at the evaluated commit",
+      "procedure": "Confirm the skill exposes three explicit modes prepare, verify, and repair; each has a documented non-overlapping responsibility (prepare derives/freezes before implementation exposure; verify executes the frozen evaluator and classifies without modifying it during the allocated attempt; repair corrects an already-demonstrated evaluator defect while preserving the frozen definition of success); and the integer contract version is greater than 10.",
+      "decisionRule": "A skill that does not expose and document all three modes with non-overlapping responsibilities, or whose contract version is not advanced past 10, is a FAIL for AC12."
+    },
+    {
+      "id": "S2",
+      "criteria": [
+        "AC13",
+        "AC14",
+        "AC16",
+        "AC17",
+        "AC18",
+        "AC19"
+      ],
+      "verifies": [
+        "R13",
+        "R14",
+        "R16",
+        "R17",
+        "R18",
+        "R19"
+      ],
+      "mode": "static inspection",
+      "executable": false,
+      "artifact": "evaluator skill verify/repair mode text and the repair implementation module (repository location is implementation freedom)",
+      "procedure": "Confirm the verify text forbids mutating the frozen evaluator during an allocated attempt and requires finalize-then-record before repair; and the repair text and code require an authoritative defect trigger, keep the change bounded to the demonstrated defect rather than rerunning full prepare, run full structural integrity validation over the whole resulting revision before it becomes current, forbid changing the frozen brief / Design Map / public eval-requirements.md / acceptance semantics, and block onto the successor path when a materially new public seam or product requirement is needed.",
+      "decisionRule": "Skill or code text that permits in-attempt evaluator mutation, an ungrounded repair, an unbounded re-derivation, a skipped whole-revision integrity re-validation, a frozen-authority change, or a silent public-seam addition is a defect for the affected criteria (AC13, AC14, AC16, AC17, AC18, AC19)."
+    },
+    {
+      "id": "S3",
+      "criteria": [
+        "AC27"
+      ],
+      "verifies": [
+        "R27",
+        "I8",
+        "N10"
+      ],
+      "mode": "static inspection",
+      "executable": false,
+      "artifact": "spikes/012-correction-cycles-evaluator-repair/bootstrap/ and the workflow dispatcher evaluator-phase wiring at the evaluated commit",
+      "procedure": "Confirm bootstrap/evaluator-skill.md is byte-identical to the pinned pre-implementation skills/evaluator/SKILL.md (sha256:fa8168a3...c38b); bootstrap/evaluator-authority.json binds the skill name, contract version, source Git object, and SHA-256 identity; and the workflow dispatcher, for the Spike 012 evaluator-prepare and evaluator-verify phases, loads and supplies that pinned material as the operative instruction source instead of resolving skills/evaluator/SKILL.md from the working tree.",
+      "decisionRule": "A dispatcher that resolves the working-tree evaluator skill for the Spike 012 evaluator phases, or a bootstrap snapshot that is not provenance-bound to the pinned identity, is a FAIL for AC27."
+    },
+    {
+      "id": "S4",
+      "criteria": [
+        "AC28"
+      ],
+      "verifies": [
+        "R28",
+        "I8",
+        "N10"
+      ],
+      "mode": "static inspection",
+      "executable": false,
+      "artifact": "Spike 012's own workflow.jsonl, manifest.md, and evaluation/** at the evaluated commit",
+      "procedure": "Confirm Spike 012's workflow.jsonl carries no correction-cycle-opened or evaluator-repair-recorded transition; the Spike 012 evaluator prepare/verify evidence binds the pinned v10 bootstrap-authority identity rather than the post-implementation evaluator skill; and no newly implemented correction-cycle transition or repair operation was used to grade, repair, recover, or certify the Spike 012 cycle.",
+      "decisionRule": "Any use of the newly implemented repair mode or correction-cycle authority to grade, repair, recover, or certify Spike 012 before human acceptance is a FAIL for AC28."
+    },
+    {
+      "id": "S5",
+      "criteria": [
+        "AC07",
+        "AC19"
+      ],
+      "verifies": [
+        "R7",
+        "R19",
+        "I2",
+        "I3",
+        "I6",
+        "N1",
+        "N2"
+      ],
+      "mode": "static inspection",
+      "executable": false,
+      "artifact": "the correction-cycle-opening authority code and the evaluator repair blocking path at the evaluated commit",
+      "procedure": "Confirm the authority still requires the successor / new-brief lineage when the frozen brief must change, when the frozen Design Map must materially change, when the human rejection is SPECIFICATION_CHANGE, when evaluator repair would require new public product semantics or a new implementation-shaped seam, or when a methodology / evidence-model defect cannot be corrected under already-frozen Spike 012 authority; and that a rejected cycle can therefore be terminal for the spike.",
+      "decisionRule": "An authority that lets a specification-changing rejection or a seam-requiring repair proceed as same-spike correction instead of routing to the successor path is a defect for AC07/AC19."
+    },
+    {
+      "id": "S6",
+      "criteria": [
+        "AC01",
+        "AC02"
+      ],
+      "verifies": [
+        "R1",
+        "R2",
+        "I1",
+        "I7",
+        "N9",
+        "N11"
+      ],
+      "mode": "static inspection",
+      "executable": false,
+      "artifact": "the cycle-derivation authority code at the evaluated commit",
+      "procedure": "Confirm the authority derives the active cycle and its evaluator/implementation/verification/promotion/As-Built/human-decision state from the append-only history, represents cycle identity as its own append-only zero-padded identifier distinct from implementation attempt, verification attempt, evaluator revision, and executor/process attempt, does not mutate or retrofit cycle fields into legacy events, and performs no automatic semantic judgment in deterministic code.",
+      "decisionRule": "Cycle identity conflated with another identifier space, cycle state stored as spike-global booleans instead of derived per cycle, or legacy events retrofitted/mutated, is a defect for AC01/AC02."
+    },
+    {
+      "id": "P1",
+      "criteria": [
+        "AC29",
+        "AC30"
+      ],
+      "verifies": [
+        "R29",
+        "R30"
+      ],
+      "mode": "provenance inspection",
+      "executable": false,
+      "procedure": "At the evaluated commit run npm test, npm run typecheck, npm run lint, npm run format:check, and git diff --check; require each to exit 0; require the pre-existing workflow-authority/provenance suite (test/workflow.test.ts), evaluator-integrity suite (test/evaluator-integrity.test.ts), host-owned workflow-run suite, and session/backend suites (session-lifecycle, session-backend, session-events, codex-backend) to remain green; confirm the visible suite completes without a live paid provider call.",
+      "decisionRule": "Any non-zero exit, any newly failing pre-existing suite, or a visible suite that needs a live paid provider call is a FAIL for AC30 (and for AC29 where the suite does not run green)."
+    },
+    {
+      "id": "P2",
+      "criteria": [
+        "AC06"
+      ],
+      "verifies": [
+        "R6",
+        "N9"
+      ],
+      "mode": "provenance inspection",
+      "executable": false,
+      "procedure": "At the evaluated commit, require the public artifacts, promoted evaluation/**, and workflow.jsonl timeline of Spike 011 (and of Spikes 003, 007, 008, 009, 010, 010a, 010b, 010c) to be byte-for-byte identical to their pre-Spike-012 state (git diff <pre-012-base>..<evaluated-commit> over those spike trees shows no change); require no new verification result, rejection, correction-cycle, or lineage event on any of those timelines.",
+      "decisionRule": "Any byte change to a Spike 003-011 public artifact, promoted evaluation record, or workflow.jsonl timeline introduced by feat/spike-012 is a FAIL for negative requirement N9 (and undermines AC06)."
+    },
+    {
+      "id": "P3",
+      "criteria": [
+        "AC27",
+        "AC28"
+      ],
+      "verifies": [
+        "R27",
+        "R28",
+        "I8"
+      ],
+      "mode": "provenance inspection",
+      "executable": false,
+      "procedure": "Confirm the Spike 012 evaluator freeze metadata and the Spike 012 verification result each record the bootstrap-authority identity sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b (evaluator v10, source commit b7f442ae); confirm no Spike 012 evaluator evidence cites a post-implementation evaluator skill identity as its grading authority; and confirm no evaluator repair operation and no correction-cycle transition appear in the Spike 012 evaluator cycle evidence.",
+      "decisionRule": "Spike 012 evaluator evidence that binds a post-implementation evaluator skill identity, or that shows a repair/correction-cycle transition in its own cycle, is a FAIL for AC27/AC28."
+    }
+  ]
+}

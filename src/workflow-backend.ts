@@ -36,8 +36,8 @@ export function buildExecutorCommand(
 
   let command: string[];
   if (spec.executor === "codex") {
-    // `workspace-write` keeps writes inside the declared workspace(s);
-    // `--ask-for-approval never` keeps routine role work non-interactive.
+    // `workspace-write` keeps writes inside the declared workspace(s). Current
+    // Codex releases reject `--approve-for-me` when a sandbox is selected.
     command = [
       "codex",
       "exec",
@@ -45,8 +45,6 @@ export function buildExecutorCommand(
       primary,
       "--sandbox",
       "workspace-write",
-      "--ask-for-approval",
-      "never",
       ...extraWorkspaces.flatMap((workspace) => ["--add-dir", workspace]),
       prompt,
     ];
@@ -60,6 +58,7 @@ export function buildExecutorCommand(
       "--permission-mode",
       "acceptEdits",
       ...extraWorkspaces.flatMap((workspace) => ["--add-dir", workspace]),
+      "--",
       prompt,
     ];
   } else {
@@ -105,6 +104,19 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
             },
       );
     });
+    // A provider CLI may fail before the backend wrapper has attached its
+    // listeners. Preserve that immediate terminal disposition instead of
+    // leaving a host-owned run permanently marked running with a dead PID.
+    if (child.exitCode !== null || child.signalCode !== null) {
+      this.#settle(
+        child.exitCode === 0
+          ? { ok: true }
+          : {
+              ok: false,
+              reason: `executor exited (code ${String(child.exitCode)}, signal ${String(child.signalCode)})`,
+            },
+      );
+    }
   }
 
   onActivity(listener: (chunk: string) => void): void {

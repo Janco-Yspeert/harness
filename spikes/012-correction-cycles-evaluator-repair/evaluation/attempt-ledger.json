@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 2,
+  "note": "Verification attempt identifiers follow the durable host allocation in spikes/012-correction-cycles-evaluator-repair/workflow.jsonl. Host verification attempt 001 was finalized at the host level (workflow.jsonl, commit 5e22ea9) as FAIL/IMPLEMENTATION_FAILURE with an all-UNEVALUATED coverage map and no evaluator-produced immutable result; it has no private ledger entry. Attempts 002 and 003 are evaluator verifications executed to completion against candidates. Identifiers are monotonic and never reused.",
+  "attempts": [
+    {
+      "id": "002",
+      "implementation": "git:31be00bae7e76a314edc0cbdaecc0362bfd57814",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:db248e53dd0466d7d43ae682dbbb4f9fe08537b64a1536e971341d919bfd09f6",
+      "resultPath": ".eval/attempts/002/eval-result.md",
+      "resultIdentity": "sha256:9ab0ea2737653971fae20e39afcf9643c3a10591daa4d7db02ad5f77bf4bca00",
+      "status": "FAIL"
+    },
+    {
+      "id": "003",
+      "implementation": "git:8c379025b5c4f99b464e0d03c8c15773c5a84acc",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:db248e53dd0466d7d43ae682dbbb4f9fe08537b64a1536e971341d919bfd09f6",
+      "resultPath": ".eval/attempts/003/eval-result.md",
+      "resultIdentity": "sha256:bbc08da2dd6e6167db6dd2a6437aef122a7c1ca2e6234c2058f33db5ce97217c",
+      "status": "PASS"
+    }
+  ]
+}

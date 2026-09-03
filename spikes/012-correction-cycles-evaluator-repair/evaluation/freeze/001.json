@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "001",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 10,
+    "identity": "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b"
+  },
+  "bootstrapAuthority": {
+    "snapshotPath": "spikes/012-correction-cycles-evaluator-repair/bootstrap/evaluator-skill.md",
+    "authorityPath": "spikes/012-correction-cycles-evaluator-repair/bootstrap/evaluator-authority.json",
+    "name": "evaluator",
+    "contractVersion": 10,
+    "sourceCommit": "b7f442aed5d5cfe2722aec40f2fab0eb059e2884",
+    "sourcePath": "skills/evaluator/SKILL.md",
+    "identity": "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b",
+    "note": "Frozen spike.md bootstrap process exception: Spike 012 evaluator prepare and verify both execute under this pinned pre-implementation evaluator skill; the newly implemented repair mode and correction-cycle authority are implementation under test and must not grade, repair, recover, or certify the Spike 012 evaluator cycle before human acceptance."
+  },
+  "inputs": {
+    "brief": "sha256:8f54bcb361aae9aff1093159c3459da6f21d84470161de651c11118c09d67e94",
+    "designMap": "sha256:50a5e771a55f49bbc6082b66e7957a37261302022784b90dd2cd97b52983e4d4",
+    "evaluationRequirements": "sha256:1ac745acfc52bdc9dcee9da38de34dfe9c33a898a7465de1b9002f9891c0d05c"
+  },
+  "artifacts": {
+    ".hidden-test/manifest.json": "sha256:2cf3126df174136973c3d1b04b1d383af41a65bdb3dd34bb2582c1db83919d64",
+    "case-manifest.json": "sha256:6d4dde9c82189b371003b41f5f5fd656853e1f1d5c39bde470e9650083e9c53c",
+    "criterion-records.md": "sha256:8e71aa35ff126bd116b2ed233e2fa47dfba230eb53efbd3cdf4c9b61693cdf46",
+    "eval-spec.md": "sha256:974c49925e11dc8fdd2552f8681e276491b8428bef3724c80fe9e4d0d7f6c048",
+    "pre-freeze-integrity-checklist.md": "sha256:f7214b9d41166cba7be9c809b569f034008d135275299397c945cb87d745a2e5"
+  },
+  "freezeInventory": [
+    ".hidden-test/manifest.json",
+    "case-manifest.json",
+    "criterion-records.md",
+    "eval-spec.md",
+    "pre-freeze-integrity-checklist.md"
+  ],
+  "privateInventoryIdentity": "sha256:e1ab2a0295d78af379b0351c24d8fa7db51cdba10f7105db2140842aa1fec2a5",
+  "validatorResultBinding": "sha256:76b657ec905c583c4ee1c7fae8b1f7e07f56edb6a52f9c3259e985baee931345",
+  "preFreezeIntegrityValidation": {
+    "mode": "evaluator v10 step 4: mechanical tools/evaluator-integrity.ts prepareEvaluatorBundle over the prepared AC coverage bundle, plus the deterministic supplementary checklist pre-freeze-integrity-checklist.md for physical existence, content-hash recomputation, public/private consistency, and no-attempt-allocated",
+    "record": "pre-freeze-integrity-checklist.md",
+    "mechanicalTool": "tools/evaluator-integrity.ts",
+    "mechanicalResult": "PASS",
+    "result": "PASS"
+  },
+  "integrityChecks": [
+    "30 criterion records AC01-AC30 present exactly once in criterion-records.md, case-manifest.json (union of cases[].criteria for E1-E23,S1-S6,P1-P3), and coverage-map.json",
+    "every referenced procedure identifier (E1-E23, S1-S6, P1-P3) is defined in case-manifest.json; no orphan procedure and no undefined reference; every procedure maps to at least one numbered acceptance criterion",
+    "bidirectional traceability verified mechanically by tools/evaluator-integrity.ts validatePreparedEvaluatorBundle (status PASS, empty diagnostics) and by transpose equality between coverage-map.json (criterion -> procedures) and case-manifest.json (case -> criteria)",
+    "each criterion record carries id, frozenAuthority, mode, required=true, non-empty procedures, and a distinct criterion-specific sufficiency; shared procedures (E6,E14,E16,S2,S5,S6,P1,P2,P3) keep per-record reasons",
+    "no evaluator-authored executable hidden test or helper frozen; E1-E23 declared materializedBy implementation per spike.md AC29 and brief scope 1-18; .hidden-test/manifest.json tests lists all empty",
+    "controlled pre-implementation baseline exercised at 6f46363: npm test 53/53; typecheck/lint/format:check/git diff --check clean; tools/workflow.ts, tools/evaluator-integrity.ts, src/workflow-backend.ts, and skills/evaluator/SKILL.md confirmed to contain no correction-cycle-opened transition, no evaluator-repair-recorded transition, no cycle-scoped authority state, and no evaluator repair mode (skill argument-hint <prepare|verify>, contract version 10)",
+    "no correction-cycle or evaluator-repair implementation commit exists on feat/spike-012; the branch carries only two narrow pre-prepare workflow-backend executor-CLI compatibility repairs (manifest.md 'Bootstrap Exception - Runner-State Adoption Gap') that implement no acceptance criterion; none inspected or used to shape any frozen case, requirement, or decision rule",
+    "freeze inventory lists every file the frozen bundle depends on (5 files); .eval/inventory.txt is the path-sorted sha256 listing of exactly those files; readiness.privateInventoryIdentity equals sha256(.eval/inventory.txt) (content-binding); .eval/attempt-ledger.json initialized with an empty attempts array; no verification attempt allocated during prepare",
+    "mechanical tools/evaluator-integrity.ts prepareEvaluatorBundle also returned its own name-only identities privateInventoryIdentity sha256:e5aac1d1d1c9e7b31ecf5ef42e3ef5469b6613b337449d59de8d702710cde7e4 and validatorResultBinding sha256:737d9976bfd6512fba19b72eab5cd25bc5462c925e7c38ef34e0fac848f37188; the frozen readiness attestation uses the stronger content-binding inventory identity and a validator binding over {evaluatorRevision, privateInventoryIdentity, integrity, tool, contractVersion}",
+    "public/private consistency: coverage-map.json readiness binds this freeze.json content identity (evaluatorRevisionIdentity), the content-binding privateInventoryIdentity above, validatorResultBinding above, integrityValidation PASS, skillVersion 10, integrityValidatedAt 6f46363, criterionRecordCount 30, and bootstrapAuthority identity sha256:fa8168a3...c38b; coverage-map.json evaluationRequirements equals inputs.evaluationRequirements",
+    "bootstrap process exception recorded: Spike 012 evaluator prepare executes under the pinned pre-implementation evaluator skill evaluator v10 sha256:fa8168a3...c38b (== working-tree skills/evaluator/SKILL.md at 6f46363 == bootstrap/evaluator-skill.md); the Spike 012 verification result must bind the same identity; the newly implemented repair mode / correction-cycle authority are not the grading authority",
+    "Spike 003-011 public artifacts, promoted evaluation/**, and workflow.jsonl timelines confirmed unchanged by feat/spike-012 (git diff 6adae1e..6f46363 over spikes/003-* .. spikes/011-* empty); Spike 012 does not rewrite, repair, or reopen those histories (negative requirement N9)"
+  ]
+}

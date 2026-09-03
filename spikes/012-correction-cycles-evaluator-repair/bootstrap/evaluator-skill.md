@@ -2,8 +2,8 @@
 name: evaluator
 description:
   Prepare and verify independent evaluation for a frozen Harness spike using
-  prepare, verify, and bounded repair modes.
-argument-hint: "<prepare|verify|repair> <spike-path>"
+  only the prepare and verify modes.
+argument-hint: "<prepare|verify> <spike-path>"
 arguments:
   - mode
   - spike
@@ -15,7 +15,7 @@ compatibility:
 
 # Evaluator
 
-Contract version: 11
+Contract version: 10
 
 Mode: `$mode`
 
@@ -26,15 +26,12 @@ The evaluator answers two questions:
 - `prepare`: **how can the frozen contract be independently falsified?**
 - `verify`: **does this implementation satisfy that already-frozen evaluation,
   and what class is any failure?**
-- `repair`: **can a demonstrated evaluator defect be corrected without changing
-  the frozen definition of success?**
 
 No other mode exists. If `$mode` is invalid, stop and show:
 
 ```text
 /evaluator prepare <spike-path>
 /evaluator verify <spike-path>
-/evaluator repair <spike-path>
 ```
 
 Do not implement the spike or redesign its contract.
@@ -488,37 +485,6 @@ recreate it. Historical documents remain immutable. Never edit an earlier
 spike's promoted artifacts to conform to this contract; report any discovered
 provenance defect separately and use an existing explicit correction mechanism
 only when independently authorized.
-
-## `repair`
-
-Repair is separate from `prepare` and `verify`. It may begin only from immutable
-authority evidence: a finalized verification attempt classified
-`EVALUATOR_DEFECT`, or a closed human-rejected correction cycle containing
-`EVALUATOR_COVERAGE_DEFECT`. An observation, chat comment, or desire to tidy an
-evaluator is not authority. Refuse it.
-
-Read the frozen brief, Design Map, public `eval-requirements.md`, source
-revision, and authoritative defect trigger. Preserve the source revision and its
-freeze metadata before changing anything. Repair only the demonstrated evidence
-defect; do not rerun semantic `prepare`, alter acceptance semantics, introduce a
-product requirement, or demand a new public or implementation-shaped test seam.
-If that would be necessary, record a terminal blocked repair and route to the
-successor/methodology path.
-
-Allocate the next monotonically increasing evaluator revision. Produce an
-immutable private repair record containing trigger identity, source/result
-revisions and identities, affected criteria/procedures, changed artifacts,
-frozen-authority identities, integrity result, and an explicit
-acceptance-semantics-preserved attestation. Run full deterministic structural
-integrity validation over the complete resulting revision before it becomes
-current. Then record the public-safe `evaluator-repair-recorded` authority
-binding; it must carry the same lineage and PASS/attestation without exposing
-private mechanics. Verification attempts remain bound to their original revision
-and are never rewritten.
-
-For Spike 012 itself, never use this v11 repair mode as bootstrap recovery or
-grading authority before human acceptance: its pinned v10 evaluator authority
-governs that exceptional cycle.
 
 ## Final execution record
 

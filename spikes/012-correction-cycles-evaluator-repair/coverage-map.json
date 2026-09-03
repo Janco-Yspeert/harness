@@ -1,0 +1,338 @@
+{
+  "spike": "012-correction-cycles-evaluator-repair",
+  "evaluationRequirements": "sha256:1ac745acfc52bdc9dcee9da38de34dfe9c33a898a7465de1b9002f9891c0d05c",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 10,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:db248e53dd0466d7d43ae682dbbb4f9fe08537b64a1536e971341d919bfd09f6",
+    "privateInventoryIdentity": "sha256:e1ab2a0295d78af379b0351c24d8fa7db51cdba10f7105db2140842aa1fec2a5",
+    "validatorResultBinding": "sha256:76b657ec905c583c4ee1c7fae8b1f7e07f56edb6a52f9c3259e985baee931345",
+    "integrityValidation": "PASS",
+    "integrityValidatedAt": "6f46363053e4e8c48054599439e52747ba595239",
+    "criterionRecordCount": 30,
+    "bootstrapAuthority": {
+      "name": "evaluator",
+      "contractVersion": 10,
+      "sourceCommit": "b7f442aed5d5cfe2722aec40f2fab0eb059e2884",
+      "identity": "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b",
+      "note": "Frozen spike.md bootstrap process exception: Spike 012 evaluator prepare and verify both execute under this pinned pre-implementation evaluator skill; the newly implemented repair mode and correction-cycle authority are implementation under test."
+    }
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; \"Core model\", scope 1; DM \"Shared contracts\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "S6"
+      ],
+      "sufficiency": "AC01 is the distinct-cycle-identity claim; E1 shows one cycle spanning multiple implementation and verification attempts with the evaluator-revision and executor/process-attempt identities never folded into the cycle identity, and S6 confirms the authority code represents cycle identity as its own append-only identifier space separate from the other four."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; scope 2; DM \"Shared contracts\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2",
+        "S6"
+      ],
+      "sufficiency": "AC02 requires legacy history to read as Cycle 001 without rewriting it; E2 runs an unannotated pre-cycle history through the updated authority and shows it interpreted as Cycle 001 with the historical bytes untouched, and S6 confirms the authority derives that from the append-only history rather than retrofitting cycle fields into legacy events."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03; \"Human rejection closes a cycle\", scope 1, 3; DM \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E3"
+      ],
+      "sufficiency": "AC03 is the IMPLEMENTATION_GAP-opens-exactly-one-same-spike-cycle claim; E3 opens a correction cycle from such a rejection, asserts the opening binds the unchanged frozen brief and Design Map identities, and shows a second opening from the same rejection refused."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; scope 1, 13; DM \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E4"
+      ],
+      "sufficiency": "AC04 requires an EVALUATOR_COVERAGE_DEFECT rejection to open a cycle that requires evaluator repair; E4 opens such a cycle and asserts the opening evidence records evaluator repair as required."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; scope 1, 13",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E5"
+      ],
+      "sufficiency": "AC05 is the both-findings claim; E5 opens a correction cycle from a rejection carrying an implementation finding and an evaluator finding and asserts the opening records both implementation correction and evaluator repair as required."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; \"Spike 011 recovery proof\", scope 2; DM \"Invariants\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E6",
+        "P2"
+      ],
+      "sufficiency": "AC06 requires a deterministic fixture to recognize Spike 011's primary+secondary rejection as Cycle-002-eligible without editing Spike 011; E6 is that fixture, asserting Cycle-001 interpretation, both-correction eligibility, and preserved Cycle 001 brief/Design Map identities, and P2 confirms spikes/011-host-owned-workflow-runs/** is byte-for-byte unchanged."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07; \"Human rejection closes a cycle\", scope 15; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E7",
+        "S5"
+      ],
+      "sufficiency": "AC07 is the SPECIFICATION_CHANGE-cannot-open, successor-lineage-still-required claim; E7 shows such a rejection refused for correction-cycle opening while the successor path stays available, and S5 confirms the authority code still routes specification-changing rejections to the successor / new-brief lineage."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08; scope 1; DM \"Invariants\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E8"
+      ],
+      "sufficiency": "AC08 is the no-reopen-after-acceptance claim; E8 human-accepts a cycle and shows every correction-cycle opening from it refused."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09; scope 3; DM \"Design decisions\", \"Invariants\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E9"
+      ],
+      "sufficiency": "AC09 requires Cycle 001 completion facts not to satisfy Cycle 002 prerequisites; E9 gives Cycle 001 PASS/promotion/As-Built/decision and shows Cycle 002 still reporting each of its own prerequisites unmet until it meets them, with Cycle 001 state unchanged."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10; scope 4; DM \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E10"
+      ],
+      "sufficiency": "AC10 is the implementation-attempt-legal-after-human-IMPLEMENTATION_GAP-without-a-fabricated-failed-verification claim; E10 opens a correction cycle with an implementation-correction finding and shows a new implementation attempt accepted with no preceding failed evaluator verification in that cycle."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11; scope 4; DM \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E11"
+      ],
+      "sufficiency": "AC11 preserves the existing in-cycle retry path; E11 shows a failed technical verification still permitting a further implementation attempt and re-verification within the same cycle."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12; scope 5",
+      "mode": "STATIC_INSPECTION",
+      "required": true,
+      "procedures": [
+        "S1"
+      ],
+      "sufficiency": "AC12 is a property of the evaluator skill file at the implementation commit; S1 reads the skill and confirms three explicit modes prepare/verify/repair with documented non-overlapping responsibilities and an integer contract version greater than 10."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; scope 7, 12, \"Verify discovers defects\"; DM \"Invariants\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E12",
+        "S2"
+      ],
+      "sufficiency": "AC13 requires verify not to mutate the frozen evaluator and to finalize/record a discovered defect before repair; E12 shows a verify attempt staying bound to its revision, finalized forward-only on a discovered defect, with no corrected revision usable until a separate repair, and S2 confirms the verify mode text forbids in-attempt mutation and mandates finalize-then-record."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md AC14; scope 6; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E13",
+        "S2"
+      ],
+      "sufficiency": "AC14 requires an authoritative defect trigger and rejection of an ungrounded repair; E13 shows repair proceeding from a finalized EVALUATOR_DEFECT attempt or a closed EVALUATOR_COVERAGE_DEFECT cycle and refused when given only a free-text reason, and S2 confirms the repair mode text and code require that binding."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md AC15; scope 8, 12; DM \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E14"
+      ],
+      "sufficiency": "AC15 requires a successful repair to preserve the source revision and create a distinguishable new one; E14 asserts the source revision is byte-for-byte intact after repair and the new revision carries a distinct identifier and content identity."
+    },
+    {
+      "id": "AC16",
+      "frozenAuthority": "spike.md AC16; scope 8; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E14",
+        "S2"
+      ],
+      "sufficiency": "AC16 requires the repair to be bounded to the demonstrated defect and not to rerun full prepare as a required step; E14 diffs the two revisions and shows only defect-related artifacts changed (unrelated ones identical in content identity), and S2 confirms the repair mode text scopes the semantic change to the defect and does not mandate a full semantic re-derivation."
+    },
+    {
+      "id": "AC17",
+      "frozenAuthority": "spike.md AC17; scope 8; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E15",
+        "S2"
+      ],
+      "sufficiency": "AC17 requires the whole resulting revision to pass structural integrity validation before becoming current; E15 shows repair running the complete deterministic validation over the entire resulting revision and a failing result blocking the revision from becoming current, and S2 confirms the repair mode text requires that whole-revision re-validation."
+    },
+    {
+      "id": "AC18",
+      "frozenAuthority": "spike.md AC18; scope 9, 10; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E16",
+        "S2"
+      ],
+      "sufficiency": "AC18 forbids repair changing the frozen brief, Design Map, public eval-requirements.md, or acceptance semantics; E16 shows each such repair attempt refused while an evidence-only swap that establishes the same frozen criterion is allowed, and S2 confirms the repair mode text forbids those changes."
+    },
+    {
+      "id": "AC19",
+      "frozenAuthority": "spike.md AC19; scope 9, 10; DM \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E16",
+        "S2",
+        "S5"
+      ],
+      "sufficiency": "AC19 requires repair to block, not silently change public authority, when a materially new public seam or product requirement is needed; E16 shows that block-and-classify path, S2 confirms the repair mode text mandates it, and S5 confirms the authority routes such cases onto the successor / methodology path."
+    },
+    {
+      "id": "AC20",
+      "frozenAuthority": "spike.md AC20; scope 11; DM \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E17"
+      ],
+      "sufficiency": "AC20 enumerates the immutable repair-record contents; E17 asserts every completed or terminally blocked repair produces a record and public-safe binding carrying the repair id, trigger type/identity, source/result revision identifiers and identities, affected criteria/procedures, defect and correction descriptions, changed-artifact identities, the semantic-preservation attestation, the frozen authority identities, and the integrity result."
+    },
+    {
+      "id": "AC21",
+      "frozenAuthority": "spike.md AC21; scope 12; DM \"Invariants\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E14"
+      ],
+      "sufficiency": "AC21 is the durable attempt-to-revision binding plus monotonic non-reused identifiers; E14 shows every verification attempt still resolving to the exact revision it executed after a repair, with revision and attempt identifiers monotonic and never reused."
+    },
+    {
+      "id": "AC22",
+      "frozenAuthority": "spike.md AC22; scope 12; DM \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E18"
+      ],
+      "sufficiency": "AC22 requires authority and promotion evidence to distinguish revisions and repair lineage without overwriting earlier evidence; E18 names and distinguishes revision 001, revision 002, and the repair lineage between them and shows promoting the later revision leaving the earlier frozen/promoted evidence intact."
+    },
+    {
+      "id": "AC23",
+      "frozenAuthority": "spike.md AC23; scope 14; DM \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E19"
+      ],
+      "sufficiency": "AC23 requires multi-finding human rejection plus legacy compatibility; E19 records a primary classification plus additional typed findings and reads Spike 011's classification+secondaryFinding record through the same normalized finding set without rewriting that event."
+    },
+    {
+      "id": "AC24",
+      "frozenAuthority": "spike.md AC24; scope 13; DM \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E20"
+      ],
+      "sufficiency": "AC24 requires a new cycle to run its own full sequence; E20 shows the opened cycle recording its own implementation handoff, verification allocation and PASS, promotion, As-Built, and a fresh human decision, each checked against that cycle's own prerequisites."
+    },
+    {
+      "id": "AC25",
+      "frozenAuthority": "spike.md AC25; scope 16; DM \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E21"
+      ],
+      "sufficiency": "AC25 enumerates the status-surface fields; E21 asserts the public authority status surface exposes the current cycle identity and open/closed state, current evaluator revision, current implementation attempt, current/final verification state, cycle-scoped promotion/As-Built/human state, correction permission and reason, and lineage, with historical cycles still distinguishable and no manual JSONL parsing required."
+    },
+    {
+      "id": "AC26",
+      "frozenAuthority": "spike.md AC26; scope 17; DM \"Invariants\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E22"
+      ],
+      "sufficiency": "AC26 forbids an unnecessary human gate before the next decision; E22 shows a mechanically-authorized correction-cycle opening and an evaluator-defect-to-repair flow each proceeding without a new human approval gate, while the next acceptance/rejection remains a human decision."
+    },
+    {
+      "id": "AC27",
+      "frozenAuthority": "spike.md AC27; \"Evaluator skill versioning and bootstrap\", \"Verification of the bootstrap boundary\"; DM \"Shared contracts\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "S3",
+        "P3"
+      ],
+      "sufficiency": "AC27 requires both evaluator phases to run under an exact provenance-verifiable pre-implementation skill identity with a mechanism proving no substitution; S3 confirms bootstrap/evaluator-skill.md equals the pinned skill, bootstrap/evaluator-authority.json binds its provenance, and the dispatcher supplies that pinned material for the Spike 012 evaluator phases, and P3 confirms the freeze and the verification result both cite the bootstrap-authority identity and no post-implementation skill identity."
+    },
+    {
+      "id": "AC28",
+      "frozenAuthority": "spike.md AC28; \"Bootstrap evaluator defects\", \"Bootstrap human rejection\", \"Verification of the bootstrap boundary\"; DM \"Invariants\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "S4",
+        "P3"
+      ],
+      "sufficiency": "AC28 forbids Spike 012 using its own new repair/correction-cycle facilities to grade or recover itself before acceptance; S4 confirms Spike 012's workflow.jsonl and evaluation/** carry no correction-cycle-opened or evaluator-repair-recorded transition and the cycle is governed by the pinned v10 contract, and P3 confirms no Spike 012 evaluator evidence cites the new facilities."
+    },
+    {
+      "id": "AC29",
+      "frozenAuthority": "spike.md AC29; scope 18",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E23",
+        "P1"
+      ],
+      "sufficiency": "AC29 requires visible deterministic regression coverage of the four behaviour families without live paid-provider calls; E23 asserts that coverage exists in test/ for the correction-cycle, evaluator-repair, legacy-history, and successor-boundary behaviours, and P1 confirms the visible suite runs green through npm test with no live provider call."
+    },
+    {
+      "id": "AC30",
+      "frozenAuthority": "spike.md AC30; scope 18",
+      "mode": "PROVENANCE_INSPECTION",
+      "required": true,
+      "procedures": [
+        "P1"
+      ],
+      "sufficiency": "AC30 is a set of command exit codes plus continued green pre-existing suites at the evaluated commit; P1 records npm test, typecheck, lint, format:check, git diff --check, and the workflow-authority, evaluator-integrity, host-owned workflow-run, and session/backend suites."
+    }
+  ]
+}

@@ -109,7 +109,12 @@ function baseRequest(
 async function allocate(
   host: HarnessHost,
   overrides: Record<string, unknown> = {},
-): Promise<{ status: number; run: RunRecord; duplicate: boolean }> {
+): Promise<{
+  status: number;
+  run: RunRecord;
+  duplicate: boolean;
+  error?: string;
+}> {
   const response = await fetch(`${host.url}/workflow-runs`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -120,7 +125,12 @@ async function allocate(
     duplicate: boolean;
     error?: string;
   };
-  return { status: response.status, run: body.run, duplicate: body.duplicate };
+  return {
+    status: response.status,
+    run: body.run,
+    duplicate: body.duplicate,
+    ...(body.error === undefined ? {} : { error: body.error }),
+  };
 }
 
 async function getRun(host: HarnessHost, runId: string): Promise<RunRecord> {
@@ -233,6 +243,65 @@ void test("a host-owned run outlives its client and is inspectable by identity",
     assert.match(terminal.terminalAt as string, /^\d{4}-\d{2}-\d{2}T.*Z$/);
   } finally {
     if (events.readyState === WebSocket.OPEN) events.close();
+    await host.close();
+  }
+});
+
+void test("direct Spike 012 evaluator verification allocations resolve pinned bootstrap authority", async () => {
+  const { host, created } = await startHarness();
+  try {
+    // This deliberately calls the host endpoint directly. It must not rely on
+    // tools/workflow.ts having already supplied the bootstrap authority.
+    const allocation = await allocate(host, {
+      slot: {
+        workflow: "012",
+        phase: "evaluator-verify",
+        methodologyAttempt: "2",
+      },
+      role: "evaluator-verify",
+      workspace: repositoryRoot,
+      permissionProfile: "evaluator",
+      evaluatorWorkspace: "/tmp/spike-012-evaluator",
+    });
+    assert.equal(allocation.status, 201, allocation.error);
+    assert.equal(allocation.run.skill, "bootstrap/evaluator-skill.md");
+    assert.equal(allocation.run.skillVersion, "10");
+    assert.deepEqual(allocation.run.verificationAuthority, {
+      name: "evaluator",
+      contractVersion: 10,
+      sourceCommit: "b7f442aed5d5cfe2722aec40f2fab0eb059e2884",
+      identity:
+        "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b",
+      snapshotPath: "bootstrap/evaluator-skill.md",
+    });
+    assert.equal(created.length, 1);
+
+    // Caller-provided authority cannot replace the host-validated snapshot.
+    const mismatch = await fetch(`${host.url}/workflow-runs`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(
+        baseRequest({
+          slot: {
+            workflow: "012",
+            phase: "evaluator-verify",
+            methodologyAttempt: "3",
+          },
+          role: "evaluator-verify",
+          workspace: repositoryRoot,
+          permissionProfile: "evaluator",
+          evaluatorWorkspace: "/tmp/spike-012-evaluator",
+          verificationAuthority: { identity: "sha256:not-the-pinned-skill" },
+        }),
+      ),
+    });
+    assert.equal(mismatch.status, 400);
+    assert.match(
+      ((await mismatch.json()) as { error: string }).error,
+      /does not match the pinned bootstrap authority/,
+    );
+    assert.equal(created.length, 1);
+  } finally {
     await host.close();
   }
 });
@@ -544,13 +613,15 @@ void test("the default local backend uses a bounded, non-interactive executor mo
     },
     skill: null,
     skillVersion: null,
+    verificationAuthority: null,
     orchestrator: null,
     prompt: "do the work",
   });
 
   const codex = buildExecutorCommand(spec("codex", ["/repo/harness"]));
   assert.ok(codex.includes("--sandbox") && codex.includes("workspace-write"));
-  assert.ok(codex.includes("--ask-for-approval") && codex.includes("never"));
+  assert.ok(!codex.includes("--approve-for-me"));
+  assert.ok(!codex.includes("--ask-for-approval"));
   assert.ok(!codex.includes("--dangerously-bypass-approvals-and-sandbox"));
 
   const claude = buildExecutorCommand(
@@ -561,6 +632,7 @@ void test("the default local backend uses a bounded, non-interactive executor mo
   );
   assert.ok(claude.includes("--add-dir"));
   assert.ok(claude.includes("/repo/harness-evaluator"));
+  assert.equal(claude.at(-2), "--");
   assert.ok(!claude.includes("--dangerously-skip-permissions"));
   assert.ok(!claude.includes("bypassPermissions"));
 });

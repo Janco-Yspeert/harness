@@ -1,4 +1,7 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 // A workflow run is a host-owned execution of a methodology workflow role. It
 // shares host-generated identity, backend lifecycle observation, termination,
@@ -70,6 +73,7 @@ export interface WorkflowRunRequest {
   readonly evaluatorWorkspace?: string | undefined;
   readonly skill?: string | undefined;
   readonly skillVersion?: string | undefined;
+  readonly verificationAuthority?: Record<string, unknown> | undefined;
   readonly orchestrator?: string | undefined;
   readonly prompt?: string | undefined;
 }
@@ -90,6 +94,7 @@ export interface ResolvedWorkflowRunSpec {
   readonly permissionProfile: WorkflowPermissionProfile;
   readonly skill: string | null;
   readonly skillVersion: string | null;
+  readonly verificationAuthority: Record<string, unknown> | null;
   readonly orchestrator: string | null;
   readonly prompt: string | null;
 }
@@ -114,6 +119,7 @@ export interface WorkflowRunRecord {
   readonly role: string;
   readonly skill: string | null;
   readonly skillVersion: string | null;
+  readonly verificationAuthority: Record<string, unknown> | null;
   readonly executor: string;
   readonly invocationMode: WorkflowInvocationMode;
   readonly replacementReason: string | null;
@@ -197,6 +203,135 @@ function optionalString(value: unknown, field: string): string | undefined {
   return requireString(value, field);
 }
 
+interface PinnedVerificationAuthority {
+  readonly name: string;
+  readonly contractVersion: number;
+  readonly sourceCommit: string;
+  readonly identity: string;
+  readonly snapshotPath: string;
+}
+
+function sha256(content: string): string {
+  return `sha256:${createHash("sha256").update(content).digest("hex")}`;
+}
+
+function readAuthorityField(
+  value: unknown,
+  field: string,
+): Record<string, unknown> {
+  const raw = value as Record<string, unknown>;
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    !(field in raw) ||
+    typeof raw[field] !== "object" ||
+    raw[field] === null ||
+    Array.isArray(raw[field])
+  ) {
+    throw new WorkflowRunRequestError(
+      `Spike 012 bootstrap evaluator authority has no ${field} object`,
+    );
+  }
+  return raw[field] as Record<string, unknown>;
+}
+
+// The host, rather than a caller-side workflow helper, owns this bootstrap
+// exception. A direct allocation must therefore reach the same pinned v10
+// authority as a CLI-dispatched allocation. The current evaluator skill is
+// intentionally never consulted here: it is implementation under test.
+function resolveSpike012VerificationAuthority(
+  request: WorkflowRunRequest,
+): PinnedVerificationAuthority | undefined {
+  if (
+    request.slot.workflow !== "012" ||
+    request.slot.phase !== "evaluator-verify"
+  ) {
+    return undefined;
+  }
+
+  const spikePath = resolve(
+    request.workspace,
+    "spikes/012-correction-cycles-evaluator-repair",
+  );
+  let authorityRaw: unknown;
+  try {
+    authorityRaw = JSON.parse(
+      readFileSync(
+        resolve(spikePath, "bootstrap/evaluator-authority.json"),
+        "utf8",
+      ),
+    );
+  } catch (error) {
+    throw new WorkflowRunRequestError(
+      `Unable to read Spike 012 bootstrap evaluator authority: ${
+        error instanceof Error ? error.message : "unknown error"
+      }`,
+    );
+  }
+  const evaluator = readAuthorityField(authorityRaw, "evaluatorSkill");
+  const name = evaluator.name;
+  const contractVersion = evaluator.contractVersion;
+  const sourceCommit = evaluator.sourceCommit;
+  const sourcePath = evaluator.sourcePath;
+  const identity = evaluator.identity;
+  const snapshotPath = evaluator.snapshotPath;
+  if (
+    typeof name !== "string" ||
+    typeof contractVersion !== "number" ||
+    typeof sourceCommit !== "string" ||
+    typeof sourcePath !== "string" ||
+    typeof identity !== "string" ||
+    typeof snapshotPath !== "string"
+  ) {
+    throw new WorkflowRunRequestError(
+      "Spike 012 bootstrap evaluator authority is invalid",
+    );
+  }
+
+  let snapshot: string;
+  let committedSource: string;
+  try {
+    snapshot = readFileSync(resolve(spikePath, snapshotPath), "utf8");
+    committedSource = execFileSync(
+      "git",
+      ["-C", request.workspace, "show", `${sourceCommit}:${sourcePath}`],
+      { encoding: "utf8" },
+    );
+  } catch (error) {
+    throw new WorkflowRunRequestError(
+      `Unable to validate Spike 012 bootstrap evaluator authority: ${
+        error instanceof Error ? error.message : "unknown error"
+      }`,
+    );
+  }
+  if (sha256(snapshot) !== identity) {
+    throw new WorkflowRunRequestError(
+      "Spike 012 bootstrap evaluator snapshot identity does not match authority",
+    );
+  }
+  if (sha256(committedSource) !== identity) {
+    throw new WorkflowRunRequestError(
+      "Spike 012 bootstrap evaluator source provenance does not match authority",
+    );
+  }
+  return { name, contractVersion, sourceCommit, identity, snapshotPath };
+}
+
+function sameAuthority(
+  left: Record<string, unknown>,
+  right: PinnedVerificationAuthority,
+): boolean {
+  return (
+    left.name === right.name &&
+    left.contractVersion === right.contractVersion &&
+    left.sourceCommit === right.sourceCommit &&
+    left.identity === right.identity &&
+    left.snapshotPath === right.snapshotPath &&
+    Object.keys(left).length === 5
+  );
+}
+
 export function parseWorkflowRunRequest(body: unknown): WorkflowRunRequest {
   if (typeof body !== "object" || body === null || Array.isArray(body)) {
     throw new WorkflowRunRequestError("request body must be a JSON object");
@@ -242,6 +377,18 @@ export function parseWorkflowRunRequest(body: unknown): WorkflowRunRequest {
     ),
     skill: optionalString(raw.skill, "skill"),
     skillVersion: optionalString(raw.skillVersion, "skillVersion"),
+    verificationAuthority:
+      typeof raw.verificationAuthority === "object" &&
+      raw.verificationAuthority !== null &&
+      !Array.isArray(raw.verificationAuthority)
+        ? (raw.verificationAuthority as Record<string, unknown>)
+        : raw.verificationAuthority === undefined
+          ? undefined
+          : (() => {
+              throw new WorkflowRunRequestError(
+                "verificationAuthority must be a JSON object",
+              );
+            })(),
     orchestrator: optionalString(raw.orchestrator, "orchestrator"),
     prompt: optionalString(raw.prompt, "prompt"),
   };
@@ -288,6 +435,34 @@ function resolvePermissionProfile(
 }
 
 function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
+  const pinnedAuthority = resolveSpike012VerificationAuthority(request);
+  if (
+    pinnedAuthority !== undefined &&
+    request.verificationAuthority !== undefined &&
+    !sameAuthority(request.verificationAuthority, pinnedAuthority)
+  ) {
+    throw new WorkflowRunRequestError(
+      "Spike 012 evaluator verification authority does not match the pinned bootstrap authority",
+    );
+  }
+  if (
+    pinnedAuthority !== undefined &&
+    request.skill !== undefined &&
+    request.skill !== pinnedAuthority.snapshotPath
+  ) {
+    throw new WorkflowRunRequestError(
+      "Spike 012 evaluator verification skill does not match the pinned bootstrap snapshot",
+    );
+  }
+  if (
+    pinnedAuthority !== undefined &&
+    request.skillVersion !== undefined &&
+    request.skillVersion !== String(pinnedAuthority.contractVersion)
+  ) {
+    throw new WorkflowRunRequestError(
+      "Spike 012 evaluator verification skill version does not match the pinned bootstrap authority",
+    );
+  }
   const permissionProfile = resolvePermissionProfile(
     request.permissionProfile ?? "repo-local-worker",
     request.workspace,
@@ -300,8 +475,15 @@ function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
     invocationMode: request.invocationMode ?? "delegated",
     workspaces: permissionProfile.workspaces,
     permissionProfile,
-    skill: request.skill ?? null,
-    skillVersion: request.skillVersion ?? null,
+    skill: pinnedAuthority?.snapshotPath ?? request.skill ?? null,
+    skillVersion:
+      pinnedAuthority === undefined
+        ? (request.skillVersion ?? null)
+        : String(pinnedAuthority.contractVersion),
+    verificationAuthority:
+      pinnedAuthority === undefined
+        ? (request.verificationAuthority ?? null)
+        : { ...pinnedAuthority },
     orchestrator: request.orchestrator ?? null,
     prompt: request.prompt ?? null,
   };
@@ -366,6 +548,7 @@ class InternalRun {
       role: this.spec.role,
       skill: this.spec.skill,
       skillVersion: this.spec.skillVersion,
+      verificationAuthority: this.spec.verificationAuthority,
       executor: this.spec.executor,
       invocationMode: this.spec.invocationMode,
       replacementReason: this.meta.replacementReason,
