@@ -298,27 +298,45 @@ Harness must know what contract governed the execution independently of what the
 
 ---
 
-# Delegated protected-role authority
+# Delegated authority source and validation boundary
 
 Protected repository roles, especially evaluator roles, must remain protected from opportunistic invocation.
 
-An ordinary implementation agent must not be able to gain evaluator authority by:
+An ordinary implementation agent, orchestrator, provider process, or API caller must not gain evaluator authority merely by:
 
 * asking for it;
 * embedding authoritative-looking prose in a prompt;
-* directly reading the evaluator skill and electing to follow it;
-* or invoking the role merely because the mechanism is technically available.
+* reading the evaluator skill and electing to follow it;
+* supplying an evaluator role or skill name in a request;
+* or invoking a technically available execution path.
 
-Valid evaluator execution may originate from:
+Valid evaluator execution may originate only from:
 
-1. explicit human invocation; or
-2. a mechanically valid Harness evaluator-role allocation.
+1. explicit authorized human invocation; or
+2. a mechanically valid Harness evaluator-role allocation derived from canonical workflow authority.
 
-The delegated authority must be represented by something controlled and validated by Harness.
+For delegated execution, canonical Harness workflow authority is the source of methodology authority. The ability to construct or submit a host workflow-run request, reach the local Harness API, or populate fields such as role, executor, permission profile, or skill does not itself authorize the protected role.
 
-The exact mechanism is a Design Map decision.
+Before launching a protected role, Harness must validate that the current canonical workflow state permits that role to execute.
 
-Removing evaluator invocation protections globally does not satisfy this spike.
+For evaluator roles, the validated delegation must bind at minimum:
+
+* the target workflow or spike;
+* the phase or methodology role being executed;
+* the applicable methodology attempt or correction cycle where one exists;
+* the exact evaluator or role-contract authority being invoked;
+* and the executor receiving the delegated authority.
+
+The host-owned run must retain an inspectable binding to that validated authority so that later execution and verification can establish not merely that an evaluator-shaped process ran, but that it ran under the correct workflow authority.
+
+The exact representation of this delegation remains a Design Map decision. The implementation may use a capability, structured authority record, signed or unsigned token, host-owned binding, or another mechanism, provided that the authority is mechanically validated and cannot be manufactured by provider prose or an ordinary caller.
+
+Explicit human evaluator invocation may use a different authorization path from delegated Harness execution. Both must preserve the same underlying protection: protected roles cannot self-authorize.
+
+The Spike 013a bootstrap path is not exempt from this boundary. Any bootstrap allocation must derive from the frozen canonical authority explicitly permitted by this brief, must record that the bootstrap exception was used, and must preserve the same minimum role, attempt, contract, and executor binding.
+
+Removing evaluator invocation protections globally, weakening `disable-model-invocation` into an advisory convention, or treating any successful `POST /workflow-runs` request as sufficient evaluator authority does not satisfy this spike.
+
 
 ---
 
@@ -346,53 +364,30 @@ The spike must explicitly characterize what supported execution means for both C
 
 ---
 
-# Process lifecycle versus role disposition
+# Authoritative semantic role result
 
-Harness must distinguish:
+Provider process termination does not determine methodology-role success.
 
-```text
-provider/process lifecycle
-```
+A methodology role may reach a successful terminal disposition only from a Harness-validated role result associated with the allocation that created the run.
 
-from:
+That result must bind at minimum:
 
-```text
-methodology-role outcome
-```
+* the host-owned run identity;
+* the allocated workflow role;
+* the applicable methodology attempt/cycle;
+* and the exact resolved role/skill contract authority.
 
-The exact vocabulary is not frozen by this brief.
+Provider output may contribute evidence used to construct or validate that result, but arbitrary provider prose or an unvalidated provider-emitted success marker is not itself methodology authority.
 
-A representation might distinguish concepts such as:
+Harness owns validation of the role result before it may affect canonical workflow progression.
 
-```text
-process:
-  queued
-  running
-  completed
-  failed
-  killed
+Only a validated successful semantic role result may satisfy a workflow prerequisite that requires completion of that governed role.
 
-role:
-  pending
-  complete
-  blocked
-  refused
-  failed
-```
+A normal process exit without such a result must not unlock the corresponding canonical transition.
 
-These names are illustrative only.
+Blocked, refused, failed, missing, contradictory or invalid role-result evidence must leave the required methodology role incomplete.
 
-The required property is that the following case is representable without ambiguity:
-
-```text
-Claude launched successfully.
-Claude exited normally.
-Claude refused to perform evaluator-repair.
-Evaluator-repair did not complete.
-Workflow must not advance.
-```
-
-A successful provider exit is insufficient evidence of semantic role completion.
+The exact result schema, transport, persistence format and role-disposition vocabulary remain Design Map freedom.
 
 ---
 
@@ -449,6 +444,42 @@ Operational execution history should begin only when Harness has genuinely commi
 A failure before a worker has genuinely begun must remain retryable without manual mutation of `.workflow` state.
 
 Historical executions that genuinely occurred must remain preserved.
+
+---
+
+# Blocked role retry semantics
+
+A governed methodology phase or attempt may require more than one host-owned execution run before it reaches a successful semantic role outcome.
+
+Dispatching a role once does not by itself consume or complete the methodology phase.
+
+If a host-owned execution terminates with a semantic outcome such as blocked, refused, unavailable, or another non-successful disposition that does not advance canonical authority, Harness must preserve that execution and allow another execution attempt for the same still-pending methodology phase where canonical authority continues to permit it.
+
+For example:
+
+```text
+canonical phase:
+  brief-readiness
+  methodology attempt: 1
+  state: pending
+
+execution history:
+  execution attempt 1: blocked
+  execution attempt 2: running
+```
+
+The second execution must not rewrite, delete, or pretend the first execution did not occur.
+
+Harness must distinguish:
+
+* methodology attempt identity;
+* execution-attempt identity;
+* process lifecycle;
+* and semantic role outcome.
+
+A prior dispatch must prevent duplicate concurrent execution where appropriate, but must not permanently prevent retry after the previous execution has reached a non-successful terminal role disposition and canonical authority still identifies that phase as eligible.
+
+The exact retry counter, identifier format, and concurrency mechanism remain Design Map decisions.
 
 ---
 
@@ -530,6 +561,8 @@ It must not become the permanent mechanism for bypassing workflow-state consiste
 
 # Evaluator bootstrap and self-modification exception
 
+**Pre-freeze retry bootstrap**: Until the retry behavior defined by this spike exists, Spike 013a may directly allocate a fresh host-owned execution of a still-pending pre-freeze role when canonical authority continues to identify that role as next and the previous execution is durably recorded as non-successful. The new run must reference the prior blocked execution and must not fabricate, delete, or overwrite runner history.
+
 Spike 013a is likely to modify:
 
 * `skills/evaluator/SKILL.md`;
@@ -566,24 +599,68 @@ However, several defects in this spike are specifically provider-bound and canno
 
 Evidence must include:
 
-## Claude
+## Reserved live-provider acceptance scenarios
 
-At least one bounded real Claude execution proving that:
+Spike 013a must reserve bounded, reproducible live-provider scenarios before implementation.
 
-* Harness allocates a protected evaluator role;
-* Claude receives the valid delegated authority through the implemented mechanism;
-* Claude performs the allocated protected role without requiring the human to manually enter `/evaluator ...`;
-* and Harness records the resulting semantic role outcome.
+These scenarios exist specifically to prove provider-bound behavior that cannot be established by mocks or static inspection.
 
-The original refusal condition must be meaningfully exercised.
+### Claude protected evaluator delegation
 
-## Codex
+The Claude scenario must:
 
-At least one bounded real Codex execution establishing which supported Harness execution/delivery path actually governs a repository role.
+* begin from canonical authority that legally permits a bounded evaluator role;
+* use the evaluator workspace/access required by the frozen evaluator contract;
+* allocate that role through the Harness host;
+* bind the exact evaluator authority used by the run;
+* execute through the real Claude adapter;
+* require no manual `/evaluator ...` invocation after allocation;
+* and produce a Harness-validated semantic role result visible through the normal run/workflow inspection surface.
 
-It is not necessary to force Codex to use a provider-native skill primitive.
+The scenario must exercise the authority boundary which previously caused Claude to refuse delegated evaluator execution.
 
-It is necessary to prove which exact contract governed the role and how Harness supplied it.
+It may use a dedicated repository-owned fixture or bounded evaluation target rather than advancing Spike 011.
+
+It must not require evaluator-private material to become public.
+
+### Codex deterministic contract execution
+
+The Codex scenario must:
+
+* begin from canonical authority that legally permits a bounded governed role;
+* allocate that role through the Harness host;
+* bind an exact repository-owned role/skill contract;
+* execute through the real Codex adapter;
+* make the contract delivery/invocation mode inspectable;
+* and produce a Harness-validated semantic role result.
+
+The purpose is not to mandate a provider-native Codex skill primitive. It is to establish that Harness, rather than Codex prose, determines which contract governed the role.
+
+### Scenario prerequisites
+
+The Design Map may choose the smallest repository-owned fixtures needed to make these scenarios safe and reproducible.
+
+Before evaluator preparation, the scenarios must identify:
+
+* the role being exercised;
+* canonical authority prerequisite;
+* required workspace/access boundary;
+* allowed repository side effects;
+* expected semantic role result;
+* and cleanup/isolation requirements.
+
+They must not depend on selecting these properties opportunistically after seeing implementation behavior.
+
+### Provider unavailability
+
+Real-provider evidence required by this brief is mandatory.
+
+If the required Claude or Codex executor is unavailable because of authentication, service availability, configuration, or equivalent external failure, the affected acceptance criterion is **blocked**, not passed using mocks as a substitute.
+
+Provider-independent deterministic coverage should still run, but it cannot replace mandatory live-provider evidence.
+
+A transient unavailable provider does not itself constitute an implementation failure unless the implementation caused the unavailability.
+
 
 ## Host boundary
 
@@ -718,6 +795,8 @@ The operational state exposes that prior canonical authority was adopted or othe
 
 After adoption, the runner derives the correct next eligible workflow phase from canonical authority.
 
+**AC35 — Blocked execution is retryable**
+When canonical authority still requires a phase and its prior host-owned execution ended in a non-successful terminal role disposition, Harness can allocate a fresh execution attempt for that same methodology phase without deleting or rewriting the earlier run.
 ---
 
 ## Dispatch semantics
@@ -871,3 +950,5 @@ Harness authority should be sufficient to authorize Harness work.
 The human should not have to repeat a valid workflow decision by manually speaking each executor's private invocation dialect.
 
 And durable methodology authority should survive the loss, restart or replacement of the operational runner that happened to execute it.
+
+---
