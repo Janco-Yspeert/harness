@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "contractVersion": 11,
+    "sourceCommit": "fae05912f59f8ebdb8982ab16deb26e293754647",
+    "sourcePath": "skills/evaluator/SKILL.md",
+    "identity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802",
+    "snapshotPath": "bootstrap/evaluator-skill.md"
+  }
+}
