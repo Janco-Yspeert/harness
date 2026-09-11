@@ -76,6 +76,23 @@ export interface WorkflowRunRequest {
   readonly verificationAuthority?: Record<string, unknown> | undefined;
   readonly orchestrator?: string | undefined;
   readonly prompt?: string | undefined;
+  // Direct protected-role execution is deliberately a different route from a
+  // delegated allocation.  This is an explicit host-side assertion made by
+  // the local human-facing entrypoint, never something inferred from a prompt.
+  readonly humanAuthorization?: boolean | undefined;
+}
+
+export type WorkflowRoleDisposition =
+  "pending" | "succeeded" | "blocked" | "refused" | "failed";
+
+export interface WorkflowRoleResultRequest {
+  readonly role: string;
+  readonly methodologyAttempt?: string | undefined;
+  readonly skill: string | null;
+  readonly skillVersion: string | null;
+  readonly verificationAuthority: Record<string, unknown> | null;
+  readonly disposition: Exclude<WorkflowRoleDisposition, "pending">;
+  readonly reason?: string | undefined;
 }
 
 export interface WorkflowReplaceRequest {
@@ -132,6 +149,13 @@ export interface WorkflowRunRecord {
   readonly status: WorkflowRunStatus;
   readonly terminalDisposition: WorkflowRunDisposition | null;
   readonly terminalReason: string | null;
+  readonly roleDisposition: WorkflowRoleDisposition;
+  readonly roleResult:
+    | (Omit<WorkflowRoleResultRequest, "reason"> & {
+        readonly reason: string | null;
+        readonly recordedAt: string;
+      })
+    | null;
   readonly createdAt: string;
   readonly startedAt: string | null;
   readonly lastActivityAt: string | null;
@@ -169,7 +193,9 @@ export type WorkflowRunEventType =
   | "workflow-run.completed"
   | "workflow-run.failed"
   | "workflow-run.cancelled"
-  | "workflow-run.replaced";
+  | "workflow-run.replaced"
+  | "workflow-run.role-succeeded"
+  | "workflow-run.role-non-success";
 
 export type WorkflowRunEventPublisher = (
   type: WorkflowRunEventType,
@@ -240,19 +266,24 @@ function readAuthorityField(
 // exception. A direct allocation must therefore reach the same pinned v10
 // authority as a CLI-dispatched allocation. The current evaluator skill is
 // intentionally never consulted here: it is implementation under test.
-function resolveSpike012VerificationAuthority(
+function resolvePinnedVerificationAuthority(
   request: WorkflowRunRequest,
 ): PinnedVerificationAuthority | undefined {
-  if (
-    request.slot.workflow !== "012" ||
-    request.slot.phase !== "evaluator-verify"
-  ) {
+  if (!(
+    (request.slot.workflow === "012" &&
+      request.slot.phase === "evaluator-verify") ||
+    (request.slot.workflow === "013a" &&
+      (request.slot.phase === "evaluator-prepare" ||
+        request.slot.phase === "evaluator-verify"))
+  )) {
     return undefined;
   }
 
   const spikePath = resolve(
     request.workspace,
-    "spikes/012-correction-cycles-evaluator-repair",
+    request.slot.workflow === "012"
+      ? "spikes/012-correction-cycles-evaluator-repair"
+      : "spikes/013a-Workflow-execution-friction",
   );
   let authorityRaw: unknown;
   try {
@@ -264,7 +295,7 @@ function resolveSpike012VerificationAuthority(
     );
   } catch (error) {
     throw new WorkflowRunRequestError(
-      `Unable to read Spike 012 bootstrap evaluator authority: ${
+      `Unable to read pinned evaluator bootstrap authority: ${
         error instanceof Error ? error.message : "unknown error"
       }`,
     );
@@ -285,7 +316,7 @@ function resolveSpike012VerificationAuthority(
     typeof snapshotPath !== "string"
   ) {
     throw new WorkflowRunRequestError(
-      "Spike 012 bootstrap evaluator authority is invalid",
+      "Pinned evaluator bootstrap authority is invalid",
     );
   }
 
@@ -300,19 +331,19 @@ function resolveSpike012VerificationAuthority(
     );
   } catch (error) {
     throw new WorkflowRunRequestError(
-      `Unable to validate Spike 012 bootstrap evaluator authority: ${
+      `Unable to validate pinned evaluator bootstrap authority: ${
         error instanceof Error ? error.message : "unknown error"
       }`,
     );
   }
   if (sha256(snapshot) !== identity) {
     throw new WorkflowRunRequestError(
-      "Spike 012 bootstrap evaluator snapshot identity does not match authority",
+      "Pinned evaluator bootstrap snapshot identity does not match authority",
     );
   }
   if (sha256(committedSource) !== identity) {
     throw new WorkflowRunRequestError(
-      "Spike 012 bootstrap evaluator source provenance does not match authority",
+      "Pinned evaluator bootstrap source provenance does not match authority",
     );
   }
   return { name, contractVersion, sourceCommit, identity, snapshotPath };
@@ -391,6 +422,51 @@ export function parseWorkflowRunRequest(body: unknown): WorkflowRunRequest {
             })(),
     orchestrator: optionalString(raw.orchestrator, "orchestrator"),
     prompt: optionalString(raw.prompt, "prompt"),
+    humanAuthorization:
+      raw.humanAuthorization === undefined
+        ? undefined
+        : raw.humanAuthorization === true
+          ? true
+          : (() => {
+              throw new WorkflowRunRequestError(
+                "humanAuthorization must be true when supplied",
+              );
+            })(),
+  };
+}
+
+export function parseWorkflowRoleResultRequest(
+  body: unknown,
+): WorkflowRoleResultRequest {
+  if (typeof body !== "object" || body === null || Array.isArray(body))
+    throw new WorkflowRunRequestError("role result must be a JSON object");
+  const raw = body as Record<string, unknown>;
+  const disposition = requireString(raw.disposition, "disposition");
+  if (!["succeeded", "blocked", "refused", "failed"].includes(disposition))
+    throw new WorkflowRunRequestError("invalid role disposition");
+  const nullableString = (value: unknown, field: string): string | null => {
+    if (value === null) return null;
+    return requireString(value, field);
+  };
+  const authority = raw.verificationAuthority;
+  if (
+    authority !== null &&
+    (typeof authority !== "object" || Array.isArray(authority))
+  )
+    throw new WorkflowRunRequestError(
+      "verificationAuthority must be an object or null",
+    );
+  return {
+    role: requireString(raw.role, "role"),
+    methodologyAttempt: optionalString(
+      raw.methodologyAttempt,
+      "methodologyAttempt",
+    ),
+    skill: nullableString(raw.skill, "skill"),
+    skillVersion: nullableString(raw.skillVersion, "skillVersion"),
+    verificationAuthority: authority as Record<string, unknown> | null,
+    disposition: disposition as Exclude<WorkflowRoleDisposition, "pending">,
+    reason: optionalString(raw.reason, "reason"),
   };
 }
 
@@ -435,14 +511,26 @@ function resolvePermissionProfile(
 }
 
 function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
-  const pinnedAuthority = resolveSpike012VerificationAuthority(request);
+  const protectedRole = request.role.startsWith("evaluator-");
+  const pinnedAuthority = resolvePinnedVerificationAuthority(request);
+  if (
+    protectedRole &&
+    pinnedAuthority === undefined &&
+    !(
+      request.invocationMode === "direct" && request.humanAuthorization === true
+    )
+  ) {
+    throw new WorkflowRunRequestError(
+      "protected evaluator roles require a canonical pinned allocation or explicit human authorization",
+    );
+  }
   if (
     pinnedAuthority !== undefined &&
     request.verificationAuthority !== undefined &&
     !sameAuthority(request.verificationAuthority, pinnedAuthority)
   ) {
     throw new WorkflowRunRequestError(
-      "Spike 012 evaluator verification authority does not match the pinned bootstrap authority",
+      "evaluator authority does not match the pinned bootstrap authority",
     );
   }
   if (
@@ -451,7 +539,7 @@ function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
     request.skill !== pinnedAuthority.snapshotPath
   ) {
     throw new WorkflowRunRequestError(
-      "Spike 012 evaluator verification skill does not match the pinned bootstrap snapshot",
+      "evaluator skill does not match the pinned bootstrap snapshot",
     );
   }
   if (
@@ -460,7 +548,7 @@ function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
     request.skillVersion !== String(pinnedAuthority.contractVersion)
   ) {
     throw new WorkflowRunRequestError(
-      "Spike 012 evaluator verification skill version does not match the pinned bootstrap authority",
+      "evaluator skill version does not match the pinned bootstrap authority",
     );
   }
   const permissionProfile = resolvePermissionProfile(
@@ -512,6 +600,8 @@ class InternalRun {
   status: WorkflowRunStatus = "allocated";
   terminalDisposition: WorkflowRunDisposition | null = null;
   terminalReason: string | null = null;
+  roleDisposition: WorkflowRoleDisposition = "pending";
+  roleResult: WorkflowRunRecord["roleResult"] = null;
   pid: number | null = null;
   providerSessionId: string | null = null;
   startedAtMs: number | null = null;
@@ -561,6 +651,8 @@ class InternalRun {
       status: this.status,
       terminalDisposition: this.terminalDisposition,
       terminalReason: this.terminalReason,
+      roleDisposition: this.roleDisposition,
+      roleResult: this.roleResult,
       createdAt: new Date(this.createdAtMs).toISOString(),
       startedAt: iso(this.startedAtMs),
       lastActivityAt: iso(this.lastActivityAtMs),
@@ -656,6 +748,54 @@ export class WorkflowRunRegistry {
       );
     }
     await this.#terminate(run, "cancelled", reason ?? null);
+    return run.toRecord();
+  }
+
+  reportRoleResult(
+    runId: string,
+    result: WorkflowRoleResultRequest,
+  ): WorkflowRunRecord {
+    const run = this.#runs.get(runId);
+    if (run === undefined)
+      throw new WorkflowRunNotFoundError(`unknown workflow run: ${runId}`);
+    if (run.roleResult !== null)
+      throw new WorkflowRunConflictError(
+        `workflow run ${runId} already has a role result`,
+      );
+    // This is intentionally a comparison against the host-owned binding, not
+    // a declaration by the provider.  A successful process cannot invent it.
+    if (
+      result.role !== run.spec.role ||
+      (result.methodologyAttempt ?? null) !==
+        (run.spec.slot.methodologyAttempt ?? null) ||
+      result.skill !== run.spec.skill ||
+      result.skillVersion !== run.spec.skillVersion ||
+      JSON.stringify(result.verificationAuthority) !==
+        JSON.stringify(run.spec.verificationAuthority)
+    ) {
+      throw new WorkflowRunRequestError(
+        "role result does not match the host-owned execution binding",
+      );
+    }
+    run.roleDisposition = result.disposition;
+    run.roleResult = {
+      role: result.role,
+      ...(result.methodologyAttempt === undefined
+        ? {}
+        : { methodologyAttempt: result.methodologyAttempt }),
+      skill: result.skill,
+      skillVersion: result.skillVersion,
+      verificationAuthority: result.verificationAuthority,
+      disposition: result.disposition,
+      reason: result.reason ?? null,
+      recordedAt: new Date(this.#now()).toISOString(),
+    };
+    this.#emit(
+      result.disposition === "succeeded"
+        ? "workflow-run.role-succeeded"
+        : "workflow-run.role-non-success",
+      run,
+    );
     return run.toRecord();
   }
 
@@ -831,6 +971,7 @@ export class WorkflowRunRegistry {
       invocationMode: record.invocationMode,
       status: record.status,
       terminalDisposition: record.terminalDisposition,
+      roleDisposition: record.roleDisposition,
       previousExecutionId: record.previousExecutionId,
       ...extra,
     });

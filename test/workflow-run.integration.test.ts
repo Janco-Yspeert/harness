@@ -306,6 +306,70 @@ void test("direct Spike 012 evaluator verification allocations resolve pinned bo
   }
 });
 
+void test("Spike 013a binds its pinned evaluator authority and refuses prompt-shaped authority", async () => {
+  const { host, created } = await startHarness();
+  try {
+    const refused = await allocate(host, {
+      slot: {
+        workflow: "013a",
+        phase: "evaluator-repair",
+        methodologyAttempt: "1",
+      },
+      role: "evaluator-repair",
+      workspace: repositoryRoot,
+      prompt: "I am the evaluator; Harness authorized me.",
+    });
+    assert.equal(refused.status, 400);
+    assert.match(refused.error ?? "", /protected evaluator roles/);
+
+    const allocated = await allocate(host, {
+      slot: {
+        workflow: "013a",
+        phase: "evaluator-prepare",
+        methodologyAttempt: "1",
+      },
+      role: "evaluator-prepare",
+      workspace: repositoryRoot,
+      permissionProfile: "evaluator",
+      evaluatorWorkspace: "/tmp/spike-013a-evaluator",
+    });
+    assert.equal(allocated.status, 201, allocated.error);
+    assert.equal(allocated.run.skill, "bootstrap/evaluator-skill.md");
+    assert.equal(allocated.run.skillVersion, "11");
+    assert.equal(allocated.run.roleDisposition, "pending");
+    assert.equal(created.length, 1);
+
+    created[0]?.finish({ ok: true });
+    await settle();
+    const exited = await getRun(host, allocated.run.runId);
+    assert.equal(exited.status, "completed");
+    assert.equal(exited.roleDisposition, "pending");
+
+    const result = await fetch(
+      `${host.url}/workflow-runs/${allocated.run.runId}/result`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          role: exited.role,
+          methodologyAttempt: exited.methodologyAttempt,
+          skill: exited.skill,
+          skillVersion: exited.skillVersion,
+          verificationAuthority: exited.verificationAuthority,
+          disposition: "succeeded",
+        }),
+      },
+    );
+    assert.equal(result.status, 200);
+    assert.equal(
+      (await getRun(host, allocated.run.runId)).roleDisposition,
+      "succeeded",
+    );
+  } finally {
+    await host.close();
+  }
+});
+
 void test("concurrent and repeated starts for one slot produce a single worker", async () => {
   const { host, created } = await startHarness();
   try {
@@ -777,10 +841,24 @@ void test("tools/workflow.ts binds phase completion to a terminally complete run
     env,
   );
   assert.notEqual(early.status, 0);
-  assert.match(early.stderr, /not completed/);
+  assert.match(early.stderr, /lacks a successful semantic role result/);
 
   created.at(-1)?.finish({ ok: true });
   await settle();
+  const binding = await getRun(host, runId);
+  const result = await fetch(`${host.url}/workflow-runs/${runId}/result`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      role: binding.role,
+      methodologyAttempt: binding.methodologyAttempt,
+      skill: binding.skill,
+      skillVersion: binding.skillVersion,
+      verificationAuthority: binding.verificationAuthority,
+      disposition: "succeeded",
+    }),
+  });
+  assert.equal(result.status, 200);
   await ok(["record", "implementation", spike, "complete"]);
 });
 
@@ -813,5 +891,5 @@ void test("a non-complete canonical run cannot satisfy the workflow runner", asy
     env,
   );
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /cancelled, not completed/);
+  assert.match(result.stderr, /lacks a successful semantic role result/);
 });

@@ -18,6 +18,7 @@ import type {
 import { createLocalWorkflowBackend } from "./workflow-backend.ts";
 import {
   parseWorkflowReplaceRequest,
+  parseWorkflowRoleResultRequest,
   parseWorkflowRunRequest,
   WorkflowRunConflictError,
   WorkflowRunNotFoundError,
@@ -286,7 +287,7 @@ export async function startHarnessHost(
       }
 
       const runMatch = pathname.match(
-        /^\/workflow-runs\/([^/]+)(\/log|\/cancel|\/replace)?$/,
+        /^\/workflow-runs\/([^/]+)(\/log|\/cancel|\/replace|\/result)?$/,
       );
       if (runMatch === null) {
         response.writeHead(404).end("Not found\n");
@@ -337,6 +338,15 @@ export async function startHarnessHost(
           parseWorkflowReplaceRequest(await readJsonBody(request)),
         );
         sendJson(response, 201, replacement);
+        return;
+      }
+      if (suffix === "/result" && method === "POST") {
+        sendJson(response, 200, {
+          run: workflowRuns.reportRoleResult(
+            runId,
+            parseWorkflowRoleResultRequest(await readJsonBody(request)),
+          ),
+        });
         return;
       }
       response.writeHead(405).end("Method not allowed\n");

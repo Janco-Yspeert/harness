@@ -162,7 +162,9 @@ void test("workflow runner independently numbers verification attempts", (t) => 
   const duplicate = run(["record", "implementation", spike, "complete"]);
   assert.notEqual(duplicate.status, 0);
   assert.notEqual(run(["dispatch", "not-a-phase", spike]).status, 0);
-  assert.notEqual(run(["dispatch", "evaluator-prepare", spike]).status, 0);
+  // Repeated planning is deliberately read-only with respect to execution
+  // attempts; it is not a duplicate dispatch.
+  assert.equal(run(["dispatch", "evaluator-prepare", spike]).status, 0);
   const state = JSON.parse(
     readFileSync(join(spikePath, ".workflow", "state.json"), "utf8"),
   ) as {
@@ -207,7 +209,7 @@ void test("blocked verification retries the unchanged implementation", (t) => {
     state.records
       .filter(
         (record) =>
-          record.phase === "evaluator-verify" && record.event === "dispatch",
+          record.phase === "evaluator-verify" && record.event === "plan",
       )
       .map((record) => [record.attempt, record.implementationAttempt]),
     [

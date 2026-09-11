@@ -41,7 +41,7 @@ interface Job {
   readonly launchedAt: string;
 }
 interface Record {
-  readonly event: "init" | "dispatch" | "job" | "outcome";
+  readonly event: "init" | "adoption" | "plan" | "dispatch" | "job" | "outcome";
   readonly phase: Phase;
   readonly attempt: number;
   readonly at: string;
@@ -217,7 +217,11 @@ function canDispatch(
     }
     if (
       attempt === 1 &&
-      !hasOutcome(state, "evaluator-prepare", 1, "complete")
+      !hasOutcome(state, "evaluator-prepare", 1, "complete") &&
+      !(
+        target !== undefined &&
+        canonicalCompletedPhases(target).includes("evaluator-prepare")
+      )
     ) {
       fail("Implementation requires the prior phase to be complete");
     }
@@ -256,7 +260,13 @@ function canDispatch(
     return;
   }
   const prior = phases[phases.indexOf(phase) - 1];
-  if (prior === undefined || !hasOutcome(state, prior, 1, "complete")) {
+  if (
+    prior === undefined ||
+    (!hasOutcome(state, prior, 1, "complete") &&
+      !(
+        target !== undefined && canonicalCompletedPhases(target).includes(prior)
+      ))
+  ) {
     fail(`Phase ${phase} requires the prior phase to be complete`);
   }
 }
@@ -284,7 +294,10 @@ function bootstrapAuthority(
 ): BootstrapAuthority | undefined {
   if (
     (phase !== "evaluator-prepare" && phase !== "evaluator-verify") ||
-    !target.path.endsWith("/012-correction-cycles-evaluator-repair")
+    !(
+      target.path.endsWith("/012-correction-cycles-evaluator-repair") ||
+      target.path.endsWith("/013a-Workflow-execution-friction")
+    )
   )
     return undefined;
   const authorityPath = resolve(
@@ -299,20 +312,30 @@ function bootstrapAuthority(
   const sourcePath = readField(item, "sourcePath");
   const claimed = readField(item, "identity");
   const snapshotPath = readField(item, "snapshotPath");
+  const expected012 = target.path.endsWith(
+    "/012-correction-cycles-evaluator-repair",
+  );
   if (
     name !== "evaluator" ||
-    contractVersion !== 10 ||
-    sourceCommit !== "b7f442aed5d5cfe2722aec40f2fab0eb059e2884" ||
+    typeof contractVersion !== "number" ||
+    typeof sourceCommit !== "string" ||
+    contractVersion !== (expected012 ? 10 : 11) ||
+    sourceCommit !==
+      (expected012
+        ? "b7f442aed5d5cfe2722aec40f2fab0eb059e2884"
+        : "fae05912f59f8ebdb8982ab16deb26e293754647") ||
     claimed !==
-      "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b" ||
+      (expected012
+        ? "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b"
+        : "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802") ||
     typeof sourcePath !== "string" ||
     typeof snapshotPath !== "string"
   )
-    fail("Spike 012 bootstrap evaluator authority is invalid");
+    fail("Pinned evaluator bootstrap authority is invalid");
   const snapshot = resolve(target.path, snapshotPath);
   if (identity(readFileSync(snapshot)) !== claimed)
     fail(
-      "Spike 012 bootstrap evaluator snapshot identity does not match authority",
+      "Pinned evaluator bootstrap snapshot identity does not match authority",
     );
   const committed = execFileSync(
     "git",
@@ -321,7 +344,7 @@ function bootstrapAuthority(
   );
   if (identity(committed) !== claimed)
     fail(
-      "Spike 012 bootstrap evaluator source provenance does not match authority",
+      "Pinned evaluator bootstrap source provenance does not match authority",
     );
   return {
     name,
@@ -387,7 +410,9 @@ function runFrom(payload: unknown): { runId: string; status: string } {
 async function fetchRun(
   url: string,
   runId: string,
-): Promise<{ runId: string; status: string } | undefined> {
+): Promise<
+  { runId: string; status: string; roleDisposition?: string } | undefined
+> {
   let response: Response;
   try {
     response = await fetch(`${url}/workflow-runs/${runId}`);
@@ -395,7 +420,15 @@ async function fetchRun(
     return undefined;
   }
   if (!response.ok) return undefined;
-  return runFrom(await response.json());
+  const payload: unknown = await response.json();
+  const base = runFrom(payload);
+  const roleDisposition = readField(
+    readField(payload, "run"),
+    "roleDisposition",
+  );
+  return typeof roleDisposition === "string"
+    ? { ...base, roleDisposition }
+    : base;
 }
 function init(target: Target): void {
   try {
@@ -498,10 +531,14 @@ async function dispatch(
   const implementationReference =
     implementationAttempt === undefined ? {} : { implementationAttempt };
   if (!execute) {
+    // Preview is planning, not a fake execution.  Writing a dispatch record
+    // here was a rather efficient way to make `--execute` impossible later.
+    // Preserve the human-planning surface as a distinct fact so explicit
+    // local/manual outcomes used by the older workflow remain representable.
     writeState(
       target,
       append(state, {
-        event: "dispatch",
+        event: "plan",
         phase,
         attempt,
         at: new Date().toISOString(),
@@ -543,7 +580,12 @@ async function record(
   const state = readState(target);
   const attempt = maximumAttempt(state, phase);
   const phaseRecords = recordsFor(state, phase, attempt);
-  if (attempt === 0 || !phaseRecords.some((item) => item.event === "dispatch"))
+  if (
+    attempt === 0 ||
+    !phaseRecords.some(
+      (item) => item.event === "dispatch" || item.event === "plan",
+    )
+  )
     fail(`Phase ${phase} has not been dispatched`);
   if (hasOutcome(state, phase, attempt))
     fail(`Phase ${phase} attempt ${String(attempt)} already has an outcome`);
@@ -557,9 +599,13 @@ async function record(
       fail(
         `Cannot confirm completion: Harness run ${job.runId} is not reachable at ${job.hostUrl}`,
       );
-    if (run.status !== "completed")
+    if (
+      run.status !== "completed" ||
+      (run as unknown as { roleDisposition?: string }).roleDisposition !==
+        "succeeded"
+    )
       fail(
-        `Phase ${phase} canonical run ${job.runId} is ${run.status}, not completed`,
+        `Phase ${phase} canonical run ${job.runId} lacks a successful semantic role result`,
       );
   }
   const implementationAttempt = phaseRecords.find(
@@ -587,11 +633,47 @@ async function status(target: Target): Promise<void> {
       const run = await fetchRun(record.job.hostUrl, record.job.runId);
       return {
         ...record,
-        job: { ...record.job, runStatus: run?.status ?? "unreachable" },
+        job: {
+          ...record.job,
+          runStatus: run?.status ?? "unreachable",
+          roleDisposition:
+            (run as unknown as { roleDisposition?: string } | undefined)
+              ?.roleDisposition ?? "unreachable",
+        },
       };
     }),
   );
   process.stdout.write(`${JSON.stringify({ records })}\n`);
+}
+
+function canonicalCompletedPhases(target: Target): Phase[] {
+  const transitions = authorityEvents(target).map((event) => event.transition);
+  const completed: Phase[] = [];
+  if (transitions.includes("brief-frozen")) completed.push("brief-readiness");
+  if (transitions.includes("design-map-frozen")) completed.push("design-map");
+  if (transitions.includes("evaluation-prepared"))
+    completed.push("evaluator-prepare");
+  return completed;
+}
+
+function adopt(target: Target): void {
+  const state = readState(target);
+  const completed = canonicalCompletedPhases(target);
+  const already = state.records.find((record) => record.event === "adoption");
+  if (already !== undefined) return;
+  const phase = completed.at(-1) ?? "brief-readiness";
+  writeState(
+    target,
+    append(state, {
+      event: "adoption",
+      phase,
+      attempt: 1,
+      at: new Date().toISOString(),
+    }),
+  );
+  process.stdout.write(
+    `${JSON.stringify({ adoptedCanonicalCheckpoints: completed, nextPhase: phases[completed.length] ?? null })}\n`,
+  );
 }
 async function cancel(target: Target, phase: Phase): Promise<void> {
   const jobRecord = [...readState(target).records]
@@ -1380,6 +1462,10 @@ async function main(args: string[]): Promise<void> {
     await status(targetFrom(rest[0]));
     return;
   }
+  if (command === "adopt" && rest.length === 1) {
+    adopt(targetFrom(rest[0]));
+    return;
+  }
   if (command === "dispatch") {
     const [phaseValue, spike, option] = rest;
     if (
@@ -1404,7 +1490,7 @@ async function main(args: string[]): Promise<void> {
     await cancel(targetFrom(rest[1]), phaseFrom(rest[0]));
     return;
   }
-  fail("Usage: workflow <init|status|dispatch|record|cancel> ...");
+  fail("Usage: workflow <init|adopt|status|dispatch|record|cancel> ...");
 }
 void main(process.argv.slice(2)).catch((error: unknown) => {
   process.stderr.write(

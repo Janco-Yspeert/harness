@@ -95,3 +95,19 @@
   individually exercised against the baseline; structural integrity
   validation; real-authority-validator acceptance of the public artifact
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 005 — Implementation
+
+- Skill: `implementation` v3
+- Input: frozen `spike.md`
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`,
+  frozen `design-map.md`
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`,
+  and committed public evaluator-preparation checkpoint `545a037`.
+- Result: candidate implementation with host-owned execution bindings, semantic
+  role-result validation, 013a pinned evaluator-authority enforcement, explicit
+  canonical checkpoint adoption, and non-consuming dispatch planning.
+- Restricted evaluator material inspected: none.
+- Checks: `npm test` (62 passing), `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, and `git diff --check`.
+- Measurement cutoff: immediately before this manifest update.
