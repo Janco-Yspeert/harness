@@ -1,0 +1,304 @@
+{
+  "spike": "013a-Workflow-execution-friction",
+  "evaluationRequirements": "sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 11,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:f86a3bf834325f2764ba38f83adc5127d68163e405d8a82b9fcfb731e121533b",
+    "privateInventoryIdentity": "sha256:81b8f9ffa29a97172e46dd47c72cda3512977270d0917cf23f937fcceb400810",
+    "validatorResultBinding": "sha256:05a3e98d0c026a020a0d71fd493ca79f8de54f8cb2987070a9115d7654fe80fd",
+    "integrityValidation": "PASS",
+    "integrityValidatedAt": "6e5ff54",
+    "criterionRecordCount": 35,
+    "bootstrapAuthority": {
+      "name": "evaluator",
+      "contractVersion": 11,
+      "sourceCommit": "fae05912f59f8ebdb8982ab16deb26e293754647",
+      "identity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802",
+      "note": "Frozen spike.md bootstrap process exception: Spike 013a evaluator prepare and verify both execute under this pinned pre-implementation evaluator skill; new execution-binding, delegation, role-result, adoption, dispatch-retry, observability, and authority-status behavior is implementation under test."
+    }
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; Design Map \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR1"],
+      "sufficiency": "PR1 requires the implementation's own visible npm-test suite to exercise deterministic role-to-contract resolution; the execution-binding representation is explicit Design Map implementation freedom, so no pre-implementation hidden-test seam is justified beyond that obligation."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; Design Map \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR1"],
+      "sufficiency": "PR1 requires the visible suite to assert the run record identifies the exact contract identity for a frozen/versioned contract; schema is Design Map freedom."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03; Design Map \"Shared contracts\", \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR1"],
+      "sufficiency": "PR1 requires the visible suite to assert an explicit recorded delivery/invocation mode distinct from provider prose."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; \"Delegated authority source and validation boundary\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR2"],
+      "sufficiency": "PR2 requires the visible suite to assert prompt-wording claims of evaluator/Harness authority are refused outside a mechanically valid allocation; the validation-boundary representation is Design Map freedom."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; \"Delegated authority source and validation boundary\"; Design Map \"Design decisions\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR3"],
+      "sufficiency": "PR3 requires the visible suite to assert a mechanically valid Harness evaluator-role allocation authorizes the protected role without weakening protection globally."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; \"Delegated authority source and validation boundary\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR3"],
+      "sufficiency": "PR3 requires the visible suite to assert explicit human evaluator invocation remains valid as a separate route."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07; \"Delegated authority source and validation boundary\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR2"],
+      "sufficiency": "PR2 requires the visible suite to assert an ordinary implementation agent or workflow role cannot elect to become the evaluator."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08; \"Observed failures\" #1; \"Reserved live-provider acceptance scenarios\"",
+      "mode": "LIVE_PROVIDER",
+      "required": true,
+      "procedures": ["LP1"],
+      "sufficiency": "LP1 is the frozen bounded live-Claude fixture spike.md mandates; only a real Claude execution exercising the original refusal condition through the live Harness host can establish delegated execution without manual invocation, per brief 'Evidence requirements'."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09; \"Observed failures\" #1; \"Reserved live-provider acceptance scenarios\"",
+      "mode": "LIVE_PROVIDER",
+      "required": true,
+      "procedures": ["LP1"],
+      "sufficiency": "LP1's fixture explicitly exercises the authority boundary that caused Claude's original refusal (Observed failure #1); static or mocked evidence is explicitly insufficient per spike.md."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10; \"Codex deterministic contract execution\"",
+      "mode": "LIVE_PROVIDER",
+      "required": true,
+      "procedures": ["LP2"],
+      "sufficiency": "LP2 is the frozen bounded live-Codex fixture spike.md mandates; only a real Codex execution can establish that Harness, not Codex prose, determines the governing contract."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11; \"Provider-specific execution\"; Design Map \"Design decisions\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["LP3"],
+      "sufficiency": "LP3 cross-compares LP1 and LP2's authority/contract-identity/result requirements; no static test can establish provider-neutral semantics without both live fixtures."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12; \"Authoritative semantic role result\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR4"],
+      "sufficiency": "PR4 requires the visible suite to assert process lifecycle and role disposition are durably distinct facts; the disposition vocabulary is Design Map freedom."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; \"Observed failures\" #3; \"Authoritative semantic role result\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR4"],
+      "sufficiency": "PR4 requires the visible suite to assert a refusing/blocking process exiting 0 is never recorded as role success."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md AC14; \"Authoritative semantic role result\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR4"],
+      "sufficiency": "PR4 requires the visible suite to assert role completion carries machine-readable evidence distinguishable from exit code."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md AC15; \"Authoritative semantic role result\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR4"],
+      "sufficiency": "PR4 requires the visible suite to assert governed prerequisites are gated on a validated role result, not process termination."
+    },
+    {
+      "id": "AC16",
+      "frozenAuthority": "spike.md AC16; \"Observed failures\" #4; \"Runner adoption and resume\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E2"],
+      "sufficiency": "E2 directly reproduces and falsifies the adoption defect: a fixture with canonical brief-frozen/design-map-frozen authority but no local dispatch/completion history for those phases, asserting the fresh runner still reaches evaluator-prepare."
+    },
+    {
+      "id": "AC17",
+      "frozenAuthority": "spike.md AC17; \"Runner adoption and resume\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E2"],
+      "sufficiency": "E2's same fixture asserts no local dispatch/outcome record is fabricated for the adopted phases."
+    },
+    {
+      "id": "AC18",
+      "frozenAuthority": "spike.md AC18; \"Runner adoption and resume\"; Design Map \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR5"],
+      "sufficiency": "PR5 requires the visible suite / status-surface inspection to expose a distinguishable adoption/resumption fact; its exact representation is Design Map freedom, so no pre-authored hidden test targets a specific field."
+    },
+    {
+      "id": "AC19",
+      "frozenAuthority": "spike.md AC19; \"Runner adoption and resume\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E2"],
+      "sufficiency": "E2 asserts the fresh runner derives evaluator-prepare specifically (not skipped ahead to implementation), which is the correct-next-phase claim."
+    },
+    {
+      "id": "AC20",
+      "frozenAuthority": "spike.md AC20; \"Observed failures\" #5; \"Dispatch semantics\"; Design Map \"Shared contracts\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 directly reproduces and falsifies the dispatch-inspection-consumes-attempt defect against the existing public tools/workflow.ts CLI seam, exercised twice with an assertion that repeated inspection stays legal and mutates no state."
+    },
+    {
+      "id": "AC21",
+      "frozenAuthority": "spike.md AC21; \"Observed failures\" #6; \"Dispatch semantics\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E3"],
+      "sufficiency": "E3 exercises the existing --execute dispatch path against an unreachable host and freezes today's already-correct non-mutating failure behavior as a regression control."
+    },
+    {
+      "id": "AC22",
+      "frozenAuthority": "spike.md AC22; \"Dispatch semantics\"; Design Map \"Invariants\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E4"],
+      "sufficiency": "E4 asserts a blocked phase's first execution record is preserved byte-identical after a fresh execution attempt is allocated."
+    },
+    {
+      "id": "AC23",
+      "frozenAuthority": "spike.md AC23; \"Observed failures\" #7; \"Workflow and run observability\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR5"],
+      "sufficiency": "PR5 requires the visible suite / CLI inspection to expose created run identity, role, and executor on dispatch."
+    },
+    {
+      "id": "AC24",
+      "frozenAuthority": "spike.md AC24; \"Workflow and run observability\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR5"],
+      "sufficiency": "PR5 requires the visible suite / CLI inspection to expose a followable path to a semantic terminal outcome."
+    },
+    {
+      "id": "AC25",
+      "frozenAuthority": "spike.md AC25; \"Workflow and run observability\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR5"],
+      "sufficiency": "PR5 requires the visible suite / CLI inspection to expose governing contract identity and delivery mode on the run record."
+    },
+    {
+      "id": "AC26",
+      "frozenAuthority": "spike.md AC26; \"Workflow and run observability\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR5"],
+      "sufficiency": "PR5 requires the visible suite / CLI inspection to expose both process state and role disposition together."
+    },
+    {
+      "id": "AC27",
+      "frozenAuthority": "spike.md AC27; \"Observed failures\" #8; \"Authority status\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E5"],
+      "sufficiency": "E5 directly reproduces and falsifies the legalTransitions defect using a real Spike-011-shaped repairable-rejection fixture built from Spike 011's own committed public authority evidence."
+    },
+    {
+      "id": "AC28",
+      "frozenAuthority": "spike.md AC28; \"Authority status\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E5"],
+      "sufficiency": "E5's same fixture is the specific Spike-011-shaped case AC28 names."
+    },
+    {
+      "id": "AC29",
+      "frozenAuthority": "spike.md AC29; \"Spike 013a bootstrap exception\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR6"],
+      "sufficiency": "PR6 requires the visible suite plus this spike's own preserved .workflow/state.json and manifest.md bootstrap-usage history (already inspected during preparation) to establish the bootstrap path stays explicit, canonical-authority-backed, non-fabricating, and scoped."
+    },
+    {
+      "id": "AC30",
+      "frozenAuthority": "spike.md AC30; \"Evaluator bootstrap and self-modification exception\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["PR7"],
+      "sufficiency": "PR7's provenance component re-confirms the pinned bootstrap snapshot identity fixed by this specification's Source section; its regression component requires the visible suite to bind that identity to Spike 013a's own evaluator-phase dispatch once the pin is generalized past Spike 012."
+    },
+    {
+      "id": "AC31",
+      "frozenAuthority": "spike.md AC31; \"Evaluator bootstrap and self-modification exception\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["PR7"],
+      "sufficiency": "PR7 requires confirmation that the finalized Spike 013a verification result binds the pinned bootstrap-authority identity, not a post-implementation-modified evaluator contract."
+    },
+    {
+      "id": "AC32",
+      "frozenAuthority": "spike.md AC32; \"Host boundary\"",
+      "mode": "HOST_BOUNDARY",
+      "required": true,
+      "procedures": ["HB1"],
+      "sufficiency": "HB1 requires confirming at least one of LP1/LP2 crossed the real host boundary (live process, real POST /workflow-runs); brief 'Host boundary' explicitly rules out static examination as sufficient."
+    },
+    {
+      "id": "AC33",
+      "frozenAuthority": "spike.md AC33; \"Objective\"; \"Completion boundary\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["COMP1"],
+      "sufficiency": "COMP1 requires LP1/LP2's allocate-to-result cycle to complete with no manual provider-invocation translation step, which only a live fixture can demonstrate."
+    },
+    {
+      "id": "AC34",
+      "frozenAuthority": "spike.md AC34; \"Spike 011 recovery\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["COMP1"],
+      "sufficiency": "COMP1 accepts LP1's exercise of the original refusal condition as the AC34 readiness demonstration, corroborated by provenance confirmation that spikes/011-host-owned-workflow-runs/** stays byte-for-byte unchanged, since spike.md forbids 013a from advancing Spike 011 itself."
+    },
+    {
+      "id": "AC35",
+      "frozenAuthority": "spike.md AC35; \"Blocked role retry semantics\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E4"],
+      "sufficiency": "E4 directly reproduces and falsifies the blocked-phase-retry defect, matching the exact mechanism Spike 013a's own manifest.md Run 002 needed a bootstrap exception to work around."
+    }
+  ]
+}
