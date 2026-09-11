@@ -36,3 +36,24 @@
 - Checks: complete brief review; revision-to-prior-findings comparison;
   relevant public-source and visible-test inspection; `git diff --check`.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 003 — Design Map (Spike 013a bootstrap exception)
+
+- Skill: `design-map` v2
+- Input: frozen `spike.md`
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`
+  with committed provenance `c543cae`.
+- Authority path: direct host-owned allocation under the Spike 013a bootstrap
+  exception. Canonical `brief-frozen` authority is the upstream source; no
+  historical runner dispatch or completion was fabricated.
+- Result: `READY`
+- Output: `design-map.md`
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`
+- Repository evidence inspected: frozen brief and readiness result; public
+  canonical and operational workflow state; public workflow authority, runner,
+  host-run, backend and visible-test surfaces; prior public Design Maps; and
+  `GOALS.md`.
+- Restricted evaluator material inspected: none.
+- Checks: frozen brief SHA-256 and Git provenance; Design Map boundary review;
+  `git diff --check`.
+- Measurement cutoff: immediately before this manifest update.
