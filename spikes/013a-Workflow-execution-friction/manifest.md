@@ -111,3 +111,39 @@
 - Checks: `npm test` (62 passing), `npm run typecheck`, `npm run lint`,
   `npm run format:check`, and `git diff --check`.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 006 — Evaluator Verification (attempt 001)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify time)
+- Input: implementation commit
+  `33fa7c44adfab2164a07d949431857f620e0a816` (attempt 1), all frozen public
+  inputs confirmed byte-identical to their frozen identities (no
+  specification drift)
+- Result: `FAIL` (`IMPLEMENTATION_FAILURE`), attempt `001`
+- Output: `verification-feedback-001.md`
+- Mandatory executable hidden coverage: 5 cases exercised; 3 pass, 2 fail. One
+  case required an in-attempt evaluator correction (a construction defect
+  exposed by the candidate's own correct fix elsewhere) before its result
+  could be trusted; both the original and corrected forms reach the same
+  conclusion for this candidate
+- Mandatory non-executable coverage: exercised via diagnostic probes against
+  the real allocation/authorization code paths and one bounded, real,
+  live-provider fixture executed end-to-end through a real local Harness host
+  to the real Codex executor. The paired Claude live-provider scenario was
+  not attempted this attempt: a diagnostic probe found no safe, isolated
+  fixture target exists under the current implementation, and the human
+  operator declined the risk of using real production spike state instead; its
+  two criteria are recorded `BLOCKED`, not passed via a substitute
+- Repository evidence inspected: the full implementation diff against the
+  frozen pre-implementation commit, the real workflow-run allocation and
+  registry code, and the live fixture's own process output
+- Restricted evaluator material inspected: this spike's own private evaluator
+  workspace (read and, for one case, corrected under the post-implementation
+  evaluator-repair rules)
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (62 passing), `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, `git diff --check` all green at the implementation
+  commit; structural integrity re-validation after the in-attempt correction
+- Measurement cutoff: immediately before this manifest update.
