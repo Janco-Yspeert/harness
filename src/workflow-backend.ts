@@ -3,6 +3,7 @@ import type { Readable } from "node:stream";
 
 import type {
   ResolvedWorkflowRunSpec,
+  WorkflowBackendRoleResult,
   WorkflowRunBackend,
   WorkflowRunBackendContext,
   WorkflowRunExitOutcome,
@@ -24,15 +25,63 @@ const FORBIDDEN_EXECUTOR_FLAGS = [
   "bypassPermissions",
 ];
 
+const RESULT_PREFIX = "HARNESS_ROLE_RESULT ";
+
+function executionPrompt(spec: ResolvedWorkflowRunSpec): string {
+  const providerTask =
+    spec.prompt ??
+    `Perform the ${spec.role} workflow role for this repository.`;
+  return `${providerTask}
+
+[HARNESS EXECUTION BINDING]
+This is a mechanically authorized Harness allocation for role ${spec.role}.
+Load and follow exactly ${spec.contract.path} (contract ${spec.contract.name} v${spec.contract.version}, ${spec.contract.identity}).
+Contract delivery mode: ${spec.contract.deliveryMode}.
+The host, not this prompt or your prose, owns the binding and validates the result.
+When the role reaches its semantic outcome, emit one final line in exactly this form:
+${RESULT_PREFIX}{"disposition":"succeeded"}
+Use "blocked", "refused", or "failed" instead of "succeeded" when appropriate, with an optional JSON string field named "reason". Do not report succeeded unless the contract's required output and checks are complete.`;
+}
+
+export function parseWorkflowBackendRoleResult(
+  output: string,
+): WorkflowBackendRoleResult | undefined {
+  const line = output
+    .split(/\r?\n/)
+    .filter((candidate) => candidate.length > 0)
+    .at(-1);
+  if (line === undefined || !line.startsWith(RESULT_PREFIX)) return undefined;
+  try {
+    const value: unknown = JSON.parse(line.slice(RESULT_PREFIX.length));
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+      return undefined;
+    const raw = value as Record<string, unknown>;
+    if (
+      !["succeeded", "blocked", "refused", "failed"].includes(
+        String(raw.disposition),
+      ) ||
+      (raw.reason !== undefined && typeof raw.reason !== "string") ||
+      !Object.keys(raw).every(
+        (key) => key === "disposition" || key === "reason",
+      )
+    )
+      return undefined;
+    return {
+      disposition: raw.disposition as WorkflowBackendRoleResult["disposition"],
+      ...(raw.reason === undefined ? {} : { reason: raw.reason }),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 export function buildExecutorCommand(
   spec: ResolvedWorkflowRunSpec,
 ): readonly string[] {
   const workspaces = spec.permissionProfile.workspaces;
   const primary = workspaces[0] ?? process.cwd();
   const extraWorkspaces = workspaces.slice(1);
-  const prompt =
-    spec.prompt ??
-    `Perform the ${spec.role} workflow role for this repository.`;
+  const prompt = executionPrompt(spec);
 
   let command: string[];
   if (spec.executor === "codex") {
@@ -83,13 +132,17 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
   #exitListener: ((outcome: WorkflowRunExitOutcome) => void) | undefined;
   #settled = false;
   #stopping: Promise<void> | undefined;
+  readonly #resultChunks: string[] = [];
 
   constructor(child: PipedChildProcess) {
     this.#child = child;
     this.pid = child.pid;
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => this.#activityListener?.(chunk));
+    child.stdout.on("data", (chunk: string) => {
+      this.#resultChunks.push(chunk);
+      this.#activityListener?.(chunk);
+    });
     child.stderr.on("data", (chunk: string) => this.#activityListener?.(chunk));
     child.on("error", (error) => {
       this.#settle({ ok: false, reason: error.message });
@@ -97,7 +150,12 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
     child.on("exit", (code, signal) => {
       this.#settle(
         code === 0
-          ? { ok: true }
+          ? {
+              ok: true,
+              roleResult: parseWorkflowBackendRoleResult(
+                this.#resultChunks.join(""),
+              ),
+            }
           : {
               ok: false,
               reason: `executor exited (code ${String(code)}, signal ${String(signal)})`,
@@ -110,7 +168,12 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
     if (child.exitCode !== null || child.signalCode !== null) {
       this.#settle(
         child.exitCode === 0
-          ? { ok: true }
+          ? {
+              ok: true,
+              roleResult: parseWorkflowBackendRoleResult(
+                this.#resultChunks.join(""),
+              ),
+            }
           : {
               ok: false,
               reason: `executor exited (code ${String(child.exitCode)}, signal ${String(child.signalCode)})`,

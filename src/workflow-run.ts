@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { relative, resolve } from "node:path";
 
 // A workflow run is a host-owned execution of a methodology workflow role. It
 // shares host-generated identity, backend lifecycle observation, termination,
@@ -95,6 +95,22 @@ export interface WorkflowRoleResultRequest {
   readonly reason?: string | undefined;
 }
 
+export interface WorkflowBackendRoleResult {
+  readonly disposition: Exclude<WorkflowRoleDisposition, "pending">;
+  readonly reason?: string | undefined;
+}
+
+export type WorkflowContractDeliveryMode =
+  "host-directed-repository-load" | "host-directed-pinned-snapshot";
+
+export interface ResolvedWorkflowContract {
+  readonly name: string;
+  readonly path: string;
+  readonly version: string;
+  readonly identity: string;
+  readonly deliveryMode: WorkflowContractDeliveryMode;
+}
+
 export interface WorkflowReplaceRequest {
   readonly reason: string;
   readonly executor?: string | undefined;
@@ -111,6 +127,8 @@ export interface ResolvedWorkflowRunSpec {
   readonly permissionProfile: WorkflowPermissionProfile;
   readonly skill: string | null;
   readonly skillVersion: string | null;
+  readonly contract: ResolvedWorkflowContract;
+  readonly allocationAuthority: Record<string, unknown>;
   readonly verificationAuthority: Record<string, unknown> | null;
   readonly orchestrator: string | null;
   readonly prompt: string | null;
@@ -136,6 +154,9 @@ export interface WorkflowRunRecord {
   readonly role: string;
   readonly skill: string | null;
   readonly skillVersion: string | null;
+  readonly contractIdentity: string;
+  readonly contractDeliveryMode: WorkflowContractDeliveryMode;
+  readonly allocationAuthority: Record<string, unknown>;
   readonly verificationAuthority: Record<string, unknown> | null;
   readonly executor: string;
   readonly invocationMode: WorkflowInvocationMode;
@@ -154,6 +175,8 @@ export interface WorkflowRunRecord {
     | (Omit<WorkflowRoleResultRequest, "reason"> & {
         readonly reason: string | null;
         readonly recordedAt: string;
+        readonly contractIdentity: string;
+        readonly contractDeliveryMode: WorkflowContractDeliveryMode;
       })
     | null;
   readonly createdAt: string;
@@ -167,6 +190,7 @@ export interface WorkflowRunRecord {
 export interface WorkflowRunExitOutcome {
   readonly ok: boolean;
   readonly reason?: string | undefined;
+  readonly roleResult?: WorkflowBackendRoleResult | undefined;
 }
 
 export interface WorkflowRunBackendContext {
@@ -233,6 +257,7 @@ interface PinnedVerificationAuthority {
   readonly name: string;
   readonly contractVersion: number;
   readonly sourceCommit: string;
+  readonly sourcePath: string;
   readonly identity: string;
   readonly snapshotPath: string;
 }
@@ -256,43 +281,76 @@ function readAuthorityField(
     Array.isArray(raw[field])
   ) {
     throw new WorkflowRunRequestError(
-      `Spike 012 bootstrap evaluator authority has no ${field} object`,
+      `Pinned evaluator bootstrap authority has no ${field} object`,
     );
   }
   return raw[field] as Record<string, unknown>;
 }
 
-// The host, rather than a caller-side workflow helper, owns this bootstrap
-// exception. A direct allocation must therefore reach the same pinned v10
-// authority as a CLI-dispatched allocation. The current evaluator skill is
-// intentionally never consulted here: it is implementation under test.
+// The host, rather than a caller-side workflow helper, owns pinned evaluator
+// authority. Any workflow that declares a pinned snapshot resolves and checks
+// it here, so direct API allocation and CLI dispatch cannot diverge.
+interface WorkflowLocation {
+  readonly path: string;
+  readonly repositoryPath: string;
+}
+
+function resolveWorkflowLocation(
+  request: WorkflowRunRequest,
+): WorkflowLocation {
+  if (!/^[0-9]{3}[a-z]*(?:-[A-Za-z0-9._-]+)?$/.test(request.slot.workflow)) {
+    throw new WorkflowRunRequestError(
+      "slot.workflow is not a valid workflow identifier",
+    );
+  }
+  const spikesPath = resolve(request.workspace, "spikes");
+  const exact = resolve(spikesPath, request.slot.workflow);
+  let selected: string | undefined;
+  if (existsSync(exact) && statSync(exact).isDirectory()) {
+    selected = request.slot.workflow;
+  } else {
+    let entries;
+    try {
+      entries = readdirSync(spikesPath, { withFileTypes: true });
+    } catch {
+      throw new WorkflowRunRequestError(
+        `unable to resolve canonical workflow: ${request.slot.workflow}`,
+      );
+    }
+    const matches = entries
+      .filter(
+        (entry) =>
+          entry.isDirectory() &&
+          entry.name.startsWith(`${request.slot.workflow}-`),
+      )
+      .map((entry) => entry.name);
+    if (matches.length === 1) selected = matches[0];
+  }
+  if (selected === undefined) {
+    throw new WorkflowRunRequestError(
+      `unable to resolve canonical workflow: ${request.slot.workflow}`,
+    );
+  }
+  return {
+    path: resolve(spikesPath, selected),
+    repositoryPath: `spikes/${selected}`,
+  };
+}
+
 function resolvePinnedVerificationAuthority(
   request: WorkflowRunRequest,
+  workflow: WorkflowLocation,
 ): PinnedVerificationAuthority | undefined {
-  if (!(
-    (request.slot.workflow === "012" &&
-      request.slot.phase === "evaluator-verify") ||
-    (request.slot.workflow === "013a" &&
-      (request.slot.phase === "evaluator-prepare" ||
-        request.slot.phase === "evaluator-verify"))
-  )) {
-    return undefined;
-  }
-
-  const spikePath = resolve(
-    request.workspace,
-    request.slot.workflow === "012"
-      ? "spikes/012-correction-cycles-evaluator-repair"
-      : "spikes/013a-Workflow-execution-friction",
+  if (!request.slot.phase.startsWith("evaluator-")) return undefined;
+  const authorityPath = resolve(
+    workflow.path,
+    "bootstrap/evaluator-authority.json",
   );
+  if (!existsSync(authorityPath)) return undefined;
+
   let authorityRaw: unknown;
   try {
-    authorityRaw = JSON.parse(
-      readFileSync(
-        resolve(spikePath, "bootstrap/evaluator-authority.json"),
-        "utf8",
-      ),
-    );
+    authorityRaw = JSON.parse(readFileSync(authorityPath, "utf8"));
   } catch (error) {
     throw new WorkflowRunRequestError(
       `Unable to read pinned evaluator bootstrap authority: ${
@@ -323,7 +381,7 @@ function resolvePinnedVerificationAuthority(
   let snapshot: string;
   let committedSource: string;
   try {
-    snapshot = readFileSync(resolve(spikePath, snapshotPath), "utf8");
+    snapshot = readFileSync(resolve(workflow.path, snapshotPath), "utf8");
     committedSource = execFileSync(
       "git",
       ["-C", request.workspace, "show", `${sourceCommit}:${sourcePath}`],
@@ -346,7 +404,14 @@ function resolvePinnedVerificationAuthority(
       "Pinned evaluator bootstrap source provenance does not match authority",
     );
   }
-  return { name, contractVersion, sourceCommit, identity, snapshotPath };
+  return {
+    name,
+    contractVersion,
+    sourceCommit,
+    sourcePath,
+    identity,
+    snapshotPath,
+  };
 }
 
 function sameAuthority(
@@ -357,10 +422,248 @@ function sameAuthority(
     left.name === right.name &&
     left.contractVersion === right.contractVersion &&
     left.sourceCommit === right.sourceCommit &&
+    left.sourcePath === right.sourcePath &&
     left.identity === right.identity &&
     left.snapshotPath === right.snapshotPath &&
-    Object.keys(left).length === 5
+    Object.keys(left).length === 6
   );
+}
+
+const ROLE_CONTRACTS: Readonly<Record<string, string>> = {
+  "brief-readiness": "brief-readiness",
+  "design-map": "design-map",
+  "evaluator-prepare": "evaluator",
+  "evaluator-repair": "evaluator",
+  "evaluator-verify": "evaluator",
+  implementation: "implementation",
+  "as-built": "as-built",
+  outcome: "outcome",
+};
+
+function resolveRepositoryContract(
+  request: WorkflowRunRequest,
+  workflow: WorkflowLocation,
+  pinned: PinnedVerificationAuthority | undefined,
+): ResolvedWorkflowContract {
+  const name = ROLE_CONTRACTS[request.role];
+  if (name === undefined) {
+    throw new WorkflowRunRequestError(
+      `unknown governed workflow role: ${request.role}`,
+    );
+  }
+  if (
+    request.role.startsWith("evaluator-") &&
+    request.slot.phase !== request.role
+  ) {
+    throw new WorkflowRunRequestError("role must match slot.phase");
+  }
+  const path =
+    pinned === undefined
+      ? `skills/${name}/SKILL.md`
+      : `${workflow.repositoryPath}/${pinned.snapshotPath}`;
+  let content: string;
+  try {
+    content = readFileSync(resolve(request.workspace, path), "utf8");
+  } catch (error) {
+    throw new WorkflowRunRequestError(
+      `unable to read resolved workflow contract ${path}: ${
+        error instanceof Error ? error.message : "unknown error"
+      }`,
+    );
+  }
+  const version =
+    pinned === undefined
+      ? /^Contract version:\s*(\d+)$/m.exec(content)?.[1]
+      : String(pinned.contractVersion);
+  if (version === undefined) {
+    throw new WorkflowRunRequestError(
+      `resolved workflow contract ${path} has no contract version`,
+    );
+  }
+  const contract: ResolvedWorkflowContract = {
+    name,
+    path,
+    version,
+    identity: sha256(content),
+    deliveryMode:
+      pinned === undefined
+        ? "host-directed-repository-load"
+        : "host-directed-pinned-snapshot",
+  };
+  if (pinned !== undefined && contract.identity !== pinned.identity) {
+    throw new WorkflowRunRequestError(
+      "resolved pinned evaluator contract identity does not match authority",
+    );
+  }
+  if (
+    request.skill !== undefined &&
+    request.skill !== contract.name &&
+    request.skill !== contract.path &&
+    request.skill !== pinned?.snapshotPath
+  ) {
+    throw new WorkflowRunRequestError(
+      "caller skill does not match the resolved contract",
+    );
+  }
+  if (request.skillVersion !== undefined && request.skillVersion !== version) {
+    throw new WorkflowRunRequestError(
+      "caller skill version does not match the resolved contract",
+    );
+  }
+  return contract;
+}
+
+interface CanonicalWorkflowEvent {
+  readonly transition: string;
+  readonly evidence: Record<string, unknown>;
+}
+
+function canonicalEvents(ledger: string): CanonicalWorkflowEvent[] {
+  return ledger
+    .split(/\r?\n/)
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const value: unknown = JSON.parse(line);
+      if (typeof value !== "object" || value === null || Array.isArray(value))
+        throw new WorkflowRunRequestError(
+          "canonical workflow authority contains an invalid event",
+        );
+      const event = value as Record<string, unknown>;
+      if (
+        typeof event.transition !== "string" ||
+        typeof event.evidence !== "object" ||
+        event.evidence === null ||
+        Array.isArray(event.evidence)
+      )
+        throw new WorkflowRunRequestError(
+          "canonical workflow authority contains an invalid event",
+        );
+      return {
+        transition: event.transition,
+        evidence: event.evidence as Record<string, unknown>,
+      };
+    });
+}
+
+function verifyCanonicalArtifact(
+  request: WorkflowRunRequest,
+  workflow: WorkflowLocation,
+  event: CanonicalWorkflowEvent | undefined,
+): CanonicalWorkflowEvent {
+  if (event === undefined)
+    throw new WorkflowRunRequestError(
+      "canonical workflow prerequisite is missing",
+    );
+  const path = event.evidence.path;
+  const commit = event.evidence.commit;
+  const identity = event.evidence.identity;
+  if (
+    typeof path !== "string" ||
+    path.startsWith("/") ||
+    path.includes("..") ||
+    typeof commit !== "string" ||
+    typeof identity !== "string"
+  )
+    throw new WorkflowRunRequestError(
+      `${event.transition} has invalid canonical artifact evidence`,
+    );
+  const absolute = resolve(workflow.path, path);
+  let current: string;
+  let committed: string;
+  try {
+    current = readFileSync(absolute, "utf8");
+    committed = execFileSync(
+      "git",
+      [
+        "-C",
+        request.workspace,
+        "show",
+        `${commit}:${relative(request.workspace, absolute)}`,
+      ],
+      { encoding: "utf8" },
+    );
+  } catch (error) {
+    throw new WorkflowRunRequestError(
+      `unable to verify ${event.transition} canonical provenance: ${
+        error instanceof Error ? error.message : "unknown error"
+      }`,
+    );
+  }
+  if (sha256(current) !== identity || sha256(committed) !== identity)
+    throw new WorkflowRunRequestError(
+      `${event.transition} canonical artifact identity does not match provenance`,
+    );
+  return event;
+}
+
+function canonicalEvaluatorAuthority(
+  request: WorkflowRunRequest,
+  workflow: WorkflowLocation,
+  contract: ResolvedWorkflowContract,
+  pinned: PinnedVerificationAuthority | undefined,
+): Record<string, unknown> {
+  let ledger: string;
+  try {
+    ledger = readFileSync(resolve(workflow.path, "workflow.jsonl"), "utf8");
+  } catch (error) {
+    throw new WorkflowRunRequestError(
+      `unable to read canonical workflow authority: ${
+        error instanceof Error ? error.message : "unknown error"
+      }`,
+    );
+  }
+  const events = canonicalEvents(ledger);
+  const has = (transition: string): boolean =>
+    events.some((event) => event.transition === transition);
+  const latest = (transition: string): CanonicalWorkflowEvent | undefined =>
+    [...events].reverse().find((event) => event.transition === transition);
+  verifyCanonicalArtifact(request, workflow, latest("brief-frozen"));
+  verifyCanonicalArtifact(request, workflow, latest("design-map-frozen"));
+  let basis: CanonicalWorkflowEvent | undefined;
+  if (request.slot.phase === "evaluator-prepare") {
+    basis = latest("design-map-frozen");
+  } else if (request.slot.phase === "evaluator-verify") {
+    if (has("evaluation-prepared") && has("implementation-handoff")) {
+      verifyCanonicalArtifact(request, workflow, latest("evaluation-prepared"));
+      const handoff = latest("implementation-handoff");
+      basis = latest("verification-allocated");
+      if (
+        handoff === undefined ||
+        basis === undefined ||
+        typeof handoff.evidence.commit !== "string" ||
+        basis.evidence.commit !== handoff.evidence.commit
+      )
+        throw new WorkflowRunRequestError(
+          "verification allocation does not bind the canonical implementation handoff",
+        );
+    }
+  } else if (request.slot.phase === "evaluator-repair") {
+    basis = [...events]
+      .reverse()
+      .find(
+        (event) =>
+          (event.transition === "correction-cycle-opened" &&
+            event.evidence.evaluatorRepair === true) ||
+          (event.transition === "verification-finalized" &&
+            event.evidence.classification === "EVALUATOR_DEFECT"),
+      );
+  }
+  if (basis === undefined) {
+    throw new WorkflowRunRequestError(
+      `canonical workflow authority does not permit ${request.slot.phase}`,
+    );
+  }
+  return {
+    type: "canonical-workflow",
+    workflow: workflow.repositoryPath,
+    phase: request.slot.phase,
+    methodologyAttempt: request.slot.methodologyAttempt ?? null,
+    ledgerIdentity: sha256(ledger),
+    basisTransition: basis.transition,
+    basisIdentity: sha256(JSON.stringify(basis)),
+    contractIdentity: contract.identity,
+    ...(pinned === undefined ? {} : { pinnedContractAuthority: { ...pinned } }),
+  };
 }
 
 export function parseWorkflowRunRequest(body: unknown): WorkflowRunRequest {
@@ -512,44 +815,40 @@ function resolvePermissionProfile(
 
 function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
   const protectedRole = request.role.startsWith("evaluator-");
-  const pinnedAuthority = resolvePinnedVerificationAuthority(request);
-  if (
-    protectedRole &&
-    pinnedAuthority === undefined &&
-    !(
-      request.invocationMode === "direct" && request.humanAuthorization === true
-    )
-  ) {
+  const directHuman =
+    request.invocationMode === "direct" && request.humanAuthorization === true;
+  const workflow = resolveWorkflowLocation(request);
+  const pinnedAuthority = resolvePinnedVerificationAuthority(request, workflow);
+  const contract = resolveRepositoryContract(
+    request,
+    workflow,
+    pinnedAuthority,
+  );
+  const delegatedAuthority =
+    protectedRole && !directHuman
+      ? canonicalEvaluatorAuthority(
+          request,
+          workflow,
+          contract,
+          pinnedAuthority,
+        )
+      : undefined;
+  if (protectedRole && delegatedAuthority === undefined && !directHuman) {
     throw new WorkflowRunRequestError(
       "protected evaluator roles require a canonical pinned allocation or explicit human authorization",
     );
   }
-  if (
-    pinnedAuthority !== undefined &&
-    request.verificationAuthority !== undefined &&
-    !sameAuthority(request.verificationAuthority, pinnedAuthority)
-  ) {
-    throw new WorkflowRunRequestError(
-      "evaluator authority does not match the pinned bootstrap authority",
-    );
-  }
-  if (
-    pinnedAuthority !== undefined &&
-    request.skill !== undefined &&
-    request.skill !== pinnedAuthority.snapshotPath
-  ) {
-    throw new WorkflowRunRequestError(
-      "evaluator skill does not match the pinned bootstrap snapshot",
-    );
-  }
-  if (
-    pinnedAuthority !== undefined &&
-    request.skillVersion !== undefined &&
-    request.skillVersion !== String(pinnedAuthority.contractVersion)
-  ) {
-    throw new WorkflowRunRequestError(
-      "evaluator skill version does not match the pinned bootstrap authority",
-    );
+  if (request.verificationAuthority !== undefined && protectedRole) {
+    const exactCanonical =
+      JSON.stringify(request.verificationAuthority) ===
+      JSON.stringify(delegatedAuthority);
+    const exactPin =
+      pinnedAuthority !== undefined &&
+      sameAuthority(request.verificationAuthority, pinnedAuthority);
+    if (!exactCanonical && !exactPin)
+      throw new WorkflowRunRequestError(
+        "evaluator authority does not match canonical workflow authority",
+      );
   }
   const permissionProfile = resolvePermissionProfile(
     request.permissionProfile ?? "repo-local-worker",
@@ -563,15 +862,16 @@ function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
     invocationMode: request.invocationMode ?? "delegated",
     workspaces: permissionProfile.workspaces,
     permissionProfile,
-    skill: pinnedAuthority?.snapshotPath ?? request.skill ?? null,
-    skillVersion:
-      pinnedAuthority === undefined
-        ? (request.skillVersion ?? null)
-        : String(pinnedAuthority.contractVersion),
-    verificationAuthority:
-      pinnedAuthority === undefined
-        ? (request.verificationAuthority ?? null)
-        : { ...pinnedAuthority },
+    skill: contract.path,
+    skillVersion: contract.version,
+    contract,
+    allocationAuthority:
+      protectedRole && directHuman
+        ? { type: "explicit-human" }
+        : (delegatedAuthority ?? { type: "host-workflow-allocation" }),
+    verificationAuthority: protectedRole
+      ? (delegatedAuthority ?? { type: "explicit-human" })
+      : null,
     orchestrator: request.orchestrator ?? null,
     prompt: request.prompt ?? null,
   };
@@ -638,6 +938,9 @@ class InternalRun {
       role: this.spec.role,
       skill: this.spec.skill,
       skillVersion: this.spec.skillVersion,
+      contractIdentity: this.spec.contract.identity,
+      contractDeliveryMode: this.spec.contract.deliveryMode,
+      allocationAuthority: this.spec.allocationAuthority,
       verificationAuthority: this.spec.verificationAuthority,
       executor: this.spec.executor,
       invocationMode: this.spec.invocationMode,
@@ -710,11 +1013,21 @@ export class WorkflowRunRegistry {
       return { run: await pending, duplicate: true };
     }
 
+    const prior = this.#canonicalRunForSlot(key);
+    if (prior?.roleDisposition === "succeeded") {
+      return { run: prior.toRecord(), duplicate: true };
+    }
+
     const creation = this.#createExecution(spec, {
-      executionAttempt: 1,
-      previousExecutionId: null,
-      replacementReason: null,
-      replacementCount: 0,
+      executionAttempt:
+        prior === undefined ? 1 : prior.meta.executionAttempt + 1,
+      previousExecutionId: prior?.runId ?? null,
+      replacementReason:
+        prior === undefined
+          ? null
+          : "retry after terminal non-successful role disposition",
+      replacementCount:
+        prior === undefined ? 0 : prior.meta.replacementCount + 1,
     });
     this.#pendingBySlot.set(key, creation);
     try {
@@ -789,6 +1102,8 @@ export class WorkflowRunRegistry {
       disposition: result.disposition,
       reason: result.reason ?? null,
       recordedAt: new Date(this.#now()).toISOString(),
+      contractIdentity: run.spec.contract.identity,
+      contractDeliveryMode: run.spec.contract.deliveryMode,
     };
     this.#emit(
       result.disposition === "succeeded"
@@ -851,12 +1166,15 @@ export class WorkflowRunRegistry {
   }
 
   #activeRunForSlot(key: string): InternalRun | undefined {
-    const canonicalId = this.#canonicalBySlot.get(key);
-    if (canonicalId === undefined) return undefined;
-    const run = this.#runs.get(canonicalId);
+    const run = this.#canonicalRunForSlot(key);
     return run !== undefined && isActiveWorkflowRunStatus(run.status)
       ? run
       : undefined;
+  }
+
+  #canonicalRunForSlot(key: string): InternalRun | undefined {
+    const canonicalId = this.#canonicalBySlot.get(key);
+    return canonicalId === undefined ? undefined : this.#runs.get(canonicalId);
   }
 
   async #createExecution(
@@ -918,6 +1236,30 @@ export class WorkflowRunRegistry {
     run.terminalDisposition = disposition;
     run.terminalReason = outcome.reason ?? null;
     run.terminalAtMs = this.#now();
+    if (outcome.roleResult !== undefined && run.roleResult === null) {
+      const result = outcome.roleResult;
+      run.roleDisposition = result.disposition;
+      run.roleResult = {
+        role: run.spec.role,
+        ...(run.spec.slot.methodologyAttempt === undefined
+          ? {}
+          : { methodologyAttempt: run.spec.slot.methodologyAttempt }),
+        skill: run.spec.skill,
+        skillVersion: run.spec.skillVersion,
+        verificationAuthority: run.spec.verificationAuthority,
+        disposition: result.disposition,
+        reason: result.reason ?? null,
+        recordedAt: new Date(this.#now()).toISOString(),
+        contractIdentity: run.spec.contract.identity,
+        contractDeliveryMode: run.spec.contract.deliveryMode,
+      };
+      this.#emit(
+        result.disposition === "succeeded"
+          ? "workflow-run.role-succeeded"
+          : "workflow-run.role-non-success",
+        run,
+      );
+    }
     this.#emit(
       outcome.ok ? "workflow-run.completed" : "workflow-run.failed",
       run,
@@ -967,6 +1309,10 @@ export class WorkflowRunRegistry {
       methodologyAttempt: record.methodologyAttempt,
       executionAttempt: record.executionAttempt,
       role: record.role,
+      skill: record.skill,
+      skillVersion: record.skillVersion,
+      contractIdentity: record.contractIdentity,
+      contractDeliveryMode: record.contractDeliveryMode,
       executor: record.executor,
       invocationMode: record.invocationMode,
       status: record.status,

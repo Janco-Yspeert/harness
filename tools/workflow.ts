@@ -183,9 +183,18 @@ function failedVerificationFor(
   );
 }
 function attemptForDispatch(state: WorkflowState, phase: Phase): number {
-  if (phase === "implementation") return maximumAttempt(state, phase) + 1;
-  if (phase === "evaluator-verify") return maximumAttempt(state, phase) + 1;
-  return 1;
+  const maximum = maximumAttempt(state, phase);
+  if (maximum === 0) return 1;
+  const latest = recordsFor(state, phase, maximum);
+  if (
+    latest.some(
+      (record) => record.outcome === "blocked" || record.outcome === "failed",
+    )
+  )
+    return maximum + 1;
+  if (phase === "implementation" || phase === "evaluator-verify")
+    return maximum + 1;
+  return maximum;
 }
 function canDispatch(
   state: WorkflowState,
@@ -457,7 +466,7 @@ function init(target: Target): void {
 async function allocateHostRun(
   spike: string,
   phase: Phase,
-  attempt: number,
+  methodologyAttempt: string,
 ): Promise<Job> {
   const url = hostUrl();
   const evaluator = phase.startsWith("evaluator-");
@@ -467,7 +476,7 @@ async function allocateHostRun(
   const slot: RunSlot = {
     workflow: spikeName(spike),
     phase,
-    methodologyAttempt: String(attempt),
+    methodologyAttempt,
   };
   const requestBody = {
     slot,
@@ -550,7 +559,13 @@ async function dispatch(
     );
     return;
   }
-  const job = await allocateHostRun(spike, phase, attempt);
+  const methodologyAttempt =
+    phase === "implementation"
+      ? String(attempt)
+      : phase === "evaluator-verify"
+        ? String(completedImplementation(state))
+        : "1";
+  const job = await allocateHostRun(spike, phase, methodologyAttempt);
   const dispatched = append(state, {
     event: "dispatch",
     phase,
@@ -1390,7 +1405,7 @@ function authority(
 ): void {
   if (mode === "status") {
     const state = authorityState(target);
-    const legal = authorityTransitions.filter((item) => {
+    const recordable = authorityTransitions.filter((item) => {
       try {
         validateAuthority(target, item, {});
         return true;
@@ -1398,8 +1413,18 @@ function authority(
         return false;
       }
     });
+    const available = new Set(recordable);
+    if (state.correctionPermitted) available.add("correction-cycle-opened");
+    const transitionAvailability = authorityTransitions.map((transition) => ({
+      transition,
+      status: recordable.includes(transition)
+        ? "available"
+        : available.has(transition)
+          ? "available-requires-evidence"
+          : "unavailable",
+    }));
     process.stdout.write(
-      `${JSON.stringify({ history: state.events, legalTransitions: legal, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.current.predecessor ?? state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected || state.blockedRepair !== undefined, outcomeComplete: state.outcome, currentCycle: { id: state.current.id, state: state.accepted || state.rejected ? "CLOSED" : "OPEN", evaluatorRevision: state.current.evaluatorRevision, implementationAttempt: state.current.implementation?.evidence.attempt ?? null, verification: state.current.verification?.evidence ?? null, promotionComplete: state.current.promoted, asBuiltComplete: state.current.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : "PENDING" }, cycles: state.cycles.map((cycle) => ({ id: cycle.id, predecessor: cycle.predecessor, evaluatorRevision: cycle.evaluatorRevision, implementationAttempt: cycle.implementation?.evidence.attempt ?? null, verification: cycle.verification?.evidence ?? null, promotionComplete: cycle.promoted, asBuiltComplete: cycle.asBuilt, humanDecision: cycle.rejectedEvent ? "REJECTED" : cycle.accepted ? "ACCEPTED" : "PENDING" })), correctionPermitted: state.correctionPermitted, correctionReason: state.correctionReason })}\n`,
+      `${JSON.stringify({ history: state.events, legalTransitions: [...available], recordableTransitions: recordable, transitionAvailability, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.current.predecessor ?? state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected || state.blockedRepair !== undefined, outcomeComplete: state.outcome, currentCycle: { id: state.current.id, state: state.accepted || state.rejected ? "CLOSED" : "OPEN", evaluatorRevision: state.current.evaluatorRevision, implementationAttempt: state.current.implementation?.evidence.attempt ?? null, verification: state.current.verification?.evidence ?? null, promotionComplete: state.current.promoted, asBuiltComplete: state.current.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : "PENDING" }, cycles: state.cycles.map((cycle) => ({ id: cycle.id, predecessor: cycle.predecessor, evaluatorRevision: cycle.evaluatorRevision, implementationAttempt: cycle.implementation?.evidence.attempt ?? null, verification: cycle.verification?.evidence ?? null, promotionComplete: cycle.promoted, asBuiltComplete: cycle.asBuilt, humanDecision: cycle.rejectedEvent ? "REJECTED" : cycle.accepted ? "ACCEPTED" : "PENDING" })), correctionPermitted: state.correctionPermitted, correctionReason: state.correctionReason })}\n`,
     );
     return;
   }

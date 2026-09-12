@@ -4,49 +4,65 @@ status: IMPLEMENTED
 
 ## Changed behavior
 
-- Host-owned workflow runs now retain a semantic role disposition and a
-  host-validated, run-bound role result separately from provider process state.
-  A clean process exit remains insufficient for a workflow phase to complete.
-- The host accepts role-result reports only when role, methodology attempt,
-  contract identity/version, and pinned verification authority agree with the
-  allocation binding. Run inspection exposes both process status and role
-  disposition.
-- Protected evaluator roles reject prompt-shaped authority. Pinned canonical
-  evaluator allocations cover Spike 013a evaluator preparation and verification
-  as well as the existing Spike 012 verification path; explicit direct human
-  authorization remains a distinct route.
-- Workflow planning records a `plan` fact rather than a dispatch, so previewing
-  a command does not consume an execution attempt. Canonical frozen checkpoints
-  can be explicitly adopted by a fresh runner and are exposed with their next
-  phase.
+- Every supported workflow role is now resolved by the host to a repository
+  contract path, version and SHA-256 identity. Missing caller declarations are
+  filled from that resolution; invented or conflicting declarations are
+  rejected. Run inspection exposes the contract identity and its
+  `host-directed-repository-load` or `host-directed-pinned-snapshot` delivery
+  mode.
+- Delegated evaluator authority is derived from the requesting workflow's own
+  canonical ledger and committed artifact provenance. A workflow-owned pinned
+  evaluator declaration is validated generically rather than enabled by a list
+  of Spike IDs. Explicit human invocation remains a separate host-side route.
+- Provider commands receive the resolved execution binding and a small
+  structured result protocol. On clean process exit the local backend can turn
+  a final `HARNESS_ROLE_RESULT` record into a host-bound semantic result without
+  a second actor calling the result endpoint. Ordinary prose and malformed or
+  extended markers remain diagnostic only.
+- A terminal non-successful role run can be retried in the same host slot. The
+  new run advances `executionAttempt` and links `previousExecutionId`; the old
+  run remains inspectable. The runner now advances attempts after blocked or
+  failed outcomes for every phase while keeping fixed-phase methodology attempt
+  identity separate from execution attempts.
+- Authority status includes evidence-aware transition availability. In
+  particular, a repairable rejection exposes `correction-cycle-opened` as
+  `available-requires-evidence` before the caller supplies that evidence.
 
 ## Consequential decisions
 
-- Role success is deliberately submitted as an explicit host-validated result,
-  not inferred from a provider exit code. This keeps provider lifecycle
-  diagnostic and prevents a polite refusal with exit code zero from advancing
-  methodology.
-- The protected-role boundary is at allocation: only a pinned canonical
-  evaluator allocation or explicit direct human authorization reaches an
-  evaluator adapter. Prompt contents are not authority.
+- Contract aliases remain accepted only as compatibility hints; the host always
+  re-resolves and records the canonical repository path and content identity.
+  This preserves existing callers without treating their strings as authority.
+- Semantic outcomes use one provider-neutral stdout envelope appended by the
+  host to both Codex and Claude prompts. The envelope carries only disposition
+  and an optional reason; the host supplies and validates role, methodology
+  attempt and contract authority from the immutable allocation binding.
+- Canonical evaluator authorization validates committed brief, Design Map and,
+  for verification, evaluator-preparation provenance before launch. This keeps
+  the generalization data-driven without inventing a new authority service.
 
 ## Rejected complexity
 
-- No universal provider skill API was introduced. The binding records the
-  repository contract and authority before adapter launch, leaving provider
-  delivery as the existing adapter concern.
+- No provider-specific skill framework or persistent result broker was added.
+  Both executors can honor the same host-directed repository load and terminal
+  result envelope through their existing bounded CLI adapters.
 
 ## Tests and checks
 
-- Added host integration coverage for 013a pinned evaluator authority, prompt
-  authority refusal, process/role separation, and successful bound role result.
-- Updated workflow tests to distinguish repeatable planning from execution
-  dispatch.
-- `npm test`, `npm run typecheck`, `npm run lint`, `npm run format:check`, and
-  `git diff --check` were run.
+- Added visible regression coverage for exact contract resolution and mismatch
+  rejection, generic canonical evaluator delegation, explicit human evaluator
+  invocation, automatic semantic-result capture, immutable linked retries, and
+  provider command/result protocol behavior.
+- Added runner regressions for blocked ordinary-phase retry and evidence-aware
+  correction-cycle availability.
+- `npm test` (69 passing), `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, and `git diff --check` pass.
 
 ## Limitations
 
-- Mandatory live Claude/Codex fixture evidence is evaluator-owned and has not
-  been claimed here. This candidate reports implementation and visible tests,
-  not independent evaluation.
+- The provider result protocol deliberately requires a final structured stdout
+  line. A provider that exits without emitting it remains `pending`; a clean
+  process exit is still never semantic success.
+- Mandatory live Claude/Codex fixture evidence remains evaluator-owned and has
+  not been claimed here. This candidate reports implementation and visible
+  tests, not independent evaluation.

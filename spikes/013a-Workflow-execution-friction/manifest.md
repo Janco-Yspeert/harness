@@ -147,3 +147,32 @@
   `npm run format:check`, `git diff --check` all green at the implementation
   commit; structural integrity re-validation after the in-attempt correction
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 007 — Implementation Retry (attempt 002)
+
+- Skill: `implementation` v3
+- Input: unchanged frozen `spike.md`
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`,
+  unchanged frozen `design-map.md`
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`,
+  unchanged public `eval-requirements.md`
+  `sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf`,
+  unchanged `coverage-map.json`
+  `sha256:eb4921e8c87d47c35d16f8fc90ad5192526327b4fe6e4517f08ae0faba1ad0a4`,
+  and sanitized public `verification-feedback-001.md` from evaluator revision
+  `002`.
+- Result: candidate retry with host-resolved repository contract identities and
+  delivery modes, workflow-owned canonical evaluator delegation, automatic
+  structured provider role results, linked non-successful execution retries,
+  and evidence-aware authority transition availability.
+- Candidate content identity before this manifest entry:
+  `sha256:a4e53b00aefbe2754cb2f831f273e612ceb671f2f08f446c77f5c24cfeb4a6f2`
+  (Git binary diff for the implementation, visible tests and implementation
+  report against the prior public checkpoint, excluding unrelated work and this
+  manifest).
+- Restricted evaluator material inspected: none.
+- Checks: `npm test` (69 passing), `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, and `git diff --check` all pass. Mandatory live
+  Claude/Codex provider verification remains allocated to independent evaluator
+  verification and was not claimed by implementation.
+- Measurement cutoff: immediately before this manifest update.

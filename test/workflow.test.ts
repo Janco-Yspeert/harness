@@ -902,10 +902,25 @@ void test("a real Spike 011-shaped legacy fixture permits the required Cycle 002
     currentCycle: { id: string };
     correctionPermitted: boolean;
     correctionReason: string;
+    legalTransitions: string[];
+    transitionAvailability: Array<{
+      transition: string;
+      status: string;
+    }>;
   };
   assert.equal(status.currentCycle.id, "001");
   assert.equal(status.correctionPermitted, true);
   assert.equal(status.correctionReason, "repairable human rejection");
+  assert.ok(status.legalTransitions.includes("correction-cycle-opened"));
+  assert.deepEqual(
+    status.transitionAvailability.find(
+      (item) => item.transition === "correction-cycle-opened",
+    ),
+    {
+      transition: "correction-cycle-opened",
+      status: "available-requires-evidence",
+    },
+  );
   assert.equal(
     f.record("correction-cycle-opened", {
       cycle: "002",
@@ -919,6 +934,31 @@ void test("a real Spike 011-shaped legacy fixture permits the required Cycle 002
     0,
   );
   assert.ok(authorityHistory(f).startsWith(before));
+});
+
+void test("a blocked ordinary phase receives a fresh execution attempt", (t) => {
+  mkdirSync(spikePath, { recursive: true });
+  t.after(() => {
+    rmSync(spikePath, { recursive: true, force: true });
+  });
+
+  assert.equal(run(["init", spike]).status, 0);
+  assert.equal(run(["dispatch", "brief-readiness", spike]).status, 0);
+  assert.equal(run(["record", "brief-readiness", spike, "blocked"]).status, 0);
+  assert.equal(run(["dispatch", "brief-readiness", spike]).status, 0);
+
+  const state = JSON.parse(
+    readFileSync(join(spikePath, ".workflow", "state.json"), "utf8"),
+  ) as { records: Array<{ event: string; phase: string; attempt: number }> };
+  assert.deepEqual(
+    state.records
+      .filter(
+        (record) =>
+          record.phase === "brief-readiness" && record.event === "plan",
+      )
+      .map((record) => record.attempt),
+    [1, 2],
+  );
 });
 
 void test("specification-changing and unqualified human rejections refuse same-spike correction", (t) => {
