@@ -274,3 +274,35 @@
   not rerun because no implementation change survived characterization.
 - Restricted evaluator material inspected: none. LP1 was not exercised.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 011 — Direct role versus Skill characterization
+
+- Skill context: `implementation` v3; characterization only, with production
+  implementation and handoff explicitly deferred by the user.
+- Input: prior characterization checkpoint
+  `7e88d9a01857925e286c2afbea3e2dca6a8b96b4`, user-specified probes A–E,
+  unchanged evaluated implementation
+  `05bc7d9e47d58f35734c8e158eafd43b153e38e2`, and unchanged frozen authority.
+- Result: Conclusion 3, bounded to Claude Code 2.1.270. Protected invocation
+  controls refused. Direct execution with the wrapper present read both markers
+  but rejected role reporting; with the wrapper absent it refused. A separate
+  metadata-free contract also refused. No successful semantic role result;
+  no provider/environment availability failure. No candidate or handoff.
+- Output: `characterization-004/report.md`
+  `sha256:0a8fac5f2ecaebe4b646cad98cc46ef29ac67ae251f385925f4a1c6091febadf`;
+  `characterization-004/evidence.json`
+  `sha256:e82129a414988fc03cda3088954c180b0ad9eae1d439a64934e69853f61f44cc`;
+  `characterization-004/run.py`
+  `sha256:fa75430852bfb3411094139f90e3eef1e7c3b126d9d9b4d2e85dbb407f3659de`.
+- Checks: five completed provider calls, all exit 0; exact A–D contract identity
+  and C/D command equality verified; provider Skill discovery confirmed;
+  tool calls and filesystem access corroborated C's reads; zero fixture write
+  events and unchanged file snapshots for all calls. Existing semantic-result
+  parser accepted A/B/E refusals and rejected C/D missing final results.
+  Evidence invariants, repository formatting, and `git diff --check` pass.
+  Full tests, typecheck, and lint were not rerun: source/tests/skills and
+  canonical Spike 013a authority are unchanged.
+- Restricted evaluator material inspected: none. LP1 and evaluator revision 002
+  were untouched. Only the synthetic wrapper moved between probes; the real
+  evaluator invocation protection remains unchanged.
+- Measurement cutoff: immediately before this manifest update.
