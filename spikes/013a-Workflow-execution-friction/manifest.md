@@ -213,3 +213,34 @@
   `npm run format:check`, `git diff --check` all green at the implementation
   commit; repository state confirmed unchanged by both live fixtures
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 009 — Evaluator Verification (attempt 003)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify time)
+- Input: implementation commit `05bc7d9e47d58f35734c8e158eafd43b153e38e2`
+  (unchanged from attempt 002 — confirmed no source changes since)
+- Result: `FAIL` (`IMPLEMENTATION_FAILURE`), attempt `003`. Evaluator
+  revision `002` unchanged; no correction needed.
+- Output: `verification-feedback-003.md`
+- Basis: new live-provider evidence gathered outside this evaluator's own
+  execution environment (which had declined to launch the required agent
+  process in attempt 002) was independently corroborated against primary,
+  session-level artifacts before being treated as admissible, then applied
+  to the three criteria attempt 002 left `BLOCKED`
+- Mandatory coverage this attempt: 32 of 35 mandatory criteria remain
+  satisfied, re-confirmed against the unchanged implementation. The 3
+  criteria previously `BLOCKED` are now `FAIL`: two independent, replicated,
+  real live-Claude executions through the candidate's actual delegated-role
+  dispatch path both resulted in refusal
+- Repository evidence inspected: independent corroboration of the new
+  evidence's provenance; full re-run of mandatory executable coverage and
+  the public regression suite against the unchanged implementation
+- Restricted evaluator material inspected: this spike's own private
+  evaluator workspace (read only; no correction was needed)
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (69 passing), `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, `git diff --check` all green; repository state
+  confirmed unaffected by the newly-corroborated evidence
+- Measurement cutoff: immediately before this manifest update.
