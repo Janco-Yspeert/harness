@@ -244,3 +244,33 @@
   `npm run format:check`, `git diff --check` all green; repository state
   confirmed unaffected by the newly-corroborated evidence
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 010 — Implementation characterization after verification 003
+
+- Skill: `implementation` v3.
+- Input: implementation `05bc7d9e47d58f35734c8e158eafd43b153e38e2`, complete
+  public verification feedback 003 (and prior feedback), unchanged frozen brief
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`,
+  Design Map
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`,
+  evaluation requirements
+  `sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf`,
+  and coverage map
+  `sha256:eb4921e8c87d47c35d16f8fc90ad5192526327b4fe6e4517f08ae0faba1ad0a4`.
+- Result: BLOCKED at provider characterization. Claude Code 2.1.270 received
+  appended and native-agent context but refused the synthetic protected role
+  through both mechanisms. A defensible trusted delivery boundary was not
+  established. No candidate or implementation handoff; evaluator revision 002,
+  evaluator protection, production source, tests, and prior evidence unchanged.
+- Output: `claude-characterization-003.md`
+  `sha256:e1e8a87eac8b62cd6e431990d5b330a6d4f116d198b9cba2421d9420e8133484`;
+  `claude-characterization-003.json`
+  `sha256:7cb21e9903f74c3494123243dedd03f1eba604c87bb22ae9fcf6a1d34293e16b`.
+- Checks: seven completed bounded Claude characterization calls; two initial
+  sandboxed calls timed out. Provisional public regression failed as expected
+  at missing provider delivery mode, then was withdrawn with the unproven
+  design. JSON parses; repository formatting check and `git diff --check` pass;
+  source/test/skill diff confirmed empty. Full tests, typecheck and lint were
+  not rerun because no implementation change survived characterization.
+- Restricted evaluator material inspected: none. LP1 was not exercised.
+- Measurement cutoff: immediately before this manifest update.
