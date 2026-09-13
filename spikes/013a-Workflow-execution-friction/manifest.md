@@ -176,3 +176,40 @@
   Claude/Codex provider verification remains allocated to independent evaluator
   verification and was not claimed by implementation.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 008 — Evaluator Verification (attempt 002)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify time)
+- Input: implementation commit
+  `05bc7d9e47d58f35734c8e158eafd43b153e38e2` (attempt 2), all frozen public
+  inputs confirmed byte-identical to their frozen identities (no
+  specification drift)
+- Result: `BLOCKED` (`INFRASTRUCTURE_FAILURE`), attempt `002`. Evaluator
+  revision `002` unchanged; no correction needed this attempt.
+- Output: `verification-feedback-002.md`
+- Mandatory executable hidden coverage: 5/5 pass, including both cases that
+  failed in attempt 001
+- Mandatory non-executable coverage: 32 of 35 mandatory criteria confirmed
+  satisfied this attempt, including every criterion that failed in attempt
+  001, via diagnostic probes against the real allocation/authorization code
+  and two further bounded, real, live-provider fixtures executed end-to-end
+  through a real local Harness host to the real Codex executor (one
+  confirming rejection of unverified contract claims and fully automatic,
+  unattended semantic role-result reporting with no manual step). The
+  remaining 3 criteria - the paired live-Claude scenario and the Spike 011
+  readiness claim that depends on it - are `BLOCKED`: this evaluator's own
+  execution environment declined to launch the required Claude agent
+  process, a session-level restriction external to the candidate
+  implementation
+- Repository evidence inspected: the full implementation diff against the
+  prior attempt, the real workflow-run allocation and registry code, and
+  both live fixtures' own process output
+- Restricted evaluator material inspected: this spike's own private
+  evaluator workspace (read only; no correction was needed)
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (69 passing), `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, `git diff --check` all green at the implementation
+  commit; repository state confirmed unchanged by both live fixtures
+- Measurement cutoff: immediately before this manifest update.
