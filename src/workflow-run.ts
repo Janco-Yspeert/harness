@@ -101,9 +101,13 @@ export interface WorkflowBackendRoleResult {
 }
 
 export type WorkflowContractDeliveryMode =
-  "host-directed-repository-load" | "host-directed-pinned-snapshot";
+  | "host-directed-repository-load"
+  | "host-directed-pinned-snapshot"
+  | "claude-system-contract";
 
 export interface ResolvedWorkflowContract {
+  // Host-captured bytes, never populated from the request or reloaded by an adapter.
+  readonly content: string;
   readonly name: string;
   readonly path: string;
   readonly version: string;
@@ -481,6 +485,7 @@ function resolveRepositoryContract(
     );
   }
   const contract: ResolvedWorkflowContract = {
+    content,
     name,
     path,
     version,
@@ -864,7 +869,10 @@ function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
     permissionProfile,
     skill: contract.path,
     skillVersion: contract.version,
-    contract,
+    contract:
+      request.executor === "claude" && delegatedAuthority !== undefined
+        ? { ...contract, deliveryMode: "claude-system-contract" }
+        : contract,
     allocationAuthority:
       protectedRole && directHuman
         ? { type: "explicit-human" }

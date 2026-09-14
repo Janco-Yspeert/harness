@@ -1,6 +1,11 @@
 import { spawn, type ChildProcessByStdio } from "node:child_process";
 import type { Readable } from "node:stream";
 
+import {
+  buildClaudeWorkflowCommand,
+  claudeWorkflowDirectory,
+} from "./claude-workflow.ts";
+
 import type {
   ResolvedWorkflowRunSpec,
   WorkflowBackendRoleResult,
@@ -81,7 +86,10 @@ export function buildExecutorCommand(
   const workspaces = spec.permissionProfile.workspaces;
   const primary = workspaces[0] ?? process.cwd();
   const extraWorkspaces = workspaces.slice(1);
-  const prompt = executionPrompt(spec);
+  const prompt =
+    spec.contract.deliveryMode === "claude-system-contract"
+      ? ""
+      : executionPrompt(spec);
 
   let command: string[];
   if (spec.executor === "codex") {
@@ -98,18 +106,7 @@ export function buildExecutorCommand(
       prompt,
     ];
   } else if (spec.executor === "claude") {
-    // `acceptEdits` is the bounded non-interactive edit mode, not the
-    // permission-bypass mode. Additional declared workspaces are added
-    // explicitly rather than granting broad host access.
-    command = [
-      "claude",
-      "-p",
-      "--permission-mode",
-      "acceptEdits",
-      ...extraWorkspaces.flatMap((workspace) => ["--add-dir", workspace]),
-      "--",
-      prompt,
-    ];
+    command = buildClaudeWorkflowCommand(spec, prompt);
   } else {
     throw new Error(`Unsupported workflow executor: ${spec.executor}`);
   }
@@ -225,7 +222,10 @@ export function createLocalWorkflowBackend(
   if (program === undefined) {
     throw new Error("workflow executor command is empty");
   }
-  const primaryWorkspace = context.spec.permissionProfile.workspaces[0];
+  const primaryWorkspace =
+    context.spec.executor === "claude"
+      ? claudeWorkflowDirectory(context.spec)
+      : context.spec.permissionProfile.workspaces[0];
   const child: PipedChildProcess = spawn(program, args, {
     cwd: primaryWorkspace ?? process.cwd(),
     stdio: ["ignore", "pipe", "pipe"],

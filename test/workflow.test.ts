@@ -688,8 +688,21 @@ void test("Spike 012 bootstrap evaluator dispatch is pinned to its committed v10
     resolved.authority.identity,
     "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b",
   );
+  assert.equal(
+    resolved.command.at(-1),
+    "Perform the allocated evaluator-verify work for spikes/012-correction-cycles-evaluator-repair.",
+  );
+  const codex = run(
+    [
+      "bootstrap-authority",
+      "spikes/012-correction-cycles-evaluator-repair",
+      "evaluator-verify",
+    ],
+    { ...process.env, HARNESS_WORKFLOW_EVALUATOR_EXECUTOR: "codex" },
+  );
+  assert.equal(codex.status, 0, codex.stderr);
   assert.match(
-    resolved.command.at(-1) ?? "",
+    (JSON.parse(codex.stdout) as { command: string[] }).command.at(-1) ?? "",
     /Do not resolve or use skills\/evaluator\/SKILL\.md/,
   );
   assert.equal(

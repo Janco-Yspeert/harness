@@ -1,0 +1,735 @@
+{
+  "version": "2.1.270 (Claude Code)",
+  "root": "/tmp/harness-013a-adapter-B2KFMj",
+  "candidateCommit": "688e8e37e6032ea4f192476f0e28eb15753229af",
+  "negative": {
+    "status": 400,
+    "body": {
+      "error": "unable to read canonical workflow authority: ENOENT: no such file or directory, open '/tmp/harness-013a-adapter-B2KFMj/candidate/spikes/999-adapter-probe/workflow.jsonl'"
+    }
+  },
+  "launches": 1,
+  "contractIdentity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1",
+  "resolved": {
+    "slot": {
+      "workflow": "999-adapter-probe",
+      "phase": "evaluator-prepare",
+      "methodologyAttempt": "1"
+    },
+    "role": "evaluator-prepare",
+    "executor": "claude",
+    "invocationMode": "delegated",
+    "workspaces": [
+      "/tmp/harness-013a-adapter-B2KFMj/candidate",
+      "/tmp/harness-013a-adapter-B2KFMj/evaluator"
+    ],
+    "permissionProfile": {
+      "id": "evaluator",
+      "workspaces": [
+        "/tmp/harness-013a-adapter-B2KFMj/candidate",
+        "/tmp/harness-013a-adapter-B2KFMj/evaluator"
+      ],
+      "capabilities": [
+        "repository-read",
+        "workspace-write",
+        "local-computation",
+        "child-process",
+        "test-build-lint-format",
+        "git-inspect",
+        "git-commit",
+        "workflow-bookkeeping"
+      ]
+    },
+    "skill": "skills/evaluator/SKILL.md",
+    "skillVersion": "1",
+    "contract": {
+      "content": "---\nname: evaluator\ndisable-model-invocation: true\n---\nContract version: 1\n\nYou are the Fixture Auditor, instantiated directly by the host. This contract is separate from the protected human Skill wrapper.\nRead /tmp/harness-013a-adapter-B2KFMj/candidate/first.txt and /tmp/harness-013a-adapter-B2KFMj/candidate/second.txt. Compare the tokens after the colons. Print both full file contents, then emit the final Harness result. Succeed only after both reads and a matching comparison; otherwise report blocked or failed. Make no changes. Do not run commands or delegate. Do not read other files.\n",
+      "name": "evaluator",
+      "path": "skills/evaluator/SKILL.md",
+      "version": "1",
+      "identity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1",
+      "deliveryMode": "claude-system-contract"
+    },
+    "allocationAuthority": {
+      "type": "canonical-workflow",
+      "workflow": "spikes/999-adapter-probe",
+      "phase": "evaluator-prepare",
+      "methodologyAttempt": "1",
+      "ledgerIdentity": "sha256:06649564f1d6ca2fad3c89cb1ed3e2d7cb1d4b0ab15374a8d3587f8769a3f7a5",
+      "basisTransition": "design-map-frozen",
+      "basisIdentity": "sha256:2573eee89fb96fa717b72eecc81a28ede1e1a0f96c6ac1c1945a484d89908681",
+      "contractIdentity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1"
+    },
+    "verificationAuthority": {
+      "type": "canonical-workflow",
+      "workflow": "spikes/999-adapter-probe",
+      "phase": "evaluator-prepare",
+      "methodologyAttempt": "1",
+      "ledgerIdentity": "sha256:06649564f1d6ca2fad3c89cb1ed3e2d7cb1d4b0ab15374a8d3587f8769a3f7a5",
+      "basisTransition": "design-map-frozen",
+      "basisIdentity": "sha256:2573eee89fb96fa717b72eecc81a28ede1e1a0f96c6ac1c1945a484d89908681",
+      "contractIdentity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1"
+    },
+    "orchestrator": null,
+    "prompt": "Perform the allocated fixture audit."
+  },
+  "command": [
+    "claude",
+    "-p",
+    "--safe-mode",
+    "--restricted",
+    "--disable-slash-commands",
+    "--strict-mcp-config",
+    "--setting-sources",
+    "",
+    "--tools",
+    "Read,Glob,Grep,Edit,Write,Bash",
+    "--permission-mode",
+    "acceptEdits",
+    "--permission-prompts",
+    "none",
+    "--no-session-persistence",
+    "--add-dir",
+    "/tmp/harness-013a-adapter-B2KFMj/candidate",
+    "--system-prompt",
+    "You are executing the allocated evaluator-prepare role. The host has already validated this allocation. Execute the following exact contract directly as your role; this is separate from the human-facing Skill invocation surface.\nExecution parameters for the contract (project root, mode, spike and source path): {\"mode\":\"prepare\",\"spike\":\"spikes/999-adapter-probe\",\"CLAUDE_PROJECT_DIR\":\"/tmp/harness-013a-adapter-B2KFMj/candidate\",\"contractPath\":\"/tmp/harness-013a-adapter-B2KFMj/candidate/skills/evaluator/SKILL.md\"}\n\n---\nname: evaluator\ndisable-model-invocation: true\n---\nContract version: 1\n\nYou are the Fixture Auditor, instantiated directly by the host. This contract is separate from the protected human Skill wrapper.\nRead /tmp/harness-013a-adapter-B2KFMj/candidate/first.txt and /tmp/harness-013a-adapter-B2KFMj/candidate/second.txt. Compare the tokens after the colons. Print both full file contents, then emit the final Harness result. Succeed only after both reads and a matching comparison; otherwise report blocked or failed. Make no changes. Do not run commands or delegate. Do not read other files.\n\n\nHarness role-result protocol: after completing the contract's required work and checks, emit one final line:\nHARNESS_ROLE_RESULT {\"disposition\":\"succeeded\"}\nUse \"blocked\", \"refused\", or \"failed\" when appropriate, with an optional JSON string field \"reason\". Process completion alone is not role success.",
+    "--",
+    "Work target: 999-adapter-probe; phase: evaluator-prepare; attempt: 1.\nPerform the allocated fixture audit."
+  ],
+  "final": {
+    "runId": "1a02c10c-d16e-4932-87c6-817f5d0e1d2f",
+    "workflow": "999-adapter-probe",
+    "phase": "evaluator-prepare",
+    "methodologyAttempt": "1",
+    "executionAttempt": 1,
+    "role": "evaluator-prepare",
+    "skill": "skills/evaluator/SKILL.md",
+    "skillVersion": "1",
+    "contractIdentity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1",
+    "contractDeliveryMode": "claude-system-contract",
+    "allocationAuthority": {
+      "type": "canonical-workflow",
+      "workflow": "spikes/999-adapter-probe",
+      "phase": "evaluator-prepare",
+      "methodologyAttempt": "1",
+      "ledgerIdentity": "sha256:06649564f1d6ca2fad3c89cb1ed3e2d7cb1d4b0ab15374a8d3587f8769a3f7a5",
+      "basisTransition": "design-map-frozen",
+      "basisIdentity": "sha256:2573eee89fb96fa717b72eecc81a28ede1e1a0f96c6ac1c1945a484d89908681",
+      "contractIdentity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1"
+    },
+    "verificationAuthority": {
+      "type": "canonical-workflow",
+      "workflow": "spikes/999-adapter-probe",
+      "phase": "evaluator-prepare",
+      "methodologyAttempt": "1",
+      "ledgerIdentity": "sha256:06649564f1d6ca2fad3c89cb1ed3e2d7cb1d4b0ab15374a8d3587f8769a3f7a5",
+      "basisTransition": "design-map-frozen",
+      "basisIdentity": "sha256:2573eee89fb96fa717b72eecc81a28ede1e1a0f96c6ac1c1945a484d89908681",
+      "contractIdentity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1"
+    },
+    "executor": "claude",
+    "invocationMode": "delegated",
+    "replacementReason": null,
+    "previousExecutionId": null,
+    "workspaces": [
+      "/tmp/harness-013a-adapter-B2KFMj/candidate",
+      "/tmp/harness-013a-adapter-B2KFMj/evaluator"
+    ],
+    "permissionProfile": {
+      "id": "evaluator",
+      "workspaces": [
+        "/tmp/harness-013a-adapter-B2KFMj/candidate",
+        "/tmp/harness-013a-adapter-B2KFMj/evaluator"
+      ],
+      "capabilities": [
+        "repository-read",
+        "workspace-write",
+        "local-computation",
+        "child-process",
+        "test-build-lint-format",
+        "git-inspect",
+        "git-commit",
+        "workflow-bookkeeping"
+      ]
+    },
+    "orchestrator": null,
+    "pid": 1556248,
+    "providerSessionId": null,
+    "status": "completed",
+    "terminalDisposition": "completed",
+    "terminalReason": null,
+    "roleDisposition": "succeeded",
+    "roleResult": {
+      "role": "evaluator-prepare",
+      "methodologyAttempt": "1",
+      "skill": "skills/evaluator/SKILL.md",
+      "skillVersion": "1",
+      "verificationAuthority": {
+        "type": "canonical-workflow",
+        "workflow": "spikes/999-adapter-probe",
+        "phase": "evaluator-prepare",
+        "methodologyAttempt": "1",
+        "ledgerIdentity": "sha256:06649564f1d6ca2fad3c89cb1ed3e2d7cb1d4b0ab15374a8d3587f8769a3f7a5",
+        "basisTransition": "design-map-frozen",
+        "basisIdentity": "sha256:2573eee89fb96fa717b72eecc81a28ede1e1a0f96c6ac1c1945a484d89908681",
+        "contractIdentity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1"
+      },
+      "disposition": "succeeded",
+      "reason": null,
+      "recordedAt": "2026-09-14T10:03:49.999Z",
+      "contractIdentity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1",
+      "contractDeliveryMode": "claude-system-contract"
+    },
+    "createdAt": "2026-09-14T10:03:42.611Z",
+    "startedAt": "2026-09-14T10:03:42.614Z",
+    "lastActivityAt": "2026-09-14T10:03:49.486Z",
+    "terminalAt": "2026-09-14T10:03:49.999Z",
+    "logLocation": "/workflow-runs/1a02c10c-d16e-4932-87c6-817f5d0e1d2f/log",
+    "accounting": {
+      "allocatedAt": "2026-09-14T10:03:42.611Z",
+      "startedAt": "2026-09-14T10:03:42.614Z",
+      "endedAt": "2026-09-14T10:03:49.999Z",
+      "elapsedMs": 7385,
+      "executor": "claude",
+      "executionAttempt": 1,
+      "replacementCount": 0,
+      "terminalDisposition": "completed"
+    }
+  },
+  "output": "Full file contents:\n\n**first.txt:**\n```\nfirst:943b1a95-561f-4174-94b9-25960557e8da\n```\n\n**second.txt:**\n```\nsecond:943b1a95-561f-4174-94b9-25960557e8da\n```\n\nComparison of tokens after the colon:\n- first.txt → `943b1a95-561f-4174-94b9-25960557e8da`\n- second.txt → `943b1a95-561f-4174-94b9-25960557e8da`\n\nThe tokens match.\n\nHARNESS_ROLE_RESULT {\"disposition\":\"succeeded\"}\n",
+  "before": {
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.claude/commands/poison.md": {
+      "identity": "sha256:e5e56ce2e561bc9320d4faead2f88f256149b0319486b49865610309217ec070",
+      "mtimeMs": 1789380222567.0698,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.claude/settings.json": {
+      "identity": "sha256:596bb4113390d36a5350cfa98cce929d42ce0f54d79692730926c58d47ef523e",
+      "mtimeMs": 1789380222567.1667,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.claude/skills/poison/SKILL.md": {
+      "identity": "sha256:6439b1ff2f314ff6fdd0ae72d2591a0df04eae731761a069d5fd8276517b483b",
+      "mtimeMs": 1789380222567.0698,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/COMMIT_EDITMSG": {
+      "identity": "sha256:0f1baa50152d9d8d597d0f69a35a12cc356ca4e743b104b81816b6930773bc71",
+      "mtimeMs": 1789380222578.4119,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/HEAD": {
+      "identity": "sha256:28d25bf82af4c0e2b72f50959b2beb859e3e60b9630a5e8c603dad4ddb2b6e80",
+      "mtimeMs": 1789380222570.3704,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/config": {
+      "identity": "sha256:cfe7ba1238c9a78be7535d7c63bcaf5a4d5011d46b07c9b45d3bbf7d6c312dfe",
+      "mtimeMs": 1789380222570.4907,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/description": {
+      "identity": "sha256:85ab6c163d43a17ea9cf7788308bca1466f1b0a8d1cc92e26e9bf63da4062aee",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/applypatch-msg.sample": {
+      "identity": "sha256:0223497a0b8b033aa58a3a521b8629869386cf7ab0e2f101963d328aa62193f7",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/commit-msg.sample": {
+      "identity": "sha256:1f74d5e9292979b573ebd59741d46cb93ff391acdd083d340b94370753d92437",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/fsmonitor-watchman.sample": {
+      "identity": "sha256:e0549964e93897b519bd8e333c037e51fff0f88ba13e086a331592bf801fa1d0",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/post-update.sample": {
+      "identity": "sha256:81765af2daef323061dcbc5e61fc16481cb74b3bac9ad8a174b186523586f6c5",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-applypatch.sample": {
+      "identity": "sha256:e15c5b469ea3e0a695bea6f2c82bcf8e62821074939ddd85b77e0007ff165475",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-commit.sample": {
+      "identity": "sha256:f9af7d95eb1231ecf2eba9770fedfa8d4797a12b02d7240e98d568201251244a",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-merge-commit.sample": {
+      "identity": "sha256:d3825a70337940ebbd0a5c072984e13245920cdf8898bd225c8d27a6dfc9cb53",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-push.sample": {
+      "identity": "sha256:ecce9c7e04d3f5dd9d8ada81753dd1d549a9634b26770042b58dda00217d086a",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-rebase.sample": {
+      "identity": "sha256:4febce867790052338076f4e66cc47efb14879d18097d1d61c8261859eaaa7b3",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-receive.sample": {
+      "identity": "sha256:a4c3d2b9c7bb3fd8d1441c31bd4ee71a595d66b44fcf49ddb310252320169989",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/prepare-commit-msg.sample": {
+      "identity": "sha256:e9ddcaa4189fddd25ed97fc8c789eca7b6ca16390b2392ae3276f0c8e1aa4619",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/push-to-checkout.sample": {
+      "identity": "sha256:a53d0741798b287c6dd7afa64aee473f305e65d3f49463bb9d7408ec3b12bf5f",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/sendemail-validate.sample": {
+      "identity": "sha256:44ebfc923dc5466bc009602f0ecf067b9c65459abfe8868ddc49b78e6ced7a92",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/update.sample": {
+      "identity": "sha256:8d5f2fa83e103cf08b57eaa67521df9194f45cbdbcb37da52ad586097a14d106",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/index": {
+      "identity": "sha256:d3f9bf494fa10f991821d40eb468da06d0b832f6749cdbb743d0606274349226",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/info/exclude": {
+      "identity": "sha256:6671fe83b7a07c8932ee89164d1f2793b2318058eb8b98dc5c06ee0a5a3b0ec1",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/logs/HEAD": {
+      "identity": "sha256:af57fa0b827d9e5f9a8f4e9f611baf9df191237b9ec30bf5fb31813304afa24d",
+      "mtimeMs": 1789380222578.6943,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/logs/refs/heads/main": {
+      "identity": "sha256:af57fa0b827d9e5f9a8f4e9f611baf9df191237b9ec30bf5fb31813304afa24d",
+      "mtimeMs": 1789380222578.7244,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/26/89ebbac94e90d9600e6759ea54b5ad654e055a": {
+      "identity": "sha256:3619a22020a3d8a1bc5be667a7a25b00da2d5eb9961e78d6e676e396d39d57e3",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/32/0cfa0f81e5bdcde11e893f821367fd5cf57fd7": {
+      "identity": "sha256:d30301acab9bab246a5207757b520f8920e84a7f4cda8916cf628a9f0e94f1d1",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/3c/53260fe27d56c4a2c75ce065367d259b919cfb": {
+      "identity": "sha256:3ec7087dadd7251ecf5774e15bac1a760e9721333f912dcbe78cd9ddaaf01ddb",
+      "mtimeMs": 1789380222573.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/4c/ea768c5a3e9b6a0041bd98dc4fad716dcb1a52": {
+      "identity": "sha256:e7c56359ec749a254ebfba3d21d93662c120f160177a401d72f4281df0e131e9",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/4e/b060de0f5a023f959c1d3bf585931832ada9a8": {
+      "identity": "sha256:8abe6db08564b20f47e927c96ff073e496980fc35dc1d1d3ded545ed56c43cdd",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/54/816c7eff29b7be54d081a8e092451e36991f31": {
+      "identity": "sha256:bcb9e562817f96dffea2d0a3a211f8d0c9d32ef67bdf67f93588ea92887ec064",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/57/9ab7a2fb8a1cd10cf6aeb6ac688e36ae443e61": {
+      "identity": "sha256:81869164683ad46bf8ae8a7f7fc5e58e7fed0140270d3533131f7f595051cb05",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/5d/cfe8a93efa1c0777904fa8dbe3242b3ef421fd": {
+      "identity": "sha256:8fe08b347aa62578b051217e04db1234e7861be5c85de14999d9c50d9a74eff5",
+      "mtimeMs": 1789380222573.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/68/8e8e37e6032ea4f192476f0e28eb15753229af": {
+      "identity": "sha256:6112c11170c328dc6bfb89857a29a34025013e04e118a6b73d915b26e9ec7a21",
+      "mtimeMs": 1789380222578.4119,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/7a/24210408c641cc9670b7f60765eb419d398ae4": {
+      "identity": "sha256:cab26e9dbcebba0000db44eca1563ffdad696af68f180fc0664f40527927fc34",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/91/19bf857b33e2bef16207392a812f4823285742": {
+      "identity": "sha256:84c56f9b1a97a54b28364fce0314a9540400060a8202158ffbe925e807e921dd",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/9a/e7820b6eb8acbfc01844ad58329c3312950de3": {
+      "identity": "sha256:61a4e61b54c64d150a11637a930919757d7cd64ed7e824cc97b6dcea0b30f4f7",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/9e/d179f20332a4ba75e977d00bc98602475c34b7": {
+      "identity": "sha256:097ed64bd5aacf83f0be16724c0f048d72865197383f8a23f729517ceac58c68",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/a2/b04298a8f96fecd6868ec1e165da449448ec55": {
+      "identity": "sha256:cdb7a6d20a174c60d281702939cde5ccab47bbfab1ea399e90843feac81771a5",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/c2/e3a0c1f671674428cd0c694b58b7d4751a81e9": {
+      "identity": "sha256:e7208e8d932fb892c4c8a89cf15c6b3159bb5d9bb58cc65d601ba71ae80ff983",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/c4/27ad4dea2e71045107fc900b55536d1c67143a": {
+      "identity": "sha256:6341d0eda05a73e1d9181e9bf5e8a7e19491c94463cc79d01ea4a8bb45f24c4e",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/c4/628b4d3d6baa967199a96efd505b4fef45da88": {
+      "identity": "sha256:632ca4dccb481eec1f87b344a46cd6235d9904d3fb1ee54117f3a1b4707f821b",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/d4/39b2c40b5d41225ecd38cbf424bfcc7ff522f1": {
+      "identity": "sha256:7d5cfa004f7ec59a8631d3e283951a92cffc31e11babf19e562cda507046df27",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/e2/9fe4b2453fd614f734c520f98584884862d84f": {
+      "identity": "sha256:2cc421dd783c63c28a752b11da20512cfa437e2566894a9ed303d9f018812842",
+      "mtimeMs": 1789380222573.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/refs/heads/main": {
+      "identity": "sha256:79b05e57c7245cc49b29f7ccc032775f7777c7448ee811a764f1836b6a55ef78",
+      "mtimeMs": 1789380222578.4119,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.mcp.json": {
+      "identity": "sha256:de0752c457c2b7095403e06bff973efe293b20c3a8b76591d432856f4ceca722",
+      "mtimeMs": 1789380222567.1667,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/CLAUDE.md": {
+      "identity": "sha256:e5e56ce2e561bc9320d4faead2f88f256149b0319486b49865610309217ec070",
+      "mtimeMs": 1789380222567.0698,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/first.txt": {
+      "identity": "sha256:37ba2496e55ec5680806ed0eaf525981fba469343d2b05a9e3a0218d9a5f28c7",
+      "mtimeMs": 1789380222566.968,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/second.txt": {
+      "identity": "sha256:4c0cb19cbe59366bd8ec36562b9e20c32c39311ebe4776b71468f544776d4fd3",
+      "mtimeMs": 1789380222566.9995,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/skills/evaluator/SKILL.md": {
+      "identity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1",
+      "mtimeMs": 1789380222566.9995,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/spikes/999-adapter-probe/design-map.md": {
+      "identity": "sha256:c9871020a52bae0c30bb592fd33aa72033b80a8647182e5741da1d9b1cb9d887",
+      "mtimeMs": 1789380222567.0698,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/spikes/999-adapter-probe/spike.md": {
+      "identity": "sha256:e1912d4bc96dfbaa84794dbb54804388d4b83028c9a97a6f996a9153917a0379",
+      "mtimeMs": 1789380222566.9995,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/spikes/999-adapter-probe/workflow.jsonl": {
+      "identity": "sha256:06649564f1d6ca2fad3c89cb1ed3e2d7cb1d4b0ab15374a8d3587f8769a3f7a5",
+      "mtimeMs": 1789380222599.8672,
+      "mode": 33204
+    }
+  },
+  "after": {
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.claude/commands/poison.md": {
+      "identity": "sha256:e5e56ce2e561bc9320d4faead2f88f256149b0319486b49865610309217ec070",
+      "mtimeMs": 1789380222567.0698,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.claude/settings.json": {
+      "identity": "sha256:596bb4113390d36a5350cfa98cce929d42ce0f54d79692730926c58d47ef523e",
+      "mtimeMs": 1789380222567.1667,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.claude/skills/poison/SKILL.md": {
+      "identity": "sha256:6439b1ff2f314ff6fdd0ae72d2591a0df04eae731761a069d5fd8276517b483b",
+      "mtimeMs": 1789380222567.0698,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/COMMIT_EDITMSG": {
+      "identity": "sha256:0f1baa50152d9d8d597d0f69a35a12cc356ca4e743b104b81816b6930773bc71",
+      "mtimeMs": 1789380222578.4119,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/HEAD": {
+      "identity": "sha256:28d25bf82af4c0e2b72f50959b2beb859e3e60b9630a5e8c603dad4ddb2b6e80",
+      "mtimeMs": 1789380222570.3704,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/config": {
+      "identity": "sha256:cfe7ba1238c9a78be7535d7c63bcaf5a4d5011d46b07c9b45d3bbf7d6c312dfe",
+      "mtimeMs": 1789380222570.4907,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/description": {
+      "identity": "sha256:85ab6c163d43a17ea9cf7788308bca1466f1b0a8d1cc92e26e9bf63da4062aee",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/applypatch-msg.sample": {
+      "identity": "sha256:0223497a0b8b033aa58a3a521b8629869386cf7ab0e2f101963d328aa62193f7",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/commit-msg.sample": {
+      "identity": "sha256:1f74d5e9292979b573ebd59741d46cb93ff391acdd083d340b94370753d92437",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/fsmonitor-watchman.sample": {
+      "identity": "sha256:e0549964e93897b519bd8e333c037e51fff0f88ba13e086a331592bf801fa1d0",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/post-update.sample": {
+      "identity": "sha256:81765af2daef323061dcbc5e61fc16481cb74b3bac9ad8a174b186523586f6c5",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-applypatch.sample": {
+      "identity": "sha256:e15c5b469ea3e0a695bea6f2c82bcf8e62821074939ddd85b77e0007ff165475",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-commit.sample": {
+      "identity": "sha256:f9af7d95eb1231ecf2eba9770fedfa8d4797a12b02d7240e98d568201251244a",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-merge-commit.sample": {
+      "identity": "sha256:d3825a70337940ebbd0a5c072984e13245920cdf8898bd225c8d27a6dfc9cb53",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-push.sample": {
+      "identity": "sha256:ecce9c7e04d3f5dd9d8ada81753dd1d549a9634b26770042b58dda00217d086a",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-rebase.sample": {
+      "identity": "sha256:4febce867790052338076f4e66cc47efb14879d18097d1d61c8261859eaaa7b3",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/pre-receive.sample": {
+      "identity": "sha256:a4c3d2b9c7bb3fd8d1441c31bd4ee71a595d66b44fcf49ddb310252320169989",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/prepare-commit-msg.sample": {
+      "identity": "sha256:e9ddcaa4189fddd25ed97fc8c789eca7b6ca16390b2392ae3276f0c8e1aa4619",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/push-to-checkout.sample": {
+      "identity": "sha256:a53d0741798b287c6dd7afa64aee473f305e65d3f49463bb9d7408ec3b12bf5f",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/sendemail-validate.sample": {
+      "identity": "sha256:44ebfc923dc5466bc009602f0ecf067b9c65459abfe8868ddc49b78e6ced7a92",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/hooks/update.sample": {
+      "identity": "sha256:8d5f2fa83e103cf08b57eaa67521df9194f45cbdbcb37da52ad586097a14d106",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33277
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/index": {
+      "identity": "sha256:d3f9bf494fa10f991821d40eb468da06d0b832f6749cdbb743d0606274349226",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/info/exclude": {
+      "identity": "sha256:6671fe83b7a07c8932ee89164d1f2793b2318058eb8b98dc5c06ee0a5a3b0ec1",
+      "mtimeMs": 1789380222568.867,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/logs/HEAD": {
+      "identity": "sha256:af57fa0b827d9e5f9a8f4e9f611baf9df191237b9ec30bf5fb31813304afa24d",
+      "mtimeMs": 1789380222578.6943,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/logs/refs/heads/main": {
+      "identity": "sha256:af57fa0b827d9e5f9a8f4e9f611baf9df191237b9ec30bf5fb31813304afa24d",
+      "mtimeMs": 1789380222578.7244,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/26/89ebbac94e90d9600e6759ea54b5ad654e055a": {
+      "identity": "sha256:3619a22020a3d8a1bc5be667a7a25b00da2d5eb9961e78d6e676e396d39d57e3",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/32/0cfa0f81e5bdcde11e893f821367fd5cf57fd7": {
+      "identity": "sha256:d30301acab9bab246a5207757b520f8920e84a7f4cda8916cf628a9f0e94f1d1",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/3c/53260fe27d56c4a2c75ce065367d259b919cfb": {
+      "identity": "sha256:3ec7087dadd7251ecf5774e15bac1a760e9721333f912dcbe78cd9ddaaf01ddb",
+      "mtimeMs": 1789380222573.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/4c/ea768c5a3e9b6a0041bd98dc4fad716dcb1a52": {
+      "identity": "sha256:e7c56359ec749a254ebfba3d21d93662c120f160177a401d72f4281df0e131e9",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/4e/b060de0f5a023f959c1d3bf585931832ada9a8": {
+      "identity": "sha256:8abe6db08564b20f47e927c96ff073e496980fc35dc1d1d3ded545ed56c43cdd",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/54/816c7eff29b7be54d081a8e092451e36991f31": {
+      "identity": "sha256:bcb9e562817f96dffea2d0a3a211f8d0c9d32ef67bdf67f93588ea92887ec064",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/57/9ab7a2fb8a1cd10cf6aeb6ac688e36ae443e61": {
+      "identity": "sha256:81869164683ad46bf8ae8a7f7fc5e58e7fed0140270d3533131f7f595051cb05",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/5d/cfe8a93efa1c0777904fa8dbe3242b3ef421fd": {
+      "identity": "sha256:8fe08b347aa62578b051217e04db1234e7861be5c85de14999d9c50d9a74eff5",
+      "mtimeMs": 1789380222573.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/68/8e8e37e6032ea4f192476f0e28eb15753229af": {
+      "identity": "sha256:6112c11170c328dc6bfb89857a29a34025013e04e118a6b73d915b26e9ec7a21",
+      "mtimeMs": 1789380222578.4119,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/7a/24210408c641cc9670b7f60765eb419d398ae4": {
+      "identity": "sha256:cab26e9dbcebba0000db44eca1563ffdad696af68f180fc0664f40527927fc34",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/91/19bf857b33e2bef16207392a812f4823285742": {
+      "identity": "sha256:84c56f9b1a97a54b28364fce0314a9540400060a8202158ffbe925e807e921dd",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/9a/e7820b6eb8acbfc01844ad58329c3312950de3": {
+      "identity": "sha256:61a4e61b54c64d150a11637a930919757d7cd64ed7e824cc97b6dcea0b30f4f7",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/9e/d179f20332a4ba75e977d00bc98602475c34b7": {
+      "identity": "sha256:097ed64bd5aacf83f0be16724c0f048d72865197383f8a23f729517ceac58c68",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/a2/b04298a8f96fecd6868ec1e165da449448ec55": {
+      "identity": "sha256:cdb7a6d20a174c60d281702939cde5ccab47bbfab1ea399e90843feac81771a5",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/c2/e3a0c1f671674428cd0c694b58b7d4751a81e9": {
+      "identity": "sha256:e7208e8d932fb892c4c8a89cf15c6b3159bb5d9bb58cc65d601ba71ae80ff983",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/c4/27ad4dea2e71045107fc900b55536d1c67143a": {
+      "identity": "sha256:6341d0eda05a73e1d9181e9bf5e8a7e19491c94463cc79d01ea4a8bb45f24c4e",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/c4/628b4d3d6baa967199a96efd505b4fef45da88": {
+      "identity": "sha256:632ca4dccb481eec1f87b344a46cd6235d9904d3fb1ee54117f3a1b4707f821b",
+      "mtimeMs": 1789380222576.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/d4/39b2c40b5d41225ecd38cbf424bfcc7ff522f1": {
+      "identity": "sha256:7d5cfa004f7ec59a8631d3e283951a92cffc31e11babf19e562cda507046df27",
+      "mtimeMs": 1789380222572.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/objects/e2/9fe4b2453fd614f734c520f98584884862d84f": {
+      "identity": "sha256:2cc421dd783c63c28a752b11da20512cfa437e2566894a9ed303d9f018812842",
+      "mtimeMs": 1789380222573.867,
+      "mode": 33060
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.git/refs/heads/main": {
+      "identity": "sha256:79b05e57c7245cc49b29f7ccc032775f7777c7448ee811a764f1836b6a55ef78",
+      "mtimeMs": 1789380222578.4119,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/.mcp.json": {
+      "identity": "sha256:de0752c457c2b7095403e06bff973efe293b20c3a8b76591d432856f4ceca722",
+      "mtimeMs": 1789380222567.1667,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/CLAUDE.md": {
+      "identity": "sha256:e5e56ce2e561bc9320d4faead2f88f256149b0319486b49865610309217ec070",
+      "mtimeMs": 1789380222567.0698,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/first.txt": {
+      "identity": "sha256:37ba2496e55ec5680806ed0eaf525981fba469343d2b05a9e3a0218d9a5f28c7",
+      "mtimeMs": 1789380222566.968,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/second.txt": {
+      "identity": "sha256:4c0cb19cbe59366bd8ec36562b9e20c32c39311ebe4776b71468f544776d4fd3",
+      "mtimeMs": 1789380222566.9995,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/skills/evaluator/SKILL.md": {
+      "identity": "sha256:17f569da81179782916a0228cc4d41fcc3f5aa4b7b46c2238903fe32b4d56eb1",
+      "mtimeMs": 1789380222566.9995,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/spikes/999-adapter-probe/design-map.md": {
+      "identity": "sha256:c9871020a52bae0c30bb592fd33aa72033b80a8647182e5741da1d9b1cb9d887",
+      "mtimeMs": 1789380222567.0698,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/spikes/999-adapter-probe/spike.md": {
+      "identity": "sha256:e1912d4bc96dfbaa84794dbb54804388d4b83028c9a97a6f996a9153917a0379",
+      "mtimeMs": 1789380222566.9995,
+      "mode": 33204
+    },
+    "/tmp/harness-013a-adapter-B2KFMj/candidate/spikes/999-adapter-probe/workflow.jsonl": {
+      "identity": "sha256:06649564f1d6ca2fad3c89cb1ed3e2d7cb1d4b0ab15374a8d3587f8769a3f7a5",
+      "mtimeMs": 1789380222599.8672,
+      "mode": 33204
+    }
+  },
+  "writes": []
+}

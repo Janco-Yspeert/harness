@@ -365,6 +365,11 @@ function bootstrapAuthority(
   };
 }
 function promptFor(phase: Phase, spike: string, target?: Target): string {
+  if (phase.startsWith("evaluator-") && executorFor(phase) === "claude") {
+    // The host resolves authority and supplies the protected contract through
+    // Claude system context. This caller identifies work, never invokes a Skill.
+    return `Perform the allocated ${phase} work for ${spike}.`;
+  }
   const bootstrap =
     target === undefined ? undefined : bootstrapAuthority(target, phase);
   if (bootstrap !== undefined) {

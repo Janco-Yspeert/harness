@@ -8,8 +8,8 @@ status: IMPLEMENTED
   contract path, version and SHA-256 identity. Missing caller declarations are
   filled from that resolution; invented or conflicting declarations are
   rejected. Run inspection exposes the contract identity and its
-  `host-directed-repository-load` or `host-directed-pinned-snapshot` delivery
-  mode.
+  `host-directed-repository-load`, `host-directed-pinned-snapshot`, or
+  `claude-system-contract` delivery mode.
 - Delegated evaluator authority is derived from the requesting workflow's own
   canonical ledger and committed artifact provenance. A workflow-owned pinned
   evaluator declaration is validated generically rather than enabled by a list
@@ -33,8 +33,9 @@ status: IMPLEMENTED
 - Contract aliases remain accepted only as compatibility hints; the host always
   re-resolves and records the canonical repository path and content identity.
   This preserves existing callers without treating their strings as authority.
-- Semantic outcomes use one provider-neutral stdout envelope appended by the
-  host to both Codex and Claude prompts. The envelope carries only disposition
+- Semantic outcomes use one provider-neutral stdout envelope described in
+  ordinary context for Codex/ordinary Claude and system context for protected
+  delegated Claude. The envelope carries only disposition
   and an optional reason; the host supplies and validates role, methodology
   attempt and contract authority from the immutable allocation binding.
 - Canonical evaluator authorization validates committed brief, Design Map and,
@@ -44,8 +45,8 @@ status: IMPLEMENTED
 ## Rejected complexity
 
 - No provider-specific skill framework or persistent result broker was added.
-  Both executors can honor the same host-directed repository load and terminal
-  result envelope through their existing bounded CLI adapters.
+  Claude has a narrow adapter for clean protected-role execution; Codex retains
+  its existing repository-loading behavior.
 
 ## Tests and checks
 
@@ -66,3 +67,57 @@ status: IMPLEMENTED
 - Mandatory live Claude/Codex fixture evidence remains evaluator-owned and has
   not been claimed here. This candidate reports implementation and visible
   tests, not independent evaluation.
+
+## Correction after verification 003 (candidate attempt 3)
+
+Claude Code remains 2.1.270, the version used by the successful clean-role
+characterization supplied with the correction request. No A–E rerun or evaluator
+preparation was performed.
+
+The host captures exact contract content when resolving the existing authority,
+including pinned snapshot identity/provenance checks. Only canonically validated
+Claude evaluator allocations select `claude-system-contract`. Request fields
+cannot populate contract content or select this mode. The adapter rechecks the
+captured content identity, never reloads a contract, and delivers its unmodified
+bytes inside replacement `--system-prompt` context alongside host-derived role,
+project/mode/path parameters and the unchanged result protocol. Task text names
+work; the CLI no longer asks delegated Claude to invoke an evaluator Skill.
+
+The adapter uses `--safe-mode --restricted --disable-slash-commands
+--strict-mcp-config --setting-sources '' --permission-prompts none
+--no-session-persistence`. Safe mode excludes candidate CLAUDE.md, Skills,
+commands, plugins, MCP, hooks and auto memory. Restricted file tools retain the
+workspace boundary. With the evaluator profile, cwd is the declared evaluator
+workspace and the candidate is an explicit additional directory. No extra
+workspace is created or granted. Host-managed policy remains applicable.
+
+Tools derive from the resolved capability set: Read/Glob/Grep for repository
+reads, Edit/Write for workspace writes, Bash only with child-process and
+local-computation capabilities. Write-capable profiles retain acceptEdits;
+read-only profiles use dontAsk. Bash availability does not bypass permission
+checks, and requests needing approval are denied. No unrestricted Bash allow,
+permission bypass, native Skill invocation, or mandatory bare mode was added.
+`disable-model-invocation: true` remains unchanged.
+
+The full 69-test suite, typecheck, lint, formatting and diff checks pass. Public
+regressions establish the host-to-adapter contract bytes despite post-resolution
+file mutation, rejection of altered content identity, rejection/ignoring of
+caller-supplied system fields, separation of task and system text, visible delivery
+mode, bounded tools/workspaces, unchanged final-marker parsing, and preservation
+of Codex and ordinary Claude behavior. The initial new regression failed on the
+old delivery mode before implementation.
+
+Final production-facing synthetic evidence is in
+`adapter-characterization-005/`: one actual host/adapter Claude allocation read
+both fresh marker tokens, returned a host-bound succeeded result and made zero
+observed fixture writes. The corresponding unauthorized request received HTTP
+400 with no backend launch. Candidate configuration deliberately contradicted the
+audit. This is implementation evidence, not independent acceptance evidence.
+
+LP1 still needs to falsify full pinned evaluator-contract execution, resolution
+of the original refusal condition, required evaluator side effects and permission
+sufficiency. In particular, restricted mode and unattended permission denial do
+not promise every test/build/Git operation will be automatically approved. The
+synthetic role required reads, not those operations. No evaluator verify,
+promotion, evaluator revision 002 change, LP1 execution, or provenance-debt repair
+was performed. The pre-existing Spike 011 ledger edit was preserved and excluded.

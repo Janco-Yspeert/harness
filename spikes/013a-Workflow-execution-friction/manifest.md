@@ -306,3 +306,53 @@
   were untouched. Only the synthetic wrapper moved between probes; the real
   evaluator invocation protection remains unchanged.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 012 — Claude protected execution correction (implementation attempt 3)
+
+- Skill: `implementation` v3.
+- Inputs: characterization checkpoint
+  `22203ccfe17af8e5ca57c09d2613027cf9f4ebc3`; user-authorized clean-role
+  characterization result on Claude Code 2.1.270; public verification feedback
+  003 against implementation `05bc7d9e47d58f35734c8e158eafd43b153e38e2`;
+  unchanged frozen brief, Design Map, evaluation requirements and coverage-map
+  identities recorded in Run 010 and rechecked against committed provenance.
+- Governing evaluator: revision `002`, unchanged. Historical revision-001
+  provenance discrepancies deliberately untouched. No evaluator preparation,
+  verification, promotion or private-material access.
+- Result: IMPLEMENTED; fresh candidate for independent evaluation. Host-captured
+  contract bytes reach protected delegated Claude through replacement system
+  context. The host alone selects this delivery after canonical validation.
+  Clean provider configuration, capability-derived tools, declared workspaces,
+  unchanged semantic parsing and protected human Skill preserved. Codex and
+  ordinary Claude retain their existing execution behavior.
+- Output: `implementation-report.md`, `adapter-characterization-005/`, three
+  production source files, the workflow CLI and two public test files.
+  Aggregate output identity `sha256:a98a5448c5d29f98b0e9b6a78d9a3e2256a5354ec53d4eb034cbb71d5ca4e60b` is SHA-256 of a compact,
+  key-sorted JSON map from the following repository-relative paths to their
+  SHA-256 byte identities (UTF-8; separators comma and colon; no final newline):
+  - `spikes/013a-Workflow-execution-friction/adapter-characterization-005/evidence.json`
+  - `spikes/013a-Workflow-execution-friction/adapter-characterization-005/report.md`
+  - `spikes/013a-Workflow-execution-friction/adapter-characterization-005/run.mjs`
+  - `spikes/013a-Workflow-execution-friction/implementation-report.md`
+  - `src/claude-workflow.ts`
+  - `src/workflow-backend.ts`
+  - `src/workflow-run.ts`
+  - `test/workflow-run.integration.test.ts`
+  - `test/workflow.test.ts`
+  - `tools/workflow.ts`
+- Verification: initial focused regression failed on the old delivery mode;
+  final full suite 69/69 passed, typecheck, lint, format:check and diff checks
+  passed. Final source/test/CLI diff reviewed for unrelated provider changes.
+  Frozen input hashes and evaluator Skill/bootstrap diff remain unchanged.
+- Live evidence: two bounded synthetic adapter iterations succeeded on Claude
+  Code 2.1.270; final run retained in `adapter-characterization-005/evidence.json`.
+  Final host run `1a02c10c-d16e-4932-87c6-817f5d0e1d2f` returned succeeded,
+  observed host elapsed time 7385 ms. Both fresh marker contents reported;
+  zero observed workspace changes and identical snapshots. Unauthorized request
+  returned HTTP 400 before launch. No LP1 consumed.
+- Limitations: full frozen evaluator command/write permission sufficiency and
+  original refusal resolution remain for LP1. No blanket Bash approval or
+  unrestricted permission bypass was introduced. Managed host policy remains
+  applicable. The pre-existing Spike 011 ledger edit is excluded.
+- Measurement cutoff: immediately before this manifest update. Candidate commit
+  and canonical handoff follow; they are not part of the measurements above.
