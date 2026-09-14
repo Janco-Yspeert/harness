@@ -97,6 +97,11 @@ the implementation role because it is evaluator-role output. This is not a
 claim that LP1 independently passed; it is a remaining characterization
 failure to be resolved before evaluator verification.
 
+Canonical `implementation-handoff` is intentionally not recorded for this
+candidate. The protected workflow authority still has implementation attempt 4
+open after a `BLOCKED` result and exposes no transition for a new attempt until
+the required human correction-cycle decision exists.
+
 ## Correction after verification 003 (candidate attempt 3)
 
 Claude Code remains 2.1.270, the version used by the successful clean-role

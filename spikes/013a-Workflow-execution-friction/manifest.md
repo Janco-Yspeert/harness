@@ -395,8 +395,10 @@
   only into `/tmp`. Production fails closed until the host installs it.
 - Restricted evaluator material inspected: none. The pre-existing Spike 011
   ledger edit was preserved and excluded.
-- Measurement cutoff: immediately before this manifest update. Candidate commit
-  and implementation handoff follow and are not included above.
+- Measurement cutoff: immediately before this manifest update. The candidate
+  commit follows and is not included above. Canonical `implementation-handoff`
+  cannot yet be recorded: the protected authority reports no human rejection
+  opening a new implementation attempt after attempt 6's `BLOCKED` result.
 
 ## Run 014 — Evaluator Verification (attempt 004)
 
