@@ -121,3 +121,57 @@ not promise every test/build/Git operation will be automatically approved. The
 synthetic role required reads, not those operations. No evaluator verify,
 promotion, evaluator revision 002 change, LP1 execution, or provenance-debt repair
 was performed. The pre-existing Spike 011 ledger edit was preserved and excluded.
+
+## Correction after verification attempt 004 (implementation attempt 4)
+
+The remaining Bash denial was a provider permission composition defect. The
+adapter exposed Bash through `--tools`, but `acceptEdits` does not approve
+general git/npm/code execution and `--permission-prompts none` turns every
+remaining prompt into an automatic denial. Neither `--restricted` nor
+`--add-dir` confines Bash filesystem reads, and command allow rules or auto mode
+without a sandbox permitted an out-of-bound `git -C` probe.
+
+Protected Claude evaluator execution now combines two host-derived layers. A
+capability-derived `--allowedTools` set authorizes bounded command families for
+Git, npm/npx, Node and Python without granting bare Bash. Claude's strict native
+OS sandbox then enforces the actual boundary: sandbox startup is mandatory,
+sandboxed Bash is auto-approved, unsandboxed retry is disabled, no commands are
+excluded, reads of workspace parents are denied and only the exact runtime
+workspaces are re-opened. Candidate settings remain excluded and cannot widen
+either layer.
+
+The local backend adds a third, ephemeral workspace. It creates unique
+run-scoped scratch, points TMPDIR/TMP/TEMP, XDG cache and npm cache into it,
+exposes it separately on run inspection, and removes it at process exit.
+Candidate and evaluator workspaces remain the durable permission-profile
+workspaces; evaluator artifacts stay in the private workspace and scratch is
+not canonical or provenance-bearing state.
+
+Public regressions cover evaluator capabilities, the exact sandbox and command
+allow settings, absence of bare Bash/bypass flags, three-workspace temp/cache
+routing and cleanup, candidate configuration isolation, exact system-contract
+delivery, unchanged Codex construction and unchanged semantic-result parsing.
+
+`adapter-characterization-006/` records bounded discovery and the final real
+production-adapter run on Claude Code 2.1.270. Repo-local `git status`, `git
+diff`, `git show`, `npm test`, `npm run typecheck`, private-workspace
+bookkeeping and scratch writes all ran unattended; an undeclared `/tmp` sibling
+was unreadable; the host candidate stayed clean; scratch was removed; and the
+host accepted the final semantic `succeeded` result. LP1 and evaluator
+verification were not run.
+
+The final `npm run check` passed with 70/70 tests, typecheck, lint and formatting;
+`git diff --check` also passed. Frozen bootstrap v11 remains
+`sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`,
+and the protected source Skill and bootstrap snapshot still declare
+`disable-model-invocation: true`.
+
+One penultimate full-check invocation had six Node test workers terminate and
+then hung without diagnostics. It was interrupted; a clean `npm test` rerun and
+the subsequent complete `npm run check` both passed 70/70. The abandoned run's
+untracked synthetic authority fixture was removed before final diff review.
+
+Strict Claude sandboxing requires Ubuntu `bubblewrap` and `socat`. The current
+host lacks a system-installed `socat`; characterization used an extracted
+Ubuntu package in the probe-only PATH. Production fails closed when either
+dependency is unavailable. No bypass or degraded fallback was added.

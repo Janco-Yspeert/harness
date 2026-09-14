@@ -1,4 +1,7 @@
 import { spawn, type ChildProcessByStdio } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { Readable } from "node:stream";
 
 import {
@@ -82,6 +85,7 @@ export function parseWorkflowBackendRoleResult(
 
 export function buildExecutorCommand(
   spec: ResolvedWorkflowRunSpec,
+  scratchWorkspace?: string,
 ): readonly string[] {
   const workspaces = spec.permissionProfile.workspaces;
   const primary = workspaces[0] ?? process.cwd();
@@ -106,7 +110,7 @@ export function buildExecutorCommand(
       prompt,
     ];
   } else if (spec.executor === "claude") {
-    command = buildClaudeWorkflowCommand(spec, prompt);
+    command = buildClaudeWorkflowCommand(spec, prompt, scratchWorkspace);
   } else {
     throw new Error(`Unsupported workflow executor: ${spec.executor}`);
   }
@@ -122,18 +126,46 @@ export function buildExecutorCommand(
   return command;
 }
 
+export function workflowScratchEnvironment(
+  scratchWorkspace: string,
+): Record<string, string> {
+  return {
+    TMPDIR: scratchWorkspace,
+    TMP: scratchWorkspace,
+    TEMP: scratchWorkspace,
+    XDG_CACHE_HOME: join(scratchWorkspace, "cache"),
+    npm_config_cache: join(scratchWorkspace, "npm-cache"),
+    npm_config_update_notifier: "false",
+  };
+}
+
+function createWorkflowScratch(runId: string): string {
+  const scratch = mkdtempSync(join(tmpdir(), `harness-workflow-${runId}-`));
+  mkdirSync(join(scratch, "cache"));
+  mkdirSync(join(scratch, "npm-cache"));
+  return scratch;
+}
+
 class LocalWorkflowBackend implements WorkflowRunBackend {
   readonly pid: number | undefined;
+  readonly scratchWorkspace: string | undefined;
   readonly #child: PipedChildProcess;
+  readonly #cleanup: (() => void) | undefined;
   #activityListener: ((chunk: string) => void) | undefined;
   #exitListener: ((outcome: WorkflowRunExitOutcome) => void) | undefined;
   #settled = false;
   #stopping: Promise<void> | undefined;
   readonly #resultChunks: string[] = [];
 
-  constructor(child: PipedChildProcess) {
+  constructor(
+    child: PipedChildProcess,
+    scratchWorkspace?: string,
+    cleanup?: () => void,
+  ) {
     this.#child = child;
     this.pid = child.pid;
+    this.scratchWorkspace = scratchWorkspace;
+    this.#cleanup = cleanup;
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.stdout.on("data", (chunk: string) => {
@@ -195,7 +227,11 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
   #settle(outcome: WorkflowRunExitOutcome): void {
     if (this.#settled) return;
     this.#settled = true;
-    this.#exitListener?.(outcome);
+    try {
+      this.#exitListener?.(outcome);
+    } finally {
+      this.#cleanup?.();
+    }
   }
 
   async #stop(): Promise<void> {
@@ -217,18 +253,47 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
 export function createLocalWorkflowBackend(
   context: WorkflowRunBackendContext,
 ): WorkflowRunBackend {
-  const command = buildExecutorCommand(context.spec);
-  const [program, ...args] = command;
-  if (program === undefined) {
-    throw new Error("workflow executor command is empty");
+  const needsScratch =
+    context.spec.executor === "claude" &&
+    context.spec.contract.deliveryMode === "claude-system-contract" &&
+    context.spec.permissionProfile.capabilities.includes("child-process") &&
+    context.spec.permissionProfile.capabilities.includes("local-computation");
+  const scratchWorkspace = needsScratch
+    ? createWorkflowScratch(context.runId)
+    : undefined;
+  try {
+    const command = buildExecutorCommand(context.spec, scratchWorkspace);
+    const [program, ...args] = command;
+    if (program === undefined) {
+      throw new Error("workflow executor command is empty");
+    }
+    const primaryWorkspace =
+      context.spec.executor === "claude"
+        ? claudeWorkflowDirectory(context.spec)
+        : context.spec.permissionProfile.workspaces[0];
+    const child: PipedChildProcess = spawn(program, args, {
+      cwd: primaryWorkspace ?? process.cwd(),
+      stdio: ["ignore", "pipe", "pipe"],
+      env:
+        scratchWorkspace === undefined
+          ? process.env
+          : {
+              ...process.env,
+              ...workflowScratchEnvironment(scratchWorkspace),
+            },
+    });
+    return new LocalWorkflowBackend(
+      child,
+      scratchWorkspace,
+      scratchWorkspace === undefined
+        ? undefined
+        : () => {
+            rmSync(scratchWorkspace, { recursive: true, force: true });
+          },
+    );
+  } catch (error) {
+    if (scratchWorkspace !== undefined)
+      rmSync(scratchWorkspace, { recursive: true, force: true });
+    throw error;
   }
-  const primaryWorkspace =
-    context.spec.executor === "claude"
-      ? claudeWorkflowDirectory(context.spec)
-      : context.spec.permissionProfile.workspaces[0];
-  const child: PipedChildProcess = spawn(program, args, {
-    cwd: primaryWorkspace ?? process.cwd(),
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  return new LocalWorkflowBackend(child);
 }

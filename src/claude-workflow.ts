@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 import type { ResolvedWorkflowRunSpec } from "./workflow-run.ts";
 
@@ -19,6 +19,7 @@ export function claudeWorkflowDirectory(
 export function buildClaudeWorkflowCommand(
   spec: ResolvedWorkflowRunSpec,
   ordinaryPrompt: string,
+  scratchWorkspace?: string,
 ): string[] {
   const workspaces = spec.permissionProfile.workspaces;
   if (spec.contract.deliveryMode !== "claude-system-contract") {
@@ -41,16 +42,56 @@ export function buildClaudeWorkflowCommand(
   }
   const capabilities = new Set(spec.permissionProfile.capabilities);
   const tools: string[] = [];
+  const allowedTools: string[] = [];
   if (capabilities.has("repository-read")) tools.push("Read", "Glob", "Grep");
   if (capabilities.has("workspace-write")) tools.push("Edit", "Write");
   if (
     capabilities.has("child-process") &&
     capabilities.has("local-computation")
   ) {
-    // Availability is not blanket approval. Claude's normal command permission
-    // checks still apply; unattended approval requests are denied, never bypassed.
+    // The host enables Claude's strict OS sandbox below. Bash is available only
+    // when the resolved profile grants both execution capabilities; sandboxed
+    // commands are then auto-approved inside the declared workspace boundary.
     tools.push("Bash");
   }
+  if (capabilities.has("git-inspect") || capabilities.has("git-commit"))
+    allowedTools.push("Bash(git *)");
+  if (capabilities.has("test-build-lint-format"))
+    allowedTools.push("Bash(npm *)", "Bash(npx *)");
+  if (capabilities.has("local-computation"))
+    allowedTools.push("Bash(node *)", "Bash(python3 *)");
+  const permitsCommands = tools.includes("Bash");
+  if (permitsCommands && scratchWorkspace === undefined) {
+    throw new Error(
+      "Claude evaluator command execution requires host-created run scratch",
+    );
+  }
+  const commandWorkspaces = [
+    ...workspaces,
+    ...(scratchWorkspace === undefined ? [] : [scratchWorkspace]),
+  ];
+  const sandboxSettings = permitsCommands
+    ? JSON.stringify({
+        permissions: { blockReadsOutsideWorkingDirectories: true },
+        sandbox: {
+          enabled: true,
+          failIfUnavailable: true,
+          autoAllowBashIfSandboxed: true,
+          allowUnsandboxedCommands: false,
+          excludedCommands: [],
+          filesystem: {
+            // Block siblings of every granted workspace (notably arbitrary
+            // /tmp entries), then re-open only the exact run allocation.
+            denyRead: [
+              ...new Set(
+                commandWorkspaces.map((workspace) => dirname(workspace)),
+              ),
+            ],
+            allowRead: commandWorkspaces,
+          },
+        },
+      })
+    : undefined;
   const parameters = {
     mode: spec.role.slice("evaluator-".length),
     spike: spec.allocationAuthority.workflow,
@@ -77,14 +118,18 @@ Use "blocked", "refused", or "failed" when appropriate, with an optional JSON st
     "--strict-mcp-config",
     "--setting-sources",
     "",
+    ...(sandboxSettings === undefined ? [] : ["--settings", sandboxSettings]),
     "--tools",
     tools.join(","),
+    ...(allowedTools.length === 0
+      ? []
+      : ["--allowedTools", allowedTools.join(",")]),
     "--permission-mode",
     capabilities.has("workspace-write") ? "acceptEdits" : "dontAsk",
     "--permission-prompts",
     "none",
     "--no-session-persistence",
-    ...workspaces
+    ...commandWorkspaces
       .filter((workspace) => workspace !== claudeWorkflowDirectory(spec))
       .flatMap((workspace) => ["--add-dir", workspace]),
     // Pass captured content as a replacement system prompt. No adapter file

@@ -167,6 +167,7 @@ export interface WorkflowRunRecord {
   readonly replacementReason: string | null;
   readonly previousExecutionId: string | null;
   readonly workspaces: readonly string[];
+  readonly scratchWorkspace: string | null;
   readonly permissionProfile: WorkflowPermissionProfile;
   readonly orchestrator: string | null;
   readonly pid: number | null;
@@ -205,6 +206,7 @@ export interface WorkflowRunBackendContext {
 export interface WorkflowRunBackend {
   readonly pid?: number | undefined;
   readonly providerSessionId?: string | undefined;
+  readonly scratchWorkspace?: string | undefined;
   onActivity(listener: (chunk: string) => void): void;
   onExit(listener: (outcome: WorkflowRunExitOutcome) => void): void;
   stop(): void | Promise<void>;
@@ -912,6 +914,7 @@ class InternalRun {
   roleResult: WorkflowRunRecord["roleResult"] = null;
   pid: number | null = null;
   providerSessionId: string | null = null;
+  scratchWorkspace: string | null = null;
   startedAtMs: number | null = null;
   lastActivityAtMs: number | null = null;
   terminalAtMs: number | null = null;
@@ -954,7 +957,11 @@ class InternalRun {
       invocationMode: this.spec.invocationMode,
       replacementReason: this.meta.replacementReason,
       previousExecutionId: this.meta.previousExecutionId,
-      workspaces: this.spec.workspaces,
+      workspaces:
+        this.scratchWorkspace === null
+          ? this.spec.workspaces
+          : [...this.spec.workspaces, this.scratchWorkspace],
+      scratchWorkspace: this.scratchWorkspace,
       permissionProfile: this.spec.permissionProfile,
       orchestrator: this.spec.orchestrator,
       pid: this.pid,
@@ -1214,6 +1221,7 @@ export class WorkflowRunRegistry {
     run.backend = backend;
     run.pid = backend.pid ?? null;
     run.providerSessionId = backend.providerSessionId ?? null;
+    run.scratchWorkspace = backend.scratchWorkspace ?? null;
     run.status = "running";
     run.startedAtMs = this.#now();
     backend.onActivity((chunk) => {

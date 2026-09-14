@@ -356,3 +356,44 @@
   applicable. The pre-existing Spike 011 ledger edit is excluded.
 - Measurement cutoff: immediately before this manifest update. Candidate commit
   and canonical handoff follow; they are not part of the measurements above.
+
+## Run 013 — Claude unattended command correction (implementation attempt 4)
+
+- Skill: `implementation` v3.
+- Inputs: candidate `77a23e89ef4718d2c93506c01ed42e0634109ecd`,
+  verification-attempt-004 runtime observation, unchanged frozen brief and
+  Design Map, pinned evaluator bootstrap v11
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`,
+  and the user's three-workspace scratch clarification. Evaluator revision,
+  allocation evidence and verification attempt 4 were not changed or finalized.
+- Result: IMPLEMENTED; fresh candidate for independent evaluation. Protected
+  delegated Claude derives bounded command-family approvals from the evaluator
+  capabilities and layers them inside a mandatory strict OS sandbox. The local
+  backend creates candidate, private-evaluator and unique run-scratch runtime
+  workspaces, routes temp/cache state to scratch, exposes scratch diagnostically
+  and removes it on exit. Unsandboxed retry, excluded commands, bare Bash and
+  permission bypass remain disabled.
+- Output: `implementation-report.md`, `adapter-characterization-006/`, four
+  production source files and one public test file. Aggregate output identity
+  `sha256:38e4084ae0b62069a0d65c44d8dfd5caf6eef8de816f1d2e40ab413ab38c04a8`
+  is SHA-256 of a compact key-sorted JSON map from those nine repository-relative
+  paths to their SHA-256 byte identities.
+- Live evidence: Claude Code 2.1.270 production-adapter run
+  `12f9570f-fae9-4137-95e3-47e6d5b03622` returned host-validated `succeeded`
+  in 25,848 ms. Git status/diff/show, npm test, typecheck, private bookkeeping
+  and scratch writes ran unattended; an undeclared `/tmp` sibling was masked;
+  the candidate stayed clean; and scratch was absent after exit. No LP1 or
+  evaluator verification ran.
+- Verification: `npm run check` passed typecheck, lint, format and 70/70 tests;
+  `git diff --check` passed; characterization evidence JSON parses. One prior
+  full-check invocation lost six Node test workers and hung without diagnostics;
+  clean standalone and full-suite reruns passed. Frozen bootstrap/source Skill
+  hashes and `disable-model-invocation: true` were rechecked unchanged. Codex
+  construction and semantic result parsing regressions remain green.
+- Host prerequisite: Claude strict sandboxing requires Ubuntu `bubblewrap` and
+  `socat`. This host lacks system `socat`; the live probe used a package extracted
+  only into `/tmp`. Production fails closed until the host installs it.
+- Restricted evaluator material inspected: none. The pre-existing Spike 011
+  ledger edit was preserved and excluded.
+- Measurement cutoff: immediately before this manifest update. Candidate commit
+  and implementation handoff follow and are not included above.

@@ -2,16 +2,26 @@ import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { once } from "node:events";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import test from "node:test";
 
 import { WebSocket, type RawData } from "ws";
 
 import {
   buildExecutorCommand,
+  createLocalWorkflowBackend,
   parseWorkflowBackendRoleResult,
   startHarnessHost,
+  workflowScratchEnvironment,
   type HarnessHost,
   type ResolvedWorkflowRunSpec,
   type SessionBackend,
@@ -243,6 +253,7 @@ void test("a host-owned run outlives its client and is inspectable by identity",
     assert.equal(run.replacementReason, null);
     assert.equal(run.previousExecutionId, null);
     assert.deepEqual(run.workspaces, [repositoryRoot]);
+    assert.equal(run.scratchWorkspace, null);
     assert.equal(
       (run.permissionProfile as { id: string }).id,
       "repo-local-worker",
@@ -487,7 +498,8 @@ void test("canonical evaluator delegation is derived from the requesting workflo
       join(bootstrap, "evaluator-skill.md"),
       "changed after resolution",
     );
-    const command = buildExecutorCommand(resolved);
+    const scratch = "/tmp/harness-run-scratch";
+    const command = buildExecutorCommand(resolved, scratch);
     const system = command[command.indexOf("--system-prompt") + 1];
     assert.ok(system);
     const task = command.at(-1);
@@ -511,6 +523,27 @@ void test("canonical evaluator delegation is derived from the requesting workflo
       assert.ok(command.includes(flag));
     assert.equal(command[command.indexOf("--setting-sources") + 1], "");
     assert.equal(command[command.indexOf("--permission-prompts") + 1], "none");
+    const settings = JSON.parse(
+      command[command.indexOf("--settings") + 1] ?? "null",
+    ) as Record<string, unknown>;
+    assert.deepEqual(settings, {
+      permissions: { blockReadsOutsideWorkingDirectories: true },
+      sandbox: {
+        enabled: true,
+        failIfUnavailable: true,
+        autoAllowBashIfSandboxed: true,
+        allowUnsandboxedCommands: false,
+        excludedCommands: [],
+        filesystem: {
+          denyRead: [resolve(repositoryRoot, ".."), "/tmp"],
+          allowRead: [
+            repositoryRoot,
+            "/tmp/harness-evaluator-fixture",
+            scratch,
+          ],
+        },
+      },
+    });
     assert.equal(
       command[command.indexOf("--tools") + 1],
       "Read,Glob,Grep,Edit,Write,Bash",
@@ -519,12 +552,30 @@ void test("canonical evaluator delegation is derived from the requesting workflo
       command[command.indexOf("--permission-mode") + 1],
       "acceptEdits",
     );
-    assert.ok(!command.includes("--allowedTools"));
+    assert.equal(
+      command[command.indexOf("--allowedTools") + 1],
+      "Bash(git *),Bash(npm *),Bash(npx *),Bash(node *),Bash(python3 *)",
+    );
+    assert.ok(!command.includes("--allowed-tools"));
+    assert.ok(
+      !command
+        .filter((argument) => argument !== "--tools")
+        .some((argument) => argument === "Bash" || argument === "Bash(*)"),
+    );
     assert.deepEqual(resolved.workspaces, [
       repositoryRoot,
       "/tmp/harness-evaluator-fixture",
     ]);
     assert.equal(command[command.indexOf("--add-dir") + 1], repositoryRoot);
+    assert.ok(command.includes(scratch));
+    assert.deepEqual(workflowScratchEnvironment(scratch), {
+      TMPDIR: scratch,
+      TMP: scratch,
+      TEMP: scratch,
+      XDG_CACHE_HOME: `${scratch}/cache`,
+      npm_config_cache: `${scratch}/npm-cache`,
+      npm_config_update_notifier: "false",
+    });
     for (const flag of [
       "--bare",
       "--dangerously-skip-permissions",
@@ -535,24 +586,32 @@ void test("canonical evaluator delegation is derived from the requesting workflo
       assert.ok(!command.includes(flag));
     assert.throws(
       () =>
-        buildExecutorCommand({
-          ...resolved,
-          contract: { ...resolved.contract, content: "substituted" },
-        }),
+        buildExecutorCommand(
+          {
+            ...resolved,
+            contract: { ...resolved.contract, content: "substituted" },
+          },
+          scratch,
+        ),
       /identity/,
     );
-    const readOnly = buildExecutorCommand({
-      ...resolved,
-      permissionProfile: {
-        ...resolved.permissionProfile,
-        capabilities: ["repository-read"],
+    const readOnly = buildExecutorCommand(
+      {
+        ...resolved,
+        permissionProfile: {
+          ...resolved.permissionProfile,
+          capabilities: ["repository-read"],
+        },
       },
-    });
+      scratch,
+    );
     assert.equal(readOnly[readOnly.indexOf("--tools") + 1], "Read,Glob,Grep");
     assert.equal(
       readOnly[readOnly.indexOf("--permission-mode") + 1],
       "dontAsk",
     );
+    assert.equal(readOnly.includes("--settings"), false);
+    assert.equal(readOnly.includes("--allowedTools"), false);
 
     assert.match(
       JSON.stringify(allocation.run.verificationAuthority),
@@ -1024,6 +1083,16 @@ void test("permission profiles are bounded, named, and recorded on the run", asy
       "/repo/harness-evaluator",
     ]);
     assert.deepEqual(evaluator.capabilities, standard.capabilities);
+    for (const capability of [
+      "repository-read",
+      "workspace-write",
+      "local-computation",
+      "child-process",
+      "test-build-lint-format",
+      "git-inspect",
+      "workflow-bookkeeping",
+    ])
+      assert.ok(evaluator.capabilities.includes(capability), capability);
 
     // No profile grants an unrestricted-host capability.
     for (const capability of evaluator.capabilities) {
@@ -1104,6 +1173,92 @@ void test("the default local backend uses a bounded, non-interactive executor mo
   assert.ok(!claude.includes("--system-prompt"));
   assert.ok(!claude.includes("--safe-mode"));
   assert.ok(!codex.includes("--system-prompt"));
+});
+
+void test("Claude evaluator execution gets run-scoped scratch that is removed at exit", async () => {
+  const fixture = mkdtempSync(join(tmpdir(), "harness-scratch-test-"));
+  const fakeBin = join(fixture, "bin");
+  const repository = join(fixture, "repository");
+  const evaluator = join(fixture, "evaluator");
+  mkdirSync(fakeBin);
+  mkdirSync(repository);
+  mkdirSync(evaluator);
+  writeFileSync(
+    join(fakeBin, "claude"),
+    `#!/usr/bin/env node
+console.log(JSON.stringify({args: process.argv.slice(2), env: {
+  TMPDIR: process.env.TMPDIR, TMP: process.env.TMP, TEMP: process.env.TEMP,
+  XDG_CACHE_HOME: process.env.XDG_CACHE_HOME,
+  npm_config_cache: process.env.npm_config_cache,
+  npm_config_update_notifier: process.env.npm_config_update_notifier,
+}}));
+setTimeout(() => console.log('HARNESS_ROLE_RESULT {"disposition":"succeeded"}'), 50);
+`,
+    { mode: 0o755 },
+  );
+  const oldPath = process.env.PATH;
+  process.env.PATH = `${fakeBin}:${oldPath ?? ""}`;
+  const content = "---\nname: evaluator\n---\nContract version: 1\n";
+  const spec: ResolvedWorkflowRunSpec = {
+    slot: {
+      workflow: "999-scratch-probe",
+      phase: "evaluator-verify",
+      methodologyAttempt: "1",
+    },
+    role: "evaluator-verify",
+    executor: "claude",
+    invocationMode: "delegated",
+    workspaces: [repository, evaluator],
+    permissionProfile: {
+      id: "evaluator",
+      workspaces: [repository, evaluator],
+      capabilities: [
+        "repository-read",
+        "workspace-write",
+        "local-computation",
+        "child-process",
+      ],
+    },
+    skill: "skills/evaluator/SKILL.md",
+    skillVersion: "1",
+    contract: {
+      name: "evaluator",
+      content,
+      path: "skills/evaluator/SKILL.md",
+      version: "1",
+      identity: `sha256:${createHash("sha256").update(content).digest("hex")}`,
+      deliveryMode: "claude-system-contract",
+    },
+    allocationAuthority: { type: "canonical-workflow" },
+    verificationAuthority: { type: "canonical-workflow" },
+    orchestrator: null,
+    prompt: "probe",
+  };
+  try {
+    const backend = createLocalWorkflowBackend({ runId: "scratch-run", spec });
+    const scratch = backend.scratchWorkspace;
+    assert.ok(scratch);
+    assert.ok(existsSync(scratch));
+    let output = "";
+    backend.onActivity((chunk) => {
+      output += chunk;
+    });
+    const outcome = await new Promise<WorkflowRunExitOutcome>((resolveExit) => {
+      backend.onExit(resolveExit);
+    });
+    assert.equal(outcome.ok, true);
+    assert.equal(outcome.roleResult?.disposition, "succeeded");
+    assert.equal(existsSync(scratch), false);
+    const diagnostic = JSON.parse(output.split("\n")[0] ?? "null") as {
+      args: string[];
+      env: Record<string, string>;
+    };
+    assert.ok(diagnostic.args.includes(scratch));
+    assert.deepEqual(diagnostic.env, workflowScratchEnvironment(scratch));
+  } finally {
+    process.env.PATH = oldPath;
+    rmSync(fixture, { recursive: true, force: true });
+  }
 });
 
 void test("the provider result protocol accepts only a final structured disposition", () => {

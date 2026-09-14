@@ -37,6 +37,7 @@ export {
   buildExecutorCommand,
   createLocalWorkflowBackend,
   parseWorkflowBackendRoleResult,
+  workflowScratchEnvironment,
 } from "./workflow-backend.ts";
 export type {
   ResolvedWorkflowRunSpec,
