@@ -397,3 +397,40 @@
   ledger edit was preserved and excluded.
 - Measurement cutoff: immediately before this manifest update. Candidate commit
   and implementation handoff follow and are not included above.
+
+## Run 014 — Evaluator Verification (attempt 004)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify time)
+- Input: implementation commit `3edb31603c1b97eb4f2d52b56c52d4965962113d`
+  (implementation attempt 4), all frozen public inputs confirmed byte-identical
+  to their frozen identities (no specification drift)
+- Result: `BLOCKED` (`INFRASTRUCTURE_FAILURE`), attempt `004`. Evaluator
+  revision `002` unchanged; no correction needed.
+- Output: `verification-feedback-004.md`
+- Mandatory executable hidden coverage: 5/5 pass (fresh run against this
+  commit)
+- Mandatory non-executable coverage: 33 of 35 mandatory criteria confirmed
+  satisfied this attempt, re-confirmed fresh where affected and cited by
+  reference for the unaffected Codex-path criteria. The paired live-Claude
+  scenario and the Spike 011 readiness criterion that depends on it remain
+  `BLOCKED`: this evaluator attempted the full frozen live-Claude fixture
+  procedure for real against this exact candidate (a disposable fixture
+  spike, a real locally started Harness host, a genuine allocation, a genuine
+  process-launch attempt), and the required Claude executor was confirmed
+  unavailable in this session's own environment (`spawn claude ENOENT`) - a
+  session-level restriction external to the candidate implementation
+- Repository evidence inspected: the full implementation diff against the
+  prior attempt, the real workflow-run allocation/registry/backend code, and
+  this attempt's own real fixture-allocation output
+- Restricted evaluator material inspected: this spike's own private evaluator
+  workspace (read only; no correction was needed)
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (70/70), `npm run typecheck`, `npm run lint`, and
+  `git diff --check` all green at the implementation commit; `npm run
+  format:check` confirmed clean when scoped to exactly the Git-tracked file
+  set (the unscoped invocation reports a non-zero exit solely due to
+  permission-masked, untracked, non-repository scaffolding entries specific to
+  this evaluation session, unrelated to the candidate)
+- Measurement cutoff: immediately before this manifest update.
