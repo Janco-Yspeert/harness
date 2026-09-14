@@ -434,3 +434,45 @@
   permission-masked, untracked, non-repository scaffolding entries specific to
   this evaluation session, unrelated to the candidate)
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 015 — Evaluator Verification adjudication (attempt 005 / canonical attempt 006)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify time)
+- Input: implementation commit `3edb31603c1b97eb4f2d52b56c52d4965962113d`
+  (implementation attempt 4), unchanged since attempt 004; a continuation of
+  the canonical attempt-5 `BLOCKED` cycle following its own later, genuinely
+  successful outer Harness-to-Claude protected-role execution (see
+  `verification-attempt-005-primary-evidence.md`)
+- Result: `BLOCKED` (`INFRASTRUCTURE_FAILURE`), private attempt `005`
+  (canonical attempt `6`). Evaluator revision `002` unchanged; no correction
+  needed or performed.
+- Output: `verification-feedback-005.md`,
+  `verification-attempt-006-lp1-adjudication.md`
+- Scope: this attempt adjudicated whether canonical attempt 5's own successful
+  protected-role execution already establishes the frozen live-Claude
+  fixture requirement (AC08/AC09/AC34), without rerunning implementation,
+  `prepare`, the visible/hidden suites, typecheck/lint/diff checks, Codex
+  evidence, or any live-Claude fixture. It determined that a distinct frozen
+  property remains genuinely unproven — see
+  `verification-attempt-006-lp1-adjudication.md` — and therefore stopped
+  before attempting any new fixture.
+- Mandatory non-executable coverage: 33 of 35 mandatory criteria re-affirmed
+  by reference to attempt 004's unchanged, drift-free evidence (confirmed via
+  fresh re-hash of every frozen input and a `git log`/`git diff --stat`
+  showing only evaluator/documentation commits since the evaluated commit).
+  AC08, AC09, and dependent AC34 remain `BLOCKED` for the same
+  executor-availability reason as attempts 002 and 004.
+- Repository evidence inspected: the public canonical `workflow.jsonl`
+  history, `verification-attempt-005-primary-evidence.md`, prior private
+  attempt results, the frozen brief's "Scenario prerequisites"/"Evidence
+  requirements" sections, and the frozen Design Map's "Design decisions".
+- Restricted evaluator material inspected: this spike's own private evaluator
+  workspace (read only; no correction was needed), including prior private
+  fixture evidence from verification attempt 002.
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check (fresh re-hash of brief, Design Map, public evaluation requirements,
+  coverage-map, bootstrap snapshot, private spec/case-manifest, and every
+  hidden test file — all unchanged); implementation-commit stability check.
+- Measurement cutoff: immediately before this manifest update.
