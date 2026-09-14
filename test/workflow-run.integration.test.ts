@@ -21,6 +21,7 @@ import {
   createLocalWorkflowBackend,
   parseWorkflowBackendRoleResult,
   startHarnessHost,
+  workflowProviderProgram,
   workflowScratchEnvironment,
   type HarnessHost,
   type ResolvedWorkflowRunSpec,
@@ -755,6 +756,93 @@ void test("Spike 013a binds its pinned evaluator authority and refuses prompt-sh
   } finally {
     await host.close();
   }
+});
+
+void test("LP1 is a host-mediated fixed Claude fixture, not a nested executor capability", async () => {
+  const { host, created, contexts } = await startHarness();
+  try {
+    const parent = await allocate(host, {
+      slot: {
+        workflow: "013a",
+        phase: "evaluator-verify",
+        methodologyAttempt: "6",
+      },
+      role: "evaluator-verify",
+      executor: "claude",
+      workspace: repositoryRoot,
+      permissionProfile: "evaluator",
+      evaluatorWorkspace: "/tmp/spike-013a-lp1-evaluator",
+    });
+    assert.equal(parent.status, 201, parent.error);
+
+    const response = await fetch(`${host.url}/workflow-fixtures/lp1`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ parentRunId: parent.run.runId }),
+    });
+    assert.equal(response.status, 201);
+    const child = ((await response.json()) as { run: RunRecord }).run;
+    assert.equal(child.executor, "claude");
+    assert.equal(child.role, "evaluator-verify");
+    assert.equal(child.contractDeliveryMode, "claude-system-contract");
+    assert.equal(child.workflow, "013a-lp1-fixture");
+    assert.deepEqual(child.fixture, {
+      identity: "spike-013a-lp1",
+      parentRunId: parent.run.runId,
+      requiredContractIdentity: parent.run.contractIdentity,
+      requiredDeliveryMode: "claude-system-contract",
+      allowedSideEffects: "none",
+    });
+    assert.equal(created.length, 2);
+    const childContext = contexts[1];
+    const parentContext = contexts[0];
+    assert.ok(childContext);
+    assert.ok(parentContext);
+    assert.equal(childContext.spec.executor, "claude");
+    assert.equal(childContext.spec.role, "evaluator-verify");
+    assert.equal(
+      childContext.spec.contract.content,
+      parentContext.spec.contract.content,
+    );
+    assert.deepEqual(childContext.spec.permissionProfile.capabilities, [
+      "repository-read",
+    ]);
+
+    // It cannot be pointed at another role, provider, or a completed parent.
+    const arbitrary = await fetch(`${host.url}/workflow-fixtures/lp1`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        parentRunId: child.runId,
+        role: "implementation",
+        executor: "codex",
+      }),
+    });
+    assert.equal(arbitrary.status, 400);
+    assert.match(
+      ((await arbitrary.json()) as { error: string }).error,
+      /requires an active canonical Spike 013a Claude evaluator-verify allocation/,
+    );
+    assert.equal(created.length, 2);
+  } finally {
+    await host.close();
+  }
+});
+
+void test("the host may configure Claude without granting it to workers", () => {
+  const spec = { executor: "claude" } as ResolvedWorkflowRunSpec;
+  assert.equal(
+    workflowProviderProgram(spec, "claude", "/host-only/claude"),
+    "/host-only/claude",
+  );
+  assert.equal(
+    workflowProviderProgram(
+      { ...spec, executor: "codex" },
+      "codex",
+      "/host-only/claude",
+    ),
+    "codex",
+  );
 });
 
 void test("a structured provider result reaches the semantic outcome without a second actor", async () => {

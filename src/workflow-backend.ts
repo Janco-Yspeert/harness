@@ -139,6 +139,19 @@ export function workflowScratchEnvironment(
   };
 }
 
+// This setting belongs to the Harness daemon, not to a workflow allocation or
+// evaluator environment. It lets an operator keep the provider installation
+// outside a constrained worker PATH without handing that path to the worker.
+export function workflowProviderProgram(
+  spec: ResolvedWorkflowRunSpec,
+  defaultProgram: string,
+  configuredClaudeExecutable = process.env.HARNESS_CLAUDE_EXECUTABLE,
+): string {
+  return spec.executor === "claude" && configuredClaudeExecutable !== undefined
+    ? configuredClaudeExecutable
+    : defaultProgram;
+}
+
 function createWorkflowScratch(runId: string): string {
   const scratch = mkdtempSync(join(tmpdir(), `harness-workflow-${runId}-`));
   mkdirSync(join(scratch, "cache"));
@@ -263,10 +276,11 @@ export function createLocalWorkflowBackend(
     : undefined;
   try {
     const command = buildExecutorCommand(context.spec, scratchWorkspace);
-    const [program, ...args] = command;
-    if (program === undefined) {
+    const [defaultProgram, ...args] = command;
+    if (defaultProgram === undefined) {
       throw new Error("workflow executor command is empty");
     }
+    const program = workflowProviderProgram(context.spec, defaultProgram);
     const primaryWorkspace =
       context.spec.executor === "claude"
         ? claudeWorkflowDirectory(context.spec)

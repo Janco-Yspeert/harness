@@ -476,3 +476,27 @@
   coverage-map, bootstrap snapshot, private spec/case-manifest, and every
   hidden test file — all unchanged); implementation-commit stability check.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 016 — LP1 host-mediated fixture correction
+
+- Skill: `implementation` v3; frozen public Spike 013a brief, Design Map and
+  evaluation requirements read. Restricted evaluator material inspected: none.
+- Input: implementation attempt 4 at `3edb31603c1b97eb4f2d52b56c52d4965962113d`;
+  the existing Spike 011 ledger edit was preserved and excluded.
+- Result: added a fixed Harness-owned LP1 child-fixture allocation. It derives
+  a Claude/evaluator-v11 child only from an active canonical Spike 013a
+  evaluator-verify parent and exposes the child binding through normal run
+  inspection. No generic nested-provider API or evaluator shell permission was
+  added.
+- Verification: focused LP1 regressions pass; direct per-file suite runs pass
+  (21 workflow-run, 11 Codex backend, 5 evaluator-integrity, 6 session-backend,
+  4 session-events, 4 session-lifecycle); typecheck, lint, formatting and diff
+  checks pass. The aggregate `npm test` invocation exits non-zero with no test
+  diagnostic in this environment although those same six files pass directly.
+- Live characterization: a fake outer parent plus real Harness child allocation
+  reached real Claude process launch using daemon-only executable configuration;
+  the child exited code 1 without a semantic role result. The evaluator-role log
+  was not inspected. This is implementation characterization, not verification
+  and does not consume LP1.
+- Measurement cutoff: immediately before this manifest update. Candidate commit
+  and implementation handoff follow and are not included above.

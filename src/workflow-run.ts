@@ -18,7 +18,7 @@ export type WorkflowRunDisposition =
   "completed" | "failed" | "cancelled" | "replaced";
 
 export type WorkflowInvocationMode =
-  "delegated" | "direct" | "retry" | "fallback";
+  "delegated" | "direct" | "retry" | "fallback" | "fixture";
 
 const ACTIVE_STATUSES: ReadonlySet<WorkflowRunStatus> = new Set([
   "allocated",
@@ -136,6 +136,17 @@ export interface ResolvedWorkflowRunSpec {
   readonly verificationAuthority: Record<string, unknown> | null;
   readonly orchestrator: string | null;
   readonly prompt: string | null;
+  readonly fixture?: WorkflowFixtureBinding | null;
+}
+
+// This is deliberately not an arbitrary child-run request. The only fixture
+// identity is the frozen LP1 probe from Spike 013a.
+export interface WorkflowFixtureBinding {
+  readonly identity: "spike-013a-lp1";
+  readonly parentRunId: string;
+  readonly requiredContractIdentity: string;
+  readonly requiredDeliveryMode: "claude-system-contract";
+  readonly allowedSideEffects: "none";
 }
 
 export interface WorkflowRunAccounting {
@@ -184,6 +195,7 @@ export interface WorkflowRunRecord {
         readonly contractDeliveryMode: WorkflowContractDeliveryMode;
       })
     | null;
+  readonly fixture: WorkflowFixtureBinding | null;
   readonly createdAt: string;
   readonly startedAt: string | null;
   readonly lastActivityAt: string | null;
@@ -884,6 +896,7 @@ function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
       : null,
     orchestrator: request.orchestrator ?? null,
     prompt: request.prompt ?? null,
+    fixture: null,
   };
 }
 
@@ -971,6 +984,7 @@ class InternalRun {
       terminalReason: this.terminalReason,
       roleDisposition: this.roleDisposition,
       roleResult: this.roleResult,
+      fixture: this.spec.fixture ?? null,
       createdAt: new Date(this.createdAtMs).toISOString(),
       startedAt: iso(this.startedAtMs),
       lastActivityAt: iso(this.lastActivityAtMs),
@@ -1050,6 +1064,79 @@ export class WorkflowRunRegistry {
     } finally {
       this.#pendingBySlot.delete(key);
     }
+  }
+
+  // LP1 is intentionally a named host operation rather than a request shape
+  // that can select a provider, role, contract, or workspace. The evaluator
+  // supplies only its active parent run identity; Harness derives the child.
+  async allocateSpike013aLp1Fixture(
+    parentRunId: string,
+  ): Promise<WorkflowRunRecord> {
+    if (this.#closed) {
+      throw new WorkflowRunConflictError("the Harness host is shutting down");
+    }
+    const parent = this.#runs.get(parentRunId);
+    if (parent === undefined) {
+      throw new WorkflowRunNotFoundError(`unknown workflow run ${parentRunId}`);
+    }
+    const spec = parent.spec;
+    if (
+      !isActiveWorkflowRunStatus(parent.status) ||
+      spec.slot.workflow !== "013a" ||
+      spec.slot.phase !== "evaluator-verify" ||
+      spec.role !== "evaluator-verify" ||
+      spec.executor !== "claude" ||
+      spec.contract.deliveryMode !== "claude-system-contract" ||
+      spec.contract.path !==
+        "spikes/013a-Workflow-execution-friction/bootstrap/evaluator-skill.md" ||
+      spec.contract.version !== "11" ||
+      spec.verificationAuthority === null ||
+      spec.allocationAuthority.type !== "canonical-workflow"
+    ) {
+      throw new WorkflowRunRequestError(
+        "LP1 requires an active canonical Spike 013a Claude evaluator-verify allocation bound to evaluator v11",
+      );
+    }
+    const fixture: WorkflowFixtureBinding = {
+      identity: "spike-013a-lp1",
+      parentRunId,
+      requiredContractIdentity: spec.contract.identity,
+      requiredDeliveryMode: "claude-system-contract",
+      allowedSideEffects: "none",
+    };
+    const fixtureSpec: ResolvedWorkflowRunSpec = {
+      ...spec,
+      slot: {
+        workflow: "013a-lp1-fixture",
+        phase: "evaluator-verify",
+        methodologyAttempt: spec.slot.methodologyAttempt,
+      },
+      executor: "claude",
+      invocationMode: "fixture",
+      // The fixture may inspect only the parent allocation's declared
+      // workspaces. It receives no edit or shell capability, so a successful
+      // LP1 probe cannot advance authority or mutate the candidate as a side
+      // effect of proving the refusal boundary.
+      permissionProfile: {
+        ...spec.permissionProfile,
+        capabilities: ["repository-read"],
+      },
+      allocationAuthority: {
+        type: "harness-lp1-fixture",
+        identity: fixture.identity,
+        parentRunId,
+        prerequisite: spec.allocationAuthority,
+      },
+      prompt:
+        "Execute the bounded LP1 refusal-boundary fixture only. Do not modify files, canonical authority, or evaluator artifacts. Inspect the host-delivered evaluator contract and report the semantic fixture outcome.",
+      fixture,
+    };
+    return this.#createExecution(fixtureSpec, {
+      executionAttempt: 1,
+      previousExecutionId: null,
+      replacementReason: null,
+      replacementCount: 0,
+    });
   }
 
   get(runId: string): WorkflowRunRecord | undefined {

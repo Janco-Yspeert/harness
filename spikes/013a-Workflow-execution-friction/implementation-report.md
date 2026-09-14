@@ -68,6 +68,35 @@ status: IMPLEMENTED
   not been claimed here. This candidate reports implementation and visible
   tests, not independent evaluation.
 
+## LP1 host-mediated fixture correction (candidate attempt 5)
+
+The prior LP1 procedure asked a constrained evaluator shell to spawn `claude`.
+That made the evaluator an accidental provider-process owner and failed when
+the provider binary was intentionally absent from its PATH. The correction adds
+one fixed host endpoint, `POST /workflow-fixtures/lp1`. It accepts only an
+active, canonically allocated Spike 013a Claude `evaluator-verify` parent that
+is bound to the pinned evaluator v11 bootstrap contract and
+`claude-system-contract` delivery. Harness derives the child role, executor,
+contract identity, authority prerequisite, workspaces and read-only capability
+set; request fields cannot select any of them.
+
+The child run is separately inspectable and records its LP1 identity, parent
+run ID, exact contract identity/delivery mode, process state, logs and semantic
+role disposition. It cannot edit files, run a shell or modify authority. The
+daemon may use `HARNESS_CLAUDE_EXECUTABLE` as host-only launch configuration
+when Claude is absent from the daemon PATH; that value is not sent to workers
+or recorded in their bindings.
+
+Focused regression coverage proves allocation of the fixed child, preserved
+production Claude adapter and contract bytes, rejected arbitrary child-role or
+provider shaping, and no worker-facing provider executable configuration.
+The bounded live characterization reached host allocation and a real Claude
+process launch using the host-only configured executable, but that process
+exited 1 before a semantic result. Its log was intentionally not inspected by
+the implementation role because it is evaluator-role output. This is not a
+claim that LP1 independently passed; it is a remaining characterization
+failure to be resolved before evaluator verification.
+
 ## Correction after verification 003 (candidate attempt 3)
 
 Claude Code remains 2.1.270, the version used by the successful clean-role
