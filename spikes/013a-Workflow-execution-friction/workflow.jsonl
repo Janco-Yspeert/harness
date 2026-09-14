@@ -12,3 +12,4 @@
 {"transition":"implementation-handoff","at":"2026-09-14T10:06:12.872Z","evidence":{"commit":"77a23e89ef4718d2c93506c01ed42e0634109ecd","attempt":3}}
 {"transition":"verification-allocated","at":"2026-09-14T18:44:07.203Z","evidence":{"commit":"77a23e89ef4718d2c93506c01ed42e0634109ecd","implementationAttempt":3,"attempt":4,"evaluatorRevision":"001"}}
 {"transition":"implementation-handoff","at":"2026-09-14T21:06:32.788Z","evidence":{"commit":"3edb31603c1b97eb4f2d52b56c52d4965962113d","attempt":4}}
+{"transition":"verification-allocated","at":"2026-09-14T21:06:44.264Z","evidence":{"commit":"3edb31603c1b97eb4f2d52b56c52d4965962113d","implementationAttempt":4,"attempt":5,"evaluatorRevision":"001"}}
