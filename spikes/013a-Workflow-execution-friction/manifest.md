@@ -746,3 +746,29 @@
   `002`'s frozen bundle) is promoted canonically under `evaluation/**`; see
   `evaluation/promotion.json`.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 024 — As-Built
+
+- Skill: `as-built` v2.
+- Input: final evaluated implementation
+  `bb541265d994aad1f1af30446bf0a19ad59e1537`; frozen brief
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`;
+  frozen Design Map
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7c3723835e0721e8673554f93b407`; and
+  promoted evaluator revision `002`, attempt `008`, `PASS`, result
+  `sha256:8b818f23887a739a2dc177ec13df75f98017324a91a885bbf594f39fee1866e5`.
+- Result: recorded the implemented execution-binding, semantic-result,
+  canonical-adoption, retry, provider-delivery, and candidate-bound fixture
+  behavior in `as-built.md`
+  `sha256:44db0010074360f2e51797809fd022a449bdc0c680d8f6dbe65029047fbe03ee`.
+- Contract comparison: no Missing, Contradictory, or material Extra behavior
+  observed.
+- Repository evidence inspected: final implementation diff and relevant
+  source/test surfaces; frozen brief and Design Map; canonical workflow
+  authority; and promoted evaluation attempt, bundle, and promotion record.
+- Restricted evaluator material inspected: only promoted artifacts under this
+  spike's `evaluation/**`, as authorized for As-Built synthesis.
+- Checks: frozen identities and final implementation provenance confirmed;
+  `git diff --check` passes before this manifest update. The pre-existing,
+  unrelated uncommitted Spike 011 ledger edit was preserved and excluded.
+- Measurement cutoff: immediately before this manifest update.
