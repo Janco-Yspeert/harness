@@ -162,14 +162,24 @@ function maximumAttempt(state: WorkflowState, phase: Phase): number {
     .map((record) => record.attempt);
   return attempts.length === 0 ? 0 : Math.max(...attempts);
 }
-function completedImplementation(state: WorkflowState): number {
+function completedImplementation(
+  state: WorkflowState,
+  target?: Target,
+): number {
   const attempts = state.records
     .filter(
       (record) =>
         record.phase === "implementation" && record.outcome === "complete",
     )
     .map((record) => record.attempt);
-  return attempts.length === 0 ? 0 : Math.max(...attempts);
+  const local = attempts.length === 0 ? 0 : Math.max(...attempts);
+  const canonical =
+    target === undefined
+      ? 0
+      : Number(authorityState(target).current.implementation?.evidence.attempt);
+  return Number.isSafeInteger(canonical) && canonical > 0
+    ? Math.max(local, canonical)
+    : local;
 }
 function failedVerificationFor(
   state: WorkflowState,
@@ -248,7 +258,7 @@ function canDispatch(
     return;
   }
   if (phase === "evaluator-verify") {
-    if (completedImplementation(state) === 0) {
+    if (completedImplementation(state, target) === 0) {
       fail("Evaluator verify requires a completed implementation");
     }
     return;
@@ -541,7 +551,9 @@ async function dispatch(
   const attempt = attemptForDispatch(state, phase);
   canDispatch(state, phase, attempt, target);
   const implementationAttempt =
-    phase === "evaluator-verify" ? completedImplementation(state) : undefined;
+    phase === "evaluator-verify"
+      ? completedImplementation(state, target)
+      : undefined;
   const implementationReference =
     implementationAttempt === undefined ? {} : { implementationAttempt };
   if (!execute) {
@@ -568,7 +580,7 @@ async function dispatch(
     phase === "implementation"
       ? String(attempt)
       : phase === "evaluator-verify"
-        ? String(completedImplementation(state))
+        ? String(completedImplementation(state, target))
         : "1";
   const job = await allocateHostRun(spike, phase, methodologyAttempt);
   const dispatched = append(state, {
@@ -663,36 +675,76 @@ async function status(target: Target): Promise<void> {
       };
     }),
   );
-  process.stdout.write(`${JSON.stringify({ records })}\n`);
+  const adoption = canonicalProgress(target);
+  process.stdout.write(
+    `${JSON.stringify({
+      records,
+      canonicalAdoption: {
+        adoptedCanonicalCheckpoints: adoption.completed,
+        nextPhase: adoption.nextPhase,
+      },
+    })}\n`,
+  );
 }
 
-function canonicalCompletedPhases(target: Target): Phase[] {
+function canonicalProgress(target: Target): {
+  readonly completed: Phase[];
+  readonly nextPhase: Phase | null;
+} {
   const transitions = authorityEvents(target).map((event) => event.transition);
   const completed: Phase[] = [];
   if (transitions.includes("brief-frozen")) completed.push("brief-readiness");
   if (transitions.includes("design-map-frozen")) completed.push("design-map");
   if (transitions.includes("evaluation-prepared"))
     completed.push("evaluator-prepare");
-  return completed;
+  const current = authorityState(target).current;
+  if (current.implementation !== null) {
+    completed.push("implementation");
+    if (current.verification?.evidence.result === "PASS") {
+      completed.push("evaluator-verify");
+      if (current.promoted) {
+        completed.push("as-built");
+        if (current.accepted) completed.push("outcome");
+      }
+    }
+  }
+  const nextPhase =
+    current.implementation === null
+      ? completed.includes("evaluator-prepare")
+        ? "implementation"
+        : (phases.find((phase) => !completed.includes(phase)) ?? null)
+      : current.verification?.evidence.result === "PASS"
+        ? current.promoted
+          ? current.accepted
+            ? null
+            : "outcome"
+          : "as-built"
+        : "evaluator-verify";
+  return { completed, nextPhase };
+}
+
+function canonicalCompletedPhases(target: Target): Phase[] {
+  return canonicalProgress(target).completed;
 }
 
 function adopt(target: Target): void {
   const state = readState(target);
-  const completed = canonicalCompletedPhases(target);
+  const progress = canonicalProgress(target);
   const already = state.records.find((record) => record.event === "adoption");
-  if (already !== undefined) return;
-  const phase = completed.at(-1) ?? "brief-readiness";
-  writeState(
-    target,
-    append(state, {
-      event: "adoption",
-      phase,
-      attempt: 1,
-      at: new Date().toISOString(),
-    }),
-  );
+  if (already === undefined) {
+    const phase = progress.completed.at(-1) ?? "brief-readiness";
+    writeState(
+      target,
+      append(state, {
+        event: "adoption",
+        phase,
+        attempt: 1,
+        at: new Date().toISOString(),
+      }),
+    );
+  }
   process.stdout.write(
-    `${JSON.stringify({ adoptedCanonicalCheckpoints: completed, nextPhase: phases[completed.length] ?? null })}\n`,
+    `${JSON.stringify({ adoptedCanonicalCheckpoints: progress.completed, nextPhase: progress.nextPhase })}\n`,
   );
 }
 async function cancel(target: Target, phase: Phase): Promise<void> {

@@ -182,6 +182,73 @@ void test("workflow runner independently numbers verification attempts", (t) => 
   assert.ok(verifies.some((record) => record.attempt === 2));
 });
 
+void test("adoption resumes a canonical implementation handoff without inventing runner history", (t) => {
+  const f = authorityFixture("-handoff-adoption", {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01")]),
+  });
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+  assert.equal(run(["init", f.fixture]).status, 0);
+  assert.equal(f.record("brief-frozen", f.evidence("spike.md")).status, 0);
+  assert.equal(
+    f.record("design-map-frozen", f.evidence("design-map.md")).status,
+    0,
+  );
+  assert.equal(
+    f.record("evaluation-prepared", f.evidence("coverage-map.json")).status,
+    0,
+  );
+  assert.equal(
+    f.record("implementation-handoff", {
+      commit: f.provenance.commit,
+      attempt: 1,
+    }).status,
+    0,
+  );
+
+  const adopted = run(["adopt", f.fixture]);
+  assert.equal(adopted.status, 0, adopted.stderr);
+  assert.deepEqual(JSON.parse(adopted.stdout), {
+    adoptedCanonicalCheckpoints: [
+      "brief-readiness",
+      "design-map",
+      "evaluator-prepare",
+      "implementation",
+    ],
+    nextPhase: "evaluator-verify",
+  });
+  assert.equal(run(["dispatch", "evaluator-verify", f.fixture]).status, 0);
+  const status = JSON.parse(run(["status", f.fixture]).stdout) as {
+    records: Array<{ event: string; phase: string }>;
+    canonicalAdoption: {
+      nextPhase: string;
+      adoptedCanonicalCheckpoints: string[];
+    };
+  };
+  assert.deepEqual(status.canonicalAdoption, {
+    adoptedCanonicalCheckpoints: [
+      "brief-readiness",
+      "design-map",
+      "evaluator-prepare",
+      "implementation",
+    ],
+    nextPhase: "evaluator-verify",
+  });
+  assert.equal(
+    status.records.filter((record) => record.event === "adoption").length,
+    1,
+  );
+  assert.ok(
+    !status.records.some(
+      (record) =>
+        record.phase === "implementation" && record.event === "dispatch",
+    ),
+  );
+});
+
 void test("blocked verification retries the unchanged implementation", (t) => {
   mkdirSync(spikePath, { recursive: true });
   t.after(() => {

@@ -765,14 +765,28 @@ function canonicalEvaluatorAuthority(
     [...events].reverse().find((event) => event.transition === transition);
   verifyCanonicalArtifact(request, workflow, latest("brief-frozen"));
   verifyCanonicalArtifact(request, workflow, latest("design-map-frozen"));
+  const currentCycle = [...events]
+    .reverse()
+    .find((event) => event.transition === "correction-cycle-opened")
+    ?.evidence.cycle;
+  const cycleEvents =
+    typeof currentCycle === "string"
+      ? events.filter((event) => event.evidence.cycle === currentCycle)
+      : events;
+  const currentHas = (transition: string): boolean =>
+    cycleEvents.some((event) => event.transition === transition);
+  const currentLatest = (
+    transition: string,
+  ): CanonicalWorkflowEvent | undefined =>
+    [...cycleEvents].reverse().find((event) => event.transition === transition);
   let basis: CanonicalWorkflowEvent | undefined;
   if (request.slot.phase === "evaluator-prepare") {
     basis = latest("design-map-frozen");
   } else if (request.slot.phase === "evaluator-verify") {
-    if (has("evaluation-prepared") && has("implementation-handoff")) {
+    if (has("evaluation-prepared") && currentHas("implementation-handoff")) {
       verifyCanonicalArtifact(request, workflow, latest("evaluation-prepared"));
-      const handoff = latest("implementation-handoff");
-      basis = latest("verification-allocated");
+      const handoff = currentLatest("implementation-handoff");
+      basis = currentLatest("verification-allocated");
       if (
         handoff === undefined ||
         basis === undefined ||
@@ -784,7 +798,7 @@ function canonicalEvaluatorAuthority(
         );
     }
   } else if (request.slot.phase === "evaluator-repair") {
-    basis = [...events]
+    basis = [...cycleEvents]
       .reverse()
       .find(
         (event) =>
@@ -939,6 +953,7 @@ function resolvePermissionProfile(
   name: WorkflowPermissionProfileName,
   workspace: string,
   evaluatorWorkspace: string | undefined,
+  grantHiddenEvaluatorWorkspace: boolean,
 ): WorkflowPermissionProfile {
   if (name === "evaluator") {
     if (evaluatorWorkspace === undefined) {
@@ -946,7 +961,9 @@ function resolvePermissionProfile(
         "the evaluator permission profile requires a declared evaluatorWorkspace",
       );
     }
-    const hiddenWorkspace = process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE;
+    const hiddenWorkspace = grantHiddenEvaluatorWorkspace
+      ? process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE
+      : undefined;
     const expectedHiddenWorkspace = resolve(workspace, "..", "harness-hidden");
     if (
       hiddenWorkspace !== undefined &&
@@ -1013,6 +1030,9 @@ function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
     request.permissionProfile ?? "repo-local-worker",
     request.workspace,
     request.evaluatorWorkspace,
+    workflow.workflow === "013a-Workflow-execution-friction" &&
+      request.slot.phase === "evaluator-verify" &&
+      request.executor === "claude",
   );
   return {
     slot: { ...request.slot, workflow: workflow.workflow },

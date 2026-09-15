@@ -772,3 +772,30 @@
   `git diff --check` passes before this manifest update. The pre-existing,
   unrelated uncommitted Spike 011 ledger edit was preserved and excluded.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 025 — Canonical handoff adoption correction
+
+- Skill: `implementation` v3. Restricted evaluator material inspected: none.
+- Input: frozen brief
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`,
+  Design Map
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`,
+  evaluation requirements
+  `sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf`,
+  and the canonical Cycle 002 rejection identifying late-stage runner
+  adoption as the implementation gap.
+- Result: `IMPLEMENTED`. Runner adoption now derives the next phase from a
+  canonical implementation handoff, exposes that derivation through status,
+  and permits evaluator verification without manufacturing an implementation
+  dispatch or outcome. Protected evaluator authority is constrained to the
+  active correction cycle, and the 013a hidden evaluator workspace is granted
+  only to its bounded Claude verification path.
+- Output: implementation and visible regression diff before this entry
+  `sha256:df521be54019b6cc0275e1364beb66e32a732d75aba32a96342aae689488f8ad`.
+- Verification: `npm test` (76/76), `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, and `git diff --check` passed. One combined check
+  invocation had an intermittent test-worker startup collapse; the clean
+  standalone full-suite rerun passed.
+- The pre-existing unrelated Spike 011 ledger edit and untracked acceptance
+  note were preserved and excluded.
+- Measurement cutoff: immediately before this manifest update.
