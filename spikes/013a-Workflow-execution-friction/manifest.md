@@ -799,3 +799,46 @@
 - The pre-existing unrelated Spike 011 ledger edit and untracked acceptance
   note were preserved and excluded.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 026 — Evaluator Verification (attempt 009 / canonical attempt 011)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify
+  time), evaluator revision `003` (the standalone cycle-002 coverage repair;
+  unchanged this attempt).
+- Input: cycle `002` canonical implementation-handoff commit
+  `07b300751376b805c8aa414eaa5d7964a442ea68` (implementation attempt 9);
+  project `HEAD` (`afa8e211723d7963d0ba5377d28ae5f676700d53`) actually
+  evaluated, one further real source commit beyond the handoff evidence (see
+  `verification-feedback-009.md`); all frozen public inputs confirmed
+  byte-identical to their frozen identities (no specification drift).
+- Result: `BLOCKED`, `INFRASTRUCTURE_FAILURE`, private attempt `009`
+  (canonical attempt `11`). No correction needed or performed.
+- Output: `verification-feedback-009.md` (safe diagnostics; does not itself
+  confirm a criterion failure).
+- Mandatory executable hidden coverage: 6/6 sub-tests pass (fresh run against
+  this commit), including both `E2` fixtures — the repaired evaluator
+  coverage's new second fixture, exercising the exact defect cycle 001's
+  human rejection identified, now passes against this candidate.
+- Mandatory non-executable coverage: 32 of 35 mandatory criteria confirmed
+  `SATISFIED`, including AC16, AC17, and AC19. AC08, AC09 (LP1) and dependent
+  AC34 remain `BLOCKED`: the required live Claude executor remains
+  unreachable from this evaluation environment (confirmed directly: no
+  `claude` executable, no configured executor path, no live Harness host
+  process reachable).
+- Repository evidence inspected: the cycle-002 implementation diff since the
+  previously-evaluated commit (`src/workflow-run.ts`, `tools/workflow.ts`,
+  `test/workflow.test.ts`), confirmed disjoint from the areas LP2/HB1/
+  COMP1-part-a evidence depends on.
+- Restricted evaluator material inspected: this spike's own private evaluator
+  workspace (read only; no correction was needed).
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (75/76 — the 1 failure is a candidate-side stale
+  self-referential test assertion, independently root-caused and confirmed
+  not to reflect any criterion failure; see `verification-feedback-009.md`),
+  `npm run typecheck`, `npm run lint`, `npm run format:check` (scoped to
+  Git-tracked files), and `git diff --check` all green; E1-E5 re-run fresh
+  (6/6 sub-tests pass).
+- Promotion: not performed (result is `BLOCKED`, not `PASS`).
+- Measurement cutoff: immediately before this manifest update.
