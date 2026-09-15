@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 1,
+  "result": "PASS",
+  "passingAttempt": "008",
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:33fa7c44adfab2164a07d949431857f620e0a816",
+      "resultPath": "evaluation/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:752beb040417b9477d60886bcc83555c6e47df50a917b06682b80a6f812fe7e9",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "freezePath": "evaluation/freeze/002.json",
+      "revisionPath": "evaluation/revisions/002",
+      "revisionDisposition": "copied"
+    },
+    {
+      "id": "002",
+      "implementation": "git:05bc7d9e47d58f35734c8e158eafd43b153e38e2",
+      "resultPath": "evaluation/attempts/002/eval-result.md",
+      "resultIdentity": "sha256:d4f3c582801a0df865968e54f09160a4ca621c6b76f9d7c7b575e04d0d7c061c",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "freezePath": "evaluation/freeze/002.json",
+      "revisionPath": "evaluation/revisions/002",
+      "revisionDisposition": "referenced"
+    },
+    {
+      "id": "003",
+      "implementation": "git:05bc7d9e47d58f35734c8e158eafd43b153e38e2",
+      "resultPath": "evaluation/attempts/003/eval-result.md",
+      "resultIdentity": "sha256:326a03b1af0b4102280479d1c6baaf44df7f72037683a0791e575450b744bf82",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "freezePath": "evaluation/freeze/002.json",
+      "revisionPath": "evaluation/revisions/002",
+      "revisionDisposition": "referenced"
+    },
+    {
+      "id": "004",
+      "implementation": "git:3edb31603c1b97eb4f2d52b56c52d4965962113d",
+      "resultPath": "evaluation/attempts/004/eval-result.md",
+      "resultIdentity": "sha256:fa3d30153bca21e2301e32c8b284805e4f297e8d4a03118a9072cb2eca8441a1",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "freezePath": "evaluation/freeze/002.json",
+      "revisionPath": "evaluation/revisions/002",
+      "revisionDisposition": "referenced"
+    },
+    {
+      "id": "005",
+      "implementation": "git:3edb31603c1b97eb4f2d52b56c52d4965962113d",
+      "resultPath": "evaluation/attempts/005/eval-result.md",
+      "resultIdentity": "sha256:0b0ba6fa1c416750c4d22b65fafc851104bae37d971dac68d25b2b1de7de6b83",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "freezePath": "evaluation/freeze/002.json",
+      "revisionPath": "evaluation/revisions/002",
+      "revisionDisposition": "referenced"
+    },
+    {
+      "id": "006",
+      "implementation": "git:5ff1a1bfc22a7e44bda19cf155c39903d7bd7feb",
+      "resultPath": "evaluation/attempts/006/eval-result.md",
+      "resultIdentity": "sha256:c9f7900c061164825538442e061446e833da2a77eeb0f2deb4bf00adbd8373fe",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "freezePath": "evaluation/freeze/002.json",
+      "revisionPath": "evaluation/revisions/002",
+      "revisionDisposition": "referenced"
+    },
+    {
+      "id": "007",
+      "implementation": "git:2bce70339cc99cb2b7ccffe5623ae20627c65fc3",
+      "resultPath": "evaluation/attempts/007/eval-result.md",
+      "resultIdentity": "sha256:b31e85909a28d664b685023f18f01b91f6fcdc65e1c1186ee9ef728e70aa6196",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "freezePath": "evaluation/freeze/002.json",
+      "revisionPath": "evaluation/revisions/002",
+      "revisionDisposition": "referenced"
+    },
+    {
+      "id": "008",
+      "implementation": "git:bb541265d994aad1f1af30446bf0a19ad59e1537",
+      "resultPath": "evaluation/attempts/008/eval-result.md",
+      "resultIdentity": "sha256:8b818f23887a739a2dc177ec13df75f98017324a91a885bbf594f39fee1866e5",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "freezePath": "evaluation/freeze/002.json",
+      "revisionPath": "evaluation/revisions/002",
+      "revisionDisposition": "referenced"
+    }
+  ],
+  "historicalArtifacts": [
+    {
+      "sourceIdentity": "sha256:564e4f67b2e8e0881c4faa2d6768977850a607c842beeaa5dbc8295871f4ee47",
+      "publicPath": "evaluation/attempt-ledger.json",
+      "promotedIdentity": "sha256:564e4f67b2e8e0881c4faa2d6768977850a607c842beeaa5dbc8295871f4ee47",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:752beb040417b9477d60886bcc83555c6e47df50a917b06682b80a6f812fe7e9",
+      "publicPath": "evaluation/attempts/001/eval-result.md",
+      "promotedIdentity": "sha256:752beb040417b9477d60886bcc83555c6e47df50a917b06682b80a6f812fe7e9",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:d4f3c582801a0df865968e54f09160a4ca621c6b76f9d7c7b575e04d0d7c061c",
+      "publicPath": "evaluation/attempts/002/eval-result.md",
+      "promotedIdentity": "sha256:d4f3c582801a0df865968e54f09160a4ca621c6b76f9d7c7b575e04d0d7c061c",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:326a03b1af0b4102280479d1c6baaf44df7f72037683a0791e575450b744bf82",
+      "publicPath": "evaluation/attempts/003/eval-result.md",
+      "promotedIdentity": "sha256:326a03b1af0b4102280479d1c6baaf44df7f72037683a0791e575450b744bf82",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:fa3d30153bca21e2301e32c8b284805e4f297e8d4a03118a9072cb2eca8441a1",
+      "publicPath": "evaluation/attempts/004/eval-result.md",
+      "promotedIdentity": "sha256:fa3d30153bca21e2301e32c8b284805e4f297e8d4a03118a9072cb2eca8441a1",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:0b0ba6fa1c416750c4d22b65fafc851104bae37d971dac68d25b2b1de7de6b83",
+      "publicPath": "evaluation/attempts/005/eval-result.md",
+      "promotedIdentity": "sha256:0b0ba6fa1c416750c4d22b65fafc851104bae37d971dac68d25b2b1de7de6b83",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:c9f7900c061164825538442e061446e833da2a77eeb0f2deb4bf00adbd8373fe",
+      "publicPath": "evaluation/attempts/006/eval-result.md",
+      "promotedIdentity": "sha256:c9f7900c061164825538442e061446e833da2a77eeb0f2deb4bf00adbd8373fe",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:b31e85909a28d664b685023f18f01b91f6fcdc65e1c1186ee9ef728e70aa6196",
+      "publicPath": "evaluation/attempts/007/eval-result.md",
+      "promotedIdentity": "sha256:b31e85909a28d664b685023f18f01b91f6fcdc65e1c1186ee9ef728e70aa6196",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:8b818f23887a739a2dc177ec13df75f98017324a91a885bbf594f39fee1866e5",
+      "publicPath": "evaluation/attempts/008/eval-result.md",
+      "promotedIdentity": "sha256:8b818f23887a739a2dc177ec13df75f98017324a91a885bbf594f39fee1866e5",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "publicPath": "evaluation/freeze/002.json",
+      "promotedIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:26979bd42ae5f5651624dfe1642f5966f92ed5b0b740a4c40b3cab54f62b5f1f",
+      "publicPath": "evaluation/revisions/002/eval-spec.md",
+      "promotedIdentity": "sha256:26979bd42ae5f5651624dfe1642f5966f92ed5b0b740a4c40b3cab54f62b5f1f",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:8e018f5b945a5121e3ffac96323c93761c7ed815a67b2ae7c0904230fbb2fba8",
+      "publicPath": "evaluation/revisions/002/case-manifest.json",
+      "promotedIdentity": "sha256:8e018f5b945a5121e3ffac96323c93761c7ed815a67b2ae7c0904230fbb2fba8",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:a7e4bdb50573dfc96007002c936628cd285b4785d34a68094bb53b4c388d3ee0",
+      "publicPath": "evaluation/revisions/002/.hidden-test/manifest.json",
+      "promotedIdentity": "sha256:a7e4bdb50573dfc96007002c936628cd285b4785d34a68094bb53b4c388d3ee0",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:abcfa00904921b7d032563e2d38669b8712975c0c49e3242757f3027be70f514",
+      "publicPath": "evaluation/revisions/002/.hidden-test/dispatch-inspection-non-consuming.test.ts",
+      "promotedIdentity": "sha256:abcfa00904921b7d032563e2d38669b8712975c0c49e3242757f3027be70f514",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:69613d21a76a7f0b6cabf6b57fbb55c1571ccf41045b40dd663c85a4b67aca63",
+      "publicPath": "evaluation/revisions/002/.hidden-test/canonical-authority-adoption.test.ts",
+      "promotedIdentity": "sha256:69613d21a76a7f0b6cabf6b57fbb55c1571ccf41045b40dd663c85a4b67aca63",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:340def2013cb61912d222738cf738a9510ca58c7d379a79cb4f1b3c898c4be65",
+      "publicPath": "evaluation/revisions/002/.hidden-test/recoverable-preexecution-failure.test.ts",
+      "promotedIdentity": "sha256:340def2013cb61912d222738cf738a9510ca58c7d379a79cb4f1b3c898c4be65",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:c19d954f7ab0fb311be2421f658e7e4ae385f324d5868290fce5e9f300c29f02",
+      "publicPath": "evaluation/revisions/002/.hidden-test/blocked-phase-retry.test.ts",
+      "promotedIdentity": "sha256:c19d954f7ab0fb311be2421f658e7e4ae385f324d5868290fce5e9f300c29f02",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:9eec27454cdd7d235d76687e104af3235251258e455268d475bdcedfa67d8785",
+      "publicPath": "evaluation/revisions/002/.hidden-test/authority-status-evidence-aware-transitions.test.ts",
+      "promotedIdentity": "sha256:9eec27454cdd7d235d76687e104af3235251258e455268d475bdcedfa67d8785",
+      "disposition": "copied"
+    }
+  ],
+  "notPromotedRevisions": []
+}

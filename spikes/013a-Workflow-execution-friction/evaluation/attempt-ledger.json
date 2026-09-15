@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 2,
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:33fa7c44adfab2164a07d949431857f620e0a816",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "resultPath": ".eval/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:752beb040417b9477d60886bcc83555c6e47df50a917b06682b80a6f812fe7e9",
+      "status": "FAIL"
+    },
+    {
+      "id": "002",
+      "implementation": "git:05bc7d9e47d58f35734c8e158eafd43b153e38e2",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "resultPath": ".eval/attempts/002/eval-result.md",
+      "resultIdentity": "sha256:d4f3c582801a0df865968e54f09160a4ca621c6b76f9d7c7b575e04d0d7c061c",
+      "status": "BLOCKED"
+    },
+    {
+      "id": "003",
+      "implementation": "git:05bc7d9e47d58f35734c8e158eafd43b153e38e2",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "resultPath": ".eval/attempts/003/eval-result.md",
+      "resultIdentity": "sha256:326a03b1af0b4102280479d1c6baaf44df7f72037683a0791e575450b744bf82",
+      "status": "FAIL"
+    },
+    {
+      "id": "004",
+      "implementation": "git:3edb31603c1b97eb4f2d52b56c52d4965962113d",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "resultPath": ".eval/attempts/004/eval-result.md",
+      "resultIdentity": "sha256:fa3d30153bca21e2301e32c8b284805e4f297e8d4a03118a9072cb2eca8441a1",
+      "status": "BLOCKED"
+    },
+    {
+      "id": "005",
+      "implementation": "git:3edb31603c1b97eb4f2d52b56c52d4965962113d",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "resultPath": ".eval/attempts/005/eval-result.md",
+      "resultIdentity": "sha256:0b0ba6fa1c416750c4d22b65fafc851104bae37d971dac68d25b2b1de7de6b83",
+      "status": "BLOCKED"
+    },
+    {
+      "id": "006",
+      "implementation": "git:5ff1a1bfc22a7e44bda19cf155c39903d7bd7feb",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "resultPath": ".eval/attempts/006/eval-result.md",
+      "resultIdentity": "sha256:c9f7900c061164825538442e061446e833da2a77eeb0f2deb4bf00adbd8373fe",
+      "status": "FAIL"
+    },
+    {
+      "id": "007",
+      "implementation": "git:2bce70339cc99cb2b7ccffe5623ae20627c65fc3",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "resultPath": ".eval/attempts/007/eval-result.md",
+      "resultIdentity": "sha256:b31e85909a28d664b685023f18f01b91f6fcdc65e1c1186ee9ef728e70aa6196",
+      "status": "BLOCKED"
+    },
+    {
+      "id": "008",
+      "implementation": "git:bb541265d994aad1f1af30446bf0a19ad59e1537",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+      "resultPath": ".eval/attempts/008/eval-result.md",
+      "resultIdentity": "sha256:8b818f23887a739a2dc177ec13df75f98017324a91a885bbf594f39fee1866e5",
+      "status": "PASS"
+    }
+  ]
+}

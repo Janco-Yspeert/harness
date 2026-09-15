@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "002",
+  "priorRevision": "001",
+  "priorRevisionIdentity": "sha256:f86a3bf834325f2764ba38f83adc5127d68163e405d8a82b9fcfb731e121533b",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 11,
+    "identity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802"
+  },
+  "bootstrapAuthority": {
+    "name": "evaluator",
+    "contractVersion": 11,
+    "sourceCommit": "fae05912f59f8ebdb8982ab16deb26e293754647",
+    "sourcePath": "skills/evaluator/SKILL.md",
+    "identity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802",
+    "snapshotPath": "spikes/013a-Workflow-execution-friction/bootstrap/evaluator-skill.md",
+    "note": "Frozen spike.md 'Evaluator bootstrap and self-modification exception': Spike 013a evaluator prepare and verify both execute under this pinned pre-implementation evaluator skill. Working-tree skills/evaluator/SKILL.md is byte-identical to this pin at preparation time."
+  },
+  "inputs": {
+    "brief": "sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac",
+    "briefCommit": "c543cae",
+    "designMap": "sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407",
+    "designMapCommit": "68f710a",
+    "evaluationRequirements": "sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf"
+  },
+  "artifacts": {
+    "eval-spec.md": "sha256:26979bd42ae5f5651624dfe1642f5966f92ed5b0b740a4c40b3cab54f62b5f1f",
+    "case-manifest.json": "sha256:8e018f5b945a5121e3ffac96323c93761c7ed815a67b2ae7c0904230fbb2fba8",
+    ".hidden-test/manifest.json": "sha256:a7e4bdb50573dfc96007002c936628cd285b4785d34a68094bb53b4c388d3ee0",
+    ".hidden-test/dispatch-inspection-non-consuming.test.ts": "sha256:abcfa00904921b7d032563e2d38669b8712975c0c49e3242757f3027be70f514",
+    ".hidden-test/canonical-authority-adoption.test.ts": "sha256:69613d21a76a7f0b6cabf6b57fbb55c1571ccf41045b40dd663c85a4b67aca63",
+    ".hidden-test/recoverable-preexecution-failure.test.ts": "sha256:340def2013cb61912d222738cf738a9510ca58c7d379a79cb4f1b3c898c4be65",
+    ".hidden-test/blocked-phase-retry.test.ts": "sha256:c19d954f7ab0fb311be2421f658e7e4ae385f324d5868290fce5e9f300c29f02",
+    ".hidden-test/authority-status-evidence-aware-transitions.test.ts": "sha256:9eec27454cdd7d235d76687e104af3235251258e455268d475bdcedfa67d8785"
+  },
+  "freezeInventory": [
+    "eval-spec.md",
+    "case-manifest.json",
+    ".hidden-test/manifest.json",
+    ".hidden-test/dispatch-inspection-non-consuming.test.ts",
+    ".hidden-test/canonical-authority-adoption.test.ts",
+    ".hidden-test/recoverable-preexecution-failure.test.ts",
+    ".hidden-test/blocked-phase-retry.test.ts",
+    ".hidden-test/authority-status-evidence-aware-transitions.test.ts"
+  ],
+  "integrityChecks": [
+    "validatePreparedEvaluatorBundle (tools/evaluator-integrity.ts) over the assembled 35-criterion / 17-procedure bundle: PASS, 0 diagnostics",
+    "every required criterion (AC01-AC35) has exactly one explicit criterion evidence record and a non-empty disposition/sufficiency reason",
+    "every criterion.procedures entry resolves to an existing case-manifest.json case, and every case maps back to at least one criterion",
+    "every executable case's requiredMaterial (its .hidden-test/*.test.ts file) is present in materialPaths and freezeInventory",
+    "coverage-map.json (public, unchanged from revision 001) and case-manifest.json (private, unchanged) criterion/procedure sets are mutually consistent (same 35 ids, same procedure assignments); only .hidden-test/blocked-phase-retry.test.ts and eval-spec.md changed in this revision",
+    "corrected E4 (.hidden-test/blocked-phase-retry.test.ts) run via `node --test <file>` against both the unimplemented baseline (project commit 6e5ff54, tools/workflow.ts/src/workflow-run.ts/src/workflow-backend.ts/src/index.ts restored to that commit) and the candidate implementation (commit 33fa7c4): FAILS identically against both, for the documented reason ('already been dispatched')",
+    "E1, E2, E3, E5 unchanged from revision 001; re-run against the candidate implementation (commit 33fa7c4): E1 PASS, E2 PASS, E3 PASS, E5 FAIL",
+    "npm test (62/62), npm run typecheck, npm run lint, npm run format:check, git diff --check each exit 0 at implementation commit 33fa7c4 / HEAD 222fdba",
+    "skills/evaluator/SKILL.md (working tree at HEAD), git show fae0591:skills/evaluator/SKILL.md, and bootstrap/evaluator-skill.md (working tree and at commit 33fa7c4) are byte-identical (sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802)"
+  ],
+  "preFreezeIntegrityValidation": {
+    "status": "PASS",
+    "diagnostics": [],
+    "privateInventoryIdentity": "sha256:81b8f9ffa29a97172e46dd47c72cda3512977270d0917cf23f937fcceb400810",
+    "validatorResultBinding": "sha256:f555941817007e045eaad7038ceff7b56698ab8da9feff5dc7712a939adf7b9d"
+  }
+}

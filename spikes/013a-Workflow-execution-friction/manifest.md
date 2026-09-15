@@ -697,3 +697,52 @@
   daemon was stopped after evidence capture.
 - Measurement cutoff: immediately before this manifest update. Evidence commit
   and push follow and are not included.
+
+## Run 023 — Evaluator Verification (attempt 008 / canonical attempt 010)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify time)
+- Input: implementation commit `bb541265d994aad1f1af30446bf0a19ad59e1537`
+  (implementation attempt 8), all frozen public inputs confirmed byte-identical
+  to their frozen identities (no specification drift); fresh standalone LP1
+  primary evidence for this exact candidate, already committed at
+  `lp1-primary-evidence-008.md` (Run 022), independently corroborated rather
+  than accepted on its own prose.
+- Result: `PASS`, private attempt `008` (canonical attempt `10`). Evaluator
+  revision `002` unchanged; no correction needed or performed.
+- Output: none (no confirmed implementation failure; no public feedback
+  artifact required).
+- Mandatory executable hidden coverage: 5/5 pass (fresh run against this
+  commit).
+- Mandatory non-executable coverage: all 35 mandatory criteria confirmed
+  `SATISFIED`. 32 were unaffected by this attempt's sole implementation
+  commit and re-confirmed fresh via the full regression suite. AC08, AC09
+  (LP1) and dependent AC34 change from attempt 007's `BLOCKED` to `SATISFIED`:
+  this evaluator independently, structurally corroborated the preserved
+  standalone live-Claude fixture evidence against primary repository state
+  the evidence's author did not control (exact historical `workflow.jsonl`
+  and fixture-definition bytes, recomputed derived identities, and the
+  candidate's own fixture-evidence validator applied by hand), rather than
+  accepting it on its own prose or rerunning it from this evaluator's own
+  environment (still independently confirmed unable to reach a live Claude
+  executor).
+- Repository evidence inspected: the full implementation diff since the
+  previously-evaluated commit (`src/workflow-run.ts`, `src/index.ts`,
+  `test/workflow-run.integration.test.ts`, `fixtures/lp1.json`), the
+  preserved LP1 evidence record, and the actual committed Git history used to
+  independently recompute its embedded derived identities.
+- Restricted evaluator material inspected: this spike's own private evaluator
+  workspace (read only; no correction was needed).
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (74/74), `npm run typecheck`, `npm run lint`,
+  `npm run format:check` (scoped to Git-tracked files), and `git diff --check`
+  all green at the implementation commit; E1-E5 re-run fresh (5/5 pass);
+  independent recomputation of the LP1 evidence's `ledgerIdentity`,
+  `handoffIdentity`/`basisIdentity`, and `definitionIdentity` from primary Git
+  history, each an exact match.
+- Promotion: completed. The complete evaluator-owned evidence chain (private
+  attempt ledger, all eight immutable attempt results, evaluator revision
+  `002`'s frozen bundle) is promoted canonically under `evaluation/**`; see
+  `evaluation/promotion.json`.
+- Measurement cutoff: immediately before this manifest update.

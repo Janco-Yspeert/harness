@@ -1,0 +1,43 @@
+{
+  "revision": "001",
+  "note": "Five evaluator-authored executable hidden tests are frozen in this revision. Each drives the existing public tools/workflow.ts CLI (the seam the current public test suite already exercises) against a disposable fixture spike directory and was validated pre-freeze against the unimplemented baseline: dispatch-inspection-non-consuming, canonical-authority-adoption, and blocked-phase-retry currently FAIL for the exact reason the corresponding acceptance criteria name (spike.md Observed Failures #4, #5, and the AC35 blocked-retry gap); authority-status-evidence-aware-transitions currently FAILS for the exact reason spike.md Observed Failure #8 names; recoverable-preexecution-failure currently PASSES and is frozen as a non-regression control over the same dispatch code path. The remaining criteria rely on the implementation's own visible regression suite, bounded live-provider fixtures, real host-boundary execution, and static/provenance inspection, per the modes and evidence plans frozen in eval-spec.md and case-manifest.json, because the frozen Design Map deliberately leaves the execution-binding, delegation, role-result, retry-counter, and observability representations as implementation freedom that an evaluator-authored hidden test would otherwise have to invent.",
+  "cases": [
+    {
+      "id": "E1",
+      "mode": "EXECUTABLE",
+      "tests": [".hidden-test/dispatch-inspection-non-consuming.test.ts"]
+    },
+    {
+      "id": "E2",
+      "mode": "EXECUTABLE",
+      "tests": [".hidden-test/canonical-authority-adoption.test.ts"]
+    },
+    {
+      "id": "E3",
+      "mode": "EXECUTABLE",
+      "tests": [".hidden-test/recoverable-preexecution-failure.test.ts"]
+    },
+    {
+      "id": "E4",
+      "mode": "EXECUTABLE",
+      "tests": [".hidden-test/blocked-phase-retry.test.ts"]
+    },
+    {
+      "id": "E5",
+      "mode": "EXECUTABLE",
+      "tests": [".hidden-test/authority-status-evidence-aware-transitions.test.ts"]
+    },
+    { "id": "PR1", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "PR2", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "PR3", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "PR4", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "PR5", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "PR6", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "PR7", "mode": "COMPOSITE", "tests": [] },
+    { "id": "LP1", "mode": "LIVE_PROVIDER", "tests": [] },
+    { "id": "LP2", "mode": "LIVE_PROVIDER", "tests": [] },
+    { "id": "LP3", "mode": "COMPOSITE", "tests": [] },
+    { "id": "HB1", "mode": "HOST_BOUNDARY", "tests": [] },
+    { "id": "COMP1", "mode": "COMPOSITE", "tests": [] }
+  ]
+}
