@@ -19,6 +19,7 @@ import { WebSocket, type RawData } from "ws";
 import {
   buildExecutorCommand,
   createLocalWorkflowBackend,
+  isSuccessfulWorkflowFixtureEvidence,
   parseWorkflowBackendRoleResult,
   startHarnessHost,
   workflowProviderProgram,
@@ -30,6 +31,7 @@ import {
   type WorkflowRunBackendContext,
   type WorkflowRunBackendFactory,
   type WorkflowRunExitOutcome,
+  type WorkflowRunRecord,
 } from "../src/index.ts";
 
 const repositoryRoot = process.cwd();
@@ -52,13 +54,39 @@ function syntheticSpikeProvenance(
       },
     }).trim();
   const identities: Record<string, string> = {};
-  const entries = Object.entries(files).map(([name, content]) => {
+  interface TreeNode {
+    files: Map<string, string>;
+    directories: Map<string, TreeNode>;
+  }
+  const rootNode: TreeNode = { files: new Map(), directories: new Map() };
+  for (const [name, content] of Object.entries(files)) {
     identities[name] =
       `sha256:${createHash("sha256").update(content).digest("hex")}`;
     const blob = git(["hash-object", "-w", "--stdin"], content);
-    return `100644 blob ${blob}\t${name}`;
-  });
-  const leaf = git(["mktree"], `${entries.join("\n")}\n`);
+    const parts = name.split("/");
+    const leafName = parts.pop();
+    assert.ok(leafName);
+    let node = rootNode;
+    for (const part of parts) {
+      let child = node.directories.get(part);
+      if (child === undefined) {
+        child = { files: new Map(), directories: new Map() };
+        node.directories.set(part, child);
+      }
+      node = child;
+    }
+    node.files.set(leafName, blob);
+  }
+  const writeTree = (node: TreeNode): string => {
+    const entries = [
+      ...[...node.files].map(([name, blob]) => `100644 blob ${blob}\t${name}`),
+      ...[...node.directories].map(
+        ([name, child]) => `040000 tree ${writeTree(child)}\t${name}`,
+      ),
+    ].sort();
+    return git(["mktree"], `${entries.join("\n")}\n`);
+  };
+  const leaf = writeTree(rootNode);
   const spikes = git(["mktree"], `040000 tree ${leaf}\t${fixtureName}\n`);
   const root = git(["mktree"], `040000 tree ${spikes}\tspikes\n`);
   return {
@@ -709,7 +737,7 @@ void test("Spike 013a binds its pinned evaluator authority and refuses prompt-sh
 
     const allocated = await allocate(host, {
       slot: {
-        workflow: "013a",
+        workflow: "013a-Workflow-execution-friction",
         phase: "evaluator-prepare",
         methodologyAttempt: "1",
       },
@@ -725,6 +753,26 @@ void test("Spike 013a binds its pinned evaluator authority and refuses prompt-sh
     );
     assert.equal(allocated.run.skillVersion, "11");
     assert.equal(allocated.run.roleDisposition, "pending");
+    assert.equal(created.length, 1);
+
+    const shorthand = await allocate(host, {
+      slot: {
+        workflow: "013a",
+        phase: "evaluator-prepare",
+        methodologyAttempt: "1",
+      },
+      role: "evaluator-prepare",
+      workspace: repositoryRoot,
+      permissionProfile: "evaluator",
+      evaluatorWorkspace: "/tmp/spike-013a-evaluator",
+    });
+    assert.equal(shorthand.status, 200, shorthand.error);
+    assert.equal(shorthand.duplicate, true);
+    assert.equal(shorthand.run.runId, allocated.run.runId);
+    assert.deepEqual(
+      shorthand.run.allocationAuthority,
+      allocated.run.allocationAuthority,
+    );
     assert.equal(created.length, 1);
 
     created[0]?.finish({ ok: true });
@@ -758,84 +806,182 @@ void test("Spike 013a binds its pinned evaluator authority and refuses prompt-sh
   }
 });
 
-void test("LP1 is a host-mediated fixed Claude fixture, not a nested executor capability", async () => {
+void test("repository fixtures resolve from candidate bytes without caller-shaped execution", async (t) => {
+  const fixtureName = `999b-workflow-fixture-${String(process.pid)}`;
+  const fixture = join(repositoryRoot, "spikes", fixtureName);
+  mkdirSync(join(fixture, "bootstrap"), { recursive: true });
+  mkdirSync(join(fixture, "fixtures"), { recursive: true });
+  t.after(() => {
+    rmSync(fixture, { recursive: true, force: true });
+  });
+
+  const sourcePath = "skills/evaluator/SKILL.md";
+  const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  }).trim();
+  const snapshot = readFileSync(join(repositoryRoot, sourcePath), "utf8");
+  const contractIdentity = `sha256:${createHash("sha256").update(snapshot).digest("hex")}`;
+  const definition = `${JSON.stringify({
+    version: 1,
+    identity: "synthetic-read-only-evaluator",
+    canonicalPrerequisite: "current-implementation-handoff",
+    role: "evaluator-verify",
+    executor: "claude",
+    contract: {
+      name: "evaluator",
+      version: 11,
+      identity: contractIdentity,
+      deliveryMode: "claude-system-contract",
+    },
+    permissionProfile: "repository-read-only",
+    permittedSideEffects: "none",
+    expectedRoleDisposition: "succeeded",
+    prompt: "Inspect the delivered contract and report the fixture outcome.",
+  })}\n`;
+  const publicFiles = {
+    "spike.md": "# Fixture brief\n",
+    "design-map.md": "# Fixture design map\n",
+    "coverage-map.json": `${JSON.stringify({
+      criteria: [
+        {
+          id: "AC01",
+          frozenAuthority: "spike.md AC01",
+          mode: "PUBLIC_REGRESSION",
+          required: true,
+          procedures: ["FX1"],
+          sufficiency: "FX1 establishes AC01.",
+        },
+      ],
+      readiness: {
+        evaluatorRevision: "001",
+        privateInventoryIdentity: `sha256:${"0".repeat(64)}`,
+        validatorResultBinding: `sha256:${"1".repeat(64)}`,
+        integrityValidation: "PASS",
+      },
+    })}\n`,
+    "fixtures/read-only.json": definition,
+  };
+  const provenance = syntheticSpikeProvenance(fixtureName, publicFiles);
+  for (const [name, content] of Object.entries(publicFiles)) {
+    const path = join(fixture, name);
+    mkdirSync(join(path, ".."), { recursive: true });
+    writeFileSync(path, content);
+  }
+  writeFileSync(join(fixture, "bootstrap/evaluator-skill.md"), snapshot);
+  writeFileSync(
+    join(fixture, "bootstrap/evaluator-authority.json"),
+    `${JSON.stringify({
+      evaluatorSkill: {
+        name: "evaluator",
+        contractVersion: 11,
+        sourceCommit,
+        sourcePath,
+        identity: contractIdentity,
+        snapshotPath: "bootstrap/evaluator-skill.md",
+      },
+    })}\n`,
+  );
+  const artifact = (path: keyof typeof publicFiles) => ({
+    path,
+    commit: provenance.commit,
+    identity: provenance.identities[path],
+  });
+  writeFileSync(
+    join(fixture, "workflow.jsonl"),
+    [
+      { transition: "brief-frozen", evidence: artifact("spike.md") },
+      {
+        transition: "design-map-frozen",
+        evidence: artifact("design-map.md"),
+      },
+      {
+        transition: "evaluation-prepared",
+        evidence: artifact("coverage-map.json"),
+      },
+      {
+        transition: "implementation-handoff",
+        evidence: { commit: provenance.commit, attempt: 1 },
+      },
+    ]
+      .map((event) => JSON.stringify(event))
+      .join("\n") + "\n",
+  );
+
   const { host, created, contexts } = await startHarness();
   try {
-    const parent = await allocate(host, {
-      slot: {
-        workflow: "013a-Workflow-execution-friction",
-        phase: "evaluator-verify",
-        methodologyAttempt: "6",
-      },
-      role: "evaluator-verify",
-      executor: "claude",
-      workspace: repositoryRoot,
-      permissionProfile: "evaluator",
-      evaluatorWorkspace: "/tmp/spike-013a-lp1-evaluator",
-    });
-    assert.equal(parent.status, 201, parent.error);
-    assert.equal(parent.run.workflow, "013a-Workflow-execution-friction");
-
-    const shorthand = await allocate(host, {
-      slot: {
-        workflow: "013a",
-        phase: "evaluator-verify",
-        methodologyAttempt: "6",
-      },
-      role: "evaluator-verify",
-      executor: "claude",
-      workspace: repositoryRoot,
-      permissionProfile: "evaluator",
-      evaluatorWorkspace: "/tmp/spike-013a-lp1-evaluator",
-    });
-    assert.equal(shorthand.status, 200, shorthand.error);
-    assert.equal(shorthand.duplicate, true);
-    assert.equal(shorthand.run.runId, parent.run.runId);
-    assert.equal(shorthand.run.workflow, parent.run.workflow);
-    assert.deepEqual(
-      shorthand.run.allocationAuthority,
-      parent.run.allocationAuthority,
-    );
-
-    const response = await fetch(`${host.url}/workflow-fixtures/lp1`, {
+    const response = await fetch(`${host.url}/workflow-fixtures`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ parentRunId: parent.run.runId }),
+      body: JSON.stringify({
+        workflow: fixtureName,
+        fixture: "read-only",
+        candidateCommit: provenance.commit,
+      }),
     });
     assert.equal(response.status, 201);
     const child = ((await response.json()) as { run: RunRecord }).run;
     assert.equal(child.executor, "claude");
     assert.equal(child.role, "evaluator-verify");
     assert.equal(child.contractDeliveryMode, "claude-system-contract");
-    assert.equal(child.workflow, "013a-lp1-fixture");
-    assert.deepEqual(child.fixture, {
-      identity: "spike-013a-lp1",
-      parentRunId: parent.run.runId,
-      requiredContractIdentity: parent.run.contractIdentity,
-      requiredDeliveryMode: "claude-system-contract",
-      allowedSideEffects: "none",
-    });
-    assert.equal(created.length, 2);
-    const childContext = contexts[1];
-    const parentContext = contexts[0];
+    assert.equal(child.workflow, fixtureName);
+    assert.equal(child.phase, "fixture:read-only");
+    const childFixture = child.fixture as Record<string, unknown>;
+    assert.equal(childFixture.identity, "synthetic-read-only-evaluator");
+    assert.equal(childFixture.candidateCommit, provenance.commit);
+    assert.equal(
+      childFixture.definitionIdentity,
+      provenance.identities["fixtures/read-only.json"],
+    );
+    assert.equal(childFixture.parentRunId, null);
+    assert.equal(created.length, 1);
+    const childContext = contexts[0];
     assert.ok(childContext);
-    assert.ok(parentContext);
     assert.equal(childContext.spec.executor, "claude");
     assert.equal(childContext.spec.role, "evaluator-verify");
-    assert.equal(
-      childContext.spec.contract.content,
-      parentContext.spec.contract.content,
-    );
+    assert.equal(childContext.spec.contract.identity, contractIdentity);
+    assert.deepEqual(childContext.spec.permissionProfile.workspaces, [
+      repositoryRoot,
+    ]);
     assert.deepEqual(childContext.spec.permissionProfile.capabilities, [
       "repository-read",
     ]);
+    created[0]?.finish({
+      ok: true,
+      roleResult: { disposition: "succeeded" },
+    });
+    await settle();
+    const completed = await getRun(host, child.runId);
+    assert.equal(
+      isSuccessfulWorkflowFixtureEvidence(
+        completed as unknown as WorkflowRunRecord,
+        {
+          workflow: fixtureName,
+          fixture: "read-only",
+          candidateCommit: provenance.commit,
+        },
+      ),
+      true,
+    );
+    assert.equal(
+      isSuccessfulWorkflowFixtureEvidence(
+        completed as unknown as WorkflowRunRecord,
+        {
+          workflow: fixtureName,
+          fixture: "read-only",
+          candidateCommit: sourceCommit,
+        },
+      ),
+      false,
+    );
 
-    // It cannot be pointed at another role, provider, or a completed parent.
-    const arbitrary = await fetch(`${host.url}/workflow-fixtures/lp1`, {
+    const arbitrary = await fetch(`${host.url}/workflow-fixtures`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        parentRunId: child.runId,
+        workflow: fixtureName,
+        fixture: "read-only",
+        candidateCommit: provenance.commit,
         role: "implementation",
         executor: "codex",
       }),
@@ -843,9 +989,24 @@ void test("LP1 is a host-mediated fixed Claude fixture, not a nested executor ca
     assert.equal(arbitrary.status, 400);
     assert.match(
       ((await arbitrary.json()) as { error: string }).error,
-      /requires an active canonical Spike 013a Claude evaluator-verify allocation/,
+      /only accepts workflow, fixture, candidateCommit, and optional parentRunId/,
     );
-    assert.equal(created.length, 2);
+    const stale = await fetch(`${host.url}/workflow-fixtures`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        workflow: fixtureName,
+        fixture: "read-only",
+        candidateCommit: sourceCommit,
+        parentRunId: child.runId,
+      }),
+    });
+    assert.equal(stale.status, 400);
+    assert.match(
+      ((await stale.json()) as { error: string }).error,
+      /current canonical implementation handoff/,
+    );
+    assert.equal(created.length, 1);
   } finally {
     await host.close();
   }

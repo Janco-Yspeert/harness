@@ -17,6 +17,7 @@ import type {
 } from "./session-backend.ts";
 import { createLocalWorkflowBackend } from "./workflow-backend.ts";
 import {
+  parseWorkflowFixtureRequest,
   parseWorkflowReplaceRequest,
   parseWorkflowRoleResultRequest,
   parseWorkflowRunRequest,
@@ -40,6 +41,7 @@ export {
   workflowProviderProgram,
   workflowScratchEnvironment,
 } from "./workflow-backend.ts";
+export { isSuccessfulWorkflowFixtureEvidence } from "./workflow-run.ts";
 export type {
   ResolvedWorkflowRunSpec,
   WorkflowInvocationMode,
@@ -290,23 +292,15 @@ export async function startHarnessHost(
         return;
       }
 
-      if (pathname === "/workflow-fixtures/lp1") {
+      if (pathname === "/workflow-fixtures") {
         if (method !== "POST") {
           response.writeHead(405).end("Method not allowed\n");
           return;
         }
-        const body = await readJsonBody(request);
-        const parentRunId =
-          typeof body === "object" && body !== null && "parentRunId" in body
-            ? (body as { parentRunId?: unknown }).parentRunId
-            : undefined;
-        if (typeof parentRunId !== "string" || parentRunId.length === 0) {
-          throw new WorkflowRunRequestError(
-            "LP1 fixture request requires parentRunId",
-          );
-        }
         sendJson(response, 201, {
-          run: await workflowRuns.allocateSpike013aLp1Fixture(parentRunId),
+          run: await workflowRuns.allocateFixture(
+            parseWorkflowFixtureRequest(await readJsonBody(request)),
+          ),
         });
         return;
       }
@@ -470,7 +464,7 @@ export async function startHarnessHost(
     if (
       pathname === "/workflow-runs" ||
       pathname.startsWith("/workflow-runs/") ||
-      pathname === "/workflow-fixtures/lp1"
+      pathname === "/workflow-fixtures"
     ) {
       void handleWorkflowRequest(request, response, pathname);
       return;

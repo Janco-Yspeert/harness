@@ -238,6 +238,47 @@ authority as the full identifier.
 The LP1 regression now creates its parent with the real runner identifier,
 then allocates the same phase through shorthand and proves that Harness returns
 the same run ID, canonical workflow field, and allocation-authority object.
+
+## Standalone repository fixture correction (implementation attempt 8)
+
+The prior `/workflow-fixtures/lp1` mechanism and its active evaluator-parent
+requirement have been removed. Harness core now exposes the deliberately small
+generic `POST /workflow-fixtures` operation. Its request accepts only a workflow,
+fixture name, full candidate commit, and optional correlation parent run ID.
+Role, executor, contract, permissions, workspaces, authority and expected result
+cannot be supplied by the caller.
+
+The fixture definition is loaded with `git show` from the exact asserted
+candidate commit, rather than from mutable working-tree bytes. Harness then
+canonicalizes the workflow, proves that commit is the current implementation
+handoff eligible for verification, validates the protected evaluator role and
+contract against the workflow's pinned canonical evaluator authority, and
+allocates an ordinary host-owned run in a separate `fixture:<name>` slot. The
+generic standalone prerequisite is therefore the current canonical
+implementation handoff plus valid evaluation-prepared and pinned-contract
+authority—not a live formal evaluator process. An optional parent is recorded
+only as correlation and grants no authority.
+
+Spike 013a owns `fixtures/lp1.json`, which fixes the LP1 identity, real Claude
+executor, evaluator v11 contract, repository-read-only boundary, no permitted
+side effects and required succeeded disposition. That descriptor is candidate
+implementation, not a new acceptance transition or frozen evaluator authority.
+Core contains no Spike 013a or LP1 identifier or launch special case.
+
+Visible synthetic regression coverage proves standalone protected-fixture
+allocation, exact candidate-byte resolution, canonical/pinned contract
+validation, rejection of caller-shaped execution, rejection of a stale
+candidate, and candidate-aware success evidence. The existing workflow
+canonicalization regression now starts with the exact runner-emitted
+`013a-Workflow-execution-friction` identifier and proves the retained `013a`
+shorthand resolves to the same run and authority identity.
+
+`npm test` passes 74/74 after one transient all-worker startup failure produced
+no test diagnostics; the workflow suite and a clean full-suite rerun both
+passed. Typecheck, lint, formatting and `git diff --check` also pass. The real
+LP1 run is intentionally deferred until this exact candidate is committed and
+recorded as the current canonical handoff, so the mechanism can validate the
+same bytes it launches.
 The pre-existing generic run-record assertion was updated to require the
 canonical workflow identifier rather than the caller alias.
 

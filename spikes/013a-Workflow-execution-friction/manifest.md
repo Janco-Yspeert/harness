@@ -636,3 +636,37 @@
   files), and `git diff --check` all green at the implementation commit; E1-E5
   re-run fresh (5/5 pass)
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 021 — Standalone generic fixture boundary
+
+- Skill: `implementation` v3. Restricted evaluator material inspected: none.
+- Input: implementation attempt 7 at
+  `2bce70339cc99cb2b7ccffe5623ae20627c65fc3`; frozen brief
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`,
+  Design Map
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`,
+  evaluation requirements
+  `sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf`,
+  coverage map
+  `sha256:eb4921e8c87d47c35d16f8fc90ad5192526327b4fe6e4517f08ae0faba1ad0a4`,
+  sanitized public `verification-feedback-007.md`, and the evaluator
+  clarification that fixture launch shape is implementation freedom.
+- Result: `IMPLEMENTED`. Replaced the Spike/LP1-specific active-parent endpoint
+  with a generic candidate-commit-bound repository fixture operation. The
+  standalone prerequisite is a current canonical implementation handoff with
+  valid frozen public provenance and pinned protected-role authority; it does
+  not allocate or fabricate formal verification history.
+- Output: staged implementation/test/configuration/report diff before this
+  entry
+  `sha256:b0803b4b3d60cdeabbc0e24f198c455a6030b21a0416a8d0dd7e50e8065cb293`.
+- Verification: focused workflow integration suite 23/23; `npm run check`
+  including full suite 74/74, typecheck, lint and formatting; `git diff
+  --check`. One earlier full-suite invocation terminated all workers before
+  diagnostics; isolated and clean full reruns passed.
+- Live LP1: deferred until this candidate is committed and recorded as the
+  current handoff, because fixture bytes are deliberately resolved from that
+  commit. No formal evaluator verification or paid provider fixture ran during
+  implementation.
+- The pre-existing unrelated Spike 011 ledger edit was preserved and excluded.
+- Measurement cutoff: immediately before this manifest update. Candidate
+  commit and canonical implementation handoff follow and are not included.

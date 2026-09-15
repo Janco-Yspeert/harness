@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "identity": "spike-013a-lp1",
+  "canonicalPrerequisite": "current-implementation-handoff",
+  "role": "evaluator-verify",
+  "executor": "claude",
+  "contract": {
+    "name": "evaluator",
+    "version": 11,
+    "identity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802",
+    "deliveryMode": "claude-system-contract"
+  },
+  "permissionProfile": "repository-read-only",
+  "permittedSideEffects": "none",
+  "expectedRoleDisposition": "succeeded",
+  "prompt": "Execute the bounded LP1 refusal-boundary fixture only. Do not modify files, canonical authority, or evaluator artifacts. Inspect the host-delivered evaluator contract and report the semantic fixture outcome."
+}

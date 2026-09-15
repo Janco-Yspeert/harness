@@ -139,14 +139,23 @@ export interface ResolvedWorkflowRunSpec {
   readonly fixture?: WorkflowFixtureBinding | null;
 }
 
-// This is deliberately not an arbitrary child-run request. The only fixture
-// identity is the frozen LP1 probe from Spike 013a.
 export interface WorkflowFixtureBinding {
-  readonly identity: "spike-013a-lp1";
-  readonly parentRunId: string;
-  readonly requiredContractIdentity: string;
-  readonly requiredDeliveryMode: "claude-system-contract";
-  readonly allowedSideEffects: "none";
+  readonly name: string;
+  readonly identity: string;
+  readonly definitionPath: string;
+  readonly definitionIdentity: string;
+  readonly candidateCommit: string;
+  readonly handoffIdentity: string;
+  readonly parentRunId: string | null;
+  readonly permittedSideEffects: "none";
+  readonly expectedRoleDisposition: "succeeded";
+}
+
+export interface WorkflowFixtureRequest {
+  readonly workflow: string;
+  readonly fixture: string;
+  readonly candidateCommit: string;
+  readonly parentRunId?: string | undefined;
 }
 
 export interface WorkflowRunAccounting {
@@ -204,6 +213,30 @@ export interface WorkflowRunRecord {
   readonly accounting: WorkflowRunAccounting;
 }
 
+export function isSuccessfulWorkflowFixtureEvidence(
+  record: WorkflowRunRecord,
+  expected: Pick<
+    WorkflowFixtureRequest,
+    "workflow" | "fixture" | "candidateCommit"
+  >,
+): boolean {
+  const fixture = record.fixture;
+  const authority = record.allocationAuthority;
+  return (
+    record.status === "completed" &&
+    record.roleDisposition === "succeeded" &&
+    record.workflow === expected.workflow &&
+    record.phase === `fixture:${expected.fixture}` &&
+    fixture?.name === expected.fixture &&
+    fixture.candidateCommit === expected.candidateCommit &&
+    fixture.definitionIdentity === authority.definitionIdentity &&
+    fixture.handoffIdentity === authority.basisIdentity &&
+    authority.type === "canonical-workflow-fixture" &&
+    authority.candidateCommit === expected.candidateCommit &&
+    authority.contractIdentity === record.contractIdentity
+  );
+}
+
 export interface WorkflowRunExitOutcome {
   readonly ok: boolean;
   readonly reason?: string | undefined;
@@ -257,6 +290,36 @@ export class WorkflowRunConflictError extends Error {}
 
 export function workflowRunLogLocation(runId: string): string {
   return `/workflow-runs/${runId}/log`;
+}
+
+export function parseWorkflowFixtureRequest(
+  body: unknown,
+): WorkflowFixtureRequest {
+  if (typeof body !== "object" || body === null || Array.isArray(body))
+    throw new WorkflowRunRequestError("fixture request must be a JSON object");
+  const raw = body as Record<string, unknown>;
+  if (
+    !Object.keys(raw).every((key) =>
+      ["workflow", "fixture", "candidateCommit", "parentRunId"].includes(key),
+    )
+  )
+    throw new WorkflowRunRequestError(
+      "fixture request only accepts workflow, fixture, candidateCommit, and optional parentRunId",
+    );
+  const fixture = requireString(raw.fixture, "fixture");
+  if (!/^[a-z0-9][a-z0-9._-]*$/.test(fixture))
+    throw new WorkflowRunRequestError("fixture is not a valid fixture name");
+  const candidateCommit = requireString(raw.candidateCommit, "candidateCommit");
+  if (!/^[a-f0-9]{40}$/.test(candidateCommit))
+    throw new WorkflowRunRequestError(
+      "candidateCommit must be a full lowercase Git commit identity",
+    );
+  return {
+    workflow: requireString(raw.workflow, "workflow"),
+    fixture,
+    candidateCommit,
+    parentRunId: optionalString(raw.parentRunId, "parentRunId"),
+  };
 }
 
 function requireString(value: unknown, field: string): string {
@@ -537,6 +600,68 @@ function resolveRepositoryContract(
 interface CanonicalWorkflowEvent {
   readonly transition: string;
   readonly evidence: Record<string, unknown>;
+}
+
+interface RepositoryFixtureDefinition {
+  readonly version: 1;
+  readonly identity: string;
+  readonly canonicalPrerequisite: "current-implementation-handoff";
+  readonly role: string;
+  readonly executor: "claude" | "codex";
+  readonly contract: {
+    readonly name: string;
+    readonly version: number;
+    readonly identity: string;
+    readonly deliveryMode: WorkflowContractDeliveryMode;
+  };
+  readonly permissionProfile: "repository-read-only";
+  readonly permittedSideEffects: "none";
+  readonly expectedRoleDisposition: "succeeded";
+  readonly prompt: string;
+}
+
+function parseRepositoryFixtureDefinition(
+  content: string,
+): RepositoryFixtureDefinition {
+  let value: unknown;
+  try {
+    value = JSON.parse(content);
+  } catch {
+    throw new WorkflowRunRequestError("fixture definition is not valid JSON");
+  }
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    throw new WorkflowRunRequestError("fixture definition must be an object");
+  const raw = value as Record<string, unknown>;
+  const contract = raw.contract;
+  if (
+    raw.version !== 1 ||
+    typeof raw.identity !== "string" ||
+    raw.identity.length === 0 ||
+    raw.canonicalPrerequisite !== "current-implementation-handoff" ||
+    typeof raw.role !== "string" ||
+    (raw.executor !== "claude" && raw.executor !== "codex") ||
+    typeof contract !== "object" ||
+    contract === null ||
+    Array.isArray(contract) ||
+    raw.permissionProfile !== "repository-read-only" ||
+    raw.permittedSideEffects !== "none" ||
+    raw.expectedRoleDisposition !== "succeeded" ||
+    typeof raw.prompt !== "string"
+  )
+    throw new WorkflowRunRequestError("fixture definition is invalid");
+  const contractRaw = contract as Record<string, unknown>;
+  if (
+    typeof contractRaw.name !== "string" ||
+    typeof contractRaw.version !== "number" ||
+    typeof contractRaw.identity !== "string" ||
+    ![
+      "host-directed-repository-load",
+      "host-directed-pinned-snapshot",
+      "claude-system-contract",
+    ].includes(String(contractRaw.deliveryMode))
+  )
+    throw new WorkflowRunRequestError("fixture contract definition is invalid");
+  return value as RepositoryFixtureDefinition;
 }
 
 function canonicalEvents(ledger: string): CanonicalWorkflowEvent[] {
@@ -1081,69 +1206,164 @@ export class WorkflowRunRegistry {
     }
   }
 
-  // LP1 is intentionally a named host operation rather than a request shape
-  // that can select a provider, role, contract, or workspace. The evaluator
-  // supplies only its active parent run identity; Harness derives the child.
-  async allocateSpike013aLp1Fixture(
-    parentRunId: string,
+  async allocateFixture(
+    request: WorkflowFixtureRequest,
   ): Promise<WorkflowRunRecord> {
     if (this.#closed) {
       throw new WorkflowRunConflictError("the Harness host is shutting down");
     }
-    const parent = this.#runs.get(parentRunId);
-    if (parent === undefined) {
-      throw new WorkflowRunNotFoundError(`unknown workflow run ${parentRunId}`);
-    }
-    const spec = parent.spec;
+    const workspace = process.cwd();
+    const locationRequest: WorkflowRunRequest = {
+      slot: { workflow: request.workflow, phase: "fixture" },
+      role: "implementation",
+      executor: "codex",
+      workspace,
+    };
+    const workflow = resolveWorkflowLocation(locationRequest);
+    const ledger = readFileSync(
+      resolve(workflow.path, "workflow.jsonl"),
+      "utf8",
+    );
+    const events = canonicalEvents(ledger);
+    const latest = (transition: string): CanonicalWorkflowEvent | undefined =>
+      [...events].reverse().find((event) => event.transition === transition);
+    verifyCanonicalArtifact(locationRequest, workflow, latest("brief-frozen"));
+    verifyCanonicalArtifact(
+      locationRequest,
+      workflow,
+      latest("design-map-frozen"),
+    );
+    verifyCanonicalArtifact(
+      locationRequest,
+      workflow,
+      latest("evaluation-prepared"),
+    );
+    const handoff = latest("implementation-handoff");
     if (
-      !isActiveWorkflowRunStatus(parent.status) ||
-      spec.slot.workflow !== "013a-Workflow-execution-friction" ||
-      spec.slot.phase !== "evaluator-verify" ||
-      spec.role !== "evaluator-verify" ||
-      spec.executor !== "claude" ||
-      spec.contract.deliveryMode !== "claude-system-contract" ||
-      spec.contract.path !==
-        "spikes/013a-Workflow-execution-friction/bootstrap/evaluator-skill.md" ||
-      spec.contract.version !== "11" ||
-      spec.verificationAuthority === null ||
-      spec.allocationAuthority.type !== "canonical-workflow"
-    ) {
+      handoff === undefined ||
+      handoff.evidence.commit !== request.candidateCommit
+    )
       throw new WorkflowRunRequestError(
-        "LP1 requires an active canonical Spike 013a Claude evaluator-verify allocation bound to evaluator v11",
+        "fixture candidateCommit is not the current canonical implementation handoff",
+      );
+    const latestFinalization = latest("verification-finalized");
+    if (
+      latestFinalization?.evidence.result === "PASS" &&
+      events.indexOf(latestFinalization) > events.indexOf(handoff)
+    )
+      throw new WorkflowRunRequestError(
+        "fixture candidate is no longer eligible for verification",
+      );
+
+    const definitionPath = `${workflow.repositoryPath}/fixtures/${request.fixture}.json`;
+    let definitionContent: string;
+    try {
+      definitionContent = execFileSync(
+        "git",
+        [
+          "-C",
+          workspace,
+          "show",
+          `${request.candidateCommit}:${definitionPath}`,
+        ],
+        { encoding: "utf8" },
+      );
+    } catch {
+      throw new WorkflowRunRequestError(
+        `unable to resolve fixture ${request.fixture} from candidate commit`,
       );
     }
+    const definition = parseRepositoryFixtureDefinition(definitionContent);
+    const protectedRole = definition.role.startsWith("evaluator-");
+    if (!protectedRole || definition.role !== "evaluator-verify")
+      throw new WorkflowRunRequestError(
+        "current-implementation-handoff permits only a bounded evaluator-verify fixture",
+      );
+    const contractRequest: WorkflowRunRequest = {
+      slot: { workflow: workflow.workflow, phase: definition.role },
+      role: definition.role,
+      executor: definition.executor,
+      workspace,
+    };
+    const pinned = resolvePinnedVerificationAuthority(
+      contractRequest,
+      workflow,
+    );
+    if (pinned === undefined)
+      throw new WorkflowRunRequestError(
+        "protected fixture requires pinned evaluator authority",
+      );
+    const resolvedContract = resolveRepositoryContract(
+      contractRequest,
+      workflow,
+      pinned,
+    );
+    const deliveryMode: WorkflowContractDeliveryMode =
+      definition.executor === "claude"
+        ? "claude-system-contract"
+        : resolvedContract.deliveryMode;
+    if (
+      definition.contract.name !== resolvedContract.name ||
+      String(definition.contract.version) !== resolvedContract.version ||
+      definition.contract.identity !== resolvedContract.identity ||
+      definition.contract.deliveryMode !== deliveryMode
+    )
+      throw new WorkflowRunRequestError(
+        "fixture contract does not match pinned canonical authority",
+      );
+
+    const parentRunId = request.parentRunId ?? null;
+    if (parentRunId !== null && !this.#runs.has(parentRunId))
+      throw new WorkflowRunNotFoundError(`unknown workflow run ${parentRunId}`);
+    const definitionIdentity = sha256(definitionContent);
+    const handoffIdentity = sha256(JSON.stringify(handoff));
     const fixture: WorkflowFixtureBinding = {
-      identity: "spike-013a-lp1",
+      name: request.fixture,
+      identity: definition.identity,
+      definitionPath,
+      definitionIdentity,
+      candidateCommit: request.candidateCommit,
+      handoffIdentity,
       parentRunId,
-      requiredContractIdentity: spec.contract.identity,
-      requiredDeliveryMode: "claude-system-contract",
-      allowedSideEffects: "none",
+      permittedSideEffects: definition.permittedSideEffects,
+      expectedRoleDisposition: definition.expectedRoleDisposition,
+    };
+    const allocationAuthority = {
+      type: "canonical-workflow-fixture",
+      workflow: workflow.repositoryPath,
+      fixture: request.fixture,
+      fixtureIdentity: definition.identity,
+      definitionIdentity,
+      candidateCommit: request.candidateCommit,
+      ledgerIdentity: sha256(ledger),
+      basisTransition: handoff.transition,
+      basisIdentity: handoffIdentity,
+      contractIdentity: resolvedContract.identity,
+      pinnedContractAuthority: { ...pinned },
+      ...(parentRunId === null ? {} : { parentRunId }),
     };
     const fixtureSpec: ResolvedWorkflowRunSpec = {
-      ...spec,
       slot: {
-        workflow: "013a-lp1-fixture",
-        phase: "evaluator-verify",
-        methodologyAttempt: spec.slot.methodologyAttempt,
+        workflow: workflow.workflow,
+        phase: `fixture:${request.fixture}`,
+        methodologyAttempt: String(handoff.evidence.attempt),
       },
-      executor: "claude",
+      role: definition.role,
+      executor: definition.executor,
       invocationMode: "fixture",
-      // The fixture may inspect only the parent allocation's declared
-      // workspaces. It receives no edit or shell capability, so a successful
-      // LP1 probe cannot advance authority or mutate the candidate as a side
-      // effect of proving the refusal boundary.
+      workspaces: [workspace],
       permissionProfile: {
-        ...spec.permissionProfile,
+        id: "repo-local-worker",
+        workspaces: [workspace],
         capabilities: ["repository-read"],
       },
-      allocationAuthority: {
-        type: "harness-lp1-fixture",
-        identity: fixture.identity,
-        parentRunId,
-        prerequisite: spec.allocationAuthority,
-      },
-      prompt:
-        "Execute the bounded LP1 refusal-boundary fixture only. Do not modify files, canonical authority, or evaluator artifacts. Inspect the host-delivered evaluator contract and report the semantic fixture outcome.",
+      skill: resolvedContract.path,
+      skillVersion: resolvedContract.version,
+      contract: { ...resolvedContract, deliveryMode },
+      allocationAuthority,
+      verificationAuthority: allocationAuthority,
+      orchestrator: null,
+      prompt: definition.prompt,
       fixture,
     };
     return this.#createExecution(fixtureSpec, {
