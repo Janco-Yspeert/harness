@@ -520,3 +520,44 @@
   and does not consume LP1.
 - Measurement cutoff: immediately before this manifest update. Candidate commit
   and implementation handoff follow and are not included above.
+
+## Run 018 — Evaluator Verification (attempt 006 / canonical attempt 008)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify time)
+- Input: implementation commit `5ff1a1bfc22a7e44bda19cf155c39903d7bd7feb`
+  (implementation attempt 6), all frozen public inputs confirmed byte-identical
+  to their frozen identities (no specification drift)
+- Result: `FAIL` (`IMPLEMENTATION_FAILURE`), private attempt `006` (canonical
+  attempt `8`). Evaluator revision `002` unchanged; no correction needed or
+  performed.
+- Output: `verification-feedback-006.md`
+- Mandatory executable hidden coverage: 5/5 pass (fresh run against this
+  commit)
+- Mandatory non-executable coverage: 32 of 35 mandatory criteria confirmed
+  satisfied this attempt. AC08, AC09 (LP1) and dependent AC34 changed from
+  `BLOCKED` to `NOT_SATISFIED`: this candidate's new host-mediated LP1
+  fixture endpoint was found, by direct code-level construction (no live
+  provider access required), to reject every parent allocation the
+  repository's own canonical dispatcher can actually produce, because it
+  checks an exact `slot.workflow` string the dispatcher never emits. A
+  second, non-criterion-flipping regression sharing the same root cause
+  (host-only configuration consumed unconditionally rather than scoped to
+  the one canonical allocation it targets) was also found and reported.
+- Repository evidence inspected: the full implementation diff since the
+  previously-evaluated commit, the new `/workflow-fixtures/lp1` allocation
+  logic and its added regression test, `tools/workflow.ts`'s real canonical
+  dispatch construction, and this attempt's own isolated in-process
+  allocation probe (no live provider process; fake session/workflow
+  backends)
+- Restricted evaluator material inspected: this spike's own private evaluator
+  workspace (read only; no correction was needed)
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (74/74 with this evaluator's two candidate-relevant
+  ambient environment variables unset; 71/74 with them present, as they
+  genuinely are for this evaluator session - see Output), `npm run
+  typecheck`, `npm run lint`, `npm run format:check` (scoped to Git-tracked
+  files), and `git diff --check` all green at the implementation commit; E1-E5
+  re-run fresh (5/5 pass)
+- Measurement cutoff: immediately before this manifest update.
