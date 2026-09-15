@@ -593,3 +593,46 @@
 - The pre-existing unrelated Spike 011 ledger edit was preserved and excluded.
 - Measurement cutoff: immediately before this manifest update. Candidate
   commit and canonical implementation handoff follow and are not included.
+
+## Run 020 — Evaluator Verification (attempt 007 / canonical attempt 009)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify time)
+- Input: implementation commit `2bce70339cc99cb2b7ccffe5623ae20627c65fc3`
+  (implementation attempt 7), all frozen public inputs confirmed byte-identical
+  to their frozen identities (no specification drift)
+- Result: `BLOCKED` (`INFRASTRUCTURE_FAILURE`), private attempt `007`
+  (canonical attempt `9`). Evaluator revision `002` unchanged; no correction
+  needed or performed.
+- Output: `verification-feedback-007.md`
+- Mandatory executable hidden coverage: 5/5 pass (fresh run against this
+  commit)
+- Mandatory non-executable coverage: 32 of 35 mandatory criteria confirmed
+  satisfied this attempt. AC08, AC09 (LP1) and dependent AC34 changed from
+  attempt 006's `NOT_SATISFIED` back to `BLOCKED`: this attempt confirmed,
+  by starting a genuine real-backend Harness host and allocating a parent
+  with the exact field values a real dispatch produces, that the prior
+  allocation-logic defect is fixed (parent allocation now succeeds); the
+  real backend's subsequent attempt to spawn the configured Claude executor
+  for that parent then failed for a reason external to this implementation
+  (the configured executor is unreachable from this evaluation session), so
+  the required host-validated successful role disposition still could not be
+  reached. The same non-criterion-flipping regression reported at attempt
+  006 (host-only configuration consumed unconditionally) remains present and
+  unfixed.
+- Repository evidence inspected: the full implementation diff since the
+  previously-evaluated commit, a real (non-fake-backend) in-process Harness
+  host allocation and LP1-fixture exercise against it, and a bare
+  environment/process-namespace check confirming no live host or executor is
+  otherwise reachable from this evaluation session
+- Restricted evaluator material inspected: this spike's own private evaluator
+  workspace (read only; no correction was needed)
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (74/74 with this evaluator's two candidate-relevant
+  ambient environment variables unset; 71/74 with them present, as they
+  genuinely are for this evaluator session - see Output), `npm run
+  typecheck`, `npm run lint`, `npm run format:check` (scoped to Git-tracked
+  files), and `git diff --check` all green at the implementation commit; E1-E5
+  re-run fresh (5/5 pass)
+- Measurement cutoff: immediately before this manifest update.
