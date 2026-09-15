@@ -819,9 +819,22 @@ function resolvePermissionProfile(
         "the evaluator permission profile requires a declared evaluatorWorkspace",
       );
     }
+    const hiddenWorkspace = process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE;
+    const expectedHiddenWorkspace = resolve(workspace, "..", "harness-hidden");
+    if (
+      hiddenWorkspace !== undefined &&
+      resolve(hiddenWorkspace) !== expectedHiddenWorkspace
+    ) {
+      throw new WorkflowRunRequestError(
+        "HARNESS_EVALUATOR_HIDDEN_WORKSPACE must name the repository sibling harness-hidden",
+      );
+    }
     return {
       id: "evaluator",
-      workspaces: [workspace, evaluatorWorkspace],
+      workspaces:
+        hiddenWorkspace === undefined
+          ? [workspace, evaluatorWorkspace]
+          : [workspace, evaluatorWorkspace, expectedHiddenWorkspace],
       capabilities: [...WORKFLOW_WORKER_CAPABILITIES],
     };
   }

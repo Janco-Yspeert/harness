@@ -829,6 +829,40 @@ void test("LP1 is a host-mediated fixed Claude fixture, not a nested executor ca
   }
 });
 
+void test("the daemon may grant only the fixed evaluator hidden sibling", async () => {
+  const { host } = await startHarness();
+  const prior = process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE;
+  process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE = join(
+    repositoryRoot,
+    "..",
+    "harness-hidden",
+  );
+  try {
+    const allocation = await allocate(host, {
+      slot: {
+        workflow: "013a",
+        phase: "evaluator-verify",
+        methodologyAttempt: "5",
+      },
+      role: "evaluator-verify",
+      executor: "claude",
+      workspace: repositoryRoot,
+      permissionProfile: "evaluator",
+      evaluatorWorkspace: "/tmp/harness-evaluator-hidden-test",
+    });
+    assert.equal(allocation.status, 201, allocation.error);
+    assert.deepEqual(
+      (allocation.run.workspaces as string[]).at(-1),
+      join(repositoryRoot, "..", "harness-hidden"),
+    );
+  } finally {
+    if (prior === undefined)
+      delete process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE;
+    else process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE = prior;
+    await host.close();
+  }
+});
+
 void test("the host may configure Claude without granting it to workers", () => {
   const spec = { executor: "claude" } as ResolvedWorkflowRunSpec;
   assert.equal(
