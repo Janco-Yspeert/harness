@@ -670,3 +670,30 @@
 - The pre-existing unrelated Spike 011 ledger edit was preserved and excluded.
 - Measurement cutoff: immediately before this manifest update. Candidate
   commit and canonical implementation handoff follow and are not included.
+
+## Run 022 — Standalone real LP1 evidence
+
+- Skill: `implementation` v3. Restricted evaluator material inspected: none.
+- Input: exact candidate
+  `bb541265d994aad1f1af30446bf0a19ad59e1537`, canonical implementation
+  handoff attempt 8, repository fixture `lp1` resolved from that commit, and
+  pinned evaluator v11 contract
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`.
+- Result: `SUCCEEDED`. The ordinary outer Harness daemon allocated one real
+  Claude fixture run without an evaluator parent. Run
+  `70410e45-d8e0-46c0-b343-6be74b8d4260` reached host process disposition
+  `completed` and host-validated semantic role disposition `succeeded` in
+  112,487 ms. No formal evaluator verification was allocated or run.
+- Output: complete candidate-bound host run record and provider log in
+  `lp1-primary-evidence-008.md`,
+  `sha256:b2534cb812846af15953661778d2ed3d12d09da4f3cea2e3e4397b58099a96ae`.
+- Binding: fixture `spike-013a-lp1`; definition
+  `sha256:d07f0ee055bed5d30f60d6681e3d7cdd1d4a284e145a74e42306ea2844bd39c4`;
+  handoff
+  `sha256:20f1bf26efb716abc6ce0fdb22e166560442174fefb596bb2e5789d97cd66aed`;
+  evaluator v11 through `claude-system-contract`; repository-read-only
+  capability; permitted side effects `none`; correlation parent `null`.
+- The pre-existing unrelated Spike 011 ledger edit remained untouched. The
+  daemon was stopped after evidence capture.
+- Measurement cutoff: immediately before this manifest update. Evidence commit
+  and push follow and are not included.
