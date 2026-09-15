@@ -1323,6 +1323,30 @@ void test("promoted evaluator provenance corrects stale correction lineage", (t)
     /Repair source evaluator revision is not current/,
   );
   assert.equal(f.record("evaluator-repair-recorded", repair).status, 0);
+  record("implementation-handoff", {
+    cycle: "002",
+    commit: f.provenance.commit,
+    attempt: 2,
+  });
+  const staleAllocation = f.record("verification-allocated", {
+    cycle: "002",
+    commit: f.provenance.commit,
+    implementationAttempt: 2,
+    attempt: 2,
+    evaluatorRevision: "001",
+  });
+  assert.notEqual(staleAllocation.status, 0);
+  assert.match(
+    staleAllocation.stderr,
+    /verification-allocated must bind the current evaluator revision/,
+  );
+  record("verification-allocated", {
+    cycle: "002",
+    commit: f.provenance.commit,
+    implementationAttempt: 2,
+    attempt: 2,
+    evaluatorRevision: "003",
+  });
 });
 
 void test("evaluator repair requires immutable defect evidence and preserves revision lineage", (t) => {

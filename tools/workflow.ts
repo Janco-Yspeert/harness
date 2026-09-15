@@ -1338,11 +1338,10 @@ function validateAuthority(
     if (!handoff)
       fail("verification-allocated requires implementation-handoff");
     const prepared = validatePreparedMap(preparedMapText(target, events));
-    if (
-      value(evidence, "evaluatorRevision") !==
-      prepared.readiness.evaluatorRevision
-    )
-      fail("verification-allocated must bind the attested evaluator revision");
+    const evaluatorRevision =
+      state.current.evaluatorRevision ?? prepared.readiness.evaluatorRevision;
+    if (value(evidence, "evaluatorRevision") !== evaluatorRevision)
+      fail("verification-allocated must bind the current evaluator revision");
     if (
       value(evidence, "commit") !== value(handoff.evidence, "commit") ||
       Number(evidence.implementationAttempt) !==
