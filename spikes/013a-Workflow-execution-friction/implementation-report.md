@@ -102,6 +102,20 @@ candidate. The protected workflow authority still has implementation attempt 4
 open after a `BLOCKED` result and exposes no transition for a new attempt until
 the required human correction-cycle decision exists.
 
+### Correction — authority-status AC27 defect
+
+That conclusion was incorrect. Full-evidence validation for implementation
+attempt 5 succeeds; only `authority status` was incorrectly probing every
+transition with `{}` and classifying missing required evidence as structural
+unavailability. The status calculation now preserves the distinction between
+structural failure and `AuthorityEvidenceRequiredError`, reporting the latter
+as `available-requires-evidence` for every transition that uses the common
+evidence reader. The pre-existing correction-cycle classification remains in
+place for its structurally checked, evidence-bearing route.
+
+This correction is part of the actual attempt-5 candidate. No human rejection
+or correction cycle is created.
+
 ## Correction after verification 003 (candidate attempt 3)
 
 Claude Code remains 2.1.270, the version used by the successful clean-role

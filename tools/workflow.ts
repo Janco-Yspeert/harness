@@ -744,10 +744,12 @@ function authorityEvents(target: Target): AuthorityEvent[] {
     .filter(Boolean)
     .map((line) => JSON.parse(line) as AuthorityEvent);
 }
+class AuthorityEvidenceRequiredError extends Error {}
+
 function value(evidence: Evidence, name: string): string {
   const result = evidence[name];
   if (typeof result !== "string" || result.length === 0)
-    fail(`Evidence requires ${name}`);
+    throw new AuthorityEvidenceRequiredError(`Evidence requires ${name}`);
   return result;
 }
 function identity(contents: string | Buffer): string {
@@ -1410,23 +1412,34 @@ function authority(
 ): void {
   if (mode === "status") {
     const state = authorityState(target);
-    const recordable = authorityTransitions.filter((item) => {
+    const availability = new Map<
+      AuthorityTransition,
+      "available" | "available-requires-evidence"
+    >();
+    for (const item of authorityTransitions) {
       try {
         validateAuthority(target, item, {});
-        return true;
-      } catch {
-        return false;
+        availability.set(item, "available");
+      } catch (error) {
+        if (error instanceof AuthorityEvidenceRequiredError)
+          availability.set(item, "available-requires-evidence");
       }
-    });
-    const available = new Set(recordable);
-    if (state.correctionPermitted) available.add("correction-cycle-opened");
+    }
+    // correction-cycle-opened has a structural predicate plus required
+    // evidence that is not read through value(); retain its established
+    // availability classification.
+    if (state.correctionPermitted)
+      availability.set(
+        "correction-cycle-opened",
+        "available-requires-evidence",
+      );
+    const recordable = authorityTransitions.filter(
+      (item) => availability.get(item) === "available",
+    );
+    const available = new Set(availability.keys());
     const transitionAvailability = authorityTransitions.map((transition) => ({
       transition,
-      status: recordable.includes(transition)
-        ? "available"
-        : available.has(transition)
-          ? "available-requires-evidence"
-          : "unavailable",
+      status: availability.get(transition) ?? "unavailable",
     }));
     process.stdout.write(
       `${JSON.stringify({ history: state.events, legalTransitions: [...available], recordableTransitions: recordable, transitionAvailability, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.current.predecessor ?? state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected || state.blockedRepair !== undefined, outcomeComplete: state.outcome, currentCycle: { id: state.current.id, state: state.accepted || state.rejected ? "CLOSED" : "OPEN", evaluatorRevision: state.current.evaluatorRevision, implementationAttempt: state.current.implementation?.evidence.attempt ?? null, verification: state.current.verification?.evidence ?? null, promotionComplete: state.current.promoted, asBuiltComplete: state.current.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : "PENDING" }, cycles: state.cycles.map((cycle) => ({ id: cycle.id, predecessor: cycle.predecessor, evaluatorRevision: cycle.evaluatorRevision, implementationAttempt: cycle.implementation?.evidence.attempt ?? null, verification: cycle.verification?.evidence ?? null, promotionComplete: cycle.promoted, asBuiltComplete: cycle.asBuilt, humanDecision: cycle.rejectedEvent ? "REJECTED" : cycle.accepted ? "ACCEPTED" : "PENDING" })), correctionPermitted: state.correctionPermitted, correctionReason: state.correctionReason })}\n`,

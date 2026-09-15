@@ -400,6 +400,24 @@
   cannot yet be recorded: the protected authority reports no human rejection
   opening a new implementation attempt after attempt 6's `BLOCKED` result.
 
+## Run 017 — Authority-status AC27 correction
+
+- Skill: `implementation` v3. Restricted evaluator material inspected: none.
+- Finding: full-evidence validation of attempt-5 `implementation-handoff`
+  against `cfa33cf` returned allowed. The prior status result was a display
+  defect: it validated with empty evidence and mistook the missing `commit` for
+  a structural prohibition.
+- Result: status now classifies the common missing-evidence validation outcome
+  as `available-requires-evidence`, while retaining `unavailable` for genuine
+  structural failure and existing correction-cycle behavior. Public regression
+  covers a finalized `BLOCKED` verification, next handoff availability, valid
+  handoff evidence, and an unavailable promotion transition.
+- Verification: `test/workflow.test.ts` 21/21; typecheck, lint, formatting and
+  diff checks pass. The aggregate `npm test` invocation still exits non-zero
+  without diagnostics in this environment while individual test files pass.
+- Measurement cutoff: immediately before this manifest update. The attempt-5
+  candidate commit and canonical handoff/allocation follow and are not included.
+
 ## Run 014 — Evaluator Verification (attempt 004)
 
 - Skill: `evaluator` v11 (pinned pre-implementation authority,

@@ -662,6 +662,77 @@ void test("a post-allocation evaluator-integrity failure is forward-only and pre
   assert.notEqual(f.record("promotion-recorded", {}).status, 0);
 });
 
+void test("authority status exposes structurally legal evidence-bearing transitions", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01")]),
+  };
+  const f = authorityFixture("-status-evidence", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+  assert.equal(attemptPrepared(f).result.status, 0);
+  assert.equal(
+    f.record("implementation-handoff", {
+      commit: f.provenance.commit,
+      attempt: 1,
+    }).status,
+    0,
+  );
+  assert.equal(
+    f.record("verification-allocated", {
+      commit: f.provenance.commit,
+      implementationAttempt: 1,
+      attempt: 1,
+      evaluatorRevision: "001",
+    }).status,
+    0,
+  );
+  assert.equal(
+    f.record("verification-finalized", {
+      attempt: 1,
+      result: "BLOCKED",
+      classification: "INFRASTRUCTURE_FAILURE",
+      coverageResults: { AC01: "BLOCKED" },
+    }).status,
+    0,
+  );
+
+  const status = JSON.parse(run(["authority", "status", f.fixture]).stdout) as {
+    legalTransitions: string[];
+    transitionAvailability: Array<{ transition: string; status: string }>;
+  };
+  assert.ok(status.legalTransitions.includes("implementation-handoff"));
+  assert.deepEqual(
+    status.transitionAvailability.find(
+      (item) => item.transition === "implementation-handoff",
+    ),
+    {
+      transition: "implementation-handoff",
+      status: "available-requires-evidence",
+    },
+  );
+  assert.deepEqual(
+    status.transitionAvailability.find(
+      (item) => item.transition === "promotion-recorded",
+    ),
+    { transition: "promotion-recorded", status: "unavailable" },
+  );
+  const validation = run([
+    "authority",
+    "validate",
+    f.fixture,
+    "implementation-handoff",
+    JSON.stringify({ commit: f.provenance.commit, attempt: 2 }),
+  ]);
+  assert.equal(validation.status, 0, validation.stderr);
+  assert.deepEqual(JSON.parse(validation.stdout), {
+    allowed: true,
+    recorded: false,
+  });
+});
+
 void test("Spike 012 bootstrap evaluator dispatch is pinned to its committed v10 snapshot", () => {
   const result = run([
     "bootstrap-authority",
