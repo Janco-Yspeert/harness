@@ -223,3 +223,35 @@ Strict Claude sandboxing requires Ubuntu `bubblewrap` and `socat`. The current
 host lacks a system-installed `socat`; characterization used an extracted
 Ubuntu package in the probe-only PATH. Production fails closed when either
 dependency is unavailable. No bypass or degraded fallback was added.
+
+## Correction after verification attempt 006 (implementation attempt 7)
+
+Workflow location resolution now returns the canonical spike-directory name,
+and `resolveSpec` stores that value in the resolved slot before slot-keying,
+run inspection, or fixture authorization. The LP1 guard therefore checks only
+`013a-Workflow-execution-friction`, the exact identifier emitted by
+`tools/workflow.ts`; it does not accept a second LP1-specific shorthand magic
+string. The existing `013a` shorthand remains an input alias at the common
+location resolver and canonicalizes to the same run slot and allocation
+authority as the full identifier.
+
+The LP1 regression now creates its parent with the real runner identifier,
+then allocates the same phase through shorthand and proves that Harness returns
+the same run ID, canonical workflow field, and allocation-authority object.
+The pre-existing generic run-record assertion was updated to require the
+canonical workflow identifier rather than the caller alias.
+
+The focused regression first failed because full and shorthand requests
+created distinct slots (`201` instead of duplicate `200`), then passed after
+canonicalization. The complete visible suite passes 74/74, together with
+typecheck, lint, formatting, and diff checks.
+
+A real loopback Harness host then allocated a genuine canonical full-ID Claude
+`evaluator-verify` parent and the fixed LP1 child through
+`POST /workflow-fixtures/lp1`. Child run
+`9cc0a9a8-692f-444b-99a8-839626754741` used the pinned evaluator v11 contract
+identity `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`,
+completed after 67,201 ms, stayed read-only, and produced a host-validated
+`succeeded` semantic result. This is implementation-side live-fixture evidence,
+not a claim of independent evaluator acceptance. The unrelated pre-existing
+Spike 011 ledger edit remains preserved and excluded.

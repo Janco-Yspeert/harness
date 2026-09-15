@@ -309,6 +309,7 @@ function readAuthorityField(
 // authority. Any workflow that declares a pinned snapshot resolves and checks
 // it here, so direct API allocation and CLI dispatch cannot diverge.
 interface WorkflowLocation {
+  readonly workflow: string;
   readonly path: string;
   readonly repositoryPath: string;
 }
@@ -350,6 +351,7 @@ function resolveWorkflowLocation(
     );
   }
   return {
+    workflow: selected,
     path: resolve(spikesPath, selected),
     repositoryPath: `spikes/${selected}`,
   };
@@ -888,7 +890,7 @@ function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
     request.evaluatorWorkspace,
   );
   return {
-    slot: request.slot,
+    slot: { ...request.slot, workflow: workflow.workflow },
     role: request.role,
     executor: request.executor,
     invocationMode: request.invocationMode ?? "delegated",
@@ -1095,7 +1097,7 @@ export class WorkflowRunRegistry {
     const spec = parent.spec;
     if (
       !isActiveWorkflowRunStatus(parent.status) ||
-      spec.slot.workflow !== "013a" ||
+      spec.slot.workflow !== "013a-Workflow-execution-friction" ||
       spec.slot.phase !== "evaluator-verify" ||
       spec.role !== "evaluator-verify" ||
       spec.executor !== "claude" ||

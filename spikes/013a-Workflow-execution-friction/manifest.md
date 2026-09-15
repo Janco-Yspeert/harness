@@ -561,3 +561,35 @@
   files), and `git diff --check` all green at the implementation commit; E1-E5
   re-run fresh (5/5 pass)
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 019 — Workflow-identity canonicalization correction
+
+- Skill: `implementation` v3. Restricted evaluator material inspected: none.
+- Input: implementation attempt 6 at
+  `5ff1a1bfc22a7e44bda19cf155c39903d7bd7feb`; frozen brief
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`,
+  Design Map
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`,
+  evaluation requirements
+  `sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf`,
+  coverage map
+  `sha256:eb4921e8c87d47c35d16f8fc90ad5192526327b4fe6e4517f08ae0faba1ad0a4`,
+  and sanitized public `verification-feedback-006.md`.
+- Result: `IMPLEMENTED`. Workflow aliases now canonicalize at resolved-spec
+  construction. The exact runner identifier and retained shorthand resolve to
+  one host slot, canonical run identity, and allocation-authority identity;
+  LP1 checks only the canonical full identifier.
+- Output: implementation/test/report diff before this entry
+  `sha256:d44de069c20a790be60930f756d6c504ec054d7252383595c49a825bae4bde35`.
+- Verification: focused regression demonstrated the old split-slot failure and
+  then passed; `npm test` 74/74, `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, and `git diff --check` pass.
+- Live LP1: real loopback host, canonical full-ID parent
+  `085ae8fa-d404-4042-898a-f70f57f2f71e`, real Claude child
+  `9cc0a9a8-692f-444b-99a8-839626754741`, pinned evaluator v11 contract
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  child completed in 67,201 ms with a host-validated `succeeded` semantic
+  result and read-only/no-side-effect fixture boundary.
+- The pre-existing unrelated Spike 011 ledger edit was preserved and excluded.
+- Measurement cutoff: immediately before this manifest update. Candidate
+  commit and canonical implementation handoff follow and are not included.

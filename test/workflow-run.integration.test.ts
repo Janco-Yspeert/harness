@@ -240,7 +240,7 @@ void test("a host-owned run outlives its client and is inspectable by identity",
     // Every enumerated run-record field is present in a stable observable form;
     // unavailable provider/model metadata is null, not fabricated.
     assert.equal(typeof run.runId, "string");
-    assert.equal(run.workflow, "011");
+    assert.equal(run.workflow, "011-host-owned-workflow-runs");
     assert.equal(run.phase, "implementation");
     assert.equal(run.methodologyAttempt, "1");
     assert.equal(run.executionAttempt, 1);
@@ -763,7 +763,7 @@ void test("LP1 is a host-mediated fixed Claude fixture, not a nested executor ca
   try {
     const parent = await allocate(host, {
       slot: {
-        workflow: "013a",
+        workflow: "013a-Workflow-execution-friction",
         phase: "evaluator-verify",
         methodologyAttempt: "6",
       },
@@ -774,6 +774,28 @@ void test("LP1 is a host-mediated fixed Claude fixture, not a nested executor ca
       evaluatorWorkspace: "/tmp/spike-013a-lp1-evaluator",
     });
     assert.equal(parent.status, 201, parent.error);
+    assert.equal(parent.run.workflow, "013a-Workflow-execution-friction");
+
+    const shorthand = await allocate(host, {
+      slot: {
+        workflow: "013a",
+        phase: "evaluator-verify",
+        methodologyAttempt: "6",
+      },
+      role: "evaluator-verify",
+      executor: "claude",
+      workspace: repositoryRoot,
+      permissionProfile: "evaluator",
+      evaluatorWorkspace: "/tmp/spike-013a-lp1-evaluator",
+    });
+    assert.equal(shorthand.status, 200, shorthand.error);
+    assert.equal(shorthand.duplicate, true);
+    assert.equal(shorthand.run.runId, parent.run.runId);
+    assert.equal(shorthand.run.workflow, parent.run.workflow);
+    assert.deepEqual(
+      shorthand.run.allocationAuthority,
+      parent.run.allocationAuthority,
+    );
 
     const response = await fetch(`${host.url}/workflow-fixtures/lp1`, {
       method: "POST",
