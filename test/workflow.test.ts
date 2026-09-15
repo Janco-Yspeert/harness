@@ -1148,6 +1148,116 @@ void test("a human-accepted cycle cannot be reopened", (t) => {
   );
 });
 
+void test("promoted evaluator provenance corrects stale correction lineage", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01")]),
+    "eval-requirements.md": "requirements\n",
+    "acceptance.md": "rejected\n",
+  };
+  const f = authorityFixture("-promoted-lineage", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+  const record = (transition: string, evidence: object) => {
+    assert.equal(f.record(transition, evidence).status, 0);
+  };
+  record("brief-frozen", f.evidence("spike.md"));
+  record("design-map-frozen", f.evidence("design-map.md"));
+  record("evaluation-prepared", f.evidence("coverage-map.json"));
+  record("implementation-handoff", { commit: f.provenance.commit, attempt: 1 });
+  record("verification-allocated", {
+    commit: f.provenance.commit,
+    implementationAttempt: 1,
+    attempt: 1,
+    evaluatorRevision: "001",
+  });
+  record("verification-finalized", {
+    attempt: 1,
+    result: "PASS",
+    coverageResults: { AC01: "SATISFIED" },
+  });
+  record("promotion-recorded", {});
+  record("as-built-recorded", {});
+  record("human-rejected", {
+    ...f.evidence("acceptance.md"),
+    classification: "IMPLEMENTATION_GAP",
+    secondaryFinding: "EVALUATOR_COVERAGE_DEFECT",
+  });
+  record("correction-cycle-opened", {
+    cycle: "002",
+    priorCycle: "001",
+    briefIdentity: f.provenance.identities["spike.md"],
+    designMapIdentity: f.provenance.identities["design-map.md"],
+    inheritedEvaluatorRevision: "001",
+    implementationCorrection: true,
+    evaluatorRepair: true,
+  });
+
+  mkdirSync(join(f.path, "evaluation", "freeze"), { recursive: true });
+  writeFileSync(
+    join(f.path, "evaluation", "freeze", "002.json"),
+    '{"evaluatorRevision":"002"}\n',
+  );
+  writeFileSync(
+    join(f.path, "evaluation", "promotion.json"),
+    JSON.stringify({
+      result: "PASS",
+      passingAttempt: "001",
+      attempts: [
+        {
+          id: "001",
+          evaluatorRevision: "002",
+          freezePath: "evaluation/freeze/002.json",
+        },
+      ],
+    }),
+  );
+
+  const status = JSON.parse(run(["authority", "status", f.fixture]).stdout) as {
+    currentCycle: {
+      evaluatorRevision: string;
+      evaluatorRevisionSource: string;
+      staleInheritedEvaluatorRevision: string | null;
+    };
+  };
+  assert.deepEqual(status.currentCycle, {
+    evaluatorRevision: "002",
+    evaluatorRevisionSource: "predecessor",
+    staleInheritedEvaluatorRevision: "001",
+    id: "002",
+    state: "OPEN",
+    implementationAttempt: null,
+    verification: null,
+    promotionComplete: false,
+    asBuiltComplete: false,
+    humanDecision: "PENDING",
+  });
+  const repair = {
+    cycle: "002",
+    triggerRejectionCycle: "001",
+    sourceEvaluatorRevision: "002",
+    resultingEvaluatorRevision: "003",
+    briefIdentity: f.provenance.identities["spike.md"],
+    designMapIdentity: f.provenance.identities["design-map.md"],
+    evaluationRequirementsIdentity:
+      f.provenance.identities["eval-requirements.md"],
+    integrityValidation: "PASS",
+    acceptanceSemanticsPreserved: true,
+  };
+  const falseClaim = f.record("evaluator-repair-recorded", {
+    ...repair,
+    sourceEvaluatorRevision: "001",
+  });
+  assert.notEqual(falseClaim.status, 0);
+  assert.match(
+    falseClaim.stderr,
+    /Repair source evaluator revision is not current/,
+  );
+  assert.equal(f.record("evaluator-repair-recorded", repair).status, 0);
+});
+
 void test("evaluator repair requires immutable defect evidence and preserves revision lineage", (t) => {
   const files = {
     "spike.md": "brief\n",

@@ -956,6 +956,9 @@ interface CycleState {
   readonly opened: AuthorityEvent | null;
   readonly events: readonly AuthorityEvent[];
   readonly evaluatorRevision: string | null;
+  readonly evaluatorRevisionSource:
+    "promoted" | "predecessor" | "allocation" | "opened" | null;
+  readonly staleInheritedEvaluatorRevision: string | null;
   readonly implementation: AuthorityEvent | null;
   readonly allocation: AuthorityEvent | null;
   readonly verification: AuthorityEvent | null;
@@ -968,13 +971,66 @@ function eventCycle(event: AuthorityEvent): string {
   const cycle = event.evidence.cycle;
   return typeof cycle === "string" && /^\d{3}$/.test(cycle) ? cycle : "001";
 }
+function promotedEvaluatorRevision(target: Target): string | null {
+  const promotionPath = resolve(target.path, "evaluation/promotion.json");
+  if (!existsSync(promotionPath)) return null;
+  try {
+    const promotion: unknown = JSON.parse(readFileSync(promotionPath, "utf8"));
+    if (
+      typeof promotion !== "object" ||
+      promotion === null ||
+      Array.isArray(promotion)
+    )
+      return null;
+    const record = promotion as { readonly [key: string]: unknown };
+    if (record.result !== "PASS" || typeof record.passingAttempt !== "string")
+      return null;
+    const attempts = record.attempts;
+    if (!Array.isArray(attempts)) return null;
+    const attempt = attempts.find(
+      (item): item is { readonly [key: string]: unknown } =>
+        typeof item === "object" &&
+        item !== null &&
+        !Array.isArray(item) &&
+        (item as { readonly [key: string]: unknown }).id ===
+          record.passingAttempt,
+    );
+    if (
+      attempt === undefined ||
+      typeof attempt.evaluatorRevision !== "string" ||
+      typeof attempt.freezePath !== "string" ||
+      attempt.freezePath.startsWith("/") ||
+      attempt.freezePath.includes("..")
+    )
+      return null;
+    const freezePath = resolve(target.path, attempt.freezePath);
+    if (
+      relative(target.path, freezePath).startsWith("..") ||
+      !existsSync(freezePath)
+    )
+      return null;
+    const freeze: unknown = JSON.parse(readFileSync(freezePath, "utf8"));
+    if (
+      typeof freeze !== "object" ||
+      freeze === null ||
+      Array.isArray(freeze) ||
+      (freeze as { readonly [key: string]: unknown }).evaluatorRevision !==
+        attempt.evaluatorRevision
+    )
+      return null;
+    return attempt.evaluatorRevision;
+  } catch {
+    return null;
+  }
+}
 function authorityState(target: Target) {
   const events = authorityEvents(target);
   const ids = new Set<string>(["001"]);
   for (const event of events)
     if (event.transition === "correction-cycle-opened")
       ids.add(value(event.evidence, "cycle"));
-  const cycles: CycleState[] = [...ids].sort().map((id) => {
+  const cycles: CycleState[] = [];
+  for (const id of [...ids].sort()) {
     const cycleEvents = events.filter((event) => eventCycle(event) === id);
     const opened =
       cycleEvents.find(
@@ -996,26 +1052,67 @@ function authorityState(target: Target) {
       [...cycleEvents]
         .reverse()
         .find((event) => event.transition === "human-rejected") ?? null;
-    const repair = [...cycleEvents]
-      .reverse()
-      .find((event) => event.transition === "evaluator-repair-recorded");
-    const evaluatorRevision =
-      typeof repair?.evidence.resultingEvaluatorRevision === "string"
-        ? repair.evidence.resultingEvaluatorRevision
-        : typeof allocation?.evidence.evaluatorRevision === "string"
-          ? allocation.evidence.evaluatorRevision
-          : typeof opened?.evidence.inheritedEvaluatorRevision === "string"
-            ? opened.evidence.inheritedEvaluatorRevision
-            : null;
-    return {
+    const predecessor =
+      typeof opened?.evidence.priorCycle === "string"
+        ? cycles.find((cycle) => cycle.id === opened.evidence.priorCycle)
+        : undefined;
+    const promotedRevision = cycleEvents.some(
+      (event) => event.transition === "promotion-recorded",
+    )
+      ? promotedEvaluatorRevision(target)
+      : null;
+    let evaluatorRevision = promotedRevision;
+    let evaluatorRevisionSource: CycleState["evaluatorRevisionSource"] =
+      promotedRevision === null ? null : "promoted";
+    if (
+      evaluatorRevision === null &&
+      predecessor !== undefined &&
+      predecessor.evaluatorRevision !== null
+    ) {
+      evaluatorRevision = predecessor.evaluatorRevision;
+      evaluatorRevisionSource = "predecessor";
+    }
+    if (
+      evaluatorRevision === null &&
+      typeof allocation?.evidence.evaluatorRevision === "string"
+    ) {
+      evaluatorRevision = allocation.evidence.evaluatorRevision;
+      evaluatorRevisionSource = "allocation";
+    }
+    if (
+      evaluatorRevision === null &&
+      typeof opened?.evidence.inheritedEvaluatorRevision === "string"
+    ) {
+      evaluatorRevision = opened.evidence.inheritedEvaluatorRevision;
+      evaluatorRevisionSource = "opened";
+    }
+    for (const repair of cycleEvents.filter(
+      (event) => event.transition === "evaluator-repair-recorded",
+    )) {
+      if (
+        typeof repair.evidence.sourceEvaluatorRevision === "string" &&
+        typeof repair.evidence.resultingEvaluatorRevision === "string" &&
+        repair.evidence.sourceEvaluatorRevision === evaluatorRevision
+      ) {
+        evaluatorRevision = repair.evidence.resultingEvaluatorRevision;
+        evaluatorRevisionSource = "predecessor";
+      }
+    }
+    const inherited =
+      typeof opened?.evidence.inheritedEvaluatorRevision === "string"
+        ? opened.evidence.inheritedEvaluatorRevision
+        : null;
+    cycles.push({
       id,
-      predecessor:
-        typeof opened?.evidence.priorCycle === "string"
-          ? opened.evidence.priorCycle
-          : null,
+      predecessor: predecessor?.id ?? null,
       opened,
       events: cycleEvents,
       evaluatorRevision,
+      evaluatorRevisionSource,
+      staleInheritedEvaluatorRevision:
+        inherited !== null && inherited !== evaluatorRevision
+          ? inherited
+          : null,
       implementation,
       allocation,
       verification,
@@ -1029,8 +1126,8 @@ function authorityState(target: Target) {
         (event) => event.transition === "human-accepted",
       ),
       rejectedEvent,
-    };
-  });
+    });
+  }
   const current = cycles.at(-1);
   if (current === undefined) fail("Authority must contain legacy Cycle 001");
   const passed = current.verification?.evidence.result === "PASS";
@@ -1442,7 +1539,7 @@ function authority(
       status: availability.get(transition) ?? "unavailable",
     }));
     process.stdout.write(
-      `${JSON.stringify({ history: state.events, legalTransitions: [...available], recordableTransitions: recordable, transitionAvailability, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.current.predecessor ?? state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected || state.blockedRepair !== undefined, outcomeComplete: state.outcome, currentCycle: { id: state.current.id, state: state.accepted || state.rejected ? "CLOSED" : "OPEN", evaluatorRevision: state.current.evaluatorRevision, implementationAttempt: state.current.implementation?.evidence.attempt ?? null, verification: state.current.verification?.evidence ?? null, promotionComplete: state.current.promoted, asBuiltComplete: state.current.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : "PENDING" }, cycles: state.cycles.map((cycle) => ({ id: cycle.id, predecessor: cycle.predecessor, evaluatorRevision: cycle.evaluatorRevision, implementationAttempt: cycle.implementation?.evidence.attempt ?? null, verification: cycle.verification?.evidence ?? null, promotionComplete: cycle.promoted, asBuiltComplete: cycle.asBuilt, humanDecision: cycle.rejectedEvent ? "REJECTED" : cycle.accepted ? "ACCEPTED" : "PENDING" })), correctionPermitted: state.correctionPermitted, correctionReason: state.correctionReason })}\n`,
+      `${JSON.stringify({ history: state.events, legalTransitions: [...available], recordableTransitions: recordable, transitionAvailability, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.current.predecessor ?? state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected || state.blockedRepair !== undefined, outcomeComplete: state.outcome, currentCycle: { id: state.current.id, state: state.accepted || state.rejected ? "CLOSED" : "OPEN", evaluatorRevision: state.current.evaluatorRevision, evaluatorRevisionSource: state.current.evaluatorRevisionSource, staleInheritedEvaluatorRevision: state.current.staleInheritedEvaluatorRevision, implementationAttempt: state.current.implementation?.evidence.attempt ?? null, verification: state.current.verification?.evidence ?? null, promotionComplete: state.current.promoted, asBuiltComplete: state.current.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : "PENDING" }, cycles: state.cycles.map((cycle) => ({ id: cycle.id, predecessor: cycle.predecessor, evaluatorRevision: cycle.evaluatorRevision, evaluatorRevisionSource: cycle.evaluatorRevisionSource, staleInheritedEvaluatorRevision: cycle.staleInheritedEvaluatorRevision, implementationAttempt: cycle.implementation?.evidence.attempt ?? null, verification: cycle.verification?.evidence ?? null, promotionComplete: cycle.promoted, asBuiltComplete: cycle.asBuilt, humanDecision: cycle.rejectedEvent ? "REJECTED" : cycle.accepted ? "ACCEPTED" : "PENDING" })), correctionPermitted: state.correctionPermitted, correctionReason: state.correctionReason })}\n`,
     );
     return;
   }
