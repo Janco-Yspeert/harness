@@ -485,8 +485,6 @@ async function allocateHostRun(
 ): Promise<Job> {
   const url = hostUrl();
   const evaluator = phase.startsWith("evaluator-");
-  const evaluatorWorkspace = process.env.HARNESS_EVALUATOR_WORKSPACE;
-  const useEvaluatorProfile = evaluator && evaluatorWorkspace !== undefined;
   const executor = executorFor(phase);
   const slot: RunSlot = {
     workflow: spikeName(spike),
@@ -499,8 +497,9 @@ async function allocateHostRun(
     executor,
     workspace: repositoryRoot,
     invocationMode: "delegated",
-    permissionProfile: useEvaluatorProfile ? "evaluator" : "repo-local-worker",
-    ...(useEvaluatorProfile ? { evaluatorWorkspace } : {}),
+    // The host derives protected-role permissions from the role and its own
+    // configuration. The runner must not make evaluator semantics depend on
+    // which environment happened to launch it.
     skill: evaluator
       ? (bootstrapAuthority(targetFrom(spike), phase)?.snapshotPath ??
         "evaluator")
@@ -536,7 +535,7 @@ async function allocateHostRun(
     runId,
     hostUrl: url,
     executor,
-    permissionProfile: requestBody.permissionProfile,
+    permissionProfile: evaluator ? "evaluator" : "repo-local-worker",
     slot,
     launchedAt: new Date().toISOString(),
   };

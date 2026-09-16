@@ -888,3 +888,28 @@
   all green; E1-E5 re-run fresh (6/6 sub-tests pass).
 - Promotion: not performed (result is `BLOCKED`, not `PASS`).
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 028 — Protected evaluator allocation correction
+
+- Skill: `implementation` v3. Restricted evaluator material inspected: none.
+- Input: frozen brief
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`,
+  Design Map
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7c3723835e0721e8673554f93b407`,
+  evaluation requirements
+  `sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf`,
+  and the preserved cycle-002 evaluator-repair allocation record.
+- Result: `IMPLEMENTED`. Protected `evaluator-*` roles now always resolve to
+  the evaluator permission profile at the Harness host. The host owns the
+  evaluator-workspace setting; missing host configuration rejects allocation
+  before provider launch. The workflow runner no longer supplies that setting,
+  and fixture allocations receive the same protected-role profile.
+- Output: candidate implementation and visible-regression diff before this
+  entry `sha256:c18606a0909373364a694b6a09e050ceeb9eb30cf6088bd494fa9160fdda9a6c`.
+- Verification: `npm test` (78/78), `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, and `git diff --check` passed. The first combined
+  suite/check invocation had an intermittent test-worker startup collapse;
+  the clean standalone full-suite rerun passed.
+- The pre-existing unrelated Spike 011 ledger edit, acceptance note, and test
+  fixture residue were preserved and excluded.
+- Measurement cutoff: immediately before this manifest update.

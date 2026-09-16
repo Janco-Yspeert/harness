@@ -281,6 +281,7 @@ export type WorkflowRunEventPublisher = (
 export interface WorkflowRunRegistryOptions {
   readonly createBackend: WorkflowRunBackendFactory;
   readonly publishEvent: WorkflowRunEventPublisher;
+  readonly evaluatorWorkspace?: string;
   readonly now?: () => number;
 }
 
@@ -989,7 +990,10 @@ function resolvePermissionProfile(
   };
 }
 
-function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
+function resolveSpec(
+  request: WorkflowRunRequest,
+  hostEvaluatorWorkspace: string | undefined,
+): ResolvedWorkflowRunSpec {
   const protectedRole = request.role.startsWith("evaluator-");
   const directHuman =
     request.invocationMode === "direct" && request.humanAuthorization === true;
@@ -1027,12 +1031,12 @@ function resolveSpec(request: WorkflowRunRequest): ResolvedWorkflowRunSpec {
       );
   }
   const permissionProfile = resolvePermissionProfile(
-    request.permissionProfile ?? "repo-local-worker",
+    protectedRole
+      ? "evaluator"
+      : (request.permissionProfile ?? "repo-local-worker"),
     request.workspace,
-    request.evaluatorWorkspace,
-    workflow.workflow === "013a-Workflow-execution-friction" &&
-      request.slot.phase === "evaluator-verify" &&
-      request.executor === "claude",
+    protectedRole ? hostEvaluatorWorkspace : request.evaluatorWorkspace,
+    protectedRole,
   );
   return {
     slot: { ...request.slot, workflow: workflow.workflow },
@@ -1173,6 +1177,7 @@ export class WorkflowRunRegistry {
   readonly #createBackend: WorkflowRunBackendFactory;
   readonly #publish: WorkflowRunEventPublisher;
   readonly #now: () => number;
+  readonly #evaluatorWorkspace: string | undefined;
   readonly #runs = new Map<string, InternalRun>();
   readonly #canonicalBySlot = new Map<string, string>();
   readonly #pendingBySlot = new Map<string, Promise<WorkflowRunRecord>>();
@@ -1181,6 +1186,7 @@ export class WorkflowRunRegistry {
   constructor(options: WorkflowRunRegistryOptions) {
     this.#createBackend = options.createBackend;
     this.#publish = options.publishEvent;
+    this.#evaluatorWorkspace = options.evaluatorWorkspace;
     this.#now = options.now ?? ((): number => Date.now());
   }
 
@@ -1190,7 +1196,7 @@ export class WorkflowRunRegistry {
     if (this.#closed) {
       throw new WorkflowRunConflictError("the Harness host is shutting down");
     }
-    const spec = resolveSpec(request);
+    const spec = resolveSpec(request, this.#evaluatorWorkspace);
     const key = slotKey(spec.slot);
 
     const active = this.#activeRunForSlot(key);
@@ -1362,6 +1368,12 @@ export class WorkflowRunRegistry {
       pinnedContractAuthority: { ...pinned },
       ...(parentRunId === null ? {} : { parentRunId }),
     };
+    const permissionProfile = resolvePermissionProfile(
+      "evaluator",
+      workspace,
+      this.#evaluatorWorkspace,
+      true,
+    );
     const fixtureSpec: ResolvedWorkflowRunSpec = {
       slot: {
         workflow: workflow.workflow,
@@ -1371,12 +1383,8 @@ export class WorkflowRunRegistry {
       role: definition.role,
       executor: definition.executor,
       invocationMode: "fixture",
-      workspaces: [workspace],
-      permissionProfile: {
-        id: "repo-local-worker",
-        workspaces: [workspace],
-        capabilities: ["repository-read"],
-      },
+      workspaces: permissionProfile.workspaces,
+      permissionProfile,
       skill: resolvedContract.path,
       skillVersion: resolvedContract.version,
       contract: { ...resolvedContract, deliveryMode },

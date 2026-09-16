@@ -113,6 +113,9 @@ export interface HarnessHost {
 export interface HarnessHostOptions {
   createBackend?: SessionBackendFactory;
   createWorkflowBackend?: WorkflowRunBackendFactory;
+  // This is daemon configuration, not caller-supplied allocation data. A
+  // protected evaluator allocation without it is rejected before launch.
+  evaluatorWorkspace?: string;
 }
 
 function sendError(socket: WebSocket | undefined, error: HarnessErrorMessage) {
@@ -267,6 +270,9 @@ export async function startHarnessHost(
   const workflowRuns = new WorkflowRunRegistry({
     createBackend: options.createWorkflowBackend ?? createLocalWorkflowBackend,
     publishEvent,
+    ...(options.evaluatorWorkspace === undefined
+      ? {}
+      : { evaluatorWorkspace: options.evaluatorWorkspace }),
   });
 
   async function handleWorkflowRequest(
@@ -690,10 +696,12 @@ if (import.meta.main) {
           return createCodexBackend(cwd === undefined ? {} : { cwd });
         }
       : undefined;
-  const host = await startHarnessHost(
-    port,
-    createBackend === undefined ? {} : { createBackend },
-  );
+  const host = await startHarnessHost(port, {
+    ...(createBackend === undefined ? {} : { createBackend }),
+    ...(process.env.HARNESS_EVALUATOR_WORKSPACE === undefined
+      ? {}
+      : { evaluatorWorkspace: process.env.HARNESS_EVALUATOR_WORKSPACE }),
+  });
   console.log(`Harness session lifecycle spike listening at ${host.url}`);
 
   const shutDown = async (): Promise<void> => {
