@@ -913,3 +913,51 @@
 - The pre-existing unrelated Spike 011 ledger edit, acceptance note, and test
   fixture residue were preserved and excluded.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 029 — Evaluator Verification (attempt 011 / canonical attempt 013)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify
+  time), evaluator revision `003` (unchanged this attempt; no correction
+  needed or performed).
+- Input: cycle `002` canonical implementation-handoff commit
+  `eaaa53dc8ea487deff592f804154fd447bb26f86` ("fix: enforce host-owned
+  evaluator permissions", implementation attempt 10); project `HEAD`
+  evaluated directly (identical to the handoff commit, no further commits);
+  all frozen public inputs confirmed byte-identical to their frozen
+  identities (no specification drift).
+- Result: `BLOCKED`, `INFRASTRUCTURE_FAILURE`, private attempt `011`
+  (canonical attempt `13`). No correction needed or performed. Unlike the
+  two immediately preceding attempts, this attempt evaluates genuine new
+  implementation content (a caller-controlled-permission fix), not a
+  bookkeeping-only diff; it reaches the same criterion disposition because
+  the live-Claude-executor limitation is unrelated to and unaffected by that
+  fix.
+- Output: `verification-feedback-011.md` (safe diagnostics; does not itself
+  confirm a criterion failure; notes the fix's confirmed sufficiency for
+  PR2/PR3 and the resolution of the previously-recurring non-mandatory
+  test-design finding from `verification-feedback-009.md`).
+- Mandatory executable hidden coverage: 6/6 sub-tests pass (fresh run against
+  this commit), including both `E2` fixtures.
+- Mandatory non-executable coverage: 32 of 35 mandatory criteria confirmed
+  `SATISFIED`. AC08, AC09 (LP1) and dependent AC34 remain `BLOCKED`: the
+  required live Claude executor remains unreachable from this evaluation
+  environment (confirmed directly: no `claude` executable, no configured
+  executor path, no live Harness host process reachable, and no fresh
+  external live-Claude evidence available).
+- Repository evidence inspected: the implementation diff since the last
+  evaluated commit (`src/index.ts`, `src/workflow-run.ts`,
+  `tools/workflow.ts`, `test/workflow-run.integration.test.ts`), confirmed
+  disjoint from the areas LP2/HB1/COMP1-part-a evidence depends on.
+- Restricted evaluator material inspected: this spike's own private evaluator
+  workspace (read only; no correction was needed).
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (78/78 — a strict improvement over the 75/76 every prior
+  attempt in this cycle reported; the previously-recurring non-mandatory
+  self-referential test-design finding no longer occurs), `npm run
+  typecheck`, `npm run lint`, `npm run format:check` (scoped to Git-tracked
+  files), and `git diff --check` all green; E1-E5 re-run fresh (6/6
+  sub-tests pass).
+- Promotion: not performed (result is `BLOCKED`, not `PASS`).
+- Measurement cutoff: immediately before this manifest update.
