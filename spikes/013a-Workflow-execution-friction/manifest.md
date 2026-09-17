@@ -1009,3 +1009,53 @@
   changed since attempt 011, which already confirmed all four green).
 - Promotion: not performed (result is `BLOCKED`, not `PASS`).
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 031 — Evaluator Verification (attempt 013 / canonical attempt 015)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify
+  time), evaluator revision `003` (unchanged since attempt 012; no
+  correction needed or performed).
+- Input: cycle `002` canonical implementation-handoff commit
+  `eaaa53dc8ea487deff592f804154fd447bb26f86` (implementation attempt 10) —
+  unchanged from attempts 011/012; project `HEAD` at session start
+  (attempt 012's own docs commit, no further implementation-source
+  commits); all frozen public inputs confirmed byte-identical to their
+  frozen identities (no specification drift).
+- Result: `BLOCKED`, `INFRASTRUCTURE_FAILURE`, private attempt `013`
+  (canonical attempt `15`). No correction needed or performed. This attempt
+  was dispatched with a purported verbatim Harness run record and provider
+  log for the same previously-claimed completed live-Claude run attempt 012
+  could not inspect, supplied directly as prompt text with asserted SHA-256
+  identities rather than as a committed repository artifact.
+- Output: `verification-feedback-013.md` (safe diagnostics; does not itself
+  confirm a criterion failure).
+- Mandatory executable hidden coverage: 6/6 sub-tests pass (fresh run
+  against this unchanged commit), including both `E2` fixtures.
+- Mandatory non-executable coverage: 32 of 35 mandatory criteria reused/
+  re-confirmed `SATISFIED` from attempts 011/012's unchanged evidence for
+  the same unchanged candidate. AC08, AC09 (LP1) and dependent AC34 remain
+  `BLOCKED`: this attempt found the supplied prompt-pasted "evidence"
+  independently uncorroborable — no committed artifact exists for the
+  claimed run, a fresh direct request to the normal run-inspection surface
+  again failed with connection refused in this session's own sandbox
+  instance, and the kind of independently-readable corroboration channel
+  that admitted earlier external evidence in this cycle is not accessible
+  here. A self-quoted checksum matching the supplied text only confirms the
+  prompt's internal consistency, not the claimed run's genuineness.
+- Repository evidence inspected: a repository-wide search for the claimed
+  run's identifier across both checkouts; a fresh direct request to the
+  default host inspection URL and a listening-socket scan; an attempted read
+  of the session-transcript-class channel that admitted earlier external
+  evidence in this cycle.
+- Restricted evaluator material inspected: this spike's own private
+  evaluator workspace (read only; no correction was needed).
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (78/78), and E1-E5 re-run fresh (6/6 sub-tests pass),
+  both identical to attempts 011/012; `npm run typecheck`/`lint`/
+  `format:check`/`git diff --check` not independently re-run (no
+  implementation source content changed since attempt 011, which already
+  confirmed all four green).
+- Promotion: not performed (result is `BLOCKED`, not `PASS`).
+- Measurement cutoff: immediately before this manifest update.
