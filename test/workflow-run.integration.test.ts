@@ -1850,3 +1850,256 @@ void test("a non-complete canonical run cannot satisfy the workflow runner", asy
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /lacks a successful semantic role result/);
 });
+
+void test("durable run evidence splits public/private by resolved permission profile", async (t) => {
+  const fixtureName = `999f-durable-evidence-${String(process.pid)}`;
+  const fixture = join(repositoryRoot, "spikes", fixtureName);
+  const hiddenFixture = join(
+    repositoryRoot,
+    "..",
+    "harness-hidden",
+    "spikes",
+    fixtureName,
+  );
+  mkdirSync(fixture, { recursive: true });
+  t.after(() => {
+    rmSync(fixture, { recursive: true, force: true });
+    rmSync(hiddenFixture, { recursive: true, force: true });
+  });
+
+  const priorHidden = process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE;
+  process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE = join(
+    repositoryRoot,
+    "..",
+    "harness-hidden",
+  );
+
+  let ordinaryRunId: string;
+  let protectedRunId: string;
+  try {
+    const { host, created } = await startHarness();
+    try {
+      const ordinary = await allocate(host, {
+        slot: {
+          workflow: fixtureName,
+          phase: "implementation",
+          methodologyAttempt: "1",
+        },
+      });
+      assert.equal(ordinary.status, 201, ordinary.error);
+      ordinaryRunId = ordinary.run.runId;
+      created.at(-1)?.emit("public transcript line\n");
+      created.at(-1)?.finish({
+        ok: true,
+        roleResult: { disposition: "succeeded", reason: "PUBLIC_REASON_TEXT" },
+      });
+
+      const protectedRun = await allocate(host, {
+        slot: {
+          workflow: fixtureName,
+          phase: "evaluator-verify",
+          methodologyAttempt: "1",
+        },
+        role: "evaluator-verify",
+        invocationMode: "direct",
+        humanAuthorization: true,
+        skill: undefined,
+      });
+      assert.equal(protectedRun.status, 201, protectedRun.error);
+      protectedRunId = protectedRun.run.runId;
+      created.at(-1)?.emit("CONFIDENTIAL transcript detail 42\n");
+      created.at(-1)?.finish({
+        ok: true,
+        roleResult: { disposition: "succeeded", reason: "PRIVATE_REASON_TEXT" },
+      });
+      await settle();
+    } finally {
+      await host.close();
+    }
+  } finally {
+    if (priorHidden === undefined)
+      delete process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE;
+    else process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE = priorHidden;
+  }
+
+  // Read every assertion below directly from disk, after the host and its
+  // registry are closed: durable evidence must not depend on the writing
+  // process's live memory.
+  const publicOrdinaryPath = join(
+    fixture,
+    ".workflow",
+    "runs",
+    `${ordinaryRunId}.json`,
+  );
+  const publicOrdinary = JSON.parse(
+    readFileSync(publicOrdinaryPath, "utf8"),
+  ) as { runId: string; roleResult: { reason: string | null } };
+  assert.equal(publicOrdinary.runId, ordinaryRunId);
+  assert.equal(publicOrdinary.roleResult.reason, "PUBLIC_REASON_TEXT");
+  assert.ok(
+    !existsSync(
+      join(hiddenFixture, ".workflow", "runs", `${ordinaryRunId}.json`),
+    ),
+    "an ordinary run must never be mirrored under harness-hidden",
+  );
+
+  const publicProtectedPath = join(
+    fixture,
+    ".workflow",
+    "runs",
+    `${protectedRunId}.json`,
+  );
+  const publicProtectedRaw = readFileSync(publicProtectedPath, "utf8");
+  assert.ok(!publicProtectedRaw.includes("PRIVATE_REASON_TEXT"));
+  assert.ok(!publicProtectedRaw.includes("CONFIDENTIAL transcript detail 42"));
+  const publicProtected = JSON.parse(publicProtectedRaw) as {
+    roleResult: { reason: string | null };
+    logIdentity: string;
+  };
+  assert.equal(publicProtected.roleResult.reason, null);
+  assert.equal(typeof publicProtected.logIdentity, "string");
+
+  const hiddenRunsDir = join(hiddenFixture, ".workflow", "runs");
+  const hiddenRecord = JSON.parse(
+    readFileSync(join(hiddenRunsDir, `${protectedRunId}.json`), "utf8"),
+  ) as { roleResult: { reason: string | null } };
+  assert.equal(hiddenRecord.roleResult.reason, "PRIVATE_REASON_TEXT");
+  const hiddenLog = readFileSync(
+    join(hiddenRunsDir, `${protectedRunId}.log`),
+    "utf8",
+  );
+  assert.equal(hiddenLog, "CONFIDENTIAL transcript detail 42\n");
+
+  // Independent recomputation, mirroring how the evaluator corroborated
+  // implementation attempt 8's LP1 evidence by hand for AC08/AC09: the
+  // public logIdentity must match a fresh hash of the private log, computed
+  // here from the primary file on disk rather than trusted from the record.
+  const recomputedLogIdentity = `sha256:${createHash("sha256").update(hiddenLog).digest("hex")}`;
+  assert.equal(publicProtected.logIdentity, recomputedLogIdentity);
+});
+
+void test("a new canonical verification allocation is not deduplicated against a prior successful one", async (t) => {
+  const fixtureName = `999g-verification-dedup-${String(process.pid)}`;
+  const fixture = join(repositoryRoot, "spikes", fixtureName);
+  mkdirSync(fixture, { recursive: true });
+  t.after(() => {
+    rmSync(fixture, { recursive: true, force: true });
+  });
+
+  const publicFiles = {
+    "spike.md": "# Fixture brief\n",
+    "design-map.md": "# Fixture design map\n",
+    "coverage-map.json": `${JSON.stringify({
+      criteria: [
+        {
+          id: "AC01",
+          frozenAuthority: "spike.md AC01",
+          mode: "PUBLIC_REGRESSION",
+          required: true,
+          procedures: ["PR1"],
+          sufficiency: "PR1 establishes AC01.",
+        },
+      ],
+      readiness: {
+        evaluatorRevision: "001",
+        privateInventoryIdentity: `sha256:${"0".repeat(64)}`,
+        validatorResultBinding: `sha256:${"1".repeat(64)}`,
+        integrityValidation: "PASS",
+      },
+    })}\n`,
+  };
+  for (const [name, content] of Object.entries(publicFiles))
+    writeFileSync(join(fixture, name), content);
+  const provenance = syntheticSpikeProvenance(fixtureName, publicFiles);
+  const artifact = (path: keyof typeof publicFiles) => ({
+    path,
+    commit: provenance.commit,
+    identity: provenance.identities[path],
+  });
+  const ledgerPath = join(fixture, "workflow.jsonl");
+  const baseEvents = [
+    { transition: "brief-frozen", evidence: artifact("spike.md") },
+    { transition: "design-map-frozen", evidence: artifact("design-map.md") },
+    {
+      transition: "evaluation-prepared",
+      evidence: artifact("coverage-map.json"),
+    },
+    {
+      transition: "implementation-handoff",
+      evidence: { commit: provenance.commit, attempt: 1 },
+    },
+    {
+      transition: "verification-allocated",
+      evidence: {
+        commit: provenance.commit,
+        implementationAttempt: 1,
+        attempt: 1,
+      },
+    },
+  ];
+  writeFileSync(
+    ledgerPath,
+    `${baseEvents.map((event) => JSON.stringify(event)).join("\n")}\n`,
+  );
+
+  const { host, created } = await startHarness();
+  try {
+    const verifyRequest = {
+      slot: {
+        workflow: fixtureName,
+        phase: "evaluator-verify",
+        methodologyAttempt: "1",
+      },
+      role: "evaluator-verify",
+    };
+    const first = await allocate(host, verifyRequest);
+    assert.equal(first.status, 201, first.error);
+    created[0]?.finish({ ok: true, roleResult: { disposition: "succeeded" } });
+    await settle();
+    assert.equal(
+      (await getRun(host, first.run.runId)).roleDisposition,
+      "succeeded",
+    );
+
+    // A second, genuinely distinct canonical `verification-allocated` event
+    // now targets the same (workflow, phase, methodologyAttempt) as the
+    // first — exactly the shape of canonical verification attempts 11-15,
+    // which all targeted the same implementation attempt in the real
+    // Spike 013a ledger and previously collided on one host-run slot.
+    const nextEvent = {
+      transition: "verification-allocated",
+      evidence: {
+        commit: provenance.commit,
+        implementationAttempt: 1,
+        attempt: 2,
+      },
+    };
+    writeFileSync(
+      ledgerPath,
+      `${[...baseEvents, nextEvent].map((event) => JSON.stringify(event)).join("\n")}\n`,
+    );
+
+    const second = await allocate(host, verifyRequest);
+    assert.equal(second.status, 201, second.error);
+    assert.equal(second.duplicate, false);
+    assert.notEqual(second.run.runId, first.run.runId);
+    assert.equal(second.run.executionAttempt, 1);
+    assert.equal(second.run.previousExecutionId, null);
+    assert.equal(created.length, 2);
+
+    // The same new canonical authority remains idempotent on retry.
+    const retry = await allocate(host, verifyRequest);
+    assert.equal(retry.status, 200);
+    assert.equal(retry.duplicate, true);
+    assert.equal(retry.run.runId, second.run.runId);
+    assert.equal(created.length, 2);
+
+    // The superseded slot's own successful run is preserved, not rewritten.
+    assert.equal(
+      (await getRun(host, first.run.runId)).roleDisposition,
+      "succeeded",
+    );
+  } finally {
+    await host.close();
+  }
+});

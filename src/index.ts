@@ -36,11 +36,13 @@ export type {
 } from "./session-backend.ts";
 export {
   buildExecutorCommand,
+  checkExecutorReadiness,
   createLocalWorkflowBackend,
   parseWorkflowBackendRoleResult,
   workflowProviderProgram,
   workflowScratchEnvironment,
 } from "./workflow-backend.ts";
+export type { ExecutorReadiness } from "./workflow-backend.ts";
 export { isSuccessfulWorkflowFixtureEvidence } from "./workflow-run.ts";
 export type {
   ResolvedWorkflowRunSpec,

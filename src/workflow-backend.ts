@@ -1,7 +1,7 @@
 import { spawn, type ChildProcessByStdio } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { accessSync, constants, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import type { Readable } from "node:stream";
 
 import {
@@ -150,6 +150,58 @@ export function workflowProviderProgram(
   return spec.executor === "claude" && configuredClaudeExecutable !== undefined
     ? configuredClaudeExecutable
     : defaultProgram;
+}
+
+export interface ExecutorReadiness {
+  readonly executor: "codex" | "claude";
+  readonly program: string;
+  readonly invocable: boolean;
+  readonly reason?: string;
+}
+
+// Informational only: this never becomes methodology authority. Canonical
+// authority alone governs whether a role may execute; this only reports
+// whether the configured executor program is currently resolvable on this
+// host, so repeated dispatch is not wasted on an already-diagnosed,
+// unreachable executor.
+export function checkExecutorReadiness(
+  executor: "codex" | "claude",
+  env: NodeJS.ProcessEnv = process.env,
+): ExecutorReadiness {
+  const program =
+    executor === "claude"
+      ? (env.HARNESS_CLAUDE_EXECUTABLE ?? "claude")
+      : "codex";
+  const isExecutable = (candidate: string): boolean => {
+    try {
+      accessSync(candidate, constants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  if (program.includes("/")) {
+    return isExecutable(program)
+      ? { executor, program, invocable: true }
+      : {
+          executor,
+          program,
+          invocable: false,
+          reason: `${program} is not an executable file`,
+        };
+  }
+  const found = (env.PATH ?? "")
+    .split(delimiter)
+    .filter((entry) => entry.length > 0)
+    .some((entry) => isExecutable(join(entry, program)));
+  return found
+    ? { executor, program, invocable: true }
+    : {
+        executor,
+        program,
+        invocable: false,
+        reason: `${program} was not found on PATH`,
+      };
 }
 
 function createWorkflowScratch(runId: string): string {

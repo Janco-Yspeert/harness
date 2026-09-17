@@ -1539,3 +1539,46 @@ void test("repair blocks to successor lineage when it needs a new public seam, b
   ) as { currentCycle: { evaluatorRevision: string } };
   assert.equal(status.currentCycle.evaluatorRevision, "002");
 });
+
+void test("readiness reports executor invocability informationally, never as authority", () => {
+  const result = run(["readiness"]);
+  assert.equal(result.status, 0, result.stderr);
+  const body = JSON.parse(result.stdout) as {
+    readiness: { executor: string; program: string; invocable: boolean }[];
+  };
+  assert.deepEqual(body.readiness.map((entry) => entry.executor).sort(), [
+    "claude",
+    "codex",
+  ]);
+  for (const entry of body.readiness) {
+    assert.equal(typeof entry.program, "string");
+    assert.equal(typeof entry.invocable, "boolean");
+  }
+
+  const scoped = run(["readiness", "codex"]);
+  assert.equal(scoped.status, 0, scoped.stderr);
+  const scopedBody = JSON.parse(scoped.stdout) as {
+    readiness: { executor: string }[];
+  };
+  assert.equal(scopedBody.readiness.length, 1);
+  assert.equal(scopedBody.readiness[0]?.executor, "codex");
+
+  // A readiness check is a pure, informational report of the currently
+  // configured executor program: it never allocates a run, touches canonical
+  // authority, or mutates `.workflow` state.
+  const unreachable = run(["readiness", "claude"], {
+    ...process.env,
+    HARNESS_CLAUDE_EXECUTABLE: "/nonexistent/claude-binary-for-test",
+  });
+  assert.equal(unreachable.status, 0, unreachable.stderr);
+  const unreachableBody = JSON.parse(unreachable.stdout) as {
+    readiness: { invocable: boolean; program: string; reason?: string }[];
+  };
+  const unreachableEntry = unreachableBody.readiness[0];
+  assert.ok(unreachableEntry);
+  assert.equal(unreachableEntry.invocable, false);
+  assert.equal(unreachableEntry.program, "/nonexistent/claude-binary-for-test");
+  assert.match(unreachableEntry.reason ?? "", /not an executable/);
+
+  assert.notEqual(run(["readiness", "bogus"]).status, 0);
+});

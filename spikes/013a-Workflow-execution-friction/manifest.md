@@ -1059,3 +1059,76 @@
   confirmed all four green).
 - Promotion: not performed (result is `BLOCKED`, not `PASS`).
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 032 — Durable evidence and verification-slot correction (cycle 002, implementation attempt 11)
+
+- Skill: `implementation` v3. Restricted evaluator material inspected: none.
+- Input: unchanged frozen brief
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`,
+  unchanged Design Map
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`,
+  unchanged public evaluation requirements
+  `sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf`,
+  unchanged coverage map
+  `sha256:eb4921e8c87d47c35d16f8fc90ad5192526327b4fe6e4517f08ae0faba1ad0a4`,
+  and the explicit human-authorized `correction-directive-011.md` (root-authority
+  process-exception input, cycle `002` implementation attempt `11`, following
+  unchanged candidate `eaaa53dc8ea487deff592f804154fd447bb26f86` — implementation
+  attempt `10`, verified `BLOCKED`/`INFRASTRUCTURE_FAILURE` on AC08/AC09/AC34
+  only at canonical verification attempts 11-15, with no confirmed
+  implementation defect in any of those attempts and 32/35 criteria
+  `SATISFIED` throughout).
+- Result: `IMPLEMENTED`. `WorkflowRunRegistry` now persists durable, host-owned
+  run evidence to disk on every terminal disposition, reusing the existing
+  `<spike>/.workflow/runs/` convention, split public/private generically by
+  whether the run's *resolved* permission profile reached the private
+  `harness-hidden` mirror (never by spike/provider identity): non-hidden-grant
+  runs are durable in full publicly; hidden-grant (evaluator-profile) runs keep
+  their full record and raw log only under the mirrored private location and
+  expose a sanitized public manifest (`roleResult.reason` cleared) plus a
+  `logIdentity` linking hash. Separately, `slotKey()` now folds in the resolved
+  allocation's `basisIdentity` when present, so a genuinely new canonical
+  `verification-allocated` event targeting the same `(workflow, phase,
+  methodologyAttempt)` as a prior *successful* allocation gets its own fresh
+  execution instead of being silently deduplicated against the stale prior
+  run; unchanged authority for the same slot remains idempotent. Also added a
+  small, informational-only `checkExecutorReadiness()` plus a `workflow
+  readiness [codex|claude]` CLI surface that reports configured-executor
+  invocability without touching canonical authority or `.workflow` state.
+- Output: staged implementation/test/report diff before this entry
+  `sha256:db976449c8e842d9dec79387a64311e258cec340df9de879ceaec539dfe48a7b`
+  (SHA-256 of a compact, key-sorted JSON map from the following
+  repository-relative paths to their SHA-256 byte identities; UTF-8;
+  separators comma and colon; no final newline):
+  - `spikes/013a-Workflow-execution-friction/implementation-report.md`
+  - `src/index.ts`
+  - `src/workflow-backend.ts`
+  - `src/workflow-run.ts`
+  - `test/workflow-run.integration.test.ts`
+  - `test/workflow.test.ts`
+  - `tools/workflow.ts`
+- Verification: added focused public regression coverage for the
+  public/private durable-evidence split (including independent recomputation
+  of the public `logIdentity` from the private raw log read directly off
+  disk after the host and registry are closed, mirroring by hand what the
+  evaluator did for implementation attempt 8's LP1 evidence) and for the
+  run-slot fix (a new canonical allocation authority targeting the same
+  implementation attempt as a prior successful one is not deduplicated
+  against it; the same new authority remains idempotent; the superseded run
+  is preserved unmodified). `npm run check` (typecheck, lint, `format:check`,
+  full `npm test`: 81/81 passing) and `git diff --check` all pass at this
+  candidate.
+- Scope discipline: no database, general evidence/artifact service, or
+  evaluator network access added; no unification of separate attempt
+  counters; no Spike 011 work of any kind (the pre-existing unrelated
+  `spikes/011-host-owned-workflow-runs/workflow.jsonl` modification,
+  `humam-acceptance.md`, `skills/orchestrator/`, and the two
+  `spikes/998a-authority-fixture-*` directories were preserved and excluded
+  from this candidate); no evaluator rubric/semantic change.
+- Live evidence: none claimed. Per this correction directive's explicit stop
+  condition, the LP1 fixture was not run and no new evaluator verification
+  attempt was allocated; implementation ends at the pushed candidate commit
+  and this manifest entry.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update. The candidate
+  commit follows and is not included above.

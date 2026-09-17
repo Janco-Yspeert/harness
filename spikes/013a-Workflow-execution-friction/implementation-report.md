@@ -296,3 +296,118 @@ completed after 67,201 ms, stayed read-only, and produced a host-validated
 `succeeded` semantic result. This is implementation-side live-fixture evidence,
 not a claim of independent evaluator acceptance. The unrelated pre-existing
 Spike 011 ledger edit remains preserved and excluded.
+
+## Durable evidence and verification-slot correction (cycle 002, implementation attempt 11)
+
+Correction directive: `correction-directive-011.md`, given as root-authority
+input following unchanged candidate `eaaa53dc8ea487deff592f804154fd447bb26f86`
+(implementation attempt 10), verified `BLOCKED`/`INFRASTRUCTURE_FAILURE` on
+AC08/AC09/AC34 only at canonical verification attempts 11-15 (all other 32 of
+35 criteria `SATISFIED` throughout). Root cause per the directive:
+`WorkflowRunRegistry` holds run records only in host-process memory, so a
+verify-time evaluator sandbox with no network path to whatever host process
+ran a live fixture can never independently corroborate it — the one attempt
+that did establish AC08/AC09/AC34 (implementation attempt 8, canonical
+verification attempt 10, `PASS`) worked only because a human manually
+committed `lp1-primary-evidence-008.md` as a public Git artifact. This
+correction generalizes that shape into the host itself, plus fixes a
+second, independently-identified defect in run-slot identity.
+
+### 1. Durable, host-owned evidence, public/private split
+
+`WorkflowRunRegistry` now writes durable evidence to disk on every terminal
+disposition (`completed`, `failed`, `cancelled`, `replaced`, and backend
+-creation failure), reusing the existing `<spike>/.workflow/` convention
+(`<spike>/.workflow/runs/<runId>.json`) rather than a new subsystem. Which
+side of the public/private split a run lands on is keyed generically off its
+*resolved* permission profile — specifically, whether that profile's
+workspaces include the private `harness-hidden` sibling mirror, exactly as
+`resolvePermissionProfile` already computes that grant — never off spike name,
+role name, or provider identity:
+
+- A run whose resolved profile never reached `harness-hidden` (ordinary
+  worker runs, `repository-read-only` fixtures, etc.) is durable in full at
+  the public location.
+- A run whose resolved profile did reach `harness-hidden` (i.e. the evaluator
+  profile with the hidden-workspace grant) has its full record and raw log
+  written only under the mirrored private location
+  (`harness-hidden/spikes/<spike>/.workflow/runs/<runId>.{json,log}`,
+  matching the exact sibling-mirror path `resolvePermissionProfile` already
+  uses for the hidden-workspace grant itself). The public location instead
+  gets a sanitized manifest — the full record with `roleResult.reason`
+  cleared — plus a `logIdentity` SHA-256 of the private raw log, letting the
+  two be linked without exposing content.
+
+No database, artifact service, or evaluator network access was added; this is
+a mechanical "write what the host already produced to disk on terminal
+disposition," matching what `lp1-primary-evidence-008.md` already
+demonstrated worked by hand.
+
+### 2. Run-slot identity fix
+
+`slotKey()` previously keyed only on `(workflow, phase, methodologyAttempt)`.
+Two distinct canonical `verification-allocated` ledger events that happen to
+target the same implementation attempt (exactly canonical verification
+attempts 11-15, all against implementation attempt 10) collapsed onto one
+slot; once that slot held a `succeeded` prior run, `allocate()` silently
+rebound any later, genuinely new canonical allocation to the stale prior
+record instead of creating its own execution. `slotKey()` now additionally
+folds in the resolved allocation's `basisIdentity` when the caller's
+`allocationAuthority` carries one (protected delegated allocations and
+repository fixtures already compute this — the SHA-256 of the exact canonical
+ledger event, so no new counter was invented). Unchanged authority for the
+same slot remains idempotent; a new canonical allocation authority targeting
+the same `(workflow, phase, methodologyAttempt)` now gets its own execution
+without rewriting or deleting the prior one. Ordinary, non-protected
+allocations (no `basisIdentity`) are unaffected and retain today's exact
+retry/dedup behavior.
+
+### 3. Executor readiness (informational only)
+
+Added `checkExecutorReadiness()` (`src/workflow-backend.ts`) and a `workflow
+readiness [codex|claude]` CLI surface (`tools/workflow.ts`) that report
+whether the currently configured executor program is resolvable on this host
+(via `HARNESS_CLAUDE_EXECUTABLE`/PATH lookup, no process spawn). This is
+purely informational: it never touches canonical authority, `.workflow`
+state, or run allocation, so repeated dispatch is not wasted on an
+already-diagnosed unreachable executor. No new subsystem was introduced; kept
+deliberately small per the correction directive's explicit permission to
+leave this out if it grew.
+
+### Scope discipline honored
+
+No database, general evidence/artifact service, or evaluator network access
+was added. No unification of the separate canonical/private/operational
+attempt counters was attempted. No Spike 011 work of any kind — the
+pre-existing unrelated `spikes/011-host-owned-workflow-runs/workflow.jsonl`
+modification, `humam-acceptance.md`, `skills/orchestrator/`, and the two
+`spikes/998a-authority-fixture-*` directories were left untouched and
+excluded from this candidate. No evaluator rubric/semantic change was made.
+The durability mechanism is expressed generically off the resolved permission
+profile, not spike- or provider-specific, and grants ordinary workers no new
+read access to `harness-hidden`.
+
+### Tests and checks
+
+Added regression coverage in `test/workflow-run.integration.test.ts`
+demonstrating: the public/private durable-evidence split (an ordinary run's
+full record, including `roleResult.reason`, is durable in full publicly; a
+hidden-workspace-granted evaluator run's public copy is a sanitized manifest
+with `roleResult.reason` cleared, its full record and raw log durable only
+under `harness-hidden`, and its public `logIdentity` independently
+recomputed from the private log file read directly off disk — mirroring by
+hand what the evaluator did for implementation attempt 8's LP1 evidence —
+after the host and registry are closed, so the assertions never depend on
+live process memory); and the run-slot fix (a second, distinct canonical
+`verification-allocated` event targeting the same implementation attempt as a
+prior *successful* allocation gets its own fresh execution rather than being
+deduplicated against the stale prior run, while repeated allocation under the
+same new authority remains idempotent and the superseded run is preserved
+unmodified). Added a focused CLI regression in `test/workflow.test.ts` for
+the `readiness` command.
+
+`npm run check` (typecheck, lint, `format:check`, and the full `npm test`
+suite: 81/81 passing) and `git diff --check` all pass at this candidate. No
+LP1 fixture was run and no new evaluator verification attempt was allocated,
+per this correction directive's explicit stop condition; implementation ends
+at the pushed candidate commit and its manifest entry.

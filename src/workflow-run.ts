@@ -1,7 +1,14 @@
 import { createHash, randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, relative, resolve } from "node:path";
 
 // A workflow run is a host-owned execution of a methodology workflow role. It
 // shares host-generated identity, backend lifecycle observation, termination,
@@ -1064,12 +1071,68 @@ function resolveSpec(
   };
 }
 
-function slotKey(slot: WorkflowRunSlot): string {
+// Two distinct canonical allocations (e.g. two separate `verification-allocated`
+// ledger events) can legitimately target the same (workflow, phase,
+// methodologyAttempt) — that tuple alone identifies the methodology attempt,
+// not the specific canonical allocation. Folding in the resolved allocation's
+// basis identity (already the hash of the exact canonical ledger event, so no
+// new counter is invented) keeps a repeated allocation with unchanged
+// authority idempotent while giving a genuinely new canonical allocation its
+// own slot instead of silently rebinding to a stale prior run.
+function slotKey(
+  slot: WorkflowRunSlot,
+  allocationAuthority?: Record<string, unknown>,
+): string {
+  const basisIdentity = allocationAuthority?.basisIdentity;
   return JSON.stringify([
     slot.workflow,
     slot.phase,
     slot.methodologyAttempt ?? null,
+    typeof basisIdentity === "string" ? basisIdentity : null,
   ]);
+}
+
+// Durable host-owned run evidence, public/private split.
+//
+// On terminal disposition a run becomes durable evidence on disk, reusing the
+// existing `<spike>/.workflow/` convention. Which side of the split a run
+// lands on is keyed generically off its resolved permission profile (whether
+// it was granted the private hidden-workspace mirror), never off spike or
+// provider identity: a run that never reached `harness-hidden` is durable in
+// full at the public per-workflow location; a run that did is durable in full
+// only under the mirrored private location (matching how
+// `resolvePermissionProfile` grants that access in the first place), and the
+// public location instead gets a sanitized manifest — binding/identity
+// fields only, no free-text `roleResult.reason` — plus a `logIdentity` hash
+// of the private raw log linking the two without exposing its content.
+function grantsHiddenWorkspace(
+  profile: WorkflowPermissionProfile,
+  workspace: string,
+): boolean {
+  return profile.workspaces.includes(
+    resolve(workspace, "..", "harness-hidden"),
+  );
+}
+
+function durableRunsDir(workspace: string, workflow: string): string {
+  return resolve(workspace, "spikes", workflow, ".workflow", "runs");
+}
+
+function hiddenDurableRunsDir(workspace: string, workflow: string): string {
+  return resolve(
+    workspace,
+    "..",
+    "harness-hidden",
+    "spikes",
+    workflow,
+    ".workflow",
+    "runs",
+  );
+}
+
+function writeDurableFile(path: string, content: string): void {
+  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+  writeFileSync(path, content, { mode: 0o600 });
 }
 
 interface ExecutionMeta {
@@ -1197,7 +1260,7 @@ export class WorkflowRunRegistry {
       throw new WorkflowRunConflictError("the Harness host is shutting down");
     }
     const spec = resolveSpec(request, this.#evaluatorWorkspace);
-    const key = slotKey(spec.slot);
+    const key = slotKey(spec.slot, spec.allocationAuthority);
 
     const active = this.#activeRunForSlot(key);
     if (active !== undefined) {
@@ -1476,6 +1539,10 @@ export class WorkflowRunRegistry {
         : "workflow-run.role-non-success",
       run,
     );
+    // A role result reported after the run already reached a terminal
+    // disposition (rather than observed from the exit outcome) still belongs
+    // in the run's durable evidence.
+    this.#persistDurableEvidence(run);
     return run.toRecord();
   }
 
@@ -1487,7 +1554,7 @@ export class WorkflowRunRegistry {
     if (prior === undefined) {
       throw new WorkflowRunNotFoundError(`unknown workflow run: ${runId}`);
     }
-    const key = slotKey(prior.spec.slot);
+    const key = slotKey(prior.spec.slot, prior.spec.allocationAuthority);
     if (this.#canonicalBySlot.get(key) !== runId) {
       throw new WorkflowRunConflictError(
         `workflow run ${runId} is not the canonical execution for its slot`,
@@ -1552,7 +1619,10 @@ export class WorkflowRunRegistry {
     }
     const run = new InternalRun(runId, spec, meta, this.#now());
     this.#runs.set(runId, run);
-    this.#canonicalBySlot.set(slotKey(spec.slot), runId);
+    this.#canonicalBySlot.set(
+      slotKey(spec.slot, spec.allocationAuthority),
+      runId,
+    );
     this.#emit("workflow-run.allocated", run);
 
     let backend: WorkflowRunBackend;
@@ -1565,6 +1635,7 @@ export class WorkflowRunRegistry {
         error instanceof Error ? error.message : "backend creation failed";
       run.terminalAtMs = this.#now();
       this.#emit("workflow-run.failed", run);
+      this.#persistDurableEvidence(run);
       return run.toRecord();
     }
 
@@ -1630,6 +1701,7 @@ export class WorkflowRunRegistry {
       outcome.ok ? "workflow-run.completed" : "workflow-run.failed",
       run,
     );
+    this.#persistDurableEvidence(run);
   }
 
   async #terminate(
@@ -1660,6 +1732,38 @@ export class WorkflowRunRegistry {
       } as const
     )[disposition];
     this.#emit(eventType, run);
+    this.#persistDurableEvidence(run);
+  }
+
+  #persistDurableEvidence(run: InternalRun): void {
+    if (isActiveWorkflowRunStatus(run.status)) return;
+    const workspace = run.spec.workspaces[0];
+    if (workspace === undefined) return;
+    const record = run.toRecord();
+    const publicPath = resolve(
+      durableRunsDir(workspace, record.workflow),
+      `${record.runId}.json`,
+    );
+    if (!grantsHiddenWorkspace(run.spec.permissionProfile, workspace)) {
+      writeDurableFile(publicPath, `${JSON.stringify(record, null, 2)}\n`);
+      return;
+    }
+    const rawLog = run.logChunks.join("");
+    const hiddenDir = hiddenDurableRunsDir(workspace, record.workflow);
+    writeDurableFile(
+      resolve(hiddenDir, `${record.runId}.json`),
+      `${JSON.stringify(record, null, 2)}\n`,
+    );
+    writeDurableFile(resolve(hiddenDir, `${record.runId}.log`), rawLog);
+    const sanitized = {
+      ...record,
+      roleResult:
+        record.roleResult === null
+          ? null
+          : { ...record.roleResult, reason: null },
+      logIdentity: sha256(rawLog),
+    };
+    writeDurableFile(publicPath, `${JSON.stringify(sanitized, null, 2)}\n`);
   }
 
   #emit(

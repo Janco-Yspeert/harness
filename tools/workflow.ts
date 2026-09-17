@@ -11,6 +11,8 @@ import {
 import { dirname, isAbsolute, normalize, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { checkExecutorReadiness } from "../src/index.ts";
+
 const DEFAULT_HOST_URL = "http://127.0.0.1:3000";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -1680,7 +1682,28 @@ async function main(args: string[]): Promise<void> {
     await cancel(targetFrom(rest[1]), phaseFrom(rest[0]));
     return;
   }
-  fail("Usage: workflow <init|adopt|status|dispatch|record|cancel> ...");
+  if (command === "readiness" && rest.length <= 1) {
+    const requested = rest[0];
+    if (
+      requested !== undefined &&
+      requested !== "codex" &&
+      requested !== "claude"
+    )
+      fail("Usage: workflow readiness [codex|claude]");
+    const executors: Executor[] =
+      requested === undefined ? ["codex", "claude"] : [requested];
+    process.stdout.write(
+      `${JSON.stringify({
+        readiness: executors.map((executor) =>
+          checkExecutorReadiness(executor),
+        ),
+      })}\n`,
+    );
+    return;
+  }
+  fail(
+    "Usage: workflow <init|adopt|status|dispatch|record|cancel|readiness> ...",
+  );
 }
 void main(process.argv.slice(2)).catch((error: unknown) => {
   process.stderr.write(
