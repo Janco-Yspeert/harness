@@ -961,3 +961,51 @@
   sub-tests pass).
 - Promotion: not performed (result is `BLOCKED`, not `PASS`).
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 030 — Evaluator Verification (attempt 012 / canonical attempt 014)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify
+  time), evaluator revision `003` (unchanged since attempt 011; no
+  correction needed or performed).
+- Input: cycle `002` canonical implementation-handoff commit
+  `eaaa53dc8ea487deff592f804154fd447bb26f86` (implementation attempt 10) —
+  unchanged from attempt 011; project `HEAD` at session start
+  (`26d0a2e944be7d8e088364f8ab89d97893e75426`, attempt 011's own docs commit,
+  no further implementation-source commits); all frozen public inputs
+  confirmed byte-identical to their frozen identities (no specification
+  drift).
+- Result: `BLOCKED`, `INFRASTRUCTURE_FAILURE`, private attempt `012`
+  (canonical attempt `14`). No correction needed or performed. This attempt
+  was specifically dispatched to independently inspect a claimed
+  already-completed live-Claude Harness run
+  (`f6108ed0-a56e-47e6-b598-2188a57beddb`) through the normal
+  `GET /workflow-runs/{id}` / `GET /workflow-runs/{id}/log` inspection
+  surface for AC08/AC09/AC34, without rerunning the fixture itself.
+- Output: `verification-feedback-012.md` (safe diagnostics; does not itself
+  confirm a criterion failure).
+- Mandatory executable hidden coverage: 6/6 sub-tests pass (fresh run against
+  this unchanged commit), including both `E2` fixtures.
+- Mandatory non-executable coverage: 32 of 35 mandatory criteria reused/
+  re-confirmed `SATISFIED` from attempt 011's unchanged evidence for the same
+  unchanged candidate. AC08, AC09 (LP1) and dependent AC34 remain `BLOCKED`:
+  this attempt confirmed, via a direct request to the normal run-inspection
+  surface using the same HTTP mechanism the public CLI itself uses, a
+  listening-socket scan, and source-level confirmation that run records are
+  held only in the originating host process's memory with no disk fallback,
+  that this evaluation sandbox has no network path to any live Harness host
+  process and therefore cannot inspect the claimed run or its log.
+- Repository evidence inspected: `tools/workflow.ts`'s own host-URL
+  resolution and `fetchRun`/log-path logic; `src/workflow-run.ts`'s
+  `WorkflowRunRegistry` persistence model; a targeted search for the claimed
+  run ID across both checkouts (no matches).
+- Restricted evaluator material inspected: this spike's own private
+  evaluator workspace (read only; no correction was needed).
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (78/78), and E1-E5 re-run fresh (6/6 sub-tests pass), both
+  identical to attempt 011; `npm run typecheck`/`lint`/`format:check`/`git
+  diff --check` not independently re-run (no implementation source content
+  changed since attempt 011, which already confirmed all four green).
+- Promotion: not performed (result is `BLOCKED`, not `PASS`).
+- Measurement cutoff: immediately before this manifest update.
