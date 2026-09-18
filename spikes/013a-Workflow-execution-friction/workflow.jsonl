@@ -48,3 +48,4 @@
 {"transition":"implementation-handoff","at":"2026-09-17T20:40:20.840Z","evidence":{"cycle":"002","commit":"50dbcdbf55e76ce53509e98bdfa46f69bb526b92","attempt":11}}
 {"transition":"implementation-handoff","at":"2026-09-18T15:04:18.276Z","evidence":{"cycle":"002","commit":"2c8bdb78d56dad19253dc634ae3ab57552f7e716","attempt":12}}
 {"transition":"implementation-handoff","at":"2026-09-18T16:12:24.751Z","evidence":{"cycle":"002","commit":"c9c0ea1d027f0e31558efde15a08e5d3a0ee5a88","attempt":13}}
+{"transition":"verification-allocated","at":"2026-09-18T20:05:19.751Z","evidence":{"cycle":"002","commit":"c9c0ea1d027f0e31558efde15a08e5d3a0ee5a88","implementationAttempt":13,"attempt":16,"evaluatorRevision":"003"}}
