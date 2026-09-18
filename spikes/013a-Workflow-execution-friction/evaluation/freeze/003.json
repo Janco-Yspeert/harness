@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "003",
+  "priorRevision": "002",
+  "priorRevisionIdentity": "sha256:782957faf0ae87cb8056216a75cd0dae6b97959de1be09cc78a8c0977f194c67",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 11,
+    "identity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802"
+  },
+  "bootstrapAuthority": {
+    "name": "evaluator",
+    "contractVersion": 11,
+    "sourceCommit": "fae05912f59f8ebdb8982ab16deb26e293754647",
+    "sourcePath": "skills/evaluator/SKILL.md",
+    "identity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802",
+    "snapshotPath": "spikes/013a-Workflow-execution-friction/bootstrap/evaluator-skill.md",
+    "note": "Frozen spike.md 'Evaluator bootstrap and self-modification exception': Spike 013a evaluator prepare and verify both execute under this pinned pre-implementation evaluator skill. Working-tree skills/evaluator/SKILL.md is byte-identical to this pin at preparation time."
+  },
+  "inputs": {
+    "brief": "sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac",
+    "briefCommit": "c543cae",
+    "designMap": "sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407",
+    "designMapCommit": "68f710a",
+    "evaluationRequirements": "sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf"
+  },
+  "artifacts": {
+    "eval-spec.md": "sha256:7d944725376a078e21b236124b92044a03ad703059cff88b8512f9f0ab6d0195",
+    "case-manifest.json": "sha256:c53b0c3de7562032676a98518e7b102487d6afd23e4af8b6ce01072cb3e3c0c3",
+    ".hidden-test/manifest.json": "sha256:a7e4bdb50573dfc96007002c936628cd285b4785d34a68094bb53b4c388d3ee0",
+    ".hidden-test/dispatch-inspection-non-consuming.test.ts": "sha256:abcfa00904921b7d032563e2d38669b8712975c0c49e3242757f3027be70f514",
+    ".hidden-test/canonical-authority-adoption.test.ts": "sha256:f3e1b337a0acfe882597e6e3bb95da7740d1a632dd1c65543bb6c2b5a342ce0e",
+    ".hidden-test/recoverable-preexecution-failure.test.ts": "sha256:340def2013cb61912d222738cf738a9510ca58c7d379a79cb4f1b3c898c4be65",
+    ".hidden-test/blocked-phase-retry.test.ts": "sha256:c19d954f7ab0fb311be2421f658e7e4ae385f324d5868290fce5e9f300c29f02",
+    ".hidden-test/authority-status-evidence-aware-transitions.test.ts": "sha256:9eec27454cdd7d235d76687e104af3235251258e455268d475bdcedfa67d8785"
+  },
+  "freezeInventory": [
+    "eval-spec.md",
+    "case-manifest.json",
+    ".hidden-test/manifest.json",
+    ".hidden-test/dispatch-inspection-non-consuming.test.ts",
+    ".hidden-test/canonical-authority-adoption.test.ts",
+    ".hidden-test/recoverable-preexecution-failure.test.ts",
+    ".hidden-test/blocked-phase-retry.test.ts",
+    ".hidden-test/authority-status-evidence-aware-transitions.test.ts"
+  ],
+  "integrityChecks": [
+    "validatePreparedEvaluatorBundle (tools/evaluator-integrity.ts) over the assembled 35-criterion / 17-procedure bundle: PASS, 0 diagnostics",
+    "every required criterion (AC01-AC35) has exactly one explicit criterion evidence record and a non-empty disposition/sufficiency reason",
+    "every criterion.procedures entry resolves to an existing case-manifest.json case, and every case maps back to at least one criterion",
+    "every executable case's requiredMaterial (its .hidden-test/*.test.ts file) is present in materialPaths and freezeInventory",
+    "coverage-map.json (public, unchanged from revision 001) criterion/procedure sets remain consistent with case-manifest.json (private): same 35 ids, same procedure assignments; only .hidden-test/canonical-authority-adoption.test.ts, case-manifest.json's E2 entry, and eval-spec.md changed in this revision - AC16/AC17/AC19's criteria, mode, and procedure (E2) are unchanged, only E2's own coverage breadth and descriptive text changed",
+    "corrected/extended E2 (.hidden-test/canonical-authority-adoption.test.ts) run via `node --test <file>` against both the unimplemented baseline (project commit 6e5ff54, tools/workflow.ts/src/workflow-run.ts/src/workflow-backend.ts/src/index.ts restored to that commit) and the closed cycle-001 candidate that produced the promoted PASS (commit bb541265d994aad1f1af30446bf0a19ad59e1537, current HEAD 9013163): fixture 1 (original) PASSES against the candidate and FAILS against baseline (unchanged from revision 002); fixture 2 (new) FAILS against both the candidate (for the exact reason human acceptance identified: 'Evaluator verify requires a completed implementation', canonical implementation-handoff authority not consulted) and the baseline, for the documented reason",
+    "E1, E3, E4, E5 unchanged from revision 002 (file identities unchanged); re-run against current HEAD (9013163): E1 PASS, E3 PASS, E4 PASS, E5 PASS",
+    "npm test (74 total: 71 pass, 3 fail) at HEAD 9013163; the 3 failures (test/workflow-run.integration.test.ts sandbox-path/permission-profile assertions) are a known, pre-existing, this-evaluator-session-environment artifact of HARNESS_EVALUATOR_HIDDEN_WORKSPACE being set (documented in attempt 008's eval-result.md 'Finding 2'), unrelated to and unaffected by this revision's hidden-test-only change; npm run typecheck, npm run lint, npm run format:check, git diff --check each exit 0 at HEAD 9013163",
+    "skills/evaluator/SKILL.md (working tree at HEAD), git show fae0591:skills/evaluator/SKILL.md, and bootstrap/evaluator-skill.md (working tree) are byte-identical (sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802)",
+    "new .hidden-test/canonical-authority-adoption.test.ts typechecks under the project's strict tsconfig options (tsc --noEmit --ignoreConfig with matching flags) with 0 errors, and is Prettier-formatted"
+  ],
+  "preFreezeIntegrityValidation": {
+    "status": "PASS",
+    "diagnostics": [],
+    "privateInventoryIdentity": "sha256:81b8f9ffa29a97172e46dd47c72cda3512977270d0917cf23f937fcceb400810",
+    "validatorResultBinding": "sha256:97b62805fc3deaacbf80d53d41a672960d5f8329c34bdcab3526b4bf2b47e579"
+  }
+}

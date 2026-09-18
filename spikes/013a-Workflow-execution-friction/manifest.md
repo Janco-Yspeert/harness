@@ -1312,3 +1312,68 @@
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update. The candidate
   commit follows and is not included above.
+
+## Run 035 — Evaluator Verification (attempt 014 / canonical attempt 16)
+
+- Skill: `evaluator` v11 (pinned pre-implementation authority,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`;
+  confirmed byte-identical to the working-tree evaluator skill at verify
+  time), evaluator revision `003` (unchanged since attempt 009; no correction
+  needed or performed).
+- Input: cycle `002` canonical implementation-handoff commit
+  `c9c0ea1d027f0e31558efde15a08e5d3a0ee5a88` (implementation attempt 13); all
+  frozen public inputs confirmed byte-identical to their frozen identities
+  (no specification drift); a genuine, host-produced durable `LP1` run record
+  (`13bb9de7-facc-4c18-a86d-0d08b019494c`, both public and hidden copies)
+  already present on disk before this session began, bound to this exact
+  candidate.
+- Result: `PASS`, private attempt `014` (canonical attempt `16`). All 35
+  acceptance criteria `SATISFIED`. Evaluator revision `003` unchanged; no
+  correction needed or performed.
+- Output: none (no confirmed implementation failure; no public feedback
+  artifact required for a `PASS`).
+- Mandatory executable hidden coverage: 6/6 sub-tests pass (fresh run against
+  this commit, public repository as working directory).
+- Mandatory non-executable coverage: all 35 mandatory criteria confirmed
+  `SATISFIED`. 32 were re-confirmed fresh against this candidate via a full
+  diff review (three implementation-attempt commits since the last-verified
+  candidate: bounded git-capability translation, host-mediated
+  `publishCommit`, durable-evidence-root decoupling, LP1 permission-profile
+  self-validation — none of it touching the Codex/host-boundary dispatch path,
+  canonical-authority resolution, role-result schema, or observability
+  surface beyond the intended, strictly-additive/-narrowing changes) plus the
+  full regression suite. `AC08`, `AC09` (`LP1`) and dependent `AC34` change
+  from `BLOCKED` to `SATISFIED`: this evaluator independently, cryptographically
+  corroborated the durable `13bb9de7` run record against primary sources it
+  did not control — re-hashing the hidden checkout's actual log file against
+  the public record's declared `logIdentity`, and independently recomputing
+  the run's `basisIdentity`/`ledgerIdentity` from the real source algorithm
+  (`src/workflow-run.ts`) and immutable Git history — rather than accepting
+  the record's own self-description, matching or exceeding the standard set
+  by attempt 013's rejection of prompt-pasted "evidence" for a different,
+  uncorroborable claimed run.
+- Repository evidence inspected: the full implementation diff since the
+  last-verified candidate (`src/claude-workflow.ts`, `src/workflow-run.ts`,
+  `src/workflow-backend.ts`, `src/index.ts`, `tools/workflow.ts`,
+  `fixtures/lp1.json`, test files); the `13bb9de7` durable run record and log
+  in both workspaces; the actual committed `workflow.jsonl` history used to
+  independently recompute its embedded derived identities; four sibling
+  genuine `implementation`-role run records cross-checked against
+  `correction-directive-012.md`/`013.md` and this manifest's own committed
+  history.
+- Restricted evaluator material inspected: this spike's own private evaluator
+  workspace (read only; no correction was needed); private evidence recorded
+  at `.eval/evidence/lp1-durable-evidence-2026-09-18.md`.
+- Checks: pinned-authority byte-identity confirmation; frozen-input drift
+  check; `npm test` (86/86), `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, and `git diff --check` all green at the
+  implementation commit; E1-E5 re-run fresh (6/6 sub-tests pass); independent
+  recomputation of the LP1 run record's `logIdentity`, `basisIdentity`/
+  `handoffIdentity`, and `ledgerIdentity` from primary Git history and the
+  real source hashing algorithm, each an exact match; confirmed the durable
+  evidence location gained no stray files from either regression run.
+- Promotion: completed. The complete evaluator-owned evidence chain for both
+  cycles (private attempt ledger, all fourteen immutable attempt results,
+  evaluator revisions `002` and `003`'s frozen bundles) is promoted
+  canonically under `evaluation/**`; see `evaluation/promotion.json`.
+- Measurement cutoff: immediately before this manifest update.
