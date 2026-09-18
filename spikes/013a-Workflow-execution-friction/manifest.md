@@ -1377,3 +1377,45 @@
   evaluator revisions `002` and `003`'s frozen bundles) is promoted
   canonically under `evaluation/**`; see `evaluation/promotion.json`.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 036 — As-Built
+
+- Skill: `as-built` v2.
+- Input: final evaluated implementation
+  `c9c0ea1d027f0e31558efde15a08e5d3a0ee5a88` (cycle `002`, implementation
+  attempt `13`); frozen brief
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`;
+  frozen Design Map
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`;
+  and promoted evaluator revision `003`, private attempt `014` (canonical
+  verification attempt `16`), `PASS`, all 35 acceptance criteria
+  `SATISFIED` (`evaluation/promotion.json`, `passingAttempt: "014"`).
+- Result: rewrote `as-built.md` from a first-principles inspection of the
+  final candidate's full diff and current source, superseding the prior
+  as-built synthesis (which described an earlier, since-superseded
+  implementation revision), recording the execution-binding, delegated-
+  authority, semantic-result, canonical-adoption/retry, observability,
+  durable-evidence, candidate-bound-fixture, and bounded git-capability/
+  host-mediated-publication behavior actually built. New identity:
+  `sha256:c8230fb2771b84929c7f90104dce02427138e1359ebcb84eddabf92eed1d8364`.
+- Contract comparison: no Missing or Contradictory behavior observed; two
+  Extra items named and reasoned about explicitly (the host-mediated
+  `publishCommit`/`git-publish` primitive, and the informational-only
+  `readiness` probe) as bounded selected implementation in service of the
+  frozen contract, not additional required behavior beyond it.
+- Repository evidence inspected: the full implementation diff at the final
+  candidate commit (`src/claude-workflow.ts`, `src/workflow-run.ts`,
+  `src/index.ts`, `src/workflow-backend.ts`, `tools/workflow.ts`,
+  `fixtures/lp1.json`, and their test coverage); the frozen brief, Design
+  Map, and `eval-requirements.md`; canonical `workflow.jsonl` authority; and
+  the promoted evaluation attempt ledger and promotion record.
+- Restricted evaluator material inspected: only promoted artifacts already
+  committed under this spike's `evaluation/**`, as authorized for As-Built
+  synthesis; `harness-hidden` was not read, searched, or inspected.
+- Checks: all four frozen-input identities (`spike.md`, `design-map.md`,
+  `eval-requirements.md`, `coverage-map.json`) recomputed directly from the
+  working tree and confirmed to match the promoted evaluation's recorded
+  identities; `git diff --check` passes for the new `as-built.md` before this
+  manifest update. The pre-existing, unrelated uncommitted Spike 011 ledger
+  edit and other untracked pre-existing drift were preserved and excluded.
+- Measurement cutoff: immediately before this manifest update.
