@@ -55,6 +55,7 @@ const WORKFLOW_WORKER_CAPABILITIES = [
   "test-build-lint-format",
   "git-inspect",
   "git-commit",
+  "git-publish",
   "workflow-bookkeeping",
 ] as const;
 
@@ -218,6 +219,18 @@ export interface WorkflowRunRecord {
   readonly terminalAt: string | null;
   readonly logLocation: string;
   readonly accounting: WorkflowRunAccounting;
+  readonly publishResult: WorkflowPublishResult | null;
+}
+
+// Host-mediated publication result: the role reports a commit it already
+// created; the host verifies it, pushes it using host-owned credentials, and
+// records what happened here. The provider process never needs network or
+// Git-remote credentials of its own for this to succeed.
+export interface WorkflowPublishResult {
+  readonly commit: string;
+  readonly branch: string;
+  readonly pushed: boolean;
+  readonly at: string;
 }
 
 export function isSuccessfulWorkflowFixtureEvidence(
@@ -277,7 +290,8 @@ export type WorkflowRunEventType =
   | "workflow-run.cancelled"
   | "workflow-run.replaced"
   | "workflow-run.role-succeeded"
-  | "workflow-run.role-non-success";
+  | "workflow-run.role-non-success"
+  | "workflow-run.published";
 
 export type WorkflowRunEventPublisher = (
   type: WorkflowRunEventType,
@@ -335,6 +349,32 @@ export function parseWorkflowFixtureRequest(
     candidateCommit,
     parentRunId: optionalString(raw.parentRunId, "parentRunId"),
   };
+}
+
+export interface WorkflowPublishRequest {
+  readonly commit: string;
+  readonly branch: string;
+}
+
+export function parseWorkflowPublishRequest(
+  body: unknown,
+): WorkflowPublishRequest {
+  if (typeof body !== "object" || body === null || Array.isArray(body))
+    throw new WorkflowRunRequestError("publish request must be a JSON object");
+  const raw = body as Record<string, unknown>;
+  if (!Object.keys(raw).every((key) => ["commit", "branch"].includes(key)))
+    throw new WorkflowRunRequestError(
+      "publish request only accepts commit and branch",
+    );
+  const commit = requireString(raw.commit, "commit");
+  if (!/^[a-f0-9]{40}$/.test(commit))
+    throw new WorkflowRunRequestError(
+      "commit must be a full lowercase Git commit identity",
+    );
+  const branch = requireString(raw.branch, "branch");
+  if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(branch) || branch.includes(".."))
+    throw new WorkflowRunRequestError("branch is not a valid branch name");
+  return { commit, branch };
 }
 
 function requireString(value: unknown, field: string): string {
@@ -1169,6 +1209,7 @@ class InternalRun {
   lastActivityAtMs: number | null = null;
   terminalAtMs: number | null = null;
   backend: WorkflowRunBackend | null = null;
+  publishResult: WorkflowPublishResult | null = null;
   readonly logChunks: string[] = [];
 
   constructor(
@@ -1227,6 +1268,7 @@ class InternalRun {
       lastActivityAt: iso(this.lastActivityAtMs),
       terminalAt: iso(this.terminalAtMs),
       logLocation: workflowRunLogLocation(this.runId),
+      publishResult: this.publishResult,
       accounting: {
         allocatedAt: new Date(this.createdAtMs).toISOString(),
         startedAt: iso(this.startedAtMs),
@@ -1499,6 +1541,78 @@ export class WorkflowRunRegistry {
   log(runId: string): string | undefined {
     const run = this.#runs.get(runId);
     return run === undefined ? undefined : run.logChunks.join("");
+  }
+
+  // Host-mediated publication. A role that created a local commit reports its
+  // identity here instead of needing its own Git-remote network/credentials.
+  // The host verifies the commit exists, is a fast-forward descendant of the
+  // branch's current remote tip (never rewriting or discarding already-
+  // published history), and that the run's own resolved permission profile
+  // actually grants git-publish, then pushes it using the host process's own
+  // credentials. This is the primitive a network-isolated protected role can
+  // use instead of gaining outbound network access.
+  publishCommit(
+    runId: string,
+    commit: string,
+    branch: string,
+  ): WorkflowRunRecord {
+    const run = this.#runs.get(runId);
+    if (run === undefined) {
+      throw new WorkflowRunNotFoundError(`unknown workflow run ${runId}`);
+    }
+    if (!run.spec.permissionProfile.capabilities.includes("git-publish")) {
+      throw new WorkflowRunRequestError(
+        `run ${runId}'s resolved permission profile does not grant git-publish`,
+      );
+    }
+    const workspace = run.spec.workspaces[0];
+    if (workspace === undefined) {
+      throw new WorkflowRunRequestError(`run ${runId} has no workspace`);
+    }
+    try {
+      execFileSync("git", ["cat-file", "-e", `${commit}^{commit}`], {
+        cwd: workspace,
+        stdio: "pipe",
+      });
+    } catch {
+      throw new WorkflowRunRequestError(
+        `commit ${commit} does not exist in this repository`,
+      );
+    }
+    let remoteTip: string;
+    try {
+      remoteTip = execFileSync(
+        "git",
+        ["rev-parse", `refs/remotes/origin/${branch}`],
+        { cwd: workspace, encoding: "utf8", stdio: "pipe" },
+      ).trim();
+    } catch {
+      // The branch has no remote tip yet; any valid commit is trivially a
+      // "fast-forward" of an empty history.
+      remoteTip = commit;
+    }
+    try {
+      execFileSync("git", ["merge-base", "--is-ancestor", remoteTip, commit], {
+        cwd: workspace,
+        stdio: "pipe",
+      });
+    } catch {
+      throw new WorkflowRunRequestError(
+        `commit ${commit} is not a fast-forward descendant of origin/${branch}; refusing to rewrite published history`,
+      );
+    }
+    execFileSync("git", ["push", "origin", `${commit}:refs/heads/${branch}`], {
+      cwd: workspace,
+      stdio: "pipe",
+    });
+    run.publishResult = {
+      commit,
+      branch,
+      pushed: true,
+      at: new Date(this.#now()).toISOString(),
+    };
+    this.#emit("workflow-run.published", run);
+    return run.toRecord();
   }
 
   async cancel(runId: string, reason?: string): Promise<WorkflowRunRecord> {

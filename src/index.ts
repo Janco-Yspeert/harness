@@ -18,6 +18,7 @@ import type {
 import { createLocalWorkflowBackend } from "./workflow-backend.ts";
 import {
   parseWorkflowFixtureRequest,
+  parseWorkflowPublishRequest,
   parseWorkflowReplaceRequest,
   parseWorkflowRoleResultRequest,
   parseWorkflowRunRequest,
@@ -325,7 +326,7 @@ export async function startHarnessHost(
       }
 
       const runMatch = pathname.match(
-        /^\/workflow-runs\/([^/]+)(\/log|\/cancel|\/replace|\/result)?$/,
+        /^\/workflow-runs\/([^/]+)(\/log|\/cancel|\/replace|\/result|\/publish)?$/,
       );
       if (runMatch === null) {
         response.writeHead(404).end("Not found\n");
@@ -384,6 +385,15 @@ export async function startHarnessHost(
             runId,
             parseWorkflowRoleResultRequest(await readJsonBody(request)),
           ),
+        });
+        return;
+      }
+      if (suffix === "/publish" && method === "POST") {
+        const { commit, branch } = parseWorkflowPublishRequest(
+          await readJsonBody(request),
+        );
+        sendJson(response, 200, {
+          run: workflowRuns.publishCommit(runId, commit, branch),
         });
         return;
       }

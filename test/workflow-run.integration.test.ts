@@ -647,7 +647,7 @@ void test("canonical evaluator delegation is derived from the requesting workflo
     );
     assert.equal(
       command[command.indexOf("--allowedTools") + 1],
-      "Bash(git *),Bash(npm *),Bash(npx *),Bash(node *),Bash(python3 *)",
+      "Bash(git status *),Bash(git diff *),Bash(git log *),Bash(git show *),Bash(git rev-parse *),Bash(git cat-file *),Bash(git merge-base *),Bash(git add *),Bash(git commit *),Bash(git push *),Bash(npm *),Bash(npx *),Bash(node *),Bash(python3 *)",
     );
     assert.ok(!command.includes("--allowed-tools"));
     assert.ok(
@@ -1249,6 +1249,283 @@ void test("a fixture whose declared permissionProfile disagrees with its resolve
   }
 });
 
+function ordinaryClaudeSpec(capabilities: string[]): ResolvedWorkflowRunSpec {
+  return {
+    slot: { workflow: "011", phase: "implementation", methodologyAttempt: "1" },
+    role: "implementation",
+    executor: "claude",
+    invocationMode: "delegated",
+    workspaces: [repositoryRoot],
+    permissionProfile: {
+      id: "repo-local-worker",
+      workspaces: [repositoryRoot],
+      capabilities,
+    },
+    skill: null,
+    skillVersion: null,
+    contract: {
+      name: "implementation",
+      content: "ordinary contract",
+      path: "skills/implementation/SKILL.md",
+      version: "3",
+      identity: `sha256:${"0".repeat(64)}`,
+      deliveryMode: "host-directed-repository-load",
+    },
+    allocationAuthority: { type: "host-workflow-allocation" },
+    verificationAuthority: null,
+    orchestrator: null,
+    prompt: "do the work",
+  };
+}
+
+void test("ordinary Claude git-capability translation is bounded to the granted subcommands, never blanket Bash(git *)", () => {
+  const withGit = buildExecutorCommand(
+    ordinaryClaudeSpec([
+      "repository-read",
+      "workspace-write",
+      "git-inspect",
+      "git-commit",
+      "git-publish",
+    ]),
+  );
+  const allowedIndex = withGit.indexOf("--allowedTools");
+  assert.ok(allowedIndex !== -1);
+  const allowed = (withGit[allowedIndex + 1] ?? "").split(",");
+  for (const expected of [
+    "Bash(git status *)",
+    "Bash(git diff *)",
+    "Bash(git log *)",
+    "Bash(git show *)",
+    "Bash(git rev-parse *)",
+    "Bash(git cat-file *)",
+    "Bash(git merge-base *)",
+    "Bash(git add *)",
+    "Bash(git commit *)",
+    "Bash(git push *)",
+  ])
+    assert.ok(allowed.includes(expected), expected);
+  assert.ok(!allowed.includes("Bash(git *)"));
+  // Permission decisions are now Harness-owned regardless of the launching
+  // account's own ambient settings -- exactly the gap that left a legitimate
+  // Harness-bound worker blocked at git add/commit/push despite already
+  // holding those capabilities.
+  assert.equal(withGit[withGit.indexOf("--setting-sources") + 1], "");
+  assert.equal(withGit[withGit.indexOf("--permission-prompts") + 1], "none");
+
+  const withoutGit = buildExecutorCommand(
+    ordinaryClaudeSpec(["repository-read", "workspace-write"]),
+  );
+  const withoutGitAllowedIndex = withoutGit.indexOf("--allowedTools");
+  const withoutGitAllowed =
+    withoutGitAllowedIndex === -1
+      ? []
+      : (withoutGit[withoutGitAllowedIndex + 1] ?? "").split(",");
+  for (const forbidden of [
+    "Bash(git add *)",
+    "Bash(git commit *)",
+    "Bash(git push *)",
+    "Bash(git *)",
+  ])
+    assert.ok(!withoutGitAllowed.includes(forbidden));
+});
+
+function createIsolatedGitWorkspace(): {
+  workspace: string;
+  remote: string;
+  branch: string;
+  initialCommit: string;
+} {
+  const gitEnv = {
+    ...process.env,
+    GIT_AUTHOR_NAME: "Harness test",
+    GIT_AUTHOR_EMAIL: "harness-test@example.invalid",
+    GIT_COMMITTER_NAME: "Harness test",
+    GIT_COMMITTER_EMAIL: "harness-test@example.invalid",
+  };
+  const remote = mkdtempSync(join(tmpdir(), "harness-publish-remote-"));
+  execFileSync("git", ["init", "--bare", "-b", "main", remote]);
+  const workspace = mkdtempSync(join(tmpdir(), "harness-publish-workspace-"));
+  execFileSync("git", ["init", "-b", "main", workspace], { env: gitEnv });
+  mkdirSync(join(workspace, "spikes", "999z-fixture-publish"), {
+    recursive: true,
+  });
+  mkdirSync(join(workspace, "skills", "implementation"), { recursive: true });
+  writeFileSync(
+    join(workspace, "skills", "implementation", "SKILL.md"),
+    "# Fixture implementation skill\n\nContract version: 1\n",
+  );
+  execFileSync("git", ["add", "-A"], { cwd: workspace, env: gitEnv });
+  execFileSync("git", ["commit", "-m", "initial"], {
+    cwd: workspace,
+    env: gitEnv,
+  });
+  const initialCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: workspace,
+    env: gitEnv,
+    encoding: "utf8",
+  }).trim();
+  execFileSync("git", ["remote", "add", "origin", remote], {
+    cwd: workspace,
+    env: gitEnv,
+  });
+  execFileSync("git", ["push", "origin", "main"], {
+    cwd: workspace,
+    env: gitEnv,
+  });
+  return { workspace, remote, branch: "main", initialCommit };
+}
+
+void test("host-mediated publishCommit pushes a validated commit using host credentials and records the result", async (t) => {
+  const { workspace, remote, branch } = createIsolatedGitWorkspace();
+  t.after(() => {
+    rmSync(workspace, { recursive: true, force: true });
+    rmSync(remote, { recursive: true, force: true });
+  });
+  const gitEnv = {
+    ...process.env,
+    GIT_AUTHOR_NAME: "Harness test",
+    GIT_AUTHOR_EMAIL: "harness-test@example.invalid",
+    GIT_COMMITTER_NAME: "Harness test",
+    GIT_COMMITTER_EMAIL: "harness-test@example.invalid",
+  };
+  writeFileSync(join(workspace, "new-file.txt"), "candidate content\n");
+  execFileSync("git", ["add", "-A"], { cwd: workspace, env: gitEnv });
+  execFileSync("git", ["commit", "-m", "candidate"], {
+    cwd: workspace,
+    env: gitEnv,
+  });
+  const candidateCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: workspace,
+    env: gitEnv,
+    encoding: "utf8",
+  }).trim();
+
+  const { host } = await startHarness();
+  try {
+    const { status, run } = await allocate(host, {
+      workspace,
+      slot: {
+        workflow: "999z-fixture-publish",
+        phase: "implementation",
+        methodologyAttempt: "1",
+      },
+      role: "implementation",
+      executor: "claude",
+    });
+    assert.equal(status, 201);
+    // Ordinary implementation workers still have no harness-hidden access --
+    // git-publish did not widen the workspace grant.
+    assert.deepEqual(run.workspaces, [workspace]);
+    assert.ok(!run.workspaces.some((path) => path.includes("harness-hidden")));
+    assert.ok(
+      (
+        run.permissionProfile as { capabilities: string[] }
+      ).capabilities.includes("git-publish"),
+    );
+    assert.equal(run.publishResult, null);
+
+    const response = await fetch(
+      `${host.url}/workflow-runs/${run.runId}/publish`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ commit: candidateCommit, branch }),
+      },
+    );
+    assert.equal(response.status, 200);
+    const published = (
+      (await response.json()) as { run: { publishResult: unknown } }
+    ).run;
+    assert.deepEqual(published.publishResult, {
+      commit: candidateCommit,
+      branch,
+      pushed: true,
+      at: (published.publishResult as { at: string }).at,
+    });
+    assert.match(
+      (published.publishResult as { at: string }).at,
+      /^\d{4}-\d{2}-\d{2}T.*Z$/,
+    );
+
+    const remoteTip = execFileSync("git", ["rev-parse", "refs/heads/main"], {
+      cwd: remote,
+      encoding: "utf8",
+    }).trim();
+    assert.equal(remoteTip, candidateCommit);
+
+    const persisted = await getRun(host, run.runId);
+    assert.deepEqual(persisted.publishResult, published.publishResult);
+  } finally {
+    await host.close();
+  }
+});
+
+void test("host-mediated publishCommit refuses a commit that is not a fast-forward descendant of the remote branch", async (t) => {
+  const { workspace, remote, branch, initialCommit } =
+    createIsolatedGitWorkspace();
+  t.after(() => {
+    rmSync(workspace, { recursive: true, force: true });
+    rmSync(remote, { recursive: true, force: true });
+  });
+  const gitEnv = {
+    ...process.env,
+    GIT_AUTHOR_NAME: "Harness test",
+    GIT_AUTHOR_EMAIL: "harness-test@example.invalid",
+    GIT_COMMITTER_NAME: "Harness test",
+    GIT_COMMITTER_EMAIL: "harness-test@example.invalid",
+  };
+  // An orphan commit sharing no history with the pushed branch -- exactly
+  // the shape a host-mediated publish must refuse, since accepting it would
+  // let a role silently rewrite/discard already-published history.
+  const orphanBlob = execFileSync("git", ["hash-object", "-w", "--stdin"], {
+    cwd: workspace,
+    input: "orphan\n",
+    encoding: "utf8",
+  }).trim();
+  const orphanTreeId = execFileSync("git", ["mktree"], {
+    cwd: workspace,
+    input: `100644 blob ${orphanBlob}\torphan.txt\n`,
+    encoding: "utf8",
+  }).trim();
+  const orphanCommit = execFileSync(
+    "git",
+    ["commit-tree", orphanTreeId, "-m", "orphan"],
+    { cwd: workspace, env: gitEnv, encoding: "utf8" },
+  ).trim();
+
+  const { host } = await startHarness();
+  try {
+    const { run } = await allocate(host, {
+      workspace,
+      slot: {
+        workflow: "999z-fixture-publish",
+        phase: "implementation",
+        methodologyAttempt: "1",
+      },
+      role: "implementation",
+      executor: "claude",
+    });
+    const response = await fetch(
+      `${host.url}/workflow-runs/${run.runId}/publish`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ commit: orphanCommit, branch }),
+      },
+    );
+    assert.equal(response.status, 400);
+    const remoteTip = execFileSync("git", ["rev-parse", "refs/heads/main"], {
+      cwd: remote,
+      encoding: "utf8",
+    }).trim();
+    assert.equal(remoteTip, initialCommit);
+    const persisted = await getRun(host, run.runId);
+    assert.equal(persisted.publishResult, null);
+  } finally {
+    await host.close();
+  }
+});
+
 void test("the daemon may grant only the fixed evaluator hidden sibling", async () => {
   const { host } = await startHarness();
   const prior = process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE;
@@ -1676,7 +1953,12 @@ void test("the default local backend uses a bounded, non-interactive executor mo
     permissionProfile: {
       id: workspaces.length > 1 ? "evaluator" : "repo-local-worker",
       workspaces,
-      capabilities: [],
+      // A real resolved profile always grants workspace-write; an empty set
+      // here was never realistic and, now that Claude command construction is
+      // capability-driven, would misreport this as a read-only permission
+      // mode instead of exercising the actual bounded-executor-mode shape
+      // this test targets.
+      capabilities: ["repository-read", "workspace-write"],
     },
     skill: null,
     skillVersion: null,

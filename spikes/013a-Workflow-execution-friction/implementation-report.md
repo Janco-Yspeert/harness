@@ -550,3 +550,111 @@ only the pre-existing genuine LP1 evidence file
 (`01b18bae-db12-407b-a57e-0f4cfb8869b6.json`); the real
 `spikes/011-host-owned-workflow-runs/.workflow/runs/` file count is
 unchanged by this candidate's test run.
+
+## Git-capability translation and host-mediated publication correction (cycle 002, implementation attempt 13)
+
+Correction directive: `correction-directive-013.md`, root-authority input
+following unchanged candidate `2c8bdb78d56dad19253dc634ae3ab57552f7e716`
+(implementation attempt 12). Two prior dispatches under this same attempt
+correctly stopped rather than proceed on unverified claims: the first found a
+real uncommitted `spikes/011-host-owned-workflow-runs/workflow.jsonl` diff the
+original directive had not accounted for (`correction-directive-013b.md`); the
+second caught an inaccurate corroboration claim in that follow-up directive
+itself, which `correction-directive-013c.md` then corrected. Before proceeding
+this candidate independently re-verified `correction-directive-013c.md`'s two
+load-bearing primary facts rather than accepting either directive's prose: the
+sole added line in `git diff -- spikes/011-host-owned-workflow-runs/workflow.jsonl`
+carries `"at":"2026-09-11T19:18:29.452Z"`, and this spike's own
+`brief-frozen` transition in `workflow.jsonl` is recorded over an hour later at
+`"at":"2026-09-11T20:23:18.431Z"`. Both matched exactly, so the uncommitted
+Spike 011 event predates this spike's own frozen brief and cannot have been
+created by any Spike 013a implementation attempt; it was left exactly as
+found, excluded from this candidate.
+
+### What changed
+
+Attempts 11 and 12 (and earlier attempts) completed real implementation and
+check work but could not finish their own Git publication: the ordinary Claude
+execution path never translated Harness's resolved permission-profile
+capabilities (`git-inspect`, `git-commit`) into actual Claude command
+permissions, so a worker holding those capabilities was still blocked at
+`git add`/`commit`/`push` by its own session's ambient allowlist, and the
+orchestrator had to finish publication manually. This candidate fixes that
+translation and adds a host-mediated publication primitive so a worker can
+prove the fix by using it.
+
+`src/claude-workflow.ts` now has one shared `resolveClaudeCapabilityTools()`
+helper used by both the ordinary and protected/system-contract Claude
+execution paths. Git capabilities are translated to bounded per-subcommand
+`--allowedTools` entries (`Bash(git status *)`, `Bash(git diff *)`,
+`Bash(git log *)`, `Bash(git show *)`, `Bash(git rev-parse *)`,
+`Bash(git cat-file *)`, `Bash(git merge-base *)`, `Bash(git add *)`,
+`Bash(git commit *)`, `Bash(git push *)`) instead of the previous blanket
+`Bash(git *)`, which would equally have admitted `git reset --hard`,
+`git push --force`, `git branch -D`, and any other destructive git operation
+regardless of which specific git capability was actually granted. The
+ordinary (non-protected) path now also passes `--setting-sources ""` and
+`--permission-prompts none`, so its effective permissions are deterministic
+and Harness-owned rather than dependent on the launching account's own
+ambient `.claude/settings.local.json` — that dependency is exactly what
+caused the observed friction. Evaluator-specific isolation (hidden workspace,
+strict OS sandbox, system-prompt replacement) is unchanged and remains
+exclusive to protected execution.
+
+`src/workflow-run.ts` adds a `git-publish` capability alongside the existing
+`git-inspect`/`git-commit`, and a host-mediated
+`WorkflowRunRegistry#publishCommit(runId, commit, branch)` primitive: a role
+reports a commit it already created; the host verifies the run's resolved
+permission profile actually grants `git-publish`, that the commit exists in
+the run's own workspace, and that it is a fast-forward descendant of the
+branch's current remote tip (refusing to rewrite already-published history),
+then pushes it using the host process's own Git credentials and records
+`{ commit, branch, pushed, at }` on the run. This exists so a future
+network-isolated role could hold `git-publish` without ever gaining outbound
+network access itself. The currently pinned, immutable evaluator contract's
+own text still assumes direct push, so this correction does not switch
+evaluator execution over to host-mediated-only publication; that is
+deliberately deferred, not silently done — evaluator and ordinary Claude
+execution both still also receive a direct, bounded `Bash(git push *)` grant
+when `git-publish` is present. `src/index.ts` exposes the primitive as
+`POST /workflow-runs/{id}/publish`.
+
+### Tests and checks
+
+`test/workflow-run.integration.test.ts` adds regression coverage for the
+bounded git-capability mapping (asserting every expected `Bash(git ...*)`
+entry is present and the blanket `Bash(git *)` is absent when `git-inspect`/
+`git-commit`/`git-publish` are granted, and that git-mutating entries are
+absent when they are not) and for `publishCommit` (a successful host-mediated
+push using an isolated bare-remote/workspace fixture, with the pushed commit
+confirmed on the remote and the result persisted on the run; and refusal,
+with no remote mutation and no recorded result, of an orphan commit that is
+not a fast-forward descendant of the remote branch).
+
+`npm run check` (typecheck, lint, `format:check`, full `npm test`: 86/86
+passing) and `git diff --check` all pass at this candidate.
+
+### Scope discipline honored
+
+No Spike 011 work of any kind: the pre-existing unrelated
+`spikes/011-host-owned-workflow-runs/workflow.jsonl` modification,
+`humam-acceptance.md`, `skills/orchestrator/`, and the two
+`spikes/998a-authority-fixture-*` directories were left untouched and
+excluded from this candidate. No frozen-document changes. No
+`--dangerously-skip-permissions` or bypass permission mode was added anywhere
+— confirmed by direct inspection of the diff; the pre-existing test
+assertions that name those flags belong to the unrelated protected-evaluator
+tests and are themselves unchanged by this diff. No general remote-operation
+framework was added beyond the one bounded `publishCommit` primitive; it does
+not accept arbitrary Git refs or commands, only an exact commit identity and
+branch name, and only ever performs a verified fast-forward push.
+
+### Publication
+
+Per this correction directive, this candidate is committed and then pushed
+directly by this worker using its own `git-publish` capability, proving the
+underlying fix rather than being told it works. Do not record the canonical
+`implementation-handoff` transition; the orchestrator will do that once it
+independently confirms the commit is on the remote branch. No LP1 fixture was
+run and no new evaluator verification attempt was allocated, per this
+correction directive's explicit stop condition.

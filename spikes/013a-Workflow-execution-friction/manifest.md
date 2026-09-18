@@ -1226,3 +1226,89 @@
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update. The candidate
   commit follows and is not included above.
+
+## Run 034 — Git-capability translation and host-mediated publication correction (cycle 002, implementation attempt 13)
+
+- Skill: `implementation` v3. Restricted evaluator material inspected: none.
+- Input: unchanged frozen brief
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`,
+  unchanged Design Map
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`,
+  unchanged public evaluation requirements
+  `sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf`,
+  unchanged coverage map
+  `sha256:eb4921e8c87d47c35d16f8fc90ad5192526327b4fe6e4517f08ae0faba1ad0a4`,
+  and the explicit human-authorized `correction-directive-013.md` (root-authority
+  process-exception input, cycle `002` implementation attempt `13`, following
+  unchanged candidate `2c8bdb78d56dad19253dc634ae3ab57552f7e716` — implementation
+  attempt `12`), together with its two continuations
+  `correction-directive-013b.md` and `correction-directive-013c.md`. Two prior
+  dispatches under this same attempt correctly stopped rather than proceed on
+  unverified claims: the first found a real uncommitted
+  `spikes/011-host-owned-workflow-runs/workflow.jsonl` diff the original
+  directive had not accounted for; the second caught an inaccurate
+  corroboration claim in the follow-up directive, which `correction-directive-013c.md`
+  then corrected. This attempt independently re-verified
+  `correction-directive-013c.md`'s two load-bearing primary facts before
+  proceeding: `git diff -- spikes/011-host-owned-workflow-runs/workflow.jsonl`
+  shows one added line, `"at":"2026-09-11T19:18:29.452Z"`; this spike's own
+  `brief-frozen` transition in `workflow.jsonl` is recorded over an hour later,
+  `"at":"2026-09-11T20:23:18.431Z"`. Both matched exactly.
+- Result: `IMPLEMENTED`. `src/claude-workflow.ts` now has one shared
+  `resolveClaudeCapabilityTools()` helper used by both the ordinary and
+  protected/system-contract Claude execution paths, translating granted
+  capabilities to bounded per-subcommand `--allowedTools` entries (e.g.
+  `Bash(git status *)`, `Bash(git add *)`, `Bash(git commit *)`,
+  `Bash(git push *)`) instead of the previous blanket `Bash(git *)`. The
+  ordinary path now also passes `--setting-sources ""` and
+  `--permission-prompts none` so its effective permissions are deterministic
+  and Harness-owned rather than dependent on the launching account's own
+  ambient settings — the exact dependency that left attempts 11 and 12 blocked
+  at their own `git add`/`commit`/`push` despite holding those capabilities.
+  `src/workflow-run.ts` adds a `git-publish` capability and a host-mediated
+  `WorkflowRunRegistry#publishCommit(runId, commit, branch)` primitive: a role
+  reports a commit it already created; the host verifies the resolved
+  permission profile grants `git-publish`, that the commit exists in the run's
+  workspace, and that it is a fast-forward descendant of the branch's current
+  remote tip, then pushes it with the host's own credentials and records the
+  result. `src/index.ts` exposes `POST /workflow-runs/{id}/publish`. The pinned
+  evaluator contract's own text still assumes direct push, so this correction
+  does not switch evaluator execution to host-mediated-only publication; both
+  ordinary and protected Claude still also receive a direct, bounded
+  `Bash(git push *)` grant when `git-publish` is present.
+- Output: staged implementation/test/report diff before this entry
+  `sha256:6544e444cb9e42f99828af0d805d2e342cf8527304addc6d54fa0443bd2b570b`
+  (SHA-256 of a compact, key-sorted JSON map from the following
+  repository-relative paths to their SHA-256 byte identities; UTF-8;
+  separators comma and colon; no final newline):
+  - `spikes/013a-Workflow-execution-friction/implementation-report.md`
+  - `src/claude-workflow.ts`
+  - `src/index.ts`
+  - `src/workflow-run.ts`
+  - `test/workflow-run.integration.test.ts`
+- Verification: added regression coverage for the bounded git-capability
+  mapping (present and absent cases, and confirming the blanket `Bash(git *)`
+  never appears) and for `publishCommit` (a successful host-mediated push
+  against an isolated bare-remote/workspace fixture, confirmed on the remote
+  and persisted on the run; refusal, with no remote mutation and no recorded
+  result, of an orphan commit that is not a fast-forward descendant of the
+  remote branch). `npm run check` (typecheck, lint, `format:check`, full
+  `npm test`: 86/86 passing) and `git diff --check` all pass at this
+  candidate.
+- Scope discipline: no Spike 011 work of any kind (the pre-existing unrelated
+  `spikes/011-host-owned-workflow-runs/workflow.jsonl` modification,
+  `humam-acceptance.md`, `skills/orchestrator/`, and the two
+  `spikes/998a-authority-fixture-*` directories were preserved and excluded
+  from this candidate); no frozen-document change; no
+  `--dangerously-skip-permissions` or bypass permission mode added anywhere;
+  no general remote-operation framework beyond the one bounded `publishCommit`
+  primitive, which accepts only an exact commit identity and branch name and
+  only ever performs a verified fast-forward push.
+- Live evidence: none claimed beyond this worker's own attempted publication
+  of this candidate using its `git-publish` capability, reported separately
+  from this entry. Per this correction directive's explicit stop condition,
+  the LP1 fixture was not run and no new evaluator verification attempt was
+  allocated.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update. The candidate
+  commit follows and is not included above.

@@ -16,18 +16,94 @@ export function claudeWorkflowDirectory(
     : workspaces[0];
 }
 
+// Capability-to-Claude-permission translation, shared by every Claude
+// execution mode. If Harness's resolved permission profile grants a
+// capability, this is the one place that decides which bounded provider
+// tool/command family actually exposes it -- a worker's real permissions
+// must come from here, never from whatever ambient CLAUDE.md/settings the
+// launching account happens to have (that dependency is exactly what left
+// ordinary implementation workers unable to complete their own git
+// publication despite already holding git-commit/git-publish).
+//
+// git-publish only becomes a direct `git push` grant for a profile the host
+// is willing to let push over the network itself (currently every profile:
+// see the git-publish comment below for the evaluator caveat). A future
+// network-isolated profile can hold git-publish without this ever granting
+// Bash push access, and instead rely solely on the host-mediated
+// WorkflowRunRegistry#publishCommit endpoint.
+function resolveClaudeCapabilityTools(
+  capabilities: ReadonlySet<string>,
+  options: { allowDirectPush: boolean },
+): { tools: string[]; allowedTools: string[] } {
+  const tools: string[] = [];
+  const allowedTools: string[] = [];
+  if (capabilities.has("repository-read")) tools.push("Read", "Glob", "Grep");
+  if (capabilities.has("workspace-write")) tools.push("Edit", "Write");
+  if (
+    capabilities.has("child-process") &&
+    capabilities.has("local-computation")
+  ) {
+    tools.push("Bash");
+  }
+  // Bounded by subcommand, never the blanket "Bash(git *)" this replaced --
+  // that would equally admit `git reset --hard`, `git push --force`,
+  // `git branch -D`, and every other destructive git operation regardless of
+  // which specific git capability was actually granted.
+  if (capabilities.has("git-inspect"))
+    allowedTools.push(
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git rev-parse *)",
+      "Bash(git cat-file *)",
+      "Bash(git merge-base *)",
+    );
+  if (capabilities.has("git-commit"))
+    allowedTools.push("Bash(git add *)", "Bash(git commit *)");
+  if (capabilities.has("git-publish") && options.allowDirectPush)
+    allowedTools.push("Bash(git push *)");
+  if (capabilities.has("test-build-lint-format"))
+    allowedTools.push("Bash(npm *)", "Bash(npx *)");
+  if (capabilities.has("local-computation"))
+    allowedTools.push("Bash(node *)", "Bash(python3 *)");
+  return { tools, allowedTools };
+}
+
 export function buildClaudeWorkflowCommand(
   spec: ResolvedWorkflowRunSpec,
   ordinaryPrompt: string,
   scratchWorkspace?: string,
 ): string[] {
   const workspaces = spec.permissionProfile.workspaces;
+  const capabilities = new Set(spec.permissionProfile.capabilities);
   if (spec.contract.deliveryMode !== "claude-system-contract") {
+    // Ordinary (non-protected) execution: no evaluator hidden workspace,
+    // system-prompt replacement, or strict OS sandbox -- those remain
+    // evaluator/system-contract-specific. This mode's workspace already is
+    // the whole granted repository, so it gains nothing from the sandbox's
+    // filesystem fencing; forcing it on would only add an unrelated
+    // bubblewrap/socat host dependency to routine implementation dispatch.
+    // It still gets the same capability-derived tool/command translation and
+    // a deterministic, host-owned permission decision instead of depending
+    // on the launching account's own settings.
+    const { tools, allowedTools } = resolveClaudeCapabilityTools(capabilities, {
+      allowDirectPush: true,
+    });
     return [
       "claude",
       "-p",
+      "--setting-sources",
+      "",
+      "--permission-prompts",
+      "none",
+      "--tools",
+      tools.join(","),
+      ...(allowedTools.length === 0
+        ? []
+        : ["--allowedTools", allowedTools.join(",")]),
       "--permission-mode",
-      "acceptEdits",
+      capabilities.has("workspace-write") ? "acceptEdits" : "dontAsk",
       ...workspaces.slice(1).flatMap((workspace) => ["--add-dir", workspace]),
       "--",
       ordinaryPrompt,
@@ -40,26 +116,17 @@ export function buildClaudeWorkflowCommand(
       "Claude system contract identity does not match the resolved binding",
     );
   }
-  const capabilities = new Set(spec.permissionProfile.capabilities);
-  const tools: string[] = [];
-  const allowedTools: string[] = [];
-  if (capabilities.has("repository-read")) tools.push("Read", "Glob", "Grep");
-  if (capabilities.has("workspace-write")) tools.push("Edit", "Write");
-  if (
-    capabilities.has("child-process") &&
-    capabilities.has("local-computation")
-  ) {
-    // The host enables Claude's strict OS sandbox below. Bash is available only
-    // when the resolved profile grants both execution capabilities; sandboxed
-    // commands are then auto-approved inside the declared workspace boundary.
-    tools.push("Bash");
-  }
-  if (capabilities.has("git-inspect") || capabilities.has("git-commit"))
-    allowedTools.push("Bash(git *)");
-  if (capabilities.has("test-build-lint-format"))
-    allowedTools.push("Bash(npm *)", "Bash(npx *)");
-  if (capabilities.has("local-computation"))
-    allowedTools.push("Bash(node *)", "Bash(python3 *)");
+  // The frozen, pinned evaluator contract's own text ("commit and push...")
+  // still assumes direct push capability; switching it to host-mediated-only
+  // publication is deferred rather than done silently here, since that
+  // would change what a currently-immutable frozen contract can actually do.
+  // git-publish is still bounded to the specific `git push` subcommand
+  // rather than the previous blanket `git *`, and the host-mediated
+  // WorkflowRunRegistry#publishCommit primitive exists and is available for
+  // any role/contract that does not need direct push capability.
+  const { tools, allowedTools } = resolveClaudeCapabilityTools(capabilities, {
+    allowDirectPush: true,
+  });
   const permitsCommands = tools.includes("Bash");
   if (permitsCommands && scratchWorkspace === undefined) {
     throw new Error(
