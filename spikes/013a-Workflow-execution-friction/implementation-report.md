@@ -411,3 +411,142 @@ suite: 81/81 passing) and `git diff --check` all pass at this candidate. No
 LP1 fixture was run and no new evaluator verification attempt was allocated,
 per this correction directive's explicit stop condition; implementation ends
 at the pushed candidate commit and its manifest entry.
+
+## Durable-evidence host configuration and LP1 permission-profile correction (cycle 002, implementation attempt 12)
+
+Correction directive: `correction-directive-012.md`, root-authority input
+following unchanged candidate
+`50dbcdbf55e76ce53509e98bdfa46f69bb526b92` (implementation attempt 11). No
+verification had been allocated against attempt 11 before this directive;
+both defects were found during a pre-verification validation exercise. This
+candidate fixes exactly the two defects the directive identifies and touches
+nothing else.
+
+### 1. Durable-evidence destination is now host-owned configuration
+
+Attempt 11's `WorkflowRunRegistry#persistDurableEvidence` derived its write
+locations directly from `run.spec.workspaces[0]` — the same workspace used to
+resolve canonical authority and repository contracts. Because the public
+integration suite legitimately constructs many registries against the real
+repository root (including against the real
+`013a-Workflow-execution-friction` workflow, so pinned/canonical-authority
+resolution sees real data), every `npm test` run durably wrote synthetic
+evidence into the real `spikes/013a-Workflow-execution-friction/.workflow/runs/`
+and its real `harness-hidden` mirror. The orchestrator independently
+identified, verified, and removed the resulting stray files (both public
+copies and private counterparts) before this candidate; this candidate does
+not touch that removal and was not given — and did not seek — access to
+`harness-hidden` to verify it.
+
+`WorkflowRunRegistryOptions` now accepts optional `evidenceRoot` and
+`hiddenEvidenceRoot`, read once at host process entry
+(`src/index.ts`, `HARNESS_EVIDENCE_ROOT`/`HARNESS_HIDDEN_EVIDENCE_ROOT`,
+mirroring the existing `HARNESS_EVALUATOR_WORKSPACE` seam) and threaded
+through `startHarnessHost`/`HarnessHostOptions` exactly like
+`evaluatorWorkspace`. `#persistDurableEvidence` now writes the public copy
+under `this.#evidenceRoot ?? workspace` and the private copy under
+`this.#hiddenEvidenceRoot ?? resolve(workspace, "..", "harness-hidden")` —
+unconfigured production behavior is byte-identical to attempt 11 (both
+default from the run's own workspace), while a host operator or the test
+suite can redirect evidence writes to any location without changing which
+workspace canonical authority and contracts are read from. The public/private
+split decision itself (`grantsHiddenWorkspace`, keyed off the *resolved*
+permission profile) is unchanged.
+
+`test/workflow-run.integration.test.ts` now creates one isolated temp
+`evidenceRoot`/`hiddenEvidenceRoot` pair at module scope and threads it
+through its shared `startHarness()` helper by default, so every test in the
+suite — not only the ones naming `013a-Workflow-execution-friction`
+explicitly — writes evidence there instead of into any real spike directory.
+The one existing test that specifically exists to prove unconfigured
+production defaulting (`durable run evidence splits public/private by
+resolved permission profile`) now explicitly opts out (`evidenceRoot: null,
+hiddenEvidenceRoot: null`) to keep exercising that default, using its own
+disposable, cleaned-up fixture name rather than a real spike. A new
+regression (`a configured evidence root keeps the real spike's evidence
+locations untouched and receives the synthetic evidence itself`) allocates a
+real pinned-bootstrap `evaluator-prepare` run against the real
+`013a-Workflow-execution-friction` workflow (exercising genuine
+canonical/pinned-authority resolution, not a synthetic fixture workflow) and
+asserts both that no file appears at the real public or real `harness-hidden`
+locations and that the record and, for the hidden branch, the raw log land
+under the configured isolated roots instead.
+
+### 2. LP1's declared `permissionProfile` now matches its effective binding
+
+`fixtures/lp1.json` declared `"permissionProfile": "repository-read-only"`,
+a value the current permission architecture (`WORKFLOW_PERMISSION_PROFILES =
+["repo-local-worker", "evaluator"]`) does not even define. `allocateFixture`
+never read `definition.permissionProfile` for authority — it always resolves
+protected `evaluator-verify` fixtures through the full host-owned `evaluator`
+profile (confirmed: the real LP1 validation run resolved
+`permissionProfile.id: "evaluator"` with `harness-hidden` in its
+`workspaces`), which is the correct security architecture from the earlier
+host-owned evaluator-permission correction (implementation attempt 10). The
+fixture was therefore falsely describing a narrower effective capability than
+Harness actually binds.
+
+Per the frozen contract's own text — `spike.md` "the Claude scenario must...
+use the evaluator workspace/access required by the frozen evaluator
+contract," `design-map.md` "the Claude fixture exercises a... protected
+evaluator role against the pinned evaluator authority, with only its
+evaluator workspace/access," and `skills/evaluator/SKILL.md`'s frontmatter
+requiring `harness-hidden` access — the frozen brief requires LP1 to use the
+real evaluator's required workspace access, not a narrowed profile; the
+write/side-effect boundary is separately and correctly carried by
+`permittedSideEffects: "none"`. `eval-requirements.md` never mentions
+`permissionProfile` or `repository-read-only` at all, confirming this is
+implementation representation, not frozen evaluation vocabulary.
+
+The fix corrects the fixture's own representation rather than the frozen
+documents. `fixtures/lp1.json` now declares
+`"permissionProfile": "evaluator"`. `RepositoryFixtureDefinition`'s
+`permissionProfile` field is widened from the single stale literal to
+`WorkflowPermissionProfileName` (validated against
+`WORKFLOW_PERMISSION_PROFILES`) so a future non-protected-role fixture can
+honestly declare `"repo-local-worker"`. `allocateFixture` now cross-checks
+the declared value against the profile `resolvePermissionProfile` actually
+returns and rejects the fixture allocation if they disagree — turning "must
+not falsely claim a narrower effective capability" into a structural,
+enforced invariant rather than a documentation convention that can silently
+drift again. Protected evaluator-role permissions remain exclusively
+host-derived; a fixture can still never widen or choose its own profile, it
+can only be rejected for describing itself incorrectly.
+
+A new regression (`a fixture whose declared permissionProfile disagrees with
+its resolved effective binding is rejected`) constructs a synthetic
+`evaluator-verify` fixture that declares `"repo-local-worker"` and asserts
+the allocation is rejected with the new mismatch error. The existing
+`repository fixtures resolve from candidate bytes without caller-shaped
+execution` regression's synthetic fixture, which already asserted the
+resolved profile is `"evaluator"`, was updated to declare
+`"permissionProfile": "evaluator"` so it no longer contains the same
+contradiction LP1 had.
+
+### Scope discipline honored
+
+No Spike 011 work of any kind: the pre-existing unrelated
+`spikes/011-host-owned-workflow-runs/workflow.jsonl` modification,
+`humam-acceptance.md`, `skills/orchestrator/`, and the two
+`spikes/998a-authority-fixture-*` directories were left untouched and
+excluded from this candidate. No database, general evidence/artifact
+service, or evaluator networking was added. No attempt-counter unification.
+No frozen-document changes. LP1 was not executed and no new evaluator
+verification attempt was allocated, per this correction directive's explicit
+stop condition.
+
+### Tests and checks
+
+Two new regressions in `test/workflow-run.integration.test.ts` (evidence-root
+isolation against the real spike; LP1-shaped fixture permission-profile
+mismatch rejection) plus updates to two existing regressions (production
+evidence-root defaulting now explicit; the synthetic read-only fixture's
+`permissionProfile` corrected to match its resolved binding). `npm run check`
+(typecheck, lint, `format:check`, full `npm test`: 83/83 passing) and
+`git diff --check` all pass at this candidate. Confirmed by direct
+inspection after the full suite run: the real
+`spikes/013a-Workflow-execution-friction/.workflow/runs/` directory contains
+only the pre-existing genuine LP1 evidence file
+(`01b18bae-db12-407b-a57e-0f4cfb8869b6.json`); the real
+`spikes/011-host-owned-workflow-runs/.workflow/runs/` file count is
+unchanged by this candidate's test run.

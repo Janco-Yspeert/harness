@@ -289,6 +289,13 @@ export interface WorkflowRunRegistryOptions {
   readonly createBackend: WorkflowRunBackendFactory;
   readonly publishEvent: WorkflowRunEventPublisher;
   readonly evaluatorWorkspace?: string;
+  // Host-owned durable-evidence destination, analogous to evaluatorWorkspace:
+  // optional, read once at host process entry, independent of the per-run
+  // authority workspace. Defaults to the run's own workspace / its
+  // harness-hidden sibling (attempt 11's original, still-correct production
+  // behavior) when absent.
+  readonly evidenceRoot?: string;
+  readonly hiddenEvidenceRoot?: string;
   readonly now?: () => number;
 }
 
@@ -622,7 +629,11 @@ interface RepositoryFixtureDefinition {
     readonly identity: string;
     readonly deliveryMode: WorkflowContractDeliveryMode;
   };
-  readonly permissionProfile: "repository-read-only";
+  // The permission profile a fixture declares must describe the effective,
+  // host-resolved binding it will actually run under (never a narrower,
+  // aspirational one) -- allocateFixture cross-checks this against the
+  // profile resolvePermissionProfile actually returns.
+  readonly permissionProfile: WorkflowPermissionProfileName;
   readonly permittedSideEffects: "none";
   readonly expectedRoleDisposition: "succeeded";
   readonly prompt: string;
@@ -651,7 +662,9 @@ function parseRepositoryFixtureDefinition(
     typeof contract !== "object" ||
     contract === null ||
     Array.isArray(contract) ||
-    raw.permissionProfile !== "repository-read-only" ||
+    !WORKFLOW_PERMISSION_PROFILES.includes(
+      raw.permissionProfile as WorkflowPermissionProfileName,
+    ) ||
     raw.permittedSideEffects !== "none" ||
     raw.expectedRoleDisposition !== "succeeded" ||
     typeof raw.prompt !== "string"
@@ -1114,20 +1127,17 @@ function grantsHiddenWorkspace(
   );
 }
 
-function durableRunsDir(workspace: string, workflow: string): string {
-  return resolve(workspace, "spikes", workflow, ".workflow", "runs");
+// `root` is a durable-evidence destination, never the authority/contract
+// workspace: production defaults it from the run's workspace (below), but a
+// host operator or test can redirect it independently via
+// WorkflowRunRegistryOptions#evidenceRoot / #hiddenEvidenceRoot without
+// changing which workspace canonical authority and contracts are read from.
+function durableRunsDir(root: string, workflow: string): string {
+  return resolve(root, "spikes", workflow, ".workflow", "runs");
 }
 
-function hiddenDurableRunsDir(workspace: string, workflow: string): string {
-  return resolve(
-    workspace,
-    "..",
-    "harness-hidden",
-    "spikes",
-    workflow,
-    ".workflow",
-    "runs",
-  );
+function defaultHiddenEvidenceRoot(workspace: string): string {
+  return resolve(workspace, "..", "harness-hidden");
 }
 
 function writeDurableFile(path: string, content: string): void {
@@ -1241,6 +1251,8 @@ export class WorkflowRunRegistry {
   readonly #publish: WorkflowRunEventPublisher;
   readonly #now: () => number;
   readonly #evaluatorWorkspace: string | undefined;
+  readonly #evidenceRoot: string | undefined;
+  readonly #hiddenEvidenceRoot: string | undefined;
   readonly #runs = new Map<string, InternalRun>();
   readonly #canonicalBySlot = new Map<string, string>();
   readonly #pendingBySlot = new Map<string, Promise<WorkflowRunRecord>>();
@@ -1250,6 +1262,8 @@ export class WorkflowRunRegistry {
     this.#createBackend = options.createBackend;
     this.#publish = options.publishEvent;
     this.#evaluatorWorkspace = options.evaluatorWorkspace;
+    this.#evidenceRoot = options.evidenceRoot;
+    this.#hiddenEvidenceRoot = options.hiddenEvidenceRoot;
     this.#now = options.now ?? ((): number => Date.now());
   }
 
@@ -1437,6 +1451,15 @@ export class WorkflowRunRegistry {
       this.#evaluatorWorkspace,
       true,
     );
+    // The fixture's declared permissionProfile is repository-owned
+    // description, not authority -- the host always resolves the effective
+    // profile itself (above). Reject a fixture whose declaration disagrees
+    // with what Harness actually binds, so the fixture can never claim a
+    // narrower (or otherwise different) effective capability than reality.
+    if (definition.permissionProfile !== permissionProfile.id)
+      throw new WorkflowRunRequestError(
+        "fixture declared permissionProfile does not match the resolved effective permission profile",
+      );
     const fixtureSpec: ResolvedWorkflowRunSpec = {
       slot: {
         workflow: workflow.workflow,
@@ -1737,11 +1760,19 @@ export class WorkflowRunRegistry {
 
   #persistDurableEvidence(run: InternalRun): void {
     if (isActiveWorkflowRunStatus(run.status)) return;
+    // `workspace` is only ever consulted here to derive the *default*
+    // evidence destination and to decide the public/private split (via
+    // grantsHiddenWorkspace, unchanged) -- it never becomes the write
+    // location itself when the host has configured an explicit evidence
+    // root. This is what keeps canonical-authority resolution (which always
+    // uses the real workspace) and durable-evidence writes independently
+    // configurable.
     const workspace = run.spec.workspaces[0];
     if (workspace === undefined) return;
     const record = run.toRecord();
+    const evidenceRoot = this.#evidenceRoot ?? workspace;
     const publicPath = resolve(
-      durableRunsDir(workspace, record.workflow),
+      durableRunsDir(evidenceRoot, record.workflow),
       `${record.runId}.json`,
     );
     if (!grantsHiddenWorkspace(run.spec.permissionProfile, workspace)) {
@@ -1749,7 +1780,9 @@ export class WorkflowRunRegistry {
       return;
     }
     const rawLog = run.logChunks.join("");
-    const hiddenDir = hiddenDurableRunsDir(workspace, record.workflow);
+    const hiddenEvidenceRoot =
+      this.#hiddenEvidenceRoot ?? defaultHiddenEvidenceRoot(workspace);
+    const hiddenDir = durableRunsDir(hiddenEvidenceRoot, record.workflow);
     writeDurableFile(
       resolve(hiddenDir, `${record.runId}.json`),
       `${JSON.stringify(record, null, 2)}\n`,

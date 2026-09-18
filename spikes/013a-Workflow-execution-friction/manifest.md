@@ -1132,3 +1132,97 @@
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update. The candidate
   commit follows and is not included above.
+
+## Run 033 — Durable-evidence host configuration and LP1 permission-profile correction (cycle 002, implementation attempt 12)
+
+- Skill: `implementation` v3. Restricted evaluator material inspected: none.
+- Input: unchanged frozen brief
+  `sha256:e11f7c8549d7a54162b8bf08698d1aa20e077aedf649f59f456eba9b135b60ac`,
+  unchanged Design Map
+  `sha256:c6fe65488748b22c2e819a1b7aa6115d7fd7c3723835e0721e8673554f93b407`,
+  unchanged public evaluation requirements
+  `sha256:59a4c69a1da9d3fa77a4d4557509499396d027021a5c14ac3c17784ee4f45fbf`,
+  unchanged coverage map
+  `sha256:eb4921e8c87d47c35d16f8fc90ad5192526327b4fe6e4517f08ae0faba1ad0a4`,
+  and the explicit human-authorized `correction-directive-012.md` (root-authority
+  process-exception input, cycle `002` implementation attempt `12`, following
+  unchanged candidate `50dbcdbf55e76ce53509e98bdfa46f69bb526b92` — implementation
+  attempt `11`, with no verification allocated against it before this
+  directive; both corrected defects were found during a pre-verification
+  validation exercise).
+- Result: `IMPLEMENTED`. Two defects fixed, nothing else touched. (1)
+  `WorkflowRunRegistry`'s durable-evidence write location is now host-owned
+  configuration (`WorkflowRunRegistryOptions#evidenceRoot`/
+  `#hiddenEvidenceRoot`, threaded through `HarnessHostOptions` and read once
+  at host process entry from `HARNESS_EVIDENCE_ROOT`/
+  `HARNESS_HIDDEN_EVIDENCE_ROOT` in `src/index.ts`, mirroring the existing
+  `HARNESS_EVALUATOR_WORKSPACE` seam), independent of the unchanged
+  authority/contract workspace (`request.workspace`). Unconfigured production
+  behavior defaults both roots from the run's own workspace, byte-identical
+  to attempt 11. The orchestrator independently identified, verified, and
+  removed the stray synthetic evidence files (public and private) that
+  attempt 11's coupling had written into the real
+  `spikes/013a-Workflow-execution-friction/.workflow/runs/` and its real
+  `harness-hidden` mirror; this candidate did not repeat or need to repeat
+  that removal, and did not access `harness-hidden`. (2)
+  `fixtures/lp1.json`'s `"permissionProfile": "repository-read-only"` named a
+  profile the current permission architecture does not define and that
+  `allocateFixture` never actually consulted — protected `evaluator-verify`
+  fixtures always resolve through the host-owned `evaluator` profile. Per
+  independent re-reading of `spike.md`, `design-map.md`, and
+  `skills/evaluator/SKILL.md` (frozen documents, left untouched), the frozen
+  contract requires LP1 to use the real evaluator's required workspace
+  access; the write/side-effect boundary is separately and correctly carried
+  by `permittedSideEffects: "none"`. `fixtures/lp1.json` now declares
+  `"permissionProfile": "evaluator"`; `RepositoryFixtureDefinition`'s field
+  is widened to `WorkflowPermissionProfileName`; and `allocateFixture` now
+  rejects any fixture allocation whose declared `permissionProfile`
+  disagrees with the profile `resolvePermissionProfile` actually resolves,
+  making the invariant structural rather than a documentation convention.
+- Output: staged implementation/test/report diff before this entry
+  `sha256:db50815735b0f03b10ceac2cfc510396af8c2d4a5ceabf05a156014ec26d324e`
+  (SHA-256 of a compact, key-sorted JSON map from the following
+  repository-relative paths to their SHA-256 byte identities; UTF-8;
+  separators comma and colon; no final newline):
+  - `spikes/013a-Workflow-execution-friction/fixtures/lp1.json`
+  - `spikes/013a-Workflow-execution-friction/implementation-report.md`
+  - `src/index.ts`
+  - `src/workflow-run.ts`
+  - `test/workflow-run.integration.test.ts`
+- Verification: added a regression allocating a real pinned-bootstrap
+  `evaluator-prepare` run against the real
+  `013a-Workflow-execution-friction` workflow (genuine canonical/pinned-
+  authority resolution, not a synthetic fixture workflow) under a configured
+  isolated evidence root, proving no file lands at the real public or real
+  `harness-hidden` evidence locations and that the record (and, for the
+  hidden branch, the raw log) instead land under the configured root; updated
+  the existing production-defaulting regression to explicitly opt out of this
+  suite's now-default isolated evidence roots so it keeps exercising genuine
+  unconfigured behavior; added a regression proving a fixture whose declared
+  `permissionProfile` disagrees with its resolved effective binding is
+  rejected; and corrected the existing synthetic read-only fixture regression
+  to declare `"permissionProfile": "evaluator"` so it no longer contains the
+  same declared/effective contradiction LP1 had. `npm run check` (typecheck,
+  lint, `format:check`, full `npm test`: 83/83 passing) and `git diff --check`
+  all pass at this candidate. Confirmed by direct inspection after the full
+  suite run: the real `spikes/013a-Workflow-execution-friction/.workflow/runs/`
+  directory contains only the pre-existing genuine LP1 evidence file
+  (`01b18bae-db12-407b-a57e-0f4cfb8869b6.json`); the real
+  `spikes/011-host-owned-workflow-runs/.workflow/runs/` file count is
+  unchanged by this candidate's test run.
+- Scope discipline: no database, general evidence/artifact service, or
+  evaluator network access added; no unification of separate attempt
+  counters; no Spike 011 work of any kind (the pre-existing unrelated
+  `spikes/011-host-owned-workflow-runs/workflow.jsonl` modification,
+  `humam-acceptance.md`, `skills/orchestrator/`, and the two
+  `spikes/998a-authority-fixture-*` directories were preserved and excluded
+  from this candidate); no evaluator rubric/semantic change; no frozen-document
+  change (`spike.md`/`design-map.md`/`eval-requirements.md` unchanged, hashes
+  above); no evaluator networking added.
+- Live evidence: none claimed. Per this correction directive's explicit stop
+  condition, the LP1 fixture was not run and no new evaluator verification
+  attempt was allocated; implementation ends at the pushed candidate commit
+  and this manifest entry.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update. The candidate
+  commit follows and is not included above.

@@ -36,6 +36,21 @@ import {
 
 const repositoryRoot = process.cwd();
 
+// This suite legitimately constructs many WorkflowRunRegistry instances
+// against the real repository root (so canonical-ledger/pinned-authority
+// resolution sees real data), including against the real
+// 013a-Workflow-execution-friction and 011-host-owned-workflow-runs
+// workflows. Left unconfigured, every terminal test run would durably
+// persist synthetic evidence into those spikes' real `.workflow/runs/` (and
+// real harness-hidden mirror) directories on every `npm test`. Redirecting
+// the *evidence* destination to an isolated temp root -- while still using
+// the real repository as the *authority* workspace -- keeps that canonical
+// resolution real without polluting real evidence locations.
+const testEvidenceRoot = mkdtempSync(join(tmpdir(), "harness-evidence-"));
+const testHiddenEvidenceRoot = mkdtempSync(
+  join(tmpdir(), "harness-hidden-evidence-"),
+);
+
 function syntheticSpikeProvenance(
   fixtureName: string,
   files: Record<string, string>,
@@ -147,7 +162,15 @@ interface Harness {
 }
 
 async function startHarness(
-  options: { evaluatorWorkspace?: string } = {
+  options: {
+    evaluatorWorkspace?: string;
+    // `undefined` (the default, whether `options` is omitted entirely or
+    // passed as `{}`) means "use this suite's isolated temp evidence
+    // roots"; explicit `null` opts out, to exercise unconfigured production
+    // defaulting behavior instead.
+    evidenceRoot?: string | null;
+    hiddenEvidenceRoot?: string | null;
+  } = {
     evaluatorWorkspace: "/tmp/harness-evaluator-workspace",
   },
 ): Promise<Harness> {
@@ -161,12 +184,22 @@ async function startHarness(
     created.push(backend);
     return backend;
   };
+  const evidenceRoot =
+    options.evidenceRoot === undefined
+      ? testEvidenceRoot
+      : options.evidenceRoot;
+  const hiddenEvidenceRoot =
+    options.hiddenEvidenceRoot === undefined
+      ? testHiddenEvidenceRoot
+      : options.hiddenEvidenceRoot;
   const host = await startHarnessHost(0, {
     createBackend: () => new NoopSessionBackend(),
     createWorkflowBackend,
     ...(options.evaluatorWorkspace === undefined
       ? {}
       : { evaluatorWorkspace: options.evaluatorWorkspace }),
+    ...(evidenceRoot === null ? {} : { evidenceRoot }),
+    ...(hiddenEvidenceRoot === null ? {} : { hiddenEvidenceRoot }),
   });
   return { host, created, contexts };
 }
@@ -904,7 +937,7 @@ void test("repository fixtures resolve from candidate bytes without caller-shape
       identity: contractIdentity,
       deliveryMode: "claude-system-contract",
     },
-    permissionProfile: "repository-read-only",
+    permissionProfile: "evaluator",
     permittedSideEffects: "none",
     expectedRoleDisposition: "succeeded",
     prompt: "Inspect the delivered contract and report the fixture outcome.",
@@ -1081,6 +1114,136 @@ void test("repository fixtures resolve from candidate bytes without caller-shape
       /current canonical implementation handoff/,
     );
     assert.equal(created.length, 1);
+  } finally {
+    await host.close();
+  }
+});
+
+void test("a fixture whose declared permissionProfile disagrees with its resolved effective binding is rejected", async (t) => {
+  const fixtureName = `999h-fixture-permission-mismatch-${String(process.pid)}`;
+  const fixture = join(repositoryRoot, "spikes", fixtureName);
+  mkdirSync(join(fixture, "bootstrap"), { recursive: true });
+  mkdirSync(join(fixture, "fixtures"), { recursive: true });
+  t.after(() => {
+    rmSync(fixture, { recursive: true, force: true });
+  });
+
+  const sourcePath = "skills/evaluator/SKILL.md";
+  const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  }).trim();
+  const snapshot = readFileSync(join(repositoryRoot, sourcePath), "utf8");
+  const contractIdentity = `sha256:${createHash("sha256").update(snapshot).digest("hex")}`;
+  // The fixture role is "evaluator-verify" (protected), which allocateFixture
+  // always resolves through the "evaluator" permission profile -- never a
+  // caller/fixture-chosen one. Declaring "repo-local-worker" here is a valid
+  // WorkflowPermissionProfileName (so it survives schema parsing) but is not
+  // the profile this fixture will actually run under, which is exactly the
+  // representation defect this regression guards against.
+  const definition = `${JSON.stringify({
+    version: 1,
+    identity: "synthetic-mismatched-profile-evaluator",
+    canonicalPrerequisite: "current-implementation-handoff",
+    role: "evaluator-verify",
+    executor: "claude",
+    contract: {
+      name: "evaluator",
+      version: 11,
+      identity: contractIdentity,
+      deliveryMode: "claude-system-contract",
+    },
+    permissionProfile: "repo-local-worker",
+    permittedSideEffects: "none",
+    expectedRoleDisposition: "succeeded",
+    prompt: "Inspect the delivered contract and report the fixture outcome.",
+  })}\n`;
+  const publicFiles = {
+    "spike.md": "# Fixture brief\n",
+    "design-map.md": "# Fixture design map\n",
+    "coverage-map.json": `${JSON.stringify({
+      criteria: [
+        {
+          id: "AC01",
+          frozenAuthority: "spike.md AC01",
+          mode: "PUBLIC_REGRESSION",
+          required: true,
+          procedures: ["FX1"],
+          sufficiency: "FX1 establishes AC01.",
+        },
+      ],
+      readiness: {
+        evaluatorRevision: "001",
+        privateInventoryIdentity: `sha256:${"0".repeat(64)}`,
+        validatorResultBinding: `sha256:${"1".repeat(64)}`,
+        integrityValidation: "PASS",
+      },
+    })}\n`,
+    "fixtures/mismatched.json": definition,
+  };
+  const provenance = syntheticSpikeProvenance(fixtureName, publicFiles);
+  for (const [name, content] of Object.entries(publicFiles)) {
+    const path = join(fixture, name);
+    mkdirSync(join(path, ".."), { recursive: true });
+    writeFileSync(path, content);
+  }
+  writeFileSync(join(fixture, "bootstrap/evaluator-skill.md"), snapshot);
+  writeFileSync(
+    join(fixture, "bootstrap/evaluator-authority.json"),
+    `${JSON.stringify({
+      evaluatorSkill: {
+        name: "evaluator",
+        contractVersion: 11,
+        sourceCommit,
+        sourcePath,
+        identity: contractIdentity,
+        snapshotPath: "bootstrap/evaluator-skill.md",
+      },
+    })}\n`,
+  );
+  const artifact = (path: keyof typeof publicFiles) => ({
+    path,
+    commit: provenance.commit,
+    identity: provenance.identities[path],
+  });
+  writeFileSync(
+    join(fixture, "workflow.jsonl"),
+    [
+      { transition: "brief-frozen", evidence: artifact("spike.md") },
+      {
+        transition: "design-map-frozen",
+        evidence: artifact("design-map.md"),
+      },
+      {
+        transition: "evaluation-prepared",
+        evidence: artifact("coverage-map.json"),
+      },
+      {
+        transition: "implementation-handoff",
+        evidence: { commit: provenance.commit, attempt: 1 },
+      },
+    ]
+      .map((event) => JSON.stringify(event))
+      .join("\n") + "\n",
+  );
+
+  const { host, created } = await startHarness();
+  try {
+    const response = await fetch(`${host.url}/workflow-fixtures`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        workflow: fixtureName,
+        fixture: "mismatched",
+        candidateCommit: provenance.commit,
+      }),
+    });
+    assert.equal(response.status, 400);
+    assert.match(
+      ((await response.json()) as { error: string }).error,
+      /does not match the resolved effective permission profile/,
+    );
+    assert.equal(created.length, 0);
   } finally {
     await host.close();
   }
@@ -1877,7 +2040,16 @@ void test("durable run evidence splits public/private by resolved permission pro
   let ordinaryRunId: string;
   let protectedRunId: string;
   try {
-    const { host, created } = await startHarness();
+    // Deliberately opt out of this suite's isolated evidence roots: this
+    // test exists specifically to prove default/unconfigured production
+    // behavior still persists to the existing repository-relative
+    // locations, using its own disposable fixture name/cleanup rather than
+    // a real spike so exercising that default stays safe.
+    const { host, created } = await startHarness({
+      evaluatorWorkspace: "/tmp/harness-evaluator-workspace",
+      evidenceRoot: null,
+      hiddenEvidenceRoot: null,
+    });
     try {
       const ordinary = await allocate(host, {
         slot: {
@@ -1976,6 +2148,118 @@ void test("durable run evidence splits public/private by resolved permission pro
   // here from the primary file on disk rather than trusted from the record.
   const recomputedLogIdentity = `sha256:${createHash("sha256").update(hiddenLog).digest("hex")}`;
   assert.equal(publicProtected.logIdentity, recomputedLogIdentity);
+});
+
+void test("a configured evidence root keeps the real spike's evidence locations untouched and receives the synthetic evidence itself", async (t) => {
+  // This registry uses the real repository root as its *authority*
+  // workspace (real 013a-Workflow-execution-friction canonical/pinned-skill
+  // resolution, exactly as legitimate integration coverage requires), but
+  // this suite's isolated evidenceRoot/hiddenEvidenceRoot (the default from
+  // startHarness()) must be where evidence actually lands -- never the real
+  // spike directory or its real harness-hidden mirror.
+  const realPublicRunsDir = join(
+    repositoryRoot,
+    "spikes",
+    "013a-Workflow-execution-friction",
+    ".workflow",
+    "runs",
+  );
+  const realHiddenRunsDir = join(
+    repositoryRoot,
+    "..",
+    "harness-hidden",
+    "spikes",
+    "013a-Workflow-execution-friction",
+    ".workflow",
+    "runs",
+  );
+  const runIds: string[] = [];
+  t.after(() => {
+    // Defensive cleanup only: a correctly isolated evidence root makes this
+    // a no-op. If the isolation regressed, this still keeps the real spike
+    // directory from accumulating test-created files.
+    for (const runId of runIds) {
+      rmSync(join(realPublicRunsDir, `${runId}.json`), { force: true });
+      rmSync(join(realHiddenRunsDir, `${runId}.json`), { force: true });
+      rmSync(join(realHiddenRunsDir, `${runId}.log`), { force: true });
+    }
+  });
+
+  const priorHidden = process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE;
+  process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE = join(
+    repositoryRoot,
+    "..",
+    "harness-hidden",
+  );
+  try {
+    const { host, created } = await startHarness();
+    try {
+      // Same real pinned-bootstrap allocation shape as "Spike 013a binds its
+      // pinned evaluator authority..." above, so this exercises genuine
+      // canonical/pinned-authority resolution against the real spike, not a
+      // synthetic fixture workflow.
+      const allocated = await allocate(host, {
+        slot: {
+          workflow: "013a-Workflow-execution-friction",
+          phase: "evaluator-prepare",
+          methodologyAttempt: "1",
+        },
+        role: "evaluator-prepare",
+        workspace: repositoryRoot,
+        permissionProfile: "evaluator",
+        evaluatorWorkspace: "/tmp/spike-013a-evaluator",
+      });
+      assert.equal(allocated.status, 201, allocated.error);
+      runIds.push(allocated.run.runId);
+      created.at(-1)?.emit("evidence-root isolation regression transcript\n");
+      created.at(-1)?.finish({
+        ok: true,
+        roleResult: { disposition: "succeeded" },
+      });
+      await settle();
+    } finally {
+      await host.close();
+    }
+  } finally {
+    if (priorHidden === undefined)
+      delete process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE;
+    else process.env.HARNESS_EVALUATOR_HIDDEN_WORKSPACE = priorHidden;
+  }
+
+  const [runId] = runIds;
+  assert.ok(runId);
+
+  assert.ok(
+    !existsSync(join(realPublicRunsDir, `${runId}.json`)),
+    "an isolated evidence root must keep the real public evidence location untouched",
+  );
+  assert.ok(
+    !existsSync(join(realHiddenRunsDir, `${runId}.json`)),
+    "an isolated hidden evidence root must keep the real harness-hidden mirror untouched",
+  );
+  assert.ok(!existsSync(join(realHiddenRunsDir, `${runId}.log`)));
+
+  const isolatedPublicPath = join(
+    testEvidenceRoot,
+    "spikes",
+    "013a-Workflow-execution-friction",
+    ".workflow",
+    "runs",
+    `${runId}.json`,
+  );
+  assert.ok(
+    existsSync(isolatedPublicPath),
+    "the synthetic evidence must instead land under the configured evidence root",
+  );
+  const isolatedHiddenDir = join(
+    testHiddenEvidenceRoot,
+    "spikes",
+    "013a-Workflow-execution-friction",
+    ".workflow",
+    "runs",
+  );
+  assert.ok(existsSync(join(isolatedHiddenDir, `${runId}.json`)));
+  assert.ok(existsSync(join(isolatedHiddenDir, `${runId}.log`)));
 });
 
 void test("a new canonical verification allocation is not deduplicated against a prior successful one", async (t) => {

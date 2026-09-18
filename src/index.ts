@@ -118,6 +118,11 @@ export interface HarnessHostOptions {
   // This is daemon configuration, not caller-supplied allocation data. A
   // protected evaluator allocation without it is rejected before launch.
   evaluatorWorkspace?: string;
+  // Host-owned durable-evidence destination roots, independent of the
+  // per-run authority workspace. Optional; production defaults to the
+  // existing repository-relative `.workflow/runs` locations when absent.
+  evidenceRoot?: string;
+  hiddenEvidenceRoot?: string;
 }
 
 function sendError(socket: WebSocket | undefined, error: HarnessErrorMessage) {
@@ -275,6 +280,12 @@ export async function startHarnessHost(
     ...(options.evaluatorWorkspace === undefined
       ? {}
       : { evaluatorWorkspace: options.evaluatorWorkspace }),
+    ...(options.evidenceRoot === undefined
+      ? {}
+      : { evidenceRoot: options.evidenceRoot }),
+    ...(options.hiddenEvidenceRoot === undefined
+      ? {}
+      : { hiddenEvidenceRoot: options.hiddenEvidenceRoot }),
   });
 
   async function handleWorkflowRequest(
@@ -703,6 +714,12 @@ if (import.meta.main) {
     ...(process.env.HARNESS_EVALUATOR_WORKSPACE === undefined
       ? {}
       : { evaluatorWorkspace: process.env.HARNESS_EVALUATOR_WORKSPACE }),
+    ...(process.env.HARNESS_EVIDENCE_ROOT === undefined
+      ? {}
+      : { evidenceRoot: process.env.HARNESS_EVIDENCE_ROOT }),
+    ...(process.env.HARNESS_HIDDEN_EVIDENCE_ROOT === undefined
+      ? {}
+      : { hiddenEvidenceRoot: process.env.HARNESS_HIDDEN_EVIDENCE_ROOT }),
   });
   console.log(`Harness session lifecycle spike listening at ${host.url}`);
 
