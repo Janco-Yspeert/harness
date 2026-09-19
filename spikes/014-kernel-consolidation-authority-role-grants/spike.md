@@ -1103,6 +1103,53 @@ The Design Map should identify additional safe deletions or consolidations.
 
 ---
 
+# Process-execution bootstrap
+
+Spike 014 is being prepared and initially executed by machinery that predates the kernel it is intended to build.
+
+That creates a separate bootstrap concern from methodology authority.
+
+Before the new execution model exists, the human may explicitly authorize an external orchestrator/session to drive the current supported Harness workflow mechanisms for this spike.
+
+For the initial preparation cycle, that bootstrap authority is:
+
+- the Codex app acts as the temporary external orchestrator;
+- it may use the current repository-owned workflow tooling and Harness host;
+- it may execute or delegate Brief Readiness, Design Map, and evaluator preparation through the existing supported paths;
+- it must preserve canonical authority and current evaluator isolation rules;
+- it must not fabricate Role Grants, Workflow Execution Grants, execution provenance, or other Spike 014 concepts before they have actually been implemented;
+- it must not treat the bootstrap execution path as evidence that the new kernel satisfies Spike 014;
+- and it must stop after evaluator preparation, before implementation.
+
+A bootstrap orchestrator may inspect, dispatch, follow, retry legitimately blocked infrastructure execution where current authority still permits it, and record supported canonical transitions.
+
+It may not:
+
+- hand-edit local runner state to manufacture eligibility;
+- fabricate missing operational history;
+- weaken protected-role invocation rules;
+- bypass evaluator-private boundaries;
+- reinterpret a provider process exit as semantic success;
+- or silently widen human authority.
+
+If the current execution machinery itself blocks preparation in a way that cannot be recovered through already-supported authority, the orchestrator must stop and report the exact bootstrap defect rather than adding a Spike-014-specific implementation workaround before the brief/evaluator are frozen.
+
+After implementation begins, any further temporary bootstrap required to exercise or cut over to the new kernel must be explicitly human-authorized, bounded to exact identities/actions, and preserved as bootstrap evidence.
+
+Such bootstrap activity cannot by itself satisfy acceptance criteria for the new generic authority, grant, provenance, attached-execution, or human-interaction mechanisms. Those criteria require evidence produced through the implemented Spike 014 path.
+
+The intended distinction is:
+
+```text
+bootstrap execution:
+  how we safely reach/build the new kernel
+
+new kernel execution:
+  what Spike 014 must actually prove
+```
+
+---
+
 # Harness self-hosting and bootstrap
 
 Spike 014 modifies the machinery that governs Harness itself.
