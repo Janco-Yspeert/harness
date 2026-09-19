@@ -2,473 +2,593 @@
 
 ## Purpose
 
-Harness is an Ubuntu-hosted, vendor-neutral control plane for supervising multiple AI coding agents from one place.
+Harness is a local control plane for AI coding work.
 
-It exists to reduce the fragmentation that comes from running different coding agents through separate tools, terminals, apps, and remote-control systems.
+Its job is to make AI-assisted development easier to delegate, govern, observe and recover across agents and providers without requiring the human to continuously supervise every process.
 
-Harness should make it easy to answer:
+Harness has two related product concerns:
 
-> What are my agents doing, and which of them needs me right now?
+1. **Governed execution** — running development roles under explicit authority, capability, provenance and evidence boundaries.
+2. **Agent supervision** — observing multiple ongoing agent sessions, surfacing work that needs attention, and allowing the human to intervene without owning the lifetime of the underlying work.
 
-Remote access from a phone is an important use case, but it is not the defining feature of Harness.
+These should share a host substrate where that is useful, but neither should distort the other.
 
-Harness is not primarily a remote terminal and is not intended to recreate the full native experience of Codex, Claude Code, or other agent tools.
+The immediate development priority is to make governed execution small, portable and useful on real projects. Multi-agent supervision and remote attention remain core product goals rather than prerequisites for proving the workflow system.
 
-Its role is supervision, allowing for human coordination and intervention across agents.
+Harness is not intended to replace Codex, Claude Code, an IDE, or the native interfaces of individual providers.
 
 ## Primary User
 
-Harness is initially intended for a developer working on an Ubuntu workstation who uses multiple AI coding agents.
+Harness is initially for a developer working on an Ubuntu machine who uses capable AI coding agents as part of normal software development.
 
-The developer may:
+The developer should be able to:
 
-* Run Codex, Claude Code, and other agents concurrently.
-* Work across multiple repositories or workspaces.
-* Start sessions from the workstation using familiar tools.
-* Leave the workstation while agents continue working.
-* Check progress remotely.
-* Identify agents waiting for human input.
-* Review and respond to questions or approval requests.
-* Send additional prompts or instructions.
-* Disconnect and reconnect without disrupting underlying work.
+- ask Harness to execute development work;
+- allow an existing eligible agent session to perform an authorized role;
+- let Harness launch an independent agent where isolation or provenance requires it;
+- allow routine workflow work to continue without repeated human prompting;
+- see when work completes, fails, stalls, or genuinely requires human input;
+- inspect trustworthy evidence of what happened;
+- work across providers, repositories and projects;
+- disconnect and later resume observation without implicitly terminating the work.
 
-Harness should optimize for this workflow before becoming a more general development or orchestration platform.
+Harness should optimize for this developer workflow before becoming a broader orchestration platform.
 
-## Core Product Experience
+## AI-First Development
 
-A developer has several coding agents working on their Ubuntu workstation.
+Harness is deliberately AI-first.
 
-For example:
+Capable agents should perform most of the implementation, verification, analysis, diagnosis, documentation and routine workflow progression.
 
-* Codex is implementing a feature in one repository.
-* Claude Code is reviewing changes in another.
-* Another session is investigating failing tests.
+The human remains the root authority for:
 
-Harness presents these sessions in one place.
+- product intent;
+- acceptance and rejection;
+- methodology changes;
+- exceptional authority;
+- decisions that cannot safely be derived from existing policy and evidence.
 
-Instead of requiring the developer to watch several terminals or switch between vendor-specific applications, Harness summarizes the important state of each session.
+Harness should reduce clerical work performed by models.
 
-The developer can quickly see:
+If Harness can deterministically allocate an identity, hash an artifact, preserve evidence, apply a mechanical transition, perform a privileged host action, or derive a known fact, the model should not be responsible for recreating that fact correctly in prose.
 
-* Which agents are working.
-* What they are broadly doing.
-* Which agents have completed.
-* Which agents have failed or become stuck.
-* Which agents require human attention.
+AI should spend its effort on reasoning.
 
-When an agent requires input, Harness should make that obvious.
+Harness should spend its effort on mechanics.
 
-The developer should be able to inspect enough context to make a decision, respond, and allow the agent to continue.
+## Roles, Not Processes
 
-## Remote Experience
+A development role is conceptually separate from the process or agent that performs it.
 
-A developer starts or attaches Harness to coding-agent work on their Ubuntu workstation.
+Authority should first answer:
 
-They leave the workstation.
+> Is this role permitted, under what contract, against what exact inputs, and with what capabilities?
 
-The underlying sessions continue running.
+Only then should Harness decide how the role is executed.
 
-From a phone or other remote client, the developer can inspect progress and respond where necessary.
+A permitted role may be:
 
-The remote client may disconnect, lose network connectivity, or close entirely without terminating the underlying sessions.
+- granted to an existing eligible session; or
+- performed by a newly launched isolated agent.
 
-Later, the developer reconnects and continues supervising the same work.
+Spawning a new process is necessary when isolation, independent provenance, incompatible capabilities, private information, or execution policy requires it.
 
-Remote clients observe and control sessions.
+It should not be required merely because the methodology uses a named role.
 
-They do not own them.
+A process or session may perform a governed role only after Harness has bound that role to it.
 
-## Unified Attention
+## Human Root Authority
 
-Human attention is a scarce resource.
+Harness mechanics exist to preserve human authority, not replace it.
 
-A central goal of Harness is therefore to surface work that requires human intervention rather than forcing the developer to continuously observe all agent output.
+The human must be able to authorize bounded corrections, exceptions and methodology changes without rewriting history.
 
-A future Harness home view should be capable of presenting something conceptually similar to:
+Exceptional authority should be explicit, scoped and forward-only.
 
-```text
-NEEDS YOU
+A human exception may change what is permitted next.
 
-Claude · conduit-python
-Permission requested
+It must not make a historical event un-happen.
 
-Codex · Harness
-Architecture question
+Harness must not require methodology-specific code exceptions merely to recover from changing the methodology itself. Bootstrap, upgrade and recovery authority should use generic root-authority mechanisms rather than hard-coded knowledge of particular spikes or workflows.
 
+## One Canonical Authority
 
-WORKING
+Harness must have exactly one canonical authority history for a governed workflow.
 
-Codex · conduit-node
-Running tests
+That history records authoritative facts such as:
 
-Claude · postgres-adapter
-Reviewing implementation
+- grants;
+- workflow decisions;
+- human authority;
+- accepted role results;
+- methodology transitions;
+- bounded exceptions.
 
+Operational run records, caches, generated reports, local runner state, provider output and evidence artifacts may contribute facts to authority resolution, but they are not independent sources of methodology authority.
 
-DONE
+A derived representation should be disposable and reconstructable from canonical authority plus its referenced immutable evidence.
 
-Codex · Go spike
-Completed successfully
-```
+Harness should not maintain two state machines that must remain synchronized by convention.
 
-Harness should help answer:
+The current JSONL authority ledger may remain the physical representation while it is useful.
 
-> Which agent needs me?
+The architectural concept is the authority ledger, not the filename or storage format.
 
-rather than:
+## Methodology Is Configuration Plus Skills
 
-> What characters are currently appearing in every terminal?
+Harness should not hard-code its own development methodology into the execution kernel.
 
-This unified attention model is a core product differentiator.
+A governed methodology should be representable through three distinct kinds of input:
 
-## Vendor Neutrality
+### Skills
 
-Codex and Claude Code are the initial target agents.
+Agent-facing semantic instructions describing how to reason and perform a role.
 
-Harness should not assume that either provider defines the overall product model.
+Skills may contain judgment that cannot sensibly be reduced to deterministic rules.
 
-Each provider may expose different capabilities, session models, approval mechanisms, structured APIs, hooks, or terminal interfaces.
+### Skill Contracts
 
-Harness should present a coherent supervisory experience across those differences.
+Machine-consumable definitions of the mechanically enforceable boundary around a role.
 
-Provider-specific behaviour should be isolated where practical.
+These may define:
 
-Harness should not attempt to make all providers internally identical.
+- required inputs;
+- deterministic preconditions;
+- allowed capabilities;
+- workspace access;
+- permitted host actions;
+- structured outputs;
+- deterministic postconditions;
+- human-interaction permissions.
 
-## Native Integration First, PTY Fallback
+The contract must not attempt to mechanize inherently semantic judgments merely because they are important.
 
-Harness should prefer structured or officially supported provider integrations when they are available and useful.
+### Workflow Policy
 
-For example, an agent may expose:
+Machine-consumable configuration describing how roles compose.
 
-* A local API.
-* A protocol server.
-* Structured event streams.
-* Hooks.
-* Session identifiers.
-* Approval APIs.
-* Machine-readable output.
+This may include:
 
-These should generally be preferred over interpreting terminal output.
+- role eligibility;
+- transitions;
+- automatic continuation;
+- retry and repair policy;
+- bounded correction behaviour;
+- human gates;
+- escalation conditions.
 
-However, Harness should retain a generic PTY-based integration path.
+Harness's own development process should remain a first-class bundled methodology, but it is not kernel law.
 
-PTY support provides a universal fallback for agents or command-line tools that do not expose richer integration mechanisms.
+Other projects should be able to use different methodologies without changing Harness source code.
 
-The initial PTY outcome is an integration spike, not a commitment to model all provider sessions as terminals.
+## Pinned Methodology
 
-The intended model is approximately:
+A running workflow should be governed by an exact, immutable methodology definition.
 
-```text
-                     Harness
-                        |
-                unified session model
-                  /      |      \
-                 /       |       \
-              Codex    Claude    Generic CLI
-                |        |           |
-             native    native       PTY
-           integration integration  fallback
-           preferred   preferred
-```
+The relevant workflow policy, contracts and skill identities should be pinned for that execution.
 
-PTY is therefore an important capability, but it should not define the entire Harness architecture.
+Changing the methodology creates a new definition for future authority.
 
-## Sessions Started Outside Harness
+It does not silently reinterpret historical work.
 
-Harness should ideally support normal developer workflows.
+Harness must permit methodology evolution without requiring the old methodology to recursively prove the legitimacy of every future methodology.
 
-A developer should not necessarily have to launch every coding agent from within Harness.
+## Automatic Continuation
 
-Where provider capabilities allow it, Harness should be able to discover, observe, attach to, or otherwise integrate with agent sessions that were initiated outside Harness.
+Routine workflow progression should continue without repeatedly asking the human to approve mechanically implied next steps.
 
-For example, a developer may start an agent directly from an Ubuntu terminal and later want that session visible in Harness.
+When the human authorizes workflow execution, Harness should be able to continue through ordinary transitions until it reaches a genuine gate.
 
-How this works will differ between providers and remains an open architectural question.
+For example, an implementation defect may lead to implementation correction and renewed verification; an evaluator defect may lead to evaluator repair and renewed verification.
 
-Harness should not assume from the outset that it must own the creation of every agent process.
+This should not require the human to repeatedly say "continue."
 
-Supporting externally initiated sessions is a product goal, but is not required for the first working slice. Initial implementations may supervise only work launched through Harness.
+Automatic continuation must nevertheless be bounded.
 
-## Product Principles
+Harness should stop and request human involvement when progress is no longer routine, including cases such as:
 
-### The Host Owns the Work
+- repeated or non-progressing failure;
+- exhausted configured retry or repair policy;
+- ambiguity about the appropriate classification or transition;
+- required changes to frozen authority;
+- no valid next transition;
+- unavailable eligible executors;
+- methodology or specification defects;
+- explicit human gates.
 
-The Ubuntu host is authoritative for local execution.
+Harness should continue by default, but it should recognize when continuing would merely dig a deeper hole.
 
-Remote clients must not implicitly own the lifetime of agent work.
+## Workflow Execution Authority
 
-Client lifecycle, network lifecycle, Harness session lifecycle, and underlying provider/process lifecycle are separate concepts.
+An explicit workflow execution authority should represent the human's instruction to run or continue a workflow.
 
-### Detachability Is Fundamental
+It should define:
 
-A remote client must be able to disconnect without terminating ongoing work.
+- the workflow scope;
+- the pinned methodology;
+- whether routine continuation is authorized;
+- allowed delegation behaviour;
+- declared stopping conditions.
 
-Temporary network failure must not imply session failure.
+Individual role authority should be derived beneath that workflow-level authority.
 
-### Multiple Agents Are Normal
+Observation is not execution authority.
 
-Multiple concurrent sessions are a core product assumption.
+A question such as:
 
-The architecture must not assume a single:
+> What happened?
 
-* Agent.
-* Provider.
-* Project.
-* Repository.
-* Workspace.
-* Session.
+must not silently become:
 
-Parallel work should remain independently identifiable and controllable.
+> Continue the workflow.
 
-### Harness Is a Supervisory Layer
+## Execution Identity and Provenance
 
-Harness should not attempt to replace the full desktop experience offered by the underlying coding agents.
+Every governed execution should have a stable Harness identity independent of the caller connection.
 
-When a developer is sitting at the workstation, using Codex or Claude Code directly may remain the best experience.
+Harness should track enough execution provenance to determine whether an existing session remains eligible for a role.
 
-Harness should focus on the common supervisory operations that provide value across providers.
+In particular, exposure to private evaluation material cannot be undone by later removing filesystem access.
 
-These may include:
+If a session has received evaluator-private material, Harness should be able to make that fact part of future eligibility decisions.
 
-* Viewing session state.
-* Inspecting recent meaningful activity.
-* Sending a prompt.
-* Answering a question.
-* Approving or rejecting an action.
-* Detecting completion or failure.
-* Viewing enough context to understand what requires attention.
+Where Harness controls access, this provenance should be mechanically recorded rather than based on the agent's recollection.
 
-Provider-specific advanced functionality may remain in native tooling.
+Eligibility applies to a particular execution identity or session, not to a provider in general.
 
-### Agent Semantics Matter More Than Terminal Semantics
+## Isolation and Private Evidence
 
-Raw terminal output is valuable and should remain available where appropriate.
+Independent verification requires meaningful separation from implementation.
 
-However, Harness should prefer meaningful states and events such as:
+Harness should support private evaluator workspaces and other protected evidence without relying only on prompt instructions for secrecy.
 
-* Working.
-* Waiting.
-* Requesting approval.
-* Asking a question.
-* Producing a meaningful agent message.
-* Completing.
-* Failing.
+The Harness host may act as the trusted broker across protected boundaries.
 
-The desired product abstraction is an agent session, not a terminal window.
+It may need access to both public and private material in order to:
 
-### Protocol Is Independent of Transport
+- enforce access rules;
+- validate identities;
+- preserve evidence;
+- perform approved promotion;
+- expose only permitted information.
 
-Harness has a domain protocol independent of its transport.
+Access by Harness does not imply access by every caller or agent.
 
-WebSocket is currently the likely initial transport between Harness clients and the daemon.
+Private evaluator information should not leak into an implementation-capable session merely because the workflow is being orchestrated from that session.
 
-Harness should not treat WebSocket messages themselves as the domain model.
+## Host-Mediated Privileged Actions
 
-This preserves the possibility of using different transports later without redesigning the Harness protocol.
+A role's authority to request an outcome should not necessarily give the agent the raw mechanism required to perform that outcome.
 
-## Conduit Compatibility
+For example, permission to publish a commit need not imply direct Git network access.
 
-Harness messages should remain structurally compatible with the Conduit message model where that continues to fit naturally.
+A role may request an allowed host action.
 
-Likely message metadata includes:
+Harness may then:
 
-* `id`
-* `kind`
-* `type`
-* `version`
-* `streamId`
-* `correlationId`
-* optional `causationId`
-* `timestamp`
-* `source`
-* optional `extensions`
+- validate the request against the role's authority;
+- enforce exact branch, identity, ancestry and path constraints;
+- use host-held credentials;
+- perform the privileged action;
+- record its independent outcome.
 
-with domain-specific content carried in `data`.
+Promotion follows the same general principle.
 
-Harness does not currently depend on Conduit.
+An agent may need to make a semantic decision about what is eligible for promotion.
 
-Conduit should not be introduced merely because the message shape is useful.
+Harness should perform deterministic copying, hashing, preservation and publication where possible.
 
-Harness owns its domain protocol independently.
+Credentials are host resources, not evidence and not automatically agent capabilities.
 
-If Harness exposes weaknesses or awkwardness in the Conduit message model, that should be treated as useful architectural feedback rather than something Harness must work around to preserve compatibility.
+## Execution Results Are Multi-Dimensional
 
-## Ubuntu First
+Provider process exit, semantic role success, methodology result and privileged host-action results are different facts.
 
-Ubuntu is the host platform.
+Harness should preserve those distinctions.
 
-Harness may make sensible use of Linux-specific capabilities including:
+For example, it should be possible to represent truthfully:
 
-* PTYs.
-* Process management.
-* Signals.
-* Unix sockets.
-* Filesystem conventions.
-* Git tooling.
-* Other Linux-native facilities.
+- evaluator semantic result: PASS;
+- role reasoning completed successfully;
+- promotion action: complete;
+- publication action: failed.
 
-Cross-platform host support is not currently a goal.
+One overloaded "completed" or "blocked" flag should not have to carry all of those meanings.
 
-Ubuntu support itself should not be treated as Harness's long-term product differentiator.
+Workflow policy may use these facts when deciding what is eligible next.
 
-Vendor support for operating systems can change.
+## Human Interaction
 
-The stronger product identity is vendor-neutral supervision across agents.
+Governed agents should be able to request human input without manufacturing human authority.
+
+Harness should eventually support structured states such as:
+
+- needs input;
+- needs approval;
+- needs root authority;
+- waiting for human.
+
+A worker waiting for legitimate human input should not have to die and consume a fresh execution merely because interactive prompting was disabled.
+
+When a human response changes what an execution is permitted to do, that authority must be recorded canonically rather than existing only as conversation text.
+
+Private agents should be able to ask the human a question through Harness without unnecessarily exposing private evaluator material to the orchestrating agent.
+
+Human interaction should remain governed and bounded rather than becoming unrestricted agent prompting.
+
+## Durable Execution Handles
+
+Launching work and waiting for work are separate concerns.
+
+Harness should return stable execution identities that callers can inspect or await.
+
+A long wait should not require correctness to depend on one network request, terminal, client process or model session remaining connected.
+
+A caller should be able to reconnect and continue waiting for the same work.
+
+Caller disconnection must not imply cancellation.
+
+Cancellation itself should be explicit and preserve established history.
+
+## Idempotency and Concurrency
+
+Repeated or concurrent requests to continue the same canonical workflow state must not accidentally launch duplicate work.
+
+For a given authority basis, the next automatically selected role should be allocated at most once unless the methodology explicitly permits a retry or replacement.
+
+Reconnects, repeated commands and multiple observers must not create competing authority.
+
+## Provider and Model Neutrality
+
+Codex and Claude Code are the initial providers.
+
+Neither should define Harness's product model.
+
+Harness should represent provider-independent concepts such as:
+
+- role;
+- authority;
+- capability;
+- workspace;
+- execution;
+- result;
+- human request;
+- host action.
+
+Provider adapters may translate these into provider-specific APIs, tools and restrictions.
+
+Harness should not pretend provider differences do not exist.
+
+Executor selection should eventually support policy over:
+
+- provider;
+- model;
+- reasoning depth;
+- isolation requirements;
+- available capabilities;
+- availability and usage limits;
+- cost.
+
+Provider or usage exhaustion should be able to trigger an allowed executor fallback without changing the semantic role or methodology.
+
+Semantic failure should not be silently hidden by provider switching unless the workflow explicitly permits that behaviour.
+
+Skills should ultimately be agent-neutral, with provider-specific wrappers or adapters where needed.
+
+## Telemetry
+
+Harness needs to make its own cost and friction measurable.
+
+Telemetry is observational evidence, not workflow authority.
+
+The architecture should permit measurement of:
+
+- wall-clock execution time;
+- model execution time where available;
+- time waiting for human input;
+- retries and repairs;
+- human interruptions;
+- provider/model selection;
+- provider usage and token consumption where measurable;
+- Harness orchestration overhead;
+- host actions and their results.
+
+Harness-observed measurements and agent-reported measurements should remain distinguishable.
+
+A failure to collect telemetry must not invalidate otherwise correct workflow work.
+
+Provider usage may initially require approximate or provider-specific mechanisms such as before/after usage snapshots.
+
+The measurement mechanism may improve over time without changing the execution model.
+
+## Host Ownership
+
+The Harness host owns Harness execution state.
+
+Client lifetime, network lifetime, workflow lifetime, agent-session lifetime and underlying process lifetime are separate concepts.
+
+Clients may disconnect without implicitly terminating work.
+
+Harness should preserve completed authority and results across client failures.
+
+Longer term, host restart behaviour should preserve the fact that work existed even when an underlying process cannot be reattached.
+
+## Agent Supervision and Unified Attention
+
+Governed workflow execution is the immediate product focus, but the original supervision goal remains important.
+
+Harness should eventually provide a unified view across active agent work and answer:
+
+> What is working, what is finished, and what needs me?
+
+Meaningful states are more valuable than raw terminal output.
+
+Useful attention states include:
+
+- working;
+- waiting;
+- needs input;
+- needs approval;
+- blocked;
+- completed;
+- failed.
+
+Multiple concurrent sessions, remote observation and intervention remain intended product capabilities.
+
+They should build on the same execution identity, lifecycle, event and human-interaction substrate where appropriate.
+
+Harness should not delay useful governed execution merely to complete the entire supervisory product first.
+
+## Native Integration and PTY Fallback
+
+Harness should prefer structured or officially supported provider integration where it provides useful semantics.
+
+This may include:
+
+- structured events;
+- session identifiers;
+- approval APIs;
+- machine-readable results;
+- usage data;
+- tool restrictions;
+- resumable sessions.
+
+PTY integration remains a useful fallback.
+
+PTY support should not define the architecture.
+
+Interactive sessions and governed workflow runs may share low-level host execution primitives, but they need not be collapsed into one domain object.
+
+## Project Portability
+
+Harness must become usable on projects other than Harness itself.
+
+Repository names, spike layouts, skill paths and bootstrap exceptions specific to the Harness repository must not be permanent kernel assumptions.
+
+Projects should be able to configure:
+
+- project/workspace identity;
+- methodology;
+- skill and contract locations;
+- protected workspaces;
+- executor policy.
+
+Harness development itself is important dogfood, but self-hosting must not become an excuse for permanent recursive complexity.
+
+A real external project is a required forcing function for the architecture.
 
 ## Security Direction
 
-Harness controls or influences software capable of:
+Harness controls software capable of reading and modifying source code, executing commands, accessing developer services and acting through privileged host resources.
 
-* Reading files.
-* Modifying source code.
-* Running commands.
-* Installing dependencies.
-* Accessing developer credentials.
-* Making network requests.
-* Interacting with Git repositories and remote services.
+Trust boundaries should therefore be explicit.
 
-Harness must therefore be treated as a remote code-execution control surface.
+Important principles include:
 
-Early development should remain conservative:
+- least practical capability;
+- host-owned credentials;
+- mechanically enforced private-workspace boundaries;
+- no authority derived merely from model prose;
+- bounded host actions;
+- explicit execution identity;
+- append-only authority;
+- no accidental public exposure.
 
-* Start locally.
-* Avoid accidental public exposure.
-* Add remote access deliberately.
-* Make trust boundaries explicit.
-* Avoid logging credentials, tokens, secrets, or sensitive environment values.
-* Do not weaken security merely to simplify development.
+Harness does not need to become a complete security sandbox or secrets-management system.
 
-A complete authentication, authorization, pairing, and remote-connectivity system is not required for the earliest spikes.
+Security mechanisms should correspond to real threat or failure boundaries rather than speculative completeness.
 
-Early shortcuts must remain clearly identified as development-only behaviour.
+## What Belongs in the Kernel
 
-## Near-Term Outcomes
+The kernel should remain deliberately small.
 
-Development should proceed through small, working outcomes.
+It should understand generic concepts such as:
 
-The approximate near-term progression is:
+- identity;
+- authority ledger;
+- methodology definitions;
+- workflow execution authority;
+- role authority;
+- execution provenance;
+- capabilities;
+- workspace grants;
+- host actions;
+- execution lifecycle;
+- semantic results;
+- deterministic predicates;
+- human authority;
+- bounded exceptions;
+- telemetry hooks.
 
-1. Prove reliable bidirectional control of a PTY-backed process on Ubuntu.
-2. Establish Harness-owned supervisory session semantics without assuming Harness owns every underlying provider session or process.
-3. Allow clients to disconnect without implicitly terminating work.
-4. Support multiple concurrent sessions.
-5. Integrate a real coding agent.
-6. Investigate and use structured provider integration where practical.
-7. Normalize enough state to provide a useful cross-agent session view.
-8. Provide a practical remote client.
-9. Surface questions, approvals, failures, and completion as attention-worthy events.
-10. Support useful interaction with more than one provider through the same Harness interface.
+It should not need to understand the semantic meaning of names such as:
 
-This sequence describes desired outcomes rather than mandatory implementation steps.
+- Brief Readiness;
+- As-Built;
+- evaluator repair;
+- implementation gap;
+- correction cycle.
 
-The implementation order may change as spikes produce new information.
+Those belong to configured methodology and skills.
 
-## Current Provisional Decisions
+A mechanism should earn its place in the kernel by enforcing a boundary that cannot safely be left to agent interpretation.
 
-The following are current architectural preferences rather than permanent commitments:
+## Near-Term Direction
 
-* Ubuntu is the host platform.
-* Harness will have a long-lived host daemon or equivalent host-side process.
-* Node.js and TypeScript are strong candidates for the initial daemon.
-* WebSocket is the likely initial client/daemon transport.
-* JSON is the likely initial wire representation.
-* Harness messages should be Conduit-shaped where natural.
-* Codex and Claude Code are the first target providers.
-* Harness should support multiple concurrent agent sessions.
-* Sessions should have stable Harness identities where Harness needs to track them.
-* Client disconnects should not terminate underlying work.
-* Structured provider integrations should be preferred over terminal parsing.
-* PTY integration should exist as a generic fallback.
-* A lightweight browser client may be used before Android to prove client/daemon behaviour.
-* Persistence across Harness daemon restarts is not required for the earliest proof.
-* Localhost-first development is preferred before remote network exposure.
+The immediate priorities are:
 
-These decisions should change when implementation evidence provides a good reason to change them.
+1. Consolidate the authority and execution kernel so there is one source of methodology authority and one role-grant model.
+2. Establish declarative skill contracts and workflow policy without baking Harness's own development process into the kernel.
+3. Support both attached and spawned governed execution under the same authority model.
+4. Make routine workflow continuation resumable, bounded and observable.
+5. Establish telemetry and provider-usage seams so the cost of Harness can be measured.
+6. Remove Harness-repository assumptions from the normal execution path.
+7. Install and use Harness on a real second project.
+8. Harden the system based on failures observed in that real use.
 
-## Open Questions
-
-The following remain intentionally unresolved:
-
-* Whether Harness should manage PTYs directly or delegate some responsibilities to tools such as `tmux`.
-* How Harness should discover or attach to agent sessions started outside Harness.
-* Which structured integration mechanisms Codex exposes that are suitable for Harness.
-* Which structured integration mechanisms Claude Code exposes that are suitable for Harness.
-* Whether Harness should launch provider sessions itself, attach to externally launched sessions, or support both models.
-* How agent state should be normalized without hiding important provider differences.
-* How reliably Harness can determine states such as:
-
-  * working;
-  * waiting for input;
-  * approval required;
-  * blocked;
-  * completed;
-  * failed.
-* The eventual authentication and device-pairing model.
-* How remote access beyond the local network should work.
-* Whether sessions should survive Harness daemon restarts.
-* What history should be persisted.
-* How much raw terminal history should be retained.
-* How permissions and approval policies should work across providers.
-* Whether Harness should eventually provide unified approval policies.
-* How repositories, branches, and Git worktrees should interact with concurrent agents.
-* Whether Harness needs a higher-level task abstraction above sessions.
-* Whether agent-to-agent orchestration belongs in Harness.
-* Whether agents should ever be able to coordinate through Harness.
-* Whether and where Conduit itself eventually becomes useful.
-* How much provider-specific functionality Harness should expose versus delegating back to native applications.
-
-Open questions should remain open until there is enough evidence or a concrete need to decide them.
+Multi-session supervision, richer attention-state handling and remote clients remain important product work, but they should not postpone the external workflow pilot unless real usage demonstrates that they are prerequisites.
 
 ## Current Non-Goals
 
 Harness is not currently intended to be:
 
-* A generic SSH client.
-* A remote desktop platform.
-* A generic remote terminal product.
-* A replacement for a desktop IDE.
-* A replacement for Codex.
-* A replacement for Claude Code.
-* A recreation of the complete Codex mobile experience.
-* A recreation of the complete Claude mobile experience.
-* A complete terminal emulator.
-* Harness will not build its own terminal-emulation engine; established terminal components may be used for fallback access.
-* A cloud-hosted development environment.
-* A general workflow orchestration platform.
-* An autonomous multi-agent organization.
-* A message-broker-based distributed system.
-* A cross-platform host daemon.
-* A system that eliminates human supervision.
+- a replacement for Codex or Claude Code;
+- a replacement for an IDE;
+- a generic remote terminal product;
+- a cloud-hosted development environment;
+- a generic business workflow engine;
+- an autonomous organization of agents;
+- a system that removes human product judgment;
+- a generalized distributed scheduler;
+- a full secrets-management system;
+- a perfect sandbox against a hostile local user;
+- a requirement that every model judgment become deterministic.
 
-Harness should avoid competing with vendor-specific tools in areas where those tools naturally have better access to their own functionality.
+Harness should not build machinery merely because machinery is possible.
 
-Its value should come from providing a useful layer above them.
+## Architectural Tests
 
-### Near-term non-goals:
+When adding a kernel mechanism, ask:
 
-* No daemon-restart persistence initially.
-* No public-network exposure initially.
-* No Android client until the host/client boundary is proven.
-* No semantic parsing of terminal output unless required by a specific experiment.
-* No worktree automation, agent-to-agent orchestration, or task scheduling initially.
-* Multiple concurrent sessions should be supported before any higher-level orchestration is attempted.
+> What concrete failure or unsafe trust boundary requires this to be mechanical?
 
-## Architectural Test
+When adding methodology to the kernel, ask:
 
-When considering a feature or abstraction, ask:
+> Could this instead be expressed as a skill contract or workflow policy?
 
-> Does this make it easier or safer to supervise, coordinate, or intervene in coding-agent work across providers?
+When adding agent instructions, ask:
+
+> Is the model being asked to perform bookkeeping that Harness could derive or perform deterministically?
+
+When adding recovery behaviour, ask:
+
+> Does this preserve history and use generic authority, or are we hard-coding another special case?
+
+When adding automation, ask:
+
+> Can Harness continue safely without the human, and does it know when it should stop?
+
+And at the product level:
+
+> Does this make AI development easier to delegate, govern, observe or intervene in across providers?
 
 If not, it probably does not belong in Harness yet.
-
-When considering provider-specific functionality, also ask:
-
-> Does Harness need to own this, or should the native provider tool continue to own it?
-
-The first useful version of Harness does not need to predict the final architecture.
-
-It needs to prove that multiple coding agents can run on an Ubuntu development machine while the developer retains a single, useful view of their progress and can intervene when their attention is required.
-
-
-
