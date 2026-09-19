@@ -11,6 +11,8 @@ import {
 import { dirname, isAbsolute, normalize, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { checkExecutorReadiness } from "../src/index.ts";
+
 const DEFAULT_HOST_URL = "http://127.0.0.1:3000";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -41,7 +43,7 @@ interface Job {
   readonly launchedAt: string;
 }
 interface Record {
-  readonly event: "init" | "dispatch" | "job" | "outcome";
+  readonly event: "init" | "adoption" | "plan" | "dispatch" | "job" | "outcome";
   readonly phase: Phase;
   readonly attempt: number;
   readonly at: string;
@@ -162,14 +164,24 @@ function maximumAttempt(state: WorkflowState, phase: Phase): number {
     .map((record) => record.attempt);
   return attempts.length === 0 ? 0 : Math.max(...attempts);
 }
-function completedImplementation(state: WorkflowState): number {
+function completedImplementation(
+  state: WorkflowState,
+  target?: Target,
+): number {
   const attempts = state.records
     .filter(
       (record) =>
         record.phase === "implementation" && record.outcome === "complete",
     )
     .map((record) => record.attempt);
-  return attempts.length === 0 ? 0 : Math.max(...attempts);
+  const local = attempts.length === 0 ? 0 : Math.max(...attempts);
+  const canonical =
+    target === undefined
+      ? 0
+      : Number(authorityState(target).current.implementation?.evidence.attempt);
+  return Number.isSafeInteger(canonical) && canonical > 0
+    ? Math.max(local, canonical)
+    : local;
 }
 function failedVerificationFor(
   state: WorkflowState,
@@ -183,9 +195,18 @@ function failedVerificationFor(
   );
 }
 function attemptForDispatch(state: WorkflowState, phase: Phase): number {
-  if (phase === "implementation") return maximumAttempt(state, phase) + 1;
-  if (phase === "evaluator-verify") return maximumAttempt(state, phase) + 1;
-  return 1;
+  const maximum = maximumAttempt(state, phase);
+  if (maximum === 0) return 1;
+  const latest = recordsFor(state, phase, maximum);
+  if (
+    latest.some(
+      (record) => record.outcome === "blocked" || record.outcome === "failed",
+    )
+  )
+    return maximum + 1;
+  if (phase === "implementation" || phase === "evaluator-verify")
+    return maximum + 1;
+  return maximum;
 }
 function canDispatch(
   state: WorkflowState,
@@ -217,7 +238,11 @@ function canDispatch(
     }
     if (
       attempt === 1 &&
-      !hasOutcome(state, "evaluator-prepare", 1, "complete")
+      !hasOutcome(state, "evaluator-prepare", 1, "complete") &&
+      !(
+        target !== undefined &&
+        canonicalCompletedPhases(target).includes("evaluator-prepare")
+      )
     ) {
       fail("Implementation requires the prior phase to be complete");
     }
@@ -235,7 +260,7 @@ function canDispatch(
     return;
   }
   if (phase === "evaluator-verify") {
-    if (completedImplementation(state) === 0) {
+    if (completedImplementation(state, target) === 0) {
       fail("Evaluator verify requires a completed implementation");
     }
     return;
@@ -256,7 +281,13 @@ function canDispatch(
     return;
   }
   const prior = phases[phases.indexOf(phase) - 1];
-  if (prior === undefined || !hasOutcome(state, prior, 1, "complete")) {
+  if (
+    prior === undefined ||
+    (!hasOutcome(state, prior, 1, "complete") &&
+      !(
+        target !== undefined && canonicalCompletedPhases(target).includes(prior)
+      ))
+  ) {
     fail(`Phase ${phase} requires the prior phase to be complete`);
   }
 }
@@ -284,7 +315,10 @@ function bootstrapAuthority(
 ): BootstrapAuthority | undefined {
   if (
     (phase !== "evaluator-prepare" && phase !== "evaluator-verify") ||
-    !target.path.endsWith("/012-correction-cycles-evaluator-repair")
+    !(
+      target.path.endsWith("/012-correction-cycles-evaluator-repair") ||
+      target.path.endsWith("/013a-Workflow-execution-friction")
+    )
   )
     return undefined;
   const authorityPath = resolve(
@@ -299,20 +333,30 @@ function bootstrapAuthority(
   const sourcePath = readField(item, "sourcePath");
   const claimed = readField(item, "identity");
   const snapshotPath = readField(item, "snapshotPath");
+  const expected012 = target.path.endsWith(
+    "/012-correction-cycles-evaluator-repair",
+  );
   if (
     name !== "evaluator" ||
-    contractVersion !== 10 ||
-    sourceCommit !== "b7f442aed5d5cfe2722aec40f2fab0eb059e2884" ||
+    typeof contractVersion !== "number" ||
+    typeof sourceCommit !== "string" ||
+    contractVersion !== (expected012 ? 10 : 11) ||
+    sourceCommit !==
+      (expected012
+        ? "b7f442aed5d5cfe2722aec40f2fab0eb059e2884"
+        : "fae05912f59f8ebdb8982ab16deb26e293754647") ||
     claimed !==
-      "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b" ||
+      (expected012
+        ? "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b"
+        : "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802") ||
     typeof sourcePath !== "string" ||
     typeof snapshotPath !== "string"
   )
-    fail("Spike 012 bootstrap evaluator authority is invalid");
+    fail("Pinned evaluator bootstrap authority is invalid");
   const snapshot = resolve(target.path, snapshotPath);
   if (identity(readFileSync(snapshot)) !== claimed)
     fail(
-      "Spike 012 bootstrap evaluator snapshot identity does not match authority",
+      "Pinned evaluator bootstrap snapshot identity does not match authority",
     );
   const committed = execFileSync(
     "git",
@@ -321,7 +365,7 @@ function bootstrapAuthority(
   );
   if (identity(committed) !== claimed)
     fail(
-      "Spike 012 bootstrap evaluator source provenance does not match authority",
+      "Pinned evaluator bootstrap source provenance does not match authority",
     );
   return {
     name,
@@ -333,6 +377,11 @@ function bootstrapAuthority(
   };
 }
 function promptFor(phase: Phase, spike: string, target?: Target): string {
+  if (phase.startsWith("evaluator-") && executorFor(phase) === "claude") {
+    // The host resolves authority and supplies the protected contract through
+    // Claude system context. This caller identifies work, never invokes a Skill.
+    return `Perform the allocated ${phase} work for ${spike}.`;
+  }
   const bootstrap =
     target === undefined ? undefined : bootstrapAuthority(target, phase);
   if (bootstrap !== undefined) {
@@ -387,7 +436,9 @@ function runFrom(payload: unknown): { runId: string; status: string } {
 async function fetchRun(
   url: string,
   runId: string,
-): Promise<{ runId: string; status: string } | undefined> {
+): Promise<
+  { runId: string; status: string; roleDisposition?: string } | undefined
+> {
   let response: Response;
   try {
     response = await fetch(`${url}/workflow-runs/${runId}`);
@@ -395,7 +446,15 @@ async function fetchRun(
     return undefined;
   }
   if (!response.ok) return undefined;
-  return runFrom(await response.json());
+  const payload: unknown = await response.json();
+  const base = runFrom(payload);
+  const roleDisposition = readField(
+    readField(payload, "run"),
+    "roleDisposition",
+  );
+  return typeof roleDisposition === "string"
+    ? { ...base, roleDisposition }
+    : base;
 }
 function init(target: Target): void {
   try {
@@ -424,17 +483,15 @@ function init(target: Target): void {
 async function allocateHostRun(
   spike: string,
   phase: Phase,
-  attempt: number,
+  methodologyAttempt: string,
 ): Promise<Job> {
   const url = hostUrl();
   const evaluator = phase.startsWith("evaluator-");
-  const evaluatorWorkspace = process.env.HARNESS_EVALUATOR_WORKSPACE;
-  const useEvaluatorProfile = evaluator && evaluatorWorkspace !== undefined;
   const executor = executorFor(phase);
   const slot: RunSlot = {
     workflow: spikeName(spike),
     phase,
-    methodologyAttempt: String(attempt),
+    methodologyAttempt,
   };
   const requestBody = {
     slot,
@@ -442,8 +499,9 @@ async function allocateHostRun(
     executor,
     workspace: repositoryRoot,
     invocationMode: "delegated",
-    permissionProfile: useEvaluatorProfile ? "evaluator" : "repo-local-worker",
-    ...(useEvaluatorProfile ? { evaluatorWorkspace } : {}),
+    // The host derives protected-role permissions from the role and its own
+    // configuration. The runner must not make evaluator semantics depend on
+    // which environment happened to launch it.
     skill: evaluator
       ? (bootstrapAuthority(targetFrom(spike), phase)?.snapshotPath ??
         "evaluator")
@@ -479,7 +537,7 @@ async function allocateHostRun(
     runId,
     hostUrl: url,
     executor,
-    permissionProfile: requestBody.permissionProfile,
+    permissionProfile: evaluator ? "evaluator" : "repo-local-worker",
     slot,
     launchedAt: new Date().toISOString(),
   };
@@ -494,14 +552,20 @@ async function dispatch(
   const attempt = attemptForDispatch(state, phase);
   canDispatch(state, phase, attempt, target);
   const implementationAttempt =
-    phase === "evaluator-verify" ? completedImplementation(state) : undefined;
+    phase === "evaluator-verify"
+      ? completedImplementation(state, target)
+      : undefined;
   const implementationReference =
     implementationAttempt === undefined ? {} : { implementationAttempt };
   if (!execute) {
+    // Preview is planning, not a fake execution.  Writing a dispatch record
+    // here was a rather efficient way to make `--execute` impossible later.
+    // Preserve the human-planning surface as a distinct fact so explicit
+    // local/manual outcomes used by the older workflow remain representable.
     writeState(
       target,
       append(state, {
-        event: "dispatch",
+        event: "plan",
         phase,
         attempt,
         at: new Date().toISOString(),
@@ -513,7 +577,13 @@ async function dispatch(
     );
     return;
   }
-  const job = await allocateHostRun(spike, phase, attempt);
+  const methodologyAttempt =
+    phase === "implementation"
+      ? String(attempt)
+      : phase === "evaluator-verify"
+        ? String(completedImplementation(state, target))
+        : "1";
+  const job = await allocateHostRun(spike, phase, methodologyAttempt);
   const dispatched = append(state, {
     event: "dispatch",
     phase,
@@ -543,7 +613,12 @@ async function record(
   const state = readState(target);
   const attempt = maximumAttempt(state, phase);
   const phaseRecords = recordsFor(state, phase, attempt);
-  if (attempt === 0 || !phaseRecords.some((item) => item.event === "dispatch"))
+  if (
+    attempt === 0 ||
+    !phaseRecords.some(
+      (item) => item.event === "dispatch" || item.event === "plan",
+    )
+  )
     fail(`Phase ${phase} has not been dispatched`);
   if (hasOutcome(state, phase, attempt))
     fail(`Phase ${phase} attempt ${String(attempt)} already has an outcome`);
@@ -557,9 +632,13 @@ async function record(
       fail(
         `Cannot confirm completion: Harness run ${job.runId} is not reachable at ${job.hostUrl}`,
       );
-    if (run.status !== "completed")
+    if (
+      run.status !== "completed" ||
+      (run as unknown as { roleDisposition?: string }).roleDisposition !==
+        "succeeded"
+    )
       fail(
-        `Phase ${phase} canonical run ${job.runId} is ${run.status}, not completed`,
+        `Phase ${phase} canonical run ${job.runId} lacks a successful semantic role result`,
       );
   }
   const implementationAttempt = phaseRecords.find(
@@ -587,11 +666,87 @@ async function status(target: Target): Promise<void> {
       const run = await fetchRun(record.job.hostUrl, record.job.runId);
       return {
         ...record,
-        job: { ...record.job, runStatus: run?.status ?? "unreachable" },
+        job: {
+          ...record.job,
+          runStatus: run?.status ?? "unreachable",
+          roleDisposition:
+            (run as unknown as { roleDisposition?: string } | undefined)
+              ?.roleDisposition ?? "unreachable",
+        },
       };
     }),
   );
-  process.stdout.write(`${JSON.stringify({ records })}\n`);
+  const adoption = canonicalProgress(target);
+  process.stdout.write(
+    `${JSON.stringify({
+      records,
+      canonicalAdoption: {
+        adoptedCanonicalCheckpoints: adoption.completed,
+        nextPhase: adoption.nextPhase,
+      },
+    })}\n`,
+  );
+}
+
+function canonicalProgress(target: Target): {
+  readonly completed: Phase[];
+  readonly nextPhase: Phase | null;
+} {
+  const transitions = authorityEvents(target).map((event) => event.transition);
+  const completed: Phase[] = [];
+  if (transitions.includes("brief-frozen")) completed.push("brief-readiness");
+  if (transitions.includes("design-map-frozen")) completed.push("design-map");
+  if (transitions.includes("evaluation-prepared"))
+    completed.push("evaluator-prepare");
+  const current = authorityState(target).current;
+  if (current.implementation !== null) {
+    completed.push("implementation");
+    if (current.verification?.evidence.result === "PASS") {
+      completed.push("evaluator-verify");
+      if (current.promoted) {
+        completed.push("as-built");
+        if (current.accepted) completed.push("outcome");
+      }
+    }
+  }
+  const nextPhase =
+    current.implementation === null
+      ? completed.includes("evaluator-prepare")
+        ? "implementation"
+        : (phases.find((phase) => !completed.includes(phase)) ?? null)
+      : current.verification?.evidence.result === "PASS"
+        ? current.promoted
+          ? current.accepted
+            ? null
+            : "outcome"
+          : "as-built"
+        : "evaluator-verify";
+  return { completed, nextPhase };
+}
+
+function canonicalCompletedPhases(target: Target): Phase[] {
+  return canonicalProgress(target).completed;
+}
+
+function adopt(target: Target): void {
+  const state = readState(target);
+  const progress = canonicalProgress(target);
+  const already = state.records.find((record) => record.event === "adoption");
+  if (already === undefined) {
+    const phase = progress.completed.at(-1) ?? "brief-readiness";
+    writeState(
+      target,
+      append(state, {
+        event: "adoption",
+        phase,
+        attempt: 1,
+        at: new Date().toISOString(),
+      }),
+    );
+  }
+  process.stdout.write(
+    `${JSON.stringify({ adoptedCanonicalCheckpoints: progress.completed, nextPhase: progress.nextPhase })}\n`,
+  );
 }
 async function cancel(target: Target, phase: Phase): Promise<void> {
   const jobRecord = [...readState(target).records]
@@ -642,10 +797,12 @@ function authorityEvents(target: Target): AuthorityEvent[] {
     .filter(Boolean)
     .map((line) => JSON.parse(line) as AuthorityEvent);
 }
+class AuthorityEvidenceRequiredError extends Error {}
+
 function value(evidence: Evidence, name: string): string {
   const result = evidence[name];
   if (typeof result !== "string" || result.length === 0)
-    fail(`Evidence requires ${name}`);
+    throw new AuthorityEvidenceRequiredError(`Evidence requires ${name}`);
   return result;
 }
 function identity(contents: string | Buffer): string {
@@ -852,6 +1009,9 @@ interface CycleState {
   readonly opened: AuthorityEvent | null;
   readonly events: readonly AuthorityEvent[];
   readonly evaluatorRevision: string | null;
+  readonly evaluatorRevisionSource:
+    "promoted" | "predecessor" | "allocation" | "opened" | null;
+  readonly staleInheritedEvaluatorRevision: string | null;
   readonly implementation: AuthorityEvent | null;
   readonly allocation: AuthorityEvent | null;
   readonly verification: AuthorityEvent | null;
@@ -864,13 +1024,66 @@ function eventCycle(event: AuthorityEvent): string {
   const cycle = event.evidence.cycle;
   return typeof cycle === "string" && /^\d{3}$/.test(cycle) ? cycle : "001";
 }
+function promotedEvaluatorRevision(target: Target): string | null {
+  const promotionPath = resolve(target.path, "evaluation/promotion.json");
+  if (!existsSync(promotionPath)) return null;
+  try {
+    const promotion: unknown = JSON.parse(readFileSync(promotionPath, "utf8"));
+    if (
+      typeof promotion !== "object" ||
+      promotion === null ||
+      Array.isArray(promotion)
+    )
+      return null;
+    const record = promotion as { readonly [key: string]: unknown };
+    if (record.result !== "PASS" || typeof record.passingAttempt !== "string")
+      return null;
+    const attempts = record.attempts;
+    if (!Array.isArray(attempts)) return null;
+    const attempt = attempts.find(
+      (item): item is { readonly [key: string]: unknown } =>
+        typeof item === "object" &&
+        item !== null &&
+        !Array.isArray(item) &&
+        (item as { readonly [key: string]: unknown }).id ===
+          record.passingAttempt,
+    );
+    if (
+      attempt === undefined ||
+      typeof attempt.evaluatorRevision !== "string" ||
+      typeof attempt.freezePath !== "string" ||
+      attempt.freezePath.startsWith("/") ||
+      attempt.freezePath.includes("..")
+    )
+      return null;
+    const freezePath = resolve(target.path, attempt.freezePath);
+    if (
+      relative(target.path, freezePath).startsWith("..") ||
+      !existsSync(freezePath)
+    )
+      return null;
+    const freeze: unknown = JSON.parse(readFileSync(freezePath, "utf8"));
+    if (
+      typeof freeze !== "object" ||
+      freeze === null ||
+      Array.isArray(freeze) ||
+      (freeze as { readonly [key: string]: unknown }).evaluatorRevision !==
+        attempt.evaluatorRevision
+    )
+      return null;
+    return attempt.evaluatorRevision;
+  } catch {
+    return null;
+  }
+}
 function authorityState(target: Target) {
   const events = authorityEvents(target);
   const ids = new Set<string>(["001"]);
   for (const event of events)
     if (event.transition === "correction-cycle-opened")
       ids.add(value(event.evidence, "cycle"));
-  const cycles: CycleState[] = [...ids].sort().map((id) => {
+  const cycles: CycleState[] = [];
+  for (const id of [...ids].sort()) {
     const cycleEvents = events.filter((event) => eventCycle(event) === id);
     const opened =
       cycleEvents.find(
@@ -892,26 +1105,67 @@ function authorityState(target: Target) {
       [...cycleEvents]
         .reverse()
         .find((event) => event.transition === "human-rejected") ?? null;
-    const repair = [...cycleEvents]
-      .reverse()
-      .find((event) => event.transition === "evaluator-repair-recorded");
-    const evaluatorRevision =
-      typeof repair?.evidence.resultingEvaluatorRevision === "string"
-        ? repair.evidence.resultingEvaluatorRevision
-        : typeof allocation?.evidence.evaluatorRevision === "string"
-          ? allocation.evidence.evaluatorRevision
-          : typeof opened?.evidence.inheritedEvaluatorRevision === "string"
-            ? opened.evidence.inheritedEvaluatorRevision
-            : null;
-    return {
+    const predecessor =
+      typeof opened?.evidence.priorCycle === "string"
+        ? cycles.find((cycle) => cycle.id === opened.evidence.priorCycle)
+        : undefined;
+    const promotedRevision = cycleEvents.some(
+      (event) => event.transition === "promotion-recorded",
+    )
+      ? promotedEvaluatorRevision(target)
+      : null;
+    let evaluatorRevision = promotedRevision;
+    let evaluatorRevisionSource: CycleState["evaluatorRevisionSource"] =
+      promotedRevision === null ? null : "promoted";
+    if (
+      evaluatorRevision === null &&
+      predecessor !== undefined &&
+      predecessor.evaluatorRevision !== null
+    ) {
+      evaluatorRevision = predecessor.evaluatorRevision;
+      evaluatorRevisionSource = "predecessor";
+    }
+    if (
+      evaluatorRevision === null &&
+      typeof allocation?.evidence.evaluatorRevision === "string"
+    ) {
+      evaluatorRevision = allocation.evidence.evaluatorRevision;
+      evaluatorRevisionSource = "allocation";
+    }
+    if (
+      evaluatorRevision === null &&
+      typeof opened?.evidence.inheritedEvaluatorRevision === "string"
+    ) {
+      evaluatorRevision = opened.evidence.inheritedEvaluatorRevision;
+      evaluatorRevisionSource = "opened";
+    }
+    for (const repair of cycleEvents.filter(
+      (event) => event.transition === "evaluator-repair-recorded",
+    )) {
+      if (
+        typeof repair.evidence.sourceEvaluatorRevision === "string" &&
+        typeof repair.evidence.resultingEvaluatorRevision === "string" &&
+        repair.evidence.sourceEvaluatorRevision === evaluatorRevision
+      ) {
+        evaluatorRevision = repair.evidence.resultingEvaluatorRevision;
+        evaluatorRevisionSource = "predecessor";
+      }
+    }
+    const inherited =
+      typeof opened?.evidence.inheritedEvaluatorRevision === "string"
+        ? opened.evidence.inheritedEvaluatorRevision
+        : null;
+    cycles.push({
       id,
-      predecessor:
-        typeof opened?.evidence.priorCycle === "string"
-          ? opened.evidence.priorCycle
-          : null,
+      predecessor: predecessor?.id ?? null,
       opened,
       events: cycleEvents,
       evaluatorRevision,
+      evaluatorRevisionSource,
+      staleInheritedEvaluatorRevision:
+        inherited !== null && inherited !== evaluatorRevision
+          ? inherited
+          : null,
       implementation,
       allocation,
       verification,
@@ -925,8 +1179,8 @@ function authorityState(target: Target) {
         (event) => event.transition === "human-accepted",
       ),
       rejectedEvent,
-    };
-  });
+    });
+  }
   const current = cycles.at(-1);
   if (current === undefined) fail("Authority must contain legacy Cycle 001");
   const passed = current.verification?.evidence.result === "PASS";
@@ -1085,11 +1339,10 @@ function validateAuthority(
     if (!handoff)
       fail("verification-allocated requires implementation-handoff");
     const prepared = validatePreparedMap(preparedMapText(target, events));
-    if (
-      value(evidence, "evaluatorRevision") !==
-      prepared.readiness.evaluatorRevision
-    )
-      fail("verification-allocated must bind the attested evaluator revision");
+    const evaluatorRevision =
+      state.current.evaluatorRevision ?? prepared.readiness.evaluatorRevision;
+    if (value(evidence, "evaluatorRevision") !== evaluatorRevision)
+      fail("verification-allocated must bind the current evaluator revision");
     if (
       value(evidence, "commit") !== value(handoff.evidence, "commit") ||
       Number(evidence.implementationAttempt) !==
@@ -1308,16 +1561,37 @@ function authority(
 ): void {
   if (mode === "status") {
     const state = authorityState(target);
-    const legal = authorityTransitions.filter((item) => {
+    const availability = new Map<
+      AuthorityTransition,
+      "available" | "available-requires-evidence"
+    >();
+    for (const item of authorityTransitions) {
       try {
         validateAuthority(target, item, {});
-        return true;
-      } catch {
-        return false;
+        availability.set(item, "available");
+      } catch (error) {
+        if (error instanceof AuthorityEvidenceRequiredError)
+          availability.set(item, "available-requires-evidence");
       }
-    });
+    }
+    // correction-cycle-opened has a structural predicate plus required
+    // evidence that is not read through value(); retain its established
+    // availability classification.
+    if (state.correctionPermitted)
+      availability.set(
+        "correction-cycle-opened",
+        "available-requires-evidence",
+      );
+    const recordable = authorityTransitions.filter(
+      (item) => availability.get(item) === "available",
+    );
+    const available = new Set(availability.keys());
+    const transitionAvailability = authorityTransitions.map((transition) => ({
+      transition,
+      status: availability.get(transition) ?? "unavailable",
+    }));
     process.stdout.write(
-      `${JSON.stringify({ history: state.events, legalTransitions: legal, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.current.predecessor ?? state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected || state.blockedRepair !== undefined, outcomeComplete: state.outcome, currentCycle: { id: state.current.id, state: state.accepted || state.rejected ? "CLOSED" : "OPEN", evaluatorRevision: state.current.evaluatorRevision, implementationAttempt: state.current.implementation?.evidence.attempt ?? null, verification: state.current.verification?.evidence ?? null, promotionComplete: state.current.promoted, asBuiltComplete: state.current.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : "PENDING" }, cycles: state.cycles.map((cycle) => ({ id: cycle.id, predecessor: cycle.predecessor, evaluatorRevision: cycle.evaluatorRevision, implementationAttempt: cycle.implementation?.evidence.attempt ?? null, verification: cycle.verification?.evidence ?? null, promotionComplete: cycle.promoted, asBuiltComplete: cycle.asBuilt, humanDecision: cycle.rejectedEvent ? "REJECTED" : cycle.accepted ? "ACCEPTED" : "PENDING" })), correctionPermitted: state.correctionPermitted, correctionReason: state.correctionReason })}\n`,
+      `${JSON.stringify({ history: state.events, legalTransitions: [...available], recordableTransitions: recordable, transitionAvailability, technicalVerification: state.passed ? "PASS" : "NOT_PASSED", promotionComplete: state.promoted, asBuiltComplete: state.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : state.asBuilt ? "PENDING" : "NOT_READY", rejectionClassification: state.rejectedEvent?.evidence.classification ?? null, predecessor: state.current.predecessor ?? state.successor?.evidence.predecessor ?? null, successorPermitted: state.rejected || state.blockedRepair !== undefined, outcomeComplete: state.outcome, currentCycle: { id: state.current.id, state: state.accepted || state.rejected ? "CLOSED" : "OPEN", evaluatorRevision: state.current.evaluatorRevision, evaluatorRevisionSource: state.current.evaluatorRevisionSource, staleInheritedEvaluatorRevision: state.current.staleInheritedEvaluatorRevision, implementationAttempt: state.current.implementation?.evidence.attempt ?? null, verification: state.current.verification?.evidence ?? null, promotionComplete: state.current.promoted, asBuiltComplete: state.current.asBuilt, humanDecision: state.rejected ? "REJECTED" : state.accepted ? "ACCEPTED" : "PENDING" }, cycles: state.cycles.map((cycle) => ({ id: cycle.id, predecessor: cycle.predecessor, evaluatorRevision: cycle.evaluatorRevision, evaluatorRevisionSource: cycle.evaluatorRevisionSource, staleInheritedEvaluatorRevision: cycle.staleInheritedEvaluatorRevision, implementationAttempt: cycle.implementation?.evidence.attempt ?? null, verification: cycle.verification?.evidence ?? null, promotionComplete: cycle.promoted, asBuiltComplete: cycle.asBuilt, humanDecision: cycle.rejectedEvent ? "REJECTED" : cycle.accepted ? "ACCEPTED" : "PENDING" })), correctionPermitted: state.correctionPermitted, correctionReason: state.correctionReason })}\n`,
     );
     return;
   }
@@ -1380,6 +1654,10 @@ async function main(args: string[]): Promise<void> {
     await status(targetFrom(rest[0]));
     return;
   }
+  if (command === "adopt" && rest.length === 1) {
+    adopt(targetFrom(rest[0]));
+    return;
+  }
   if (command === "dispatch") {
     const [phaseValue, spike, option] = rest;
     if (
@@ -1404,7 +1682,28 @@ async function main(args: string[]): Promise<void> {
     await cancel(targetFrom(rest[1]), phaseFrom(rest[0]));
     return;
   }
-  fail("Usage: workflow <init|status|dispatch|record|cancel> ...");
+  if (command === "readiness" && rest.length <= 1) {
+    const requested = rest[0];
+    if (
+      requested !== undefined &&
+      requested !== "codex" &&
+      requested !== "claude"
+    )
+      fail("Usage: workflow readiness [codex|claude]");
+    const executors: Executor[] =
+      requested === undefined ? ["codex", "claude"] : [requested];
+    process.stdout.write(
+      `${JSON.stringify({
+        readiness: executors.map((executor) =>
+          checkExecutorReadiness(executor),
+        ),
+      })}\n`,
+    );
+    return;
+  }
+  fail(
+    "Usage: workflow <init|adopt|status|dispatch|record|cancel|readiness> ...",
+  );
 }
 void main(process.argv.slice(2)).catch((error: unknown) => {
   process.stderr.write(

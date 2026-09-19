@@ -1,0 +1,195 @@
+{
+  "revision": "001",
+  "note": "Every case is mandatory. E1-E5 are evaluator-authored executable hidden tests driving the existing public tools/workflow.ts CLI. PR1-PR7 are visible-regression obligations placed on the implementation because the frozen Design Map leaves the underlying representations (execution binding, delegation material, role-result schema, adoption record, CLI/API surface) as implementation freedom. LP1-LP3, HB1, and COMP1 are the mandatory live-provider and host-boundary scenarios spike.md 'Evidence requirements' reserves; their fixture prerequisites (role, canonical-authority precondition, workspace/access boundary, permitted side effects, cleanup/isolation) must be fixed by the implementation per spike.md 'Scenario prerequisites' before they are exercised at verify.",
+  "cases": [
+    {
+      "id": "E1",
+      "criteria": ["AC20"],
+      "verifies": ["R20", "N5"],
+      "mode": "executable regression (evaluator-authored)",
+      "executable": true,
+      "tests": [".hidden-test/dispatch-inspection-non-consuming.test.ts"],
+      "procedure": "Init a disposable fixture spike; run `dispatch brief-readiness <spike>` (no --execute) twice; assert the second inspection succeeds, is byte-identical output to the first, and leaves .workflow/state.json with no dispatch event; then assert a genuine --execute dispatch for the same still-pending phase is not refused with 'already been dispatched'.",
+      "decisionRule": "A second inspection failing, or a subsequent real dispatch being refused because inspection already ran, is a FAIL for AC20."
+    },
+    {
+      "id": "E2",
+      "criteria": ["AC16", "AC17", "AC19"],
+      "verifies": ["R16", "R17", "R19", "N4", "I4"],
+      "mode": "executable regression (evaluator-authored)",
+      "executable": true,
+      "tests": [".hidden-test/canonical-authority-adoption.test.ts"],
+      "procedure": "Record brief-frozen and design-map-frozen canonical authority for a fixture; init a fresh .workflow state for the same fixture (no local dispatch/completion history); assert dispatching evaluator-prepare succeeds (AC16), dispatching implementation is refused (AC19: correct next phase, not skipped ahead), and that no brief-readiness/design-map dispatch or outcome record appears in local state after adoption (AC17).",
+      "decisionRule": "A fresh runner failing to reach evaluator-prepare from valid canonical authority, deriving the wrong next phase, or gaining local dispatch/outcome records for phases it never ran, is a FAIL for AC16/AC17/AC19."
+    },
+    {
+      "id": "E3",
+      "criteria": ["AC21"],
+      "verifies": ["R21", "I4"],
+      "mode": "executable regression (evaluator-authored, frozen as non-regression control)",
+      "executable": true,
+      "tests": [".hidden-test/recoverable-preexecution-failure.test.ts"],
+      "procedure": "Init a fixture; run `dispatch brief-readiness <spike> --execute` against an unreachable HARNESS_HOST_URL; assert the failure leaves .workflow/state.json byte-identical to before; retry the same dispatch and assert it fails identically, not with 'already been dispatched'.",
+      "decisionRule": "A pre-execution allocation failure that mutates local state, or a retry refused because of the failed attempt, is a FAIL for AC21."
+    },
+    {
+      "id": "E4",
+      "criteria": ["AC22", "AC35"],
+      "verifies": ["R22", "R35", "N6", "I4"],
+      "mode": "executable regression (evaluator-authored)",
+      "executable": true,
+      "tests": [".hidden-test/blocked-phase-retry.test.ts"],
+      "procedure": "Dispatch and record a phase outcome as blocked; assert a fresh dispatch for the same still-pending phase succeeds (AC35); assert the first (blocked) outcome record is preserved byte-identical and a distinct fresh execution-attempt identity is recorded alongside it, not in place of it (AC22).",
+      "decisionRule": "A blocked phase that cannot be redispatched, or whose first execution record is deleted/rewritten by the retry, is a FAIL for AC22/AC35."
+    },
+    {
+      "id": "E5",
+      "criteria": ["AC27", "AC28"],
+      "verifies": ["R27", "R28"],
+      "mode": "executable regression (evaluator-authored)",
+      "executable": true,
+      "tests": [".hidden-test/authority-status-evidence-aware-transitions.test.ts"],
+      "procedure": "Replay Spike 011's own committed public authority evidence into a fresh fixture to reach an equivalent repairable human-rejected state (correctionPermitted: true); assert `authority status`'s legalTransitions includes correction-cycle-opened even though no evidence for it has been supplied.",
+      "decisionRule": "A repairable-rejection state whose legalTransitions omits correction-cycle-opened (or an equivalent Design-Map-approved availability signal) is a FAIL for AC27/AC28."
+    },
+    {
+      "id": "PR1",
+      "criteria": ["AC01", "AC02", "AC03"],
+      "verifies": ["R1", "R2", "R3"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC01-AC03; Design Map 'Shared contracts')",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: a governed role allocation deterministically resolves to the intended repository contract; for a frozen/versioned contract the run record identifies its exact identity; the run record explicitly states how the contract was delivered/invoked for the selected executor, distinct from provider prose.",
+      "decisionRule": "A run record with no deterministic contract resolution, no exact contract identity for a frozen contract, or no explicit delivery-mode field (relying on provider claims instead) is a FAIL for AC01/AC02/AC03."
+    },
+    {
+      "id": "PR2",
+      "criteria": ["AC04", "AC07"],
+      "verifies": ["R4", "R7", "N1", "I1"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC04, AC07; 'Delegated authority source and validation boundary')",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: a request/prompt containing evaluator-role or Harness-allocation-claiming text, submitted other than through a mechanically valid Harness evaluator-role allocation, is refused protected authority; an ordinary implementation agent or workflow role cannot independently elect to become the evaluator.",
+      "decisionRule": "Protected evaluator authority granted merely because a request/prompt claims it, or an ordinary role able to self-elect as evaluator, is a FAIL for AC04/AC07."
+    },
+    {
+      "id": "PR3",
+      "criteria": ["AC05", "AC06"],
+      "verifies": ["R5", "R6", "I1"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC05, AC06)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: a mechanically valid Harness evaluator-role allocation (derived from canonical workflow authority) authorizes the protected role without a global protection weakening; explicit authorized human evaluator invocation (e.g. `/evaluator ...`) remains separately valid.",
+      "decisionRule": "A valid Harness allocation failing to authorize the protected role, evaluator protection weakened globally to achieve delegation, or explicit human invocation no longer working, is a FAIL for AC05/AC06."
+    },
+    {
+      "id": "PR4",
+      "criteria": ["AC12", "AC13", "AC14", "AC15"],
+      "verifies": ["R12", "R13", "R14", "R15", "N2", "N3"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC12-AC15; 'Authoritative semantic role result')",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario: provider/process lifecycle and methodology-role disposition are represented as distinct, durable facts; a process exiting 0 while refusing/blocking its role is not recorded as role success; a successful role has machine-readable evidence distinguishable from exit code alone; a governed prerequisite is not satisfied by process termination without a validated role result.",
+      "decisionRule": "A workflow prerequisite satisfied by process exit alone, or a refused/blocked role represented as complete, is a FAIL for AC12/AC13/AC14/AC15."
+    },
+    {
+      "id": "PR5",
+      "criteria": ["AC18", "AC23", "AC24", "AC25", "AC26"],
+      "verifies": ["R18", "R23", "R24", "R25", "R26"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC18, AC23-AC26; 'Workflow and run observability')",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test / CLI-inspection scenario: dispatch exposes the created run identity, allocated role, and executor; the run is followable to a semantic terminal outcome via CLI/API without reverse-engineering internal files; the run record exposes governing contract identity and delivery mode plus both process state and role disposition; adoption/resumption of canonical authority is exposed as a distinguishable operational fact.",
+      "decisionRule": "A successful dispatch or adoption whose identity, role, executor, contract identity, delivery mode, process state, role disposition, or adoption fact cannot be discovered without manual file inspection is a FAIL for AC18/AC23/AC24/AC25/AC26."
+    },
+    {
+      "id": "PR6",
+      "criteria": ["AC29"],
+      "verifies": ["R29"],
+      "mode": "public executable regression + preserved private history",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC29; 'Spike 013a bootstrap exception') plus this spike's own preserved .workflow/state.json and manifest.md Run 003 / pre-freeze retry bootstrap history",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario plus inspection of this spike's own recorded bootstrap usage: every direct host-owned allocation under the Spike 013a bootstrap exception identifies the exact upstream frozen canonical authority it derives from, is recorded distinguishably from ordinary runner history, and does not fabricate prior dispatch/completion events.",
+      "decisionRule": "A bootstrap allocation that cannot be traced to an identified upstream frozen authority, that is indistinguishable from ordinary runner history, or that fabricates history, is a FAIL for AC29."
+    },
+    {
+      "id": "PR7",
+      "criteria": ["AC30", "AC31"],
+      "verifies": ["R30", "R31"],
+      "mode": "provenance inspection + public executable regression",
+      "executable": true,
+      "artifact": "spikes/013a-Workflow-execution-friction/bootstrap/** at the evaluated commit; test/*.test.ts",
+      "materializedBy": "this specification's own Source section (provenance) plus implementation (regression, analogous to Spike 012's pin-dispatch test)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "Re-confirm bootstrap/evaluator-skill.md and bootstrap/evaluator-authority.json are byte-identical to their frozen identity (sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802); confirm the workflow dispatcher supplies this pinned snapshot, not working-tree skills/evaluator/SKILL.md, for Spike 013a evaluator-prepare/evaluator-verify allocations; confirm the finalized Spike 013a verification result binds this same bootstrap-authority identity.",
+      "decisionRule": "A changed pinned snapshot identity, an evaluator-phase allocation for this spike resolving working-tree SKILL.md instead of the pin, or a verification result not binding the pinned identity, is a FAIL for AC30/AC31."
+    },
+    {
+      "id": "LP1",
+      "criteria": ["AC08", "AC09"],
+      "verifies": ["R8", "R9", "I1"],
+      "mode": "live provider fixture",
+      "executable": false,
+      "fixture": {
+        "role": "a bounded, repository-owned, canonically-permitted protected evaluator role",
+        "authorityPrerequisite": "canonical workflow authority that legally permits exactly this bounded evaluator role for the fixture spike/workflow",
+        "workspaceBoundary": "the evaluator workspace/access the pinned evaluator contract requires, plus the fixture's own declared repository-owned workspace; no broader host access",
+        "permittedEffects": "only the side effects the fixture declares (bounded evaluator output for the fixture spike); must not advance spikes/011-host-owned-workflow-runs authority",
+        "expectedResult": "a Harness-validated successful evaluator-role disposition, reached with no manual /evaluator ... invocation after allocation, visible through the normal run/workflow inspection surface",
+        "cleanup": "fixture artifacts removed or left in a disposable, clearly-marked location after the run; no mutation of any real spike's canonical workflow.jsonl"
+      },
+      "procedure": "Allocate the fixture's protected evaluator role through the Harness host to the real Claude adapter; observe the run to its terminal semantic result with no manual slash-command invocation; confirm the run demonstrably exercises the authority boundary that caused the original Claude refusal (spike.md Observed failure #1) - i.e. Claude is delegated the role and performs it without independently deciding it needs a human-typed /evaluator command.",
+      "decisionRule": "Claude refusing the delegated role, requiring a manual /evaluator invocation to proceed, or the host recording process completion without a validated successful role result, is a FAIL for AC08/AC09. Required-executor unavailability (auth/service/config) is BLOCKED, not FAIL."
+    },
+    {
+      "id": "LP2",
+      "criteria": ["AC10"],
+      "verifies": ["R10"],
+      "mode": "live provider fixture",
+      "executable": false,
+      "fixture": {
+        "role": "a bounded, repository-owned, canonically-permitted governed role bound to an exact repository-owned contract",
+        "authorityPrerequisite": "canonical workflow authority that legally permits exactly this bounded role for the fixture spike/workflow",
+        "workspaceBoundary": "the fixture's own declared repository-owned workspace; no broader host access",
+        "permittedEffects": "only the side effects the fixture declares; must not advance spikes/011-host-owned-workflow-runs authority",
+        "expectedResult": "a Harness-validated successful role disposition, with the exact contract identity and delivery/invocation mode recorded and inspectable through the run record",
+        "cleanup": "fixture artifacts removed or left in a disposable, clearly-marked location after the run; no mutation of any real spike's canonical workflow.jsonl"
+      },
+      "procedure": "Allocate the fixture's governed role through the Harness host to the real Codex adapter; confirm the run record identifies the exact contract that governed the run and states how it was delivered/invoked, independent of Codex's own narrative claims.",
+      "decisionRule": "A run record that cannot identify the exact governing contract or its delivery/invocation mode independent of Codex's own claims is a FAIL for AC10. Required-executor unavailability is BLOCKED, not FAIL."
+    },
+    {
+      "id": "LP3",
+      "criteria": ["AC11"],
+      "verifies": ["R11", "I2"],
+      "mode": "composite (cross-fixture comparison of LP1 and LP2)",
+      "executable": false,
+      "procedure": "Compare LP1's and LP2's recorded authority validation, contract-identity binding, and semantic-result requirements; confirm both satisfy the same shared-contract obligations (Design Map 'Shared contracts') despite different provider mechanisms.",
+      "decisionRule": "A material difference in authority, contract-identity, or semantic-result requirements between the Claude and Codex fixtures (beyond provider-specific delivery mechanism) is a FAIL for AC11."
+    },
+    {
+      "id": "HB1",
+      "criteria": ["AC32"],
+      "verifies": ["R32", "N7"],
+      "mode": "host boundary",
+      "executable": false,
+      "procedure": "Confirm at least one of LP1/LP2 crossed the real Harness host-owned workflow-run boundary: an actual POST /workflow-runs request reaching a live host process, which spawned a real provider child process (not a statically constructed command array, not a mocked backend).",
+      "decisionRule": "Evidence limited to static examination of prompts, command arrays, permission profiles, or adapter configuration - without a live host process and a real provider child process - is a FAIL for AC32, per spike.md 'Host boundary'."
+    },
+    {
+      "id": "COMP1",
+      "criteria": ["AC33", "AC34"],
+      "verifies": ["R33", "R34", "N9", "I5"],
+      "mode": "composite (LP1/LP2 unattended-progression confirmation + provenance inspection)",
+      "executable": false,
+      "procedure": "(a) Confirm LP1's and/or LP2's allocate -> observe -> validated-result cycle completed with no manual step translating the Harness allocation into provider-specific invocation instructions. (b) Confirm spikes/011-host-owned-workflow-runs/** (workflow.jsonl and public evidence files) is byte-for-byte unchanged across Spike 013a implementation and verification, and accept LP1's exercise of the original refusal condition (R9) as the AC34 readiness demonstration, since spike.md forbids 013a from advancing or completing Spike 011 itself.",
+      "decisionRule": "A human required to hand-translate an allocation into a provider invocation is a FAIL for AC33. Any change to spikes/011-host-owned-workflow-runs/** during 013a implementation/verification, or a demonstrated mechanism that would not in fact support retrying Spike 011 Cycle 002 afterward, is a FAIL for AC34."
+    }
+  ]
+}

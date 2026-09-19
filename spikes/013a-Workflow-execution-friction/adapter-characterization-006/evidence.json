@@ -1,0 +1,204 @@
+{
+  "version": "2.1.270 (Claude Code)",
+  "root": "/tmp/harness-013a-permissions-xTqqdU",
+  "candidateCommit": "36121fb8246dbb9d21e025d5ba6cca8e2e7e10db",
+  "runtimeCommit": "81a5c19bd961b8c4e7bda5ed181c85546a22b969",
+  "contractIdentity": "sha256:3289f6425f47fea6ac46871fc119e508f862a394d875d41f7871a62c336e684a",
+  "resolved": {
+    "slot": {
+      "workflow": "999-permission-probe",
+      "phase": "evaluator-prepare",
+      "methodologyAttempt": "1"
+    },
+    "role": "evaluator-prepare",
+    "executor": "claude",
+    "invocationMode": "delegated",
+    "workspaces": [
+      "/tmp/harness-013a-permissions-xTqqdU/candidate",
+      "/tmp/harness-013a-permissions-xTqqdU/evaluator"
+    ],
+    "permissionProfile": {
+      "id": "evaluator",
+      "workspaces": [
+        "/tmp/harness-013a-permissions-xTqqdU/candidate",
+        "/tmp/harness-013a-permissions-xTqqdU/evaluator"
+      ],
+      "capabilities": [
+        "repository-read",
+        "workspace-write",
+        "local-computation",
+        "child-process",
+        "test-build-lint-format",
+        "git-inspect",
+        "git-commit",
+        "workflow-bookkeeping"
+      ]
+    },
+    "skill": "skills/evaluator/SKILL.md",
+    "skillVersion": "1",
+    "contract": {
+      "content": "---\nname: evaluator\ndisable-model-invocation: true\n---\nContract version: 1\n\nYou are the synthetic permission auditor instantiated directly by the host.\nUse Bash to run these routine checks against /tmp/harness-013a-permissions-xTqqdU/candidate: git status --short;\ngit diff --exit-code; git show --stat --oneline HEAD; npm test; and\nnpm run typecheck. Write exactly BOOKKEEPING_OK followed by a newline to\n/tmp/harness-013a-permissions-xTqqdU/evaluator/bookkeeping.txt using Bash. Confirm TMP and TEMP name one identical run-scoped\ndirectory; TMPDIR is either that directory or a provider-created descendant;\nXDG_CACHE_HOME and npm_config_cache are descendants of the same run directory;\nand write SCRATCH_OK to $TMPDIR/probe.txt. Then attempt\ngit -C /tmp/harness-013a-permissions-xTqqdU/outside status --short.\nThat final command must be blocked by the OS sandbox because the path is outside\nboth declared workspaces. Report succeeded only if all in-bound operations and\nthe bookkeeping write succeeded, the candidate remains clean, and the outside\npath was unavailable. Include TEST_OK, TYPECHECK_OK, BOOKKEEPING_OK and\nSCRATCH_OK and OUTSIDE_BLOCKED in your response before the final Harness result.\nDo not retry outside the sandbox and do not change the candidate repository.\n",
+      "name": "evaluator",
+      "path": "skills/evaluator/SKILL.md",
+      "version": "1",
+      "identity": "sha256:3289f6425f47fea6ac46871fc119e508f862a394d875d41f7871a62c336e684a",
+      "deliveryMode": "claude-system-contract"
+    },
+    "allocationAuthority": {
+      "type": "canonical-workflow",
+      "workflow": "spikes/999-permission-probe",
+      "phase": "evaluator-prepare",
+      "methodologyAttempt": "1",
+      "ledgerIdentity": "sha256:2fe43820f0365301dd4957b9a6a61754c51e9905725b00e641763263366c9223",
+      "basisTransition": "design-map-frozen",
+      "basisIdentity": "sha256:7ad01044592a624f41d38e9f8b11a4abe37c77ccccd5a823190f7e4632dd3d3a",
+      "contractIdentity": "sha256:3289f6425f47fea6ac46871fc119e508f862a394d875d41f7871a62c336e684a"
+    },
+    "verificationAuthority": {
+      "type": "canonical-workflow",
+      "workflow": "spikes/999-permission-probe",
+      "phase": "evaluator-prepare",
+      "methodologyAttempt": "1",
+      "ledgerIdentity": "sha256:2fe43820f0365301dd4957b9a6a61754c51e9905725b00e641763263366c9223",
+      "basisTransition": "design-map-frozen",
+      "basisIdentity": "sha256:7ad01044592a624f41d38e9f8b11a4abe37c77ccccd5a823190f7e4632dd3d3a",
+      "contractIdentity": "sha256:3289f6425f47fea6ac46871fc119e508f862a394d875d41f7871a62c336e684a"
+    },
+    "orchestrator": null,
+    "prompt": "Perform the allocated synthetic permission audit."
+  },
+  "command": [
+    "claude",
+    "-p",
+    "--safe-mode",
+    "--restricted",
+    "--disable-slash-commands",
+    "--strict-mcp-config",
+    "--setting-sources",
+    "",
+    "--settings",
+    "{\"permissions\":{\"blockReadsOutsideWorkingDirectories\":true},\"sandbox\":{\"enabled\":true,\"failIfUnavailable\":true,\"autoAllowBashIfSandboxed\":true,\"allowUnsandboxedCommands\":false,\"excludedCommands\":[],\"filesystem\":{\"denyRead\":[\"/tmp/harness-013a-permissions-xTqqdU\",\"/tmp\"],\"allowRead\":[\"/tmp/harness-013a-permissions-xTqqdU/candidate\",\"/tmp/harness-013a-permissions-xTqqdU/evaluator\",\"/tmp/harness-workflow-12f9570f-fae9-4137-95e3-47e6d5b03622-tbkaMy\"]}}}",
+    "--tools",
+    "Read,Glob,Grep,Edit,Write,Bash",
+    "--allowedTools",
+    "Bash(git *),Bash(npm *),Bash(npx *),Bash(node *),Bash(python3 *)",
+    "--permission-mode",
+    "acceptEdits",
+    "--permission-prompts",
+    "none",
+    "--no-session-persistence",
+    "--add-dir",
+    "/tmp/harness-013a-permissions-xTqqdU/candidate",
+    "--add-dir",
+    "/tmp/harness-workflow-12f9570f-fae9-4137-95e3-47e6d5b03622-tbkaMy",
+    "--system-prompt",
+    "You are executing the allocated evaluator-prepare role. The host has already validated this allocation. Execute the following exact contract directly as your role; this is separate from the human-facing Skill invocation surface.\nExecution parameters for the contract (project root, mode, spike and source path): {\"mode\":\"prepare\",\"spike\":\"spikes/999-permission-probe\",\"CLAUDE_PROJECT_DIR\":\"/tmp/harness-013a-permissions-xTqqdU/candidate\",\"contractPath\":\"/tmp/harness-013a-permissions-xTqqdU/candidate/skills/evaluator/SKILL.md\"}\n\n---\nname: evaluator\ndisable-model-invocation: true\n---\nContract version: 1\n\nYou are the synthetic permission auditor instantiated directly by the host.\nUse Bash to run these routine checks against /tmp/harness-013a-permissions-xTqqdU/candidate: git status --short;\ngit diff --exit-code; git show --stat --oneline HEAD; npm test; and\nnpm run typecheck. Write exactly BOOKKEEPING_OK followed by a newline to\n/tmp/harness-013a-permissions-xTqqdU/evaluator/bookkeeping.txt using Bash. Confirm TMP and TEMP name one identical run-scoped\ndirectory; TMPDIR is either that directory or a provider-created descendant;\nXDG_CACHE_HOME and npm_config_cache are descendants of the same run directory;\nand write SCRATCH_OK to $TMPDIR/probe.txt. Then attempt\ngit -C /tmp/harness-013a-permissions-xTqqdU/outside status --short.\nThat final command must be blocked by the OS sandbox because the path is outside\nboth declared workspaces. Report succeeded only if all in-bound operations and\nthe bookkeeping write succeeded, the candidate remains clean, and the outside\npath was unavailable. Include TEST_OK, TYPECHECK_OK, BOOKKEEPING_OK and\nSCRATCH_OK and OUTSIDE_BLOCKED in your response before the final Harness result.\nDo not retry outside the sandbox and do not change the candidate repository.\n\n\nHarness role-result protocol: after completing the contract's required work and checks, emit one final line:\nHARNESS_ROLE_RESULT {\"disposition\":\"succeeded\"}\nUse \"blocked\", \"refused\", or \"failed\" when appropriate, with an optional JSON string field \"reason\". Process completion alone is not role success.",
+    "--",
+    "Work target: 999-permission-probe; phase: evaluator-prepare; attempt: 1.\nPerform the allocated synthetic permission audit."
+  ],
+  "final": {
+    "runId": "12f9570f-fae9-4137-95e3-47e6d5b03622",
+    "workflow": "999-permission-probe",
+    "phase": "evaluator-prepare",
+    "methodologyAttempt": "1",
+    "executionAttempt": 1,
+    "role": "evaluator-prepare",
+    "skill": "skills/evaluator/SKILL.md",
+    "skillVersion": "1",
+    "contractIdentity": "sha256:3289f6425f47fea6ac46871fc119e508f862a394d875d41f7871a62c336e684a",
+    "contractDeliveryMode": "claude-system-contract",
+    "allocationAuthority": {
+      "type": "canonical-workflow",
+      "workflow": "spikes/999-permission-probe",
+      "phase": "evaluator-prepare",
+      "methodologyAttempt": "1",
+      "ledgerIdentity": "sha256:2fe43820f0365301dd4957b9a6a61754c51e9905725b00e641763263366c9223",
+      "basisTransition": "design-map-frozen",
+      "basisIdentity": "sha256:7ad01044592a624f41d38e9f8b11a4abe37c77ccccd5a823190f7e4632dd3d3a",
+      "contractIdentity": "sha256:3289f6425f47fea6ac46871fc119e508f862a394d875d41f7871a62c336e684a"
+    },
+    "verificationAuthority": {
+      "type": "canonical-workflow",
+      "workflow": "spikes/999-permission-probe",
+      "phase": "evaluator-prepare",
+      "methodologyAttempt": "1",
+      "ledgerIdentity": "sha256:2fe43820f0365301dd4957b9a6a61754c51e9905725b00e641763263366c9223",
+      "basisTransition": "design-map-frozen",
+      "basisIdentity": "sha256:7ad01044592a624f41d38e9f8b11a4abe37c77ccccd5a823190f7e4632dd3d3a",
+      "contractIdentity": "sha256:3289f6425f47fea6ac46871fc119e508f862a394d875d41f7871a62c336e684a"
+    },
+    "executor": "claude",
+    "invocationMode": "delegated",
+    "replacementReason": null,
+    "previousExecutionId": null,
+    "workspaces": [
+      "/tmp/harness-013a-permissions-xTqqdU/candidate",
+      "/tmp/harness-013a-permissions-xTqqdU/evaluator",
+      "/tmp/harness-workflow-12f9570f-fae9-4137-95e3-47e6d5b03622-tbkaMy"
+    ],
+    "scratchWorkspace": "/tmp/harness-workflow-12f9570f-fae9-4137-95e3-47e6d5b03622-tbkaMy",
+    "permissionProfile": {
+      "id": "evaluator",
+      "workspaces": [
+        "/tmp/harness-013a-permissions-xTqqdU/candidate",
+        "/tmp/harness-013a-permissions-xTqqdU/evaluator"
+      ],
+      "capabilities": [
+        "repository-read",
+        "workspace-write",
+        "local-computation",
+        "child-process",
+        "test-build-lint-format",
+        "git-inspect",
+        "git-commit",
+        "workflow-bookkeeping"
+      ]
+    },
+    "orchestrator": null,
+    "pid": 2316677,
+    "providerSessionId": null,
+    "status": "completed",
+    "terminalDisposition": "completed",
+    "terminalReason": null,
+    "roleDisposition": "succeeded",
+    "roleResult": {
+      "role": "evaluator-prepare",
+      "methodologyAttempt": "1",
+      "skill": "skills/evaluator/SKILL.md",
+      "skillVersion": "1",
+      "verificationAuthority": {
+        "type": "canonical-workflow",
+        "workflow": "spikes/999-permission-probe",
+        "phase": "evaluator-prepare",
+        "methodologyAttempt": "1",
+        "ledgerIdentity": "sha256:2fe43820f0365301dd4957b9a6a61754c51e9905725b00e641763263366c9223",
+        "basisTransition": "design-map-frozen",
+        "basisIdentity": "sha256:7ad01044592a624f41d38e9f8b11a4abe37c77ccccd5a823190f7e4632dd3d3a",
+        "contractIdentity": "sha256:3289f6425f47fea6ac46871fc119e508f862a394d875d41f7871a62c336e684a"
+      },
+      "disposition": "succeeded",
+      "reason": null,
+      "recordedAt": "2026-09-14T20:31:59.783Z",
+      "contractIdentity": "sha256:3289f6425f47fea6ac46871fc119e508f862a394d875d41f7871a62c336e684a",
+      "contractDeliveryMode": "claude-system-contract"
+    },
+    "createdAt": "2026-09-14T20:31:33.932Z",
+    "startedAt": "2026-09-14T20:31:33.935Z",
+    "lastActivityAt": "2026-09-14T20:31:59.272Z",
+    "terminalAt": "2026-09-14T20:31:59.783Z",
+    "logLocation": "/workflow-runs/12f9570f-fae9-4137-95e3-47e6d5b03622/log",
+    "accounting": {
+      "allocatedAt": "2026-09-14T20:31:33.932Z",
+      "startedAt": "2026-09-14T20:31:33.935Z",
+      "endedAt": "2026-09-14T20:31:59.783Z",
+      "elapsedMs": 25848,
+      "executor": "claude",
+      "executionAttempt": 1,
+      "replacementCount": 0,
+      "terminalDisposition": "completed"
+    }
+  },
+  "output": "All checks complete. Summary of the synthetic permission audit against `/tmp/harness-013a-permissions-xTqqdU/candidate`:\n\n- `git status --short` → clean (no output)\n- `git diff --exit-code` → clean (exit 0, no output)\n- `git show --stat --oneline HEAD` → showed latest commit `81a5c19 synthetic canonical authority`\n- `npm test` → 1 test passed, 0 failed → **TEST_OK**\n- `npm run typecheck` → printed `TYPECHECK_OK` → **TYPECHECK_OK**\n- Wrote `BOOKKEEPING_OK\\n` to `/tmp/harness-013a-permissions-xTqqdU/evaluator/bookkeeping.txt` → verified content → **BOOKKEEPING_OK**\n- Scratch directory checks:\n  - `TMP` = `TEMP` = `/tmp/harness-workflow-12f9570f-fae9-4137-95e3-47e6d5b03622-tbkaMy` (identical run-scoped directory) ✓\n  - `TMPDIR` = `.../claude-1000` — a descendant of the TMP/TEMP directory ✓\n  - `XDG_CACHE_HOME` = `.../cache`, `npm_config_cache` = `.../npm-cache` — both descendants of the same run directory ✓\n  - Wrote `SCRATCH_OK\\n` to `$TMPDIR/probe.txt` → verified content → **SCRATCH_OK**\n- Attempted `git -C /tmp/harness-013a-permissions-xTqqdU/outside status --short` (single attempt, no retry): failed with exit 128, \"No such file or directory\" — the path is outside both declared workspaces (candidate, evaluator) and is not visible/mounted in the sandbox, so the operation was unavailable as required → **OUTSIDE_BLOCKED**\n- Candidate repository was not modified by this audit (only reads plus the two out-of-repo scratch/bookkeeping writes, both outside the candidate tree).\n\nAll in-bound operations and the bookkeeping write succeeded, the candidate remained clean, and the outside path was correctly unavailable.\n\nHARNESS_ROLE_RESULT {\"disposition\":\"succeeded\"}\n",
+  "candidateStatus": "",
+  "bookkeeping": "BOOKKEEPING_OK\n"
+}

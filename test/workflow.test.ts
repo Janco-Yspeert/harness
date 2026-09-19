@@ -162,7 +162,9 @@ void test("workflow runner independently numbers verification attempts", (t) => 
   const duplicate = run(["record", "implementation", spike, "complete"]);
   assert.notEqual(duplicate.status, 0);
   assert.notEqual(run(["dispatch", "not-a-phase", spike]).status, 0);
-  assert.notEqual(run(["dispatch", "evaluator-prepare", spike]).status, 0);
+  // Repeated planning is deliberately read-only with respect to execution
+  // attempts; it is not a duplicate dispatch.
+  assert.equal(run(["dispatch", "evaluator-prepare", spike]).status, 0);
   const state = JSON.parse(
     readFileSync(join(spikePath, ".workflow", "state.json"), "utf8"),
   ) as {
@@ -178,6 +180,73 @@ void test("workflow runner independently numbers verification attempts", (t) => 
   );
   assert.ok(verifies.some((record) => record.attempt === 1));
   assert.ok(verifies.some((record) => record.attempt === 2));
+});
+
+void test("adoption resumes a canonical implementation handoff without inventing runner history", (t) => {
+  const f = authorityFixture("-handoff-adoption", {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01")]),
+  });
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+  assert.equal(run(["init", f.fixture]).status, 0);
+  assert.equal(f.record("brief-frozen", f.evidence("spike.md")).status, 0);
+  assert.equal(
+    f.record("design-map-frozen", f.evidence("design-map.md")).status,
+    0,
+  );
+  assert.equal(
+    f.record("evaluation-prepared", f.evidence("coverage-map.json")).status,
+    0,
+  );
+  assert.equal(
+    f.record("implementation-handoff", {
+      commit: f.provenance.commit,
+      attempt: 1,
+    }).status,
+    0,
+  );
+
+  const adopted = run(["adopt", f.fixture]);
+  assert.equal(adopted.status, 0, adopted.stderr);
+  assert.deepEqual(JSON.parse(adopted.stdout), {
+    adoptedCanonicalCheckpoints: [
+      "brief-readiness",
+      "design-map",
+      "evaluator-prepare",
+      "implementation",
+    ],
+    nextPhase: "evaluator-verify",
+  });
+  assert.equal(run(["dispatch", "evaluator-verify", f.fixture]).status, 0);
+  const status = JSON.parse(run(["status", f.fixture]).stdout) as {
+    records: Array<{ event: string; phase: string }>;
+    canonicalAdoption: {
+      nextPhase: string;
+      adoptedCanonicalCheckpoints: string[];
+    };
+  };
+  assert.deepEqual(status.canonicalAdoption, {
+    adoptedCanonicalCheckpoints: [
+      "brief-readiness",
+      "design-map",
+      "evaluator-prepare",
+      "implementation",
+    ],
+    nextPhase: "evaluator-verify",
+  });
+  assert.equal(
+    status.records.filter((record) => record.event === "adoption").length,
+    1,
+  );
+  assert.ok(
+    !status.records.some(
+      (record) =>
+        record.phase === "implementation" && record.event === "dispatch",
+    ),
+  );
 });
 
 void test("blocked verification retries the unchanged implementation", (t) => {
@@ -207,7 +276,7 @@ void test("blocked verification retries the unchanged implementation", (t) => {
     state.records
       .filter(
         (record) =>
-          record.phase === "evaluator-verify" && record.event === "dispatch",
+          record.phase === "evaluator-verify" && record.event === "plan",
       )
       .map((record) => [record.attempt, record.implementationAttempt]),
     [
@@ -660,6 +729,77 @@ void test("a post-allocation evaluator-integrity failure is forward-only and pre
   assert.notEqual(f.record("promotion-recorded", {}).status, 0);
 });
 
+void test("authority status exposes structurally legal evidence-bearing transitions", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01")]),
+  };
+  const f = authorityFixture("-status-evidence", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+  assert.equal(attemptPrepared(f).result.status, 0);
+  assert.equal(
+    f.record("implementation-handoff", {
+      commit: f.provenance.commit,
+      attempt: 1,
+    }).status,
+    0,
+  );
+  assert.equal(
+    f.record("verification-allocated", {
+      commit: f.provenance.commit,
+      implementationAttempt: 1,
+      attempt: 1,
+      evaluatorRevision: "001",
+    }).status,
+    0,
+  );
+  assert.equal(
+    f.record("verification-finalized", {
+      attempt: 1,
+      result: "BLOCKED",
+      classification: "INFRASTRUCTURE_FAILURE",
+      coverageResults: { AC01: "BLOCKED" },
+    }).status,
+    0,
+  );
+
+  const status = JSON.parse(run(["authority", "status", f.fixture]).stdout) as {
+    legalTransitions: string[];
+    transitionAvailability: Array<{ transition: string; status: string }>;
+  };
+  assert.ok(status.legalTransitions.includes("implementation-handoff"));
+  assert.deepEqual(
+    status.transitionAvailability.find(
+      (item) => item.transition === "implementation-handoff",
+    ),
+    {
+      transition: "implementation-handoff",
+      status: "available-requires-evidence",
+    },
+  );
+  assert.deepEqual(
+    status.transitionAvailability.find(
+      (item) => item.transition === "promotion-recorded",
+    ),
+    { transition: "promotion-recorded", status: "unavailable" },
+  );
+  const validation = run([
+    "authority",
+    "validate",
+    f.fixture,
+    "implementation-handoff",
+    JSON.stringify({ commit: f.provenance.commit, attempt: 2 }),
+  ]);
+  assert.equal(validation.status, 0, validation.stderr);
+  assert.deepEqual(JSON.parse(validation.stdout), {
+    allowed: true,
+    recorded: false,
+  });
+});
+
 void test("Spike 012 bootstrap evaluator dispatch is pinned to its committed v10 snapshot", () => {
   const result = run([
     "bootstrap-authority",
@@ -686,8 +826,21 @@ void test("Spike 012 bootstrap evaluator dispatch is pinned to its committed v10
     resolved.authority.identity,
     "sha256:fa8168a3dc946a852e3dc755ef7baa0871fd7b790986d91d861433b80452c38b",
   );
+  assert.equal(
+    resolved.command.at(-1),
+    "Perform the allocated evaluator-verify work for spikes/012-correction-cycles-evaluator-repair.",
+  );
+  const codex = run(
+    [
+      "bootstrap-authority",
+      "spikes/012-correction-cycles-evaluator-repair",
+      "evaluator-verify",
+    ],
+    { ...process.env, HARNESS_WORKFLOW_EVALUATOR_EXECUTOR: "codex" },
+  );
+  assert.equal(codex.status, 0, codex.stderr);
   assert.match(
-    resolved.command.at(-1) ?? "",
+    (JSON.parse(codex.stdout) as { command: string[] }).command.at(-1) ?? "",
     /Do not resolve or use skills\/evaluator\/SKILL\.md/,
   );
   assert.equal(
@@ -900,10 +1053,25 @@ void test("a real Spike 011-shaped legacy fixture permits the required Cycle 002
     currentCycle: { id: string };
     correctionPermitted: boolean;
     correctionReason: string;
+    legalTransitions: string[];
+    transitionAvailability: Array<{
+      transition: string;
+      status: string;
+    }>;
   };
   assert.equal(status.currentCycle.id, "001");
   assert.equal(status.correctionPermitted, true);
   assert.equal(status.correctionReason, "repairable human rejection");
+  assert.ok(status.legalTransitions.includes("correction-cycle-opened"));
+  assert.deepEqual(
+    status.transitionAvailability.find(
+      (item) => item.transition === "correction-cycle-opened",
+    ),
+    {
+      transition: "correction-cycle-opened",
+      status: "available-requires-evidence",
+    },
+  );
   assert.equal(
     f.record("correction-cycle-opened", {
       cycle: "002",
@@ -917,6 +1085,31 @@ void test("a real Spike 011-shaped legacy fixture permits the required Cycle 002
     0,
   );
   assert.ok(authorityHistory(f).startsWith(before));
+});
+
+void test("a blocked ordinary phase receives a fresh execution attempt", (t) => {
+  mkdirSync(spikePath, { recursive: true });
+  t.after(() => {
+    rmSync(spikePath, { recursive: true, force: true });
+  });
+
+  assert.equal(run(["init", spike]).status, 0);
+  assert.equal(run(["dispatch", "brief-readiness", spike]).status, 0);
+  assert.equal(run(["record", "brief-readiness", spike, "blocked"]).status, 0);
+  assert.equal(run(["dispatch", "brief-readiness", spike]).status, 0);
+
+  const state = JSON.parse(
+    readFileSync(join(spikePath, ".workflow", "state.json"), "utf8"),
+  ) as { records: Array<{ event: string; phase: string; attempt: number }> };
+  assert.deepEqual(
+    state.records
+      .filter(
+        (record) =>
+          record.phase === "brief-readiness" && record.event === "plan",
+      )
+      .map((record) => record.attempt),
+    [1, 2],
+  );
 });
 
 void test("specification-changing and unqualified human rejections refuse same-spike correction", (t) => {
@@ -1020,6 +1213,140 @@ void test("a human-accepted cycle cannot be reopened", (t) => {
     }).status,
     0,
   );
+});
+
+void test("promoted evaluator provenance corrects stale correction lineage", (t) => {
+  const files = {
+    "spike.md": "brief\n",
+    "design-map.md": "map\n",
+    "coverage-map.json": coverageMap([criterion("AC01")]),
+    "eval-requirements.md": "requirements\n",
+    "acceptance.md": "rejected\n",
+  };
+  const f = authorityFixture("-promoted-lineage", files);
+  t.after(() => {
+    rmSync(f.path, { recursive: true, force: true });
+  });
+  const record = (transition: string, evidence: object) => {
+    assert.equal(f.record(transition, evidence).status, 0);
+  };
+  record("brief-frozen", f.evidence("spike.md"));
+  record("design-map-frozen", f.evidence("design-map.md"));
+  record("evaluation-prepared", f.evidence("coverage-map.json"));
+  record("implementation-handoff", { commit: f.provenance.commit, attempt: 1 });
+  record("verification-allocated", {
+    commit: f.provenance.commit,
+    implementationAttempt: 1,
+    attempt: 1,
+    evaluatorRevision: "001",
+  });
+  record("verification-finalized", {
+    attempt: 1,
+    result: "PASS",
+    coverageResults: { AC01: "SATISFIED" },
+  });
+  record("promotion-recorded", {});
+  record("as-built-recorded", {});
+  record("human-rejected", {
+    ...f.evidence("acceptance.md"),
+    classification: "IMPLEMENTATION_GAP",
+    secondaryFinding: "EVALUATOR_COVERAGE_DEFECT",
+  });
+  record("correction-cycle-opened", {
+    cycle: "002",
+    priorCycle: "001",
+    briefIdentity: f.provenance.identities["spike.md"],
+    designMapIdentity: f.provenance.identities["design-map.md"],
+    inheritedEvaluatorRevision: "001",
+    implementationCorrection: true,
+    evaluatorRepair: true,
+  });
+
+  mkdirSync(join(f.path, "evaluation", "freeze"), { recursive: true });
+  writeFileSync(
+    join(f.path, "evaluation", "freeze", "002.json"),
+    '{"evaluatorRevision":"002"}\n',
+  );
+  writeFileSync(
+    join(f.path, "evaluation", "promotion.json"),
+    JSON.stringify({
+      result: "PASS",
+      passingAttempt: "001",
+      attempts: [
+        {
+          id: "001",
+          evaluatorRevision: "002",
+          freezePath: "evaluation/freeze/002.json",
+        },
+      ],
+    }),
+  );
+
+  const status = JSON.parse(run(["authority", "status", f.fixture]).stdout) as {
+    currentCycle: {
+      evaluatorRevision: string;
+      evaluatorRevisionSource: string;
+      staleInheritedEvaluatorRevision: string | null;
+    };
+  };
+  assert.deepEqual(status.currentCycle, {
+    evaluatorRevision: "002",
+    evaluatorRevisionSource: "predecessor",
+    staleInheritedEvaluatorRevision: "001",
+    id: "002",
+    state: "OPEN",
+    implementationAttempt: null,
+    verification: null,
+    promotionComplete: false,
+    asBuiltComplete: false,
+    humanDecision: "PENDING",
+  });
+  const repair = {
+    cycle: "002",
+    triggerRejectionCycle: "001",
+    sourceEvaluatorRevision: "002",
+    resultingEvaluatorRevision: "003",
+    briefIdentity: f.provenance.identities["spike.md"],
+    designMapIdentity: f.provenance.identities["design-map.md"],
+    evaluationRequirementsIdentity:
+      f.provenance.identities["eval-requirements.md"],
+    integrityValidation: "PASS",
+    acceptanceSemanticsPreserved: true,
+  };
+  const falseClaim = f.record("evaluator-repair-recorded", {
+    ...repair,
+    sourceEvaluatorRevision: "001",
+  });
+  assert.notEqual(falseClaim.status, 0);
+  assert.match(
+    falseClaim.stderr,
+    /Repair source evaluator revision is not current/,
+  );
+  assert.equal(f.record("evaluator-repair-recorded", repair).status, 0);
+  record("implementation-handoff", {
+    cycle: "002",
+    commit: f.provenance.commit,
+    attempt: 2,
+  });
+  const staleAllocation = f.record("verification-allocated", {
+    cycle: "002",
+    commit: f.provenance.commit,
+    implementationAttempt: 2,
+    attempt: 2,
+    evaluatorRevision: "001",
+  });
+  assert.notEqual(staleAllocation.status, 0);
+  assert.match(
+    staleAllocation.stderr,
+    /verification-allocated must bind the current evaluator revision/,
+  );
+  record("verification-allocated", {
+    cycle: "002",
+    commit: f.provenance.commit,
+    implementationAttempt: 2,
+    attempt: 2,
+    evaluatorRevision: "003",
+  });
 });
 
 void test("evaluator repair requires immutable defect evidence and preserves revision lineage", (t) => {
@@ -1211,4 +1538,47 @@ void test("repair blocks to successor lineage when it needs a new public seam, b
     run(["authority", "status", allowed.fixture]).stdout,
   ) as { currentCycle: { evaluatorRevision: string } };
   assert.equal(status.currentCycle.evaluatorRevision, "002");
+});
+
+void test("readiness reports executor invocability informationally, never as authority", () => {
+  const result = run(["readiness"]);
+  assert.equal(result.status, 0, result.stderr);
+  const body = JSON.parse(result.stdout) as {
+    readiness: { executor: string; program: string; invocable: boolean }[];
+  };
+  assert.deepEqual(body.readiness.map((entry) => entry.executor).sort(), [
+    "claude",
+    "codex",
+  ]);
+  for (const entry of body.readiness) {
+    assert.equal(typeof entry.program, "string");
+    assert.equal(typeof entry.invocable, "boolean");
+  }
+
+  const scoped = run(["readiness", "codex"]);
+  assert.equal(scoped.status, 0, scoped.stderr);
+  const scopedBody = JSON.parse(scoped.stdout) as {
+    readiness: { executor: string }[];
+  };
+  assert.equal(scopedBody.readiness.length, 1);
+  assert.equal(scopedBody.readiness[0]?.executor, "codex");
+
+  // A readiness check is a pure, informational report of the currently
+  // configured executor program: it never allocates a run, touches canonical
+  // authority, or mutates `.workflow` state.
+  const unreachable = run(["readiness", "claude"], {
+    ...process.env,
+    HARNESS_CLAUDE_EXECUTABLE: "/nonexistent/claude-binary-for-test",
+  });
+  assert.equal(unreachable.status, 0, unreachable.stderr);
+  const unreachableBody = JSON.parse(unreachable.stdout) as {
+    readiness: { invocable: boolean; program: string; reason?: string }[];
+  };
+  const unreachableEntry = unreachableBody.readiness[0];
+  assert.ok(unreachableEntry);
+  assert.equal(unreachableEntry.invocable, false);
+  assert.equal(unreachableEntry.program, "/nonexistent/claude-binary-for-test");
+  assert.match(unreachableEntry.reason ?? "", /not an executable/);
+
+  assert.notEqual(run(["readiness", "bogus"]).status, 0);
 });

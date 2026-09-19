@@ -17,7 +17,10 @@ import type {
 } from "./session-backend.ts";
 import { createLocalWorkflowBackend } from "./workflow-backend.ts";
 import {
+  parseWorkflowFixtureRequest,
+  parseWorkflowPublishRequest,
   parseWorkflowReplaceRequest,
+  parseWorkflowRoleResultRequest,
   parseWorkflowRunRequest,
   WorkflowRunConflictError,
   WorkflowRunNotFoundError,
@@ -34,8 +37,14 @@ export type {
 } from "./session-backend.ts";
 export {
   buildExecutorCommand,
+  checkExecutorReadiness,
   createLocalWorkflowBackend,
+  parseWorkflowBackendRoleResult,
+  workflowProviderProgram,
+  workflowScratchEnvironment,
 } from "./workflow-backend.ts";
+export type { ExecutorReadiness } from "./workflow-backend.ts";
+export { isSuccessfulWorkflowFixtureEvidence } from "./workflow-run.ts";
 export type {
   ResolvedWorkflowRunSpec,
   WorkflowInvocationMode,
@@ -44,6 +53,7 @@ export type {
   WorkflowRunBackendContext,
   WorkflowRunBackendFactory,
   WorkflowRunExitOutcome,
+  WorkflowFixtureBinding,
   WorkflowRunRecord,
   WorkflowRunStatus,
 } from "./workflow-run.ts";
@@ -106,6 +116,14 @@ export interface HarnessHost {
 export interface HarnessHostOptions {
   createBackend?: SessionBackendFactory;
   createWorkflowBackend?: WorkflowRunBackendFactory;
+  // This is daemon configuration, not caller-supplied allocation data. A
+  // protected evaluator allocation without it is rejected before launch.
+  evaluatorWorkspace?: string;
+  // Host-owned durable-evidence destination roots, independent of the
+  // per-run authority workspace. Optional; production defaults to the
+  // existing repository-relative `.workflow/runs` locations when absent.
+  evidenceRoot?: string;
+  hiddenEvidenceRoot?: string;
 }
 
 function sendError(socket: WebSocket | undefined, error: HarnessErrorMessage) {
@@ -260,6 +278,15 @@ export async function startHarnessHost(
   const workflowRuns = new WorkflowRunRegistry({
     createBackend: options.createWorkflowBackend ?? createLocalWorkflowBackend,
     publishEvent,
+    ...(options.evaluatorWorkspace === undefined
+      ? {}
+      : { evaluatorWorkspace: options.evaluatorWorkspace }),
+    ...(options.evidenceRoot === undefined
+      ? {}
+      : { evidenceRoot: options.evidenceRoot }),
+    ...(options.hiddenEvidenceRoot === undefined
+      ? {}
+      : { hiddenEvidenceRoot: options.hiddenEvidenceRoot }),
   });
 
   async function handleWorkflowRequest(
@@ -285,8 +312,21 @@ export async function startHarnessHost(
         return;
       }
 
+      if (pathname === "/workflow-fixtures") {
+        if (method !== "POST") {
+          response.writeHead(405).end("Method not allowed\n");
+          return;
+        }
+        sendJson(response, 201, {
+          run: await workflowRuns.allocateFixture(
+            parseWorkflowFixtureRequest(await readJsonBody(request)),
+          ),
+        });
+        return;
+      }
+
       const runMatch = pathname.match(
-        /^\/workflow-runs\/([^/]+)(\/log|\/cancel|\/replace)?$/,
+        /^\/workflow-runs\/([^/]+)(\/log|\/cancel|\/replace|\/result|\/publish)?$/,
       );
       if (runMatch === null) {
         response.writeHead(404).end("Not found\n");
@@ -337,6 +377,24 @@ export async function startHarnessHost(
           parseWorkflowReplaceRequest(await readJsonBody(request)),
         );
         sendJson(response, 201, replacement);
+        return;
+      }
+      if (suffix === "/result" && method === "POST") {
+        sendJson(response, 200, {
+          run: workflowRuns.reportRoleResult(
+            runId,
+            parseWorkflowRoleResultRequest(await readJsonBody(request)),
+          ),
+        });
+        return;
+      }
+      if (suffix === "/publish" && method === "POST") {
+        const { commit, branch } = parseWorkflowPublishRequest(
+          await readJsonBody(request),
+        );
+        sendJson(response, 200, {
+          run: workflowRuns.publishCommit(runId, commit, branch),
+        });
         return;
       }
       response.writeHead(405).end("Method not allowed\n");
@@ -434,7 +492,8 @@ export async function startHarnessHost(
 
     if (
       pathname === "/workflow-runs" ||
-      pathname.startsWith("/workflow-runs/")
+      pathname.startsWith("/workflow-runs/") ||
+      pathname === "/workflow-fixtures"
     ) {
       void handleWorkflowRequest(request, response, pathname);
       return;
@@ -660,10 +719,18 @@ if (import.meta.main) {
           return createCodexBackend(cwd === undefined ? {} : { cwd });
         }
       : undefined;
-  const host = await startHarnessHost(
-    port,
-    createBackend === undefined ? {} : { createBackend },
-  );
+  const host = await startHarnessHost(port, {
+    ...(createBackend === undefined ? {} : { createBackend }),
+    ...(process.env.HARNESS_EVALUATOR_WORKSPACE === undefined
+      ? {}
+      : { evaluatorWorkspace: process.env.HARNESS_EVALUATOR_WORKSPACE }),
+    ...(process.env.HARNESS_EVIDENCE_ROOT === undefined
+      ? {}
+      : { evidenceRoot: process.env.HARNESS_EVIDENCE_ROOT }),
+    ...(process.env.HARNESS_HIDDEN_EVIDENCE_ROOT === undefined
+      ? {}
+      : { hiddenEvidenceRoot: process.env.HARNESS_HIDDEN_EVIDENCE_ROOT }),
+  });
   console.log(`Harness session lifecycle spike listening at ${host.url}`);
 
   const shutDown = async (): Promise<void> => {

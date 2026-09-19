@@ -1,8 +1,17 @@
 import { spawn, type ChildProcessByStdio } from "node:child_process";
+import { accessSync, constants, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { delimiter, join } from "node:path";
 import type { Readable } from "node:stream";
+
+import {
+  buildClaudeWorkflowCommand,
+  claudeWorkflowDirectory,
+} from "./claude-workflow.ts";
 
 import type {
   ResolvedWorkflowRunSpec,
+  WorkflowBackendRoleResult,
   WorkflowRunBackend,
   WorkflowRunBackendContext,
   WorkflowRunExitOutcome,
@@ -24,15 +33,67 @@ const FORBIDDEN_EXECUTOR_FLAGS = [
   "bypassPermissions",
 ];
 
+const RESULT_PREFIX = "HARNESS_ROLE_RESULT ";
+
+function executionPrompt(spec: ResolvedWorkflowRunSpec): string {
+  const providerTask =
+    spec.prompt ??
+    `Perform the ${spec.role} workflow role for this repository.`;
+  return `${providerTask}
+
+[HARNESS EXECUTION BINDING]
+This is a mechanically authorized Harness allocation for role ${spec.role}.
+Load and follow exactly ${spec.contract.path} (contract ${spec.contract.name} v${spec.contract.version}, ${spec.contract.identity}).
+Contract delivery mode: ${spec.contract.deliveryMode}.
+The host, not this prompt or your prose, owns the binding and validates the result.
+When the role reaches its semantic outcome, emit one final line in exactly this form:
+${RESULT_PREFIX}{"disposition":"succeeded"}
+Use "blocked", "refused", or "failed" instead of "succeeded" when appropriate, with an optional JSON string field named "reason". Do not report succeeded unless the contract's required output and checks are complete.`;
+}
+
+export function parseWorkflowBackendRoleResult(
+  output: string,
+): WorkflowBackendRoleResult | undefined {
+  const line = output
+    .split(/\r?\n/)
+    .filter((candidate) => candidate.length > 0)
+    .at(-1);
+  if (line === undefined || !line.startsWith(RESULT_PREFIX)) return undefined;
+  try {
+    const value: unknown = JSON.parse(line.slice(RESULT_PREFIX.length));
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+      return undefined;
+    const raw = value as Record<string, unknown>;
+    if (
+      !["succeeded", "blocked", "refused", "failed"].includes(
+        String(raw.disposition),
+      ) ||
+      (raw.reason !== undefined && typeof raw.reason !== "string") ||
+      !Object.keys(raw).every(
+        (key) => key === "disposition" || key === "reason",
+      )
+    )
+      return undefined;
+    return {
+      disposition: raw.disposition as WorkflowBackendRoleResult["disposition"],
+      ...(raw.reason === undefined ? {} : { reason: raw.reason }),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 export function buildExecutorCommand(
   spec: ResolvedWorkflowRunSpec,
+  scratchWorkspace?: string,
 ): readonly string[] {
   const workspaces = spec.permissionProfile.workspaces;
   const primary = workspaces[0] ?? process.cwd();
   const extraWorkspaces = workspaces.slice(1);
   const prompt =
-    spec.prompt ??
-    `Perform the ${spec.role} workflow role for this repository.`;
+    spec.contract.deliveryMode === "claude-system-contract"
+      ? ""
+      : executionPrompt(spec);
 
   let command: string[];
   if (spec.executor === "codex") {
@@ -49,18 +110,7 @@ export function buildExecutorCommand(
       prompt,
     ];
   } else if (spec.executor === "claude") {
-    // `acceptEdits` is the bounded non-interactive edit mode, not the
-    // permission-bypass mode. Additional declared workspaces are added
-    // explicitly rather than granting broad host access.
-    command = [
-      "claude",
-      "-p",
-      "--permission-mode",
-      "acceptEdits",
-      ...extraWorkspaces.flatMap((workspace) => ["--add-dir", workspace]),
-      "--",
-      prompt,
-    ];
+    command = buildClaudeWorkflowCommand(spec, prompt, scratchWorkspace);
   } else {
     throw new Error(`Unsupported workflow executor: ${spec.executor}`);
   }
@@ -76,20 +126,117 @@ export function buildExecutorCommand(
   return command;
 }
 
+export function workflowScratchEnvironment(
+  scratchWorkspace: string,
+): Record<string, string> {
+  return {
+    TMPDIR: scratchWorkspace,
+    TMP: scratchWorkspace,
+    TEMP: scratchWorkspace,
+    XDG_CACHE_HOME: join(scratchWorkspace, "cache"),
+    npm_config_cache: join(scratchWorkspace, "npm-cache"),
+    npm_config_update_notifier: "false",
+  };
+}
+
+// This setting belongs to the Harness daemon, not to a workflow allocation or
+// evaluator environment. It lets an operator keep the provider installation
+// outside a constrained worker PATH without handing that path to the worker.
+export function workflowProviderProgram(
+  spec: ResolvedWorkflowRunSpec,
+  defaultProgram: string,
+  configuredClaudeExecutable = process.env.HARNESS_CLAUDE_EXECUTABLE,
+): string {
+  return spec.executor === "claude" && configuredClaudeExecutable !== undefined
+    ? configuredClaudeExecutable
+    : defaultProgram;
+}
+
+export interface ExecutorReadiness {
+  readonly executor: "codex" | "claude";
+  readonly program: string;
+  readonly invocable: boolean;
+  readonly reason?: string;
+}
+
+// Informational only: this never becomes methodology authority. Canonical
+// authority alone governs whether a role may execute; this only reports
+// whether the configured executor program is currently resolvable on this
+// host, so repeated dispatch is not wasted on an already-diagnosed,
+// unreachable executor.
+export function checkExecutorReadiness(
+  executor: "codex" | "claude",
+  env: NodeJS.ProcessEnv = process.env,
+): ExecutorReadiness {
+  const program =
+    executor === "claude"
+      ? (env.HARNESS_CLAUDE_EXECUTABLE ?? "claude")
+      : "codex";
+  const isExecutable = (candidate: string): boolean => {
+    try {
+      accessSync(candidate, constants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  if (program.includes("/")) {
+    return isExecutable(program)
+      ? { executor, program, invocable: true }
+      : {
+          executor,
+          program,
+          invocable: false,
+          reason: `${program} is not an executable file`,
+        };
+  }
+  const found = (env.PATH ?? "")
+    .split(delimiter)
+    .filter((entry) => entry.length > 0)
+    .some((entry) => isExecutable(join(entry, program)));
+  return found
+    ? { executor, program, invocable: true }
+    : {
+        executor,
+        program,
+        invocable: false,
+        reason: `${program} was not found on PATH`,
+      };
+}
+
+function createWorkflowScratch(runId: string): string {
+  const scratch = mkdtempSync(join(tmpdir(), `harness-workflow-${runId}-`));
+  mkdirSync(join(scratch, "cache"));
+  mkdirSync(join(scratch, "npm-cache"));
+  return scratch;
+}
+
 class LocalWorkflowBackend implements WorkflowRunBackend {
   readonly pid: number | undefined;
+  readonly scratchWorkspace: string | undefined;
   readonly #child: PipedChildProcess;
+  readonly #cleanup: (() => void) | undefined;
   #activityListener: ((chunk: string) => void) | undefined;
   #exitListener: ((outcome: WorkflowRunExitOutcome) => void) | undefined;
   #settled = false;
   #stopping: Promise<void> | undefined;
+  readonly #resultChunks: string[] = [];
 
-  constructor(child: PipedChildProcess) {
+  constructor(
+    child: PipedChildProcess,
+    scratchWorkspace?: string,
+    cleanup?: () => void,
+  ) {
     this.#child = child;
     this.pid = child.pid;
+    this.scratchWorkspace = scratchWorkspace;
+    this.#cleanup = cleanup;
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => this.#activityListener?.(chunk));
+    child.stdout.on("data", (chunk: string) => {
+      this.#resultChunks.push(chunk);
+      this.#activityListener?.(chunk);
+    });
     child.stderr.on("data", (chunk: string) => this.#activityListener?.(chunk));
     child.on("error", (error) => {
       this.#settle({ ok: false, reason: error.message });
@@ -97,7 +244,12 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
     child.on("exit", (code, signal) => {
       this.#settle(
         code === 0
-          ? { ok: true }
+          ? {
+              ok: true,
+              roleResult: parseWorkflowBackendRoleResult(
+                this.#resultChunks.join(""),
+              ),
+            }
           : {
               ok: false,
               reason: `executor exited (code ${String(code)}, signal ${String(signal)})`,
@@ -110,7 +262,12 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
     if (child.exitCode !== null || child.signalCode !== null) {
       this.#settle(
         child.exitCode === 0
-          ? { ok: true }
+          ? {
+              ok: true,
+              roleResult: parseWorkflowBackendRoleResult(
+                this.#resultChunks.join(""),
+              ),
+            }
           : {
               ok: false,
               reason: `executor exited (code ${String(child.exitCode)}, signal ${String(child.signalCode)})`,
@@ -135,7 +292,11 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
   #settle(outcome: WorkflowRunExitOutcome): void {
     if (this.#settled) return;
     this.#settled = true;
-    this.#exitListener?.(outcome);
+    try {
+      this.#exitListener?.(outcome);
+    } finally {
+      this.#cleanup?.();
+    }
   }
 
   async #stop(): Promise<void> {
@@ -157,15 +318,48 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
 export function createLocalWorkflowBackend(
   context: WorkflowRunBackendContext,
 ): WorkflowRunBackend {
-  const command = buildExecutorCommand(context.spec);
-  const [program, ...args] = command;
-  if (program === undefined) {
-    throw new Error("workflow executor command is empty");
+  const needsScratch =
+    context.spec.executor === "claude" &&
+    context.spec.contract.deliveryMode === "claude-system-contract" &&
+    context.spec.permissionProfile.capabilities.includes("child-process") &&
+    context.spec.permissionProfile.capabilities.includes("local-computation");
+  const scratchWorkspace = needsScratch
+    ? createWorkflowScratch(context.runId)
+    : undefined;
+  try {
+    const command = buildExecutorCommand(context.spec, scratchWorkspace);
+    const [defaultProgram, ...args] = command;
+    if (defaultProgram === undefined) {
+      throw new Error("workflow executor command is empty");
+    }
+    const program = workflowProviderProgram(context.spec, defaultProgram);
+    const primaryWorkspace =
+      context.spec.executor === "claude"
+        ? claudeWorkflowDirectory(context.spec)
+        : context.spec.permissionProfile.workspaces[0];
+    const child: PipedChildProcess = spawn(program, args, {
+      cwd: primaryWorkspace ?? process.cwd(),
+      stdio: ["ignore", "pipe", "pipe"],
+      env:
+        scratchWorkspace === undefined
+          ? process.env
+          : {
+              ...process.env,
+              ...workflowScratchEnvironment(scratchWorkspace),
+            },
+    });
+    return new LocalWorkflowBackend(
+      child,
+      scratchWorkspace,
+      scratchWorkspace === undefined
+        ? undefined
+        : () => {
+            rmSync(scratchWorkspace, { recursive: true, force: true });
+          },
+    );
+  } catch (error) {
+    if (scratchWorkspace !== undefined)
+      rmSync(scratchWorkspace, { recursive: true, force: true });
+    throw error;
   }
-  const primaryWorkspace = context.spec.permissionProfile.workspaces[0];
-  const child: PipedChildProcess = spawn(program, args, {
-    cwd: primaryWorkspace ?? process.cwd(),
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  return new LocalWorkflowBackend(child);
 }
