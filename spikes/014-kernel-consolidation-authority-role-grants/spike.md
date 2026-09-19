@@ -396,6 +396,32 @@ unless those concepts are supplied as configured data interpreted generically.
 
 ## 5. Skill contracts
 
+### Initial governed-role migration roster
+
+Spike 014 must migrate the complete current Harness governed-role roster onto configured workflow policy and machine-readable contracts:
+
+1. `brief-readiness`
+2. `design-map`
+3. `evaluator-prepare`
+4. `evaluator-repair`
+5. `implementation`
+6. `evaluator-verify`
+7. `as-built`
+8. `outcome`
+
+No current governed role is intentionally deferred outside the new configured kernel path.
+
+The three evaluator roles may share one underlying evaluator contract definition where their deterministic boundary is genuinely common, provided that:
+
+- each remains a distinct configured role/policy entry;
+- each Role Grant binds the exact role being performed;
+- role-specific inputs, preconditions, allowed transitions, and postconditions remain independently expressible;
+- a shared contract cannot let one evaluator role silently assume another evaluator role's authority.
+
+The Design Map may choose whether this is represented as one reusable evaluator contract referenced by three roles, three thin role-specific contracts over one common definition, or another equivalent structure.
+
+The migration requirement is about eliminating hard-coded kernel role knowledge, not duplicating identical contract bytes.
+
 Each governed role must have a machine-readable contract separate from its semantic `SKILL.md`.
 
 The contract must contain only mechanically enforceable facts.
@@ -552,6 +578,44 @@ A role may not be performed merely because an agent claims that role in prose.
 
 ## 9. Attached and spawned execution
 
+### Minimum reproducible proof protocol
+
+The attached-session and human-wait proofs must use externally observable host operations and durable identities.
+
+The Design Map may choose endpoint names, transport, and storage, but the proof must persist or durably expose at least:
+
+- existing session/executor identity;
+- Workflow Execution Grant identity;
+- Role Grant identity;
+- execution/run identity or Execution Handle;
+- semantic role result;
+- and, for human interaction, human-request identity and response identity/reference.
+
+For attached execution, Harness must expose a supported host operation that binds an already-running registered session/executor identity to an exact Role Grant.
+
+For human wait/resume, Harness must expose supported host operations that:
+
+1. record a structured human request against the existing execution;
+2. place that execution in a waiting-for-human state without terminating it;
+3. accept a human response referencing the exact request/execution;
+4. record any authority-changing response canonically before use;
+5. deliver/resume the same execution identity.
+
+A repository-controlled fixture is acceptable as the bounded "real" session proof if it is:
+
+- a real external OS process or equivalent independently running executor started before the Role Grant is issued;
+- connected to Harness through the actual supported host boundary used by the implementation;
+- long-lived enough to receive a later Role Grant and, where used, pause and resume;
+- incapable of satisfying the proof through an in-memory callback or direct test-only method invocation.
+
+The fixture need not be Codex or Claude.
+
+The purpose of these proofs is to establish the host/session/grant protocol independently of provider-specific attach support.
+
+A live provider may additionally exercise the same path, but that is not required for AC14 or AC24–AC25 unless the Design Map deliberately chooses it.
+
+A mock-only adapter, same-process fake, or test that bypasses the supported host operation does not count as the required real proof.
+
 The same Role Grant model must support two execution modes.
 
 ### Spawned execution
@@ -640,6 +704,43 @@ The executor may not invent arbitrary host action names or parameters.
 ---
 
 ## 12. Host-mediated publication is the mandatory privileged-action proof
+
+### Required bounded publication environment
+
+The mandatory publication proof must be reproducible without GitHub credentials or external network availability.
+
+Use a host-controlled temporary/local bare Git repository as the publication remote, or an evaluator-equivalent repository-controlled bare remote with the same properties.
+
+For the proof:
+
+- the bare remote is created and controlled by the Harness host/test environment;
+- it lives outside every executor workspace grant;
+- the executor receives no remote credentials;
+- the executor receives no direct publication/network capability merely because host-mediated publication is allowed;
+- the Role Grant permits only the structured host publication action required by the contract;
+- the executor requests publication of one exact commit/ref update through the supported Harness host boundary;
+- Harness validates the request against the Role Grant, repository identity, branch/ref, commit identity, and required ancestry/base constraints;
+- the host process performs the actual ref advance;
+- evidence records the host-action identity and result.
+
+Durable proof must include enough primary evidence to independently corroborate:
+
+- the requested commit identity;
+- the target ref/branch;
+- the remote ref identity before publication;
+- the remote ref identity after publication;
+- the exact host action/result that caused the advance;
+- and that the executor's grant/profile did not contain direct remote-publication authority.
+
+A unit mock of `git push` is insufficient.
+
+A successful direct executor push is not acceptable proof.
+
+The evaluator need not prove that every theoretically possible filesystem escape is impossible; it must prove that under the declared workspace/capability boundary the publication path exercised was host-mediated and the executor was not granted the direct publication mechanism.
+
+An authenticated external remote is optional supplementary evidence only.
+
+Failure of an optional external remote must not block the required bounded publication criterion if the local bare-remote proof passes.
 
 Spike 013a introduced a host-mediated `publishCommit` path but retained direct provider publication behaviour.
 
