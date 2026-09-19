@@ -1419,3 +1419,43 @@
   manifest update. The pre-existing, unrelated uncommitted Spike 011 ledger
   edit and other untracked pre-existing drift were preserved and excluded.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 037 — Outcome
+
+- Skill: `outcome` v3.
+- Input: canonical `human-accepted` (commit `0f34444`, cycle `002`,
+  implementation attempt `13`, candidate `c9c0ea1d027f0e31558efde15a08e5d3a0ee5a88`,
+  verification attempt `16`, evaluator revision `003`, `PASS`); frozen brief
+  and Design Map (identities above, unchanged); promoted evaluation under
+  `evaluation/**` (`evaluation/promotion.json`, `passingAttempt: "014"`);
+  `as-built.md`; `as-built-dispatch-exception.md`; and the explicit
+  human-authorized `outcome-directive.md`.
+- Result: `outcome.md` written, synthesizing both cycles: cycle `001`'s
+  independently-evaluated `PASS` and subsequent explicit human rejection
+  (`IMPLEMENTATION_GAP`/`EVALUATOR_COVERAGE_DEFECT`); the resulting
+  evaluator-repair (one `BLOCKED` attempt on hidden-material access, one
+  successful repair producing evaluator revision `003`); cycle `002`'s
+  publication-boundary failure inside its own accepted `PASS`
+  (verification run `cb314e67-eff3-41ce-adfb-d925cf390ac2`, honestly
+  `roleDisposition: "blocked"` alongside a genuine canonical `PASS`) and its
+  host-mediated `git-publish` recovery; the As-Built dispatch process
+  exception for the resulting duplicate local/canonical runner-state gap;
+  and the explicit distinction between defects this cycle fixed versus those
+  deliberately deferred to a future spike.
+- Repository evidence inspected: `workflow.jsonl` (both cycles' full
+  transition history), `manifest.md` (all 36 prior runs), the frozen brief,
+  Design Map, `as-built.md`, `as-built-dispatch-exception.md`,
+  `evaluation/promotion.json`, the affected host-run evidence record
+  (`.workflow/runs/cb314e67-eff3-41ce-adfb-d925cf390ac2.json`), relevant Git
+  provenance (`git log`/`git show` for the As-Built and promotion
+  bookkeeping commits), and the prior Spike 012 `outcome.md` as a format
+  precedent. `harness-hidden` was not read, searched, or inspected.
+- Restricted evaluator material inspected: none.
+- Checks: `git diff --check` passes for `outcome.md`. The pre-existing,
+  unrelated uncommitted `spikes/011-host-owned-workflow-runs/workflow.jsonl`
+  edit and other untracked pre-existing drift (`skills/orchestrator/`,
+  `spikes/013a-Workflow-execution-friction/humam-acceptance.md`, the two
+  `spikes/998a-authority-fixture-*` directories, and
+  `spikes/post-013a-architecture-review.md`) were preserved and excluded;
+  Spike 014 was not started and `GOALS.md` was not touched.
+- Measurement cutoff: immediately before this manifest update.
