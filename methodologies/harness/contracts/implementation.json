@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "workspaces": ["repository"],
+  "capabilities": ["repository-read", "repository-write", "local-computation"],
+  "forbiddenExposure": ["evaluator-private"],
+  "protected": false,
+  "inputs": [
+    {
+      "name": "brief",
+      "event": "brief-frozen",
+      "committed": true
+    },
+    {
+      "name": "design",
+      "event": "design-map-frozen",
+      "committed": true
+    },
+    {
+      "name": "coverage",
+      "event": ["evaluation-prepared", "evaluator-repair-recorded"],
+      "committed": true,
+      "validator": "prepared-coverage"
+    },
+    {
+      "name": "requirements",
+      "path": "eval-requirements.md",
+      "identityBinding": {
+        "input": "coverage",
+        "field": "evaluationRequirements"
+      }
+    }
+  ],
+  "results": ["succeeded", "blocked", "refused", "failed"],
+  "methodology": {},
+  "human": ["input", "approval", "root"],
+  "postconditions": []
+}

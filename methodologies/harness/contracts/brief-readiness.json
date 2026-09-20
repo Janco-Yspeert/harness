@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "workspaces": ["repository"],
+  "capabilities": ["repository-read", "local-computation"],
+  "forbiddenExposure": [],
+  "protected": false,
+  "inputs": [
+    {
+      "name": "brief",
+      "path": "spike.md"
+    }
+  ],
+  "results": ["succeeded", "blocked", "refused", "failed"],
+  "methodology": {
+    "verdict": ["READY", "NOT_READY"]
+  },
+  "human": ["input", "approval", "root"],
+  "postconditions": ["brief-readiness.md"]
+}

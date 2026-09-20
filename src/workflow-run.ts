@@ -9,6 +9,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
+import { parseLedger } from "./kernel/ledger.ts";
+import type { WorkflowPolicy } from "./kernel/model.ts";
 
 // A workflow run is a host-owned execution of a methodology workflow role. It
 // shares host-generated identity, backend lifecycle observation, termination,
@@ -567,28 +569,26 @@ function sameAuthority(
   );
 }
 
-const ROLE_CONTRACTS: Readonly<Record<string, string>> = {
-  "brief-readiness": "brief-readiness",
-  "design-map": "design-map",
-  "evaluator-prepare": "evaluator",
-  "evaluator-repair": "evaluator",
-  "evaluator-verify": "evaluator",
-  implementation: "implementation",
-  "as-built": "as-built",
-  outcome: "outcome",
-};
-
 function resolveRepositoryContract(
   request: WorkflowRunRequest,
   workflow: WorkflowLocation,
   pinned: PinnedVerificationAuthority | undefined,
 ): ResolvedWorkflowContract {
-  const name = ROLE_CONTRACTS[request.role];
-  if (name === undefined) {
+  // Historical replay also consumes the shipped role mapping; there is no
+  // second concrete role-to-skill table to keep synchronized with the kernel.
+  const policy = JSON.parse(
+    readFileSync(
+      new URL("../methodologies/harness/policy.json", import.meta.url),
+      "utf8",
+    ),
+  ) as WorkflowPolicy;
+  const configured = policy.roles[request.role]?.skill;
+  if (configured === undefined) {
     throw new WorkflowRunRequestError(
       `unknown governed workflow role: ${request.role}`,
     );
   }
+  const name = configured.split("/").at(-2) ?? request.role;
   if (
     request.role.startsWith("evaluator-") &&
     request.slot.phase !== request.role
@@ -597,7 +597,7 @@ function resolveRepositoryContract(
   }
   const path =
     pinned === undefined
-      ? `skills/${name}/SKILL.md`
+      ? configured
       : `${workflow.repositoryPath}/${pinned.snapshotPath}`;
   let content: string;
   try {
@@ -726,30 +726,16 @@ function parseRepositoryFixtureDefinition(
 }
 
 function canonicalEvents(ledger: string): CanonicalWorkflowEvent[] {
-  return ledger
-    .split(/\r?\n/)
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      const value: unknown = JSON.parse(line);
-      if (typeof value !== "object" || value === null || Array.isArray(value))
-        throw new WorkflowRunRequestError(
-          "canonical workflow authority contains an invalid event",
-        );
-      const event = value as Record<string, unknown>;
-      if (
-        typeof event.transition !== "string" ||
-        typeof event.evidence !== "object" ||
-        event.evidence === null ||
-        Array.isArray(event.evidence)
-      )
-        throw new WorkflowRunRequestError(
-          "canonical workflow authority contains an invalid event",
-        );
-      return {
-        transition: event.transition,
-        evidence: event.evidence as Record<string, unknown>,
-      };
-    });
+  try {
+    return parseLedger(ledger).map(({ transition, evidence }) => ({
+      transition,
+      evidence,
+    }));
+  } catch {
+    throw new WorkflowRunRequestError(
+      "canonical workflow authority contains an invalid event",
+    );
+  }
 }
 
 function verifyCanonicalArtifact(

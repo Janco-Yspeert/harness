@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "roles": {
+    "brief-readiness": {
+      "contract": "methodologies/harness/contracts/brief-readiness.json",
+      "skill": "skills/brief-readiness/SKILL.md",
+      "when": {
+        "not": {
+          "event": "brief-frozen"
+        }
+      },
+      "retry": {
+        "dispositions": ["blocked", "failed", "interrupted"],
+        "limit": 2
+      },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "methodology": {
+            "verdict": "READY"
+          },
+          "transition": "brief-frozen",
+          "evidence": {
+            "artifact": "spike.md"
+          }
+        },
+        {
+          "disposition": "succeeded",
+          "methodology": {
+            "verdict": "NOT_READY"
+          },
+          "transition": "readiness-blocked"
+        }
+      ]
+    },
+    "design-map": {
+      "contract": "methodologies/harness/contracts/design-map.json",
+      "skill": "skills/design-map/SKILL.md",
+      "when": {
+        "all": [
+          {
+            "event": "brief-frozen"
+          },
+          {
+            "not": {
+              "event": "design-map-frozen"
+            }
+          }
+        ]
+      },
+      "retry": {
+        "dispositions": ["blocked", "failed", "interrupted"],
+        "limit": 2
+      },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "transition": "design-map-frozen",
+          "evidence": {
+            "artifact": "design-map.md"
+          }
+        }
+      ]
+    },
+    "evaluator-prepare": {
+      "contract": "methodologies/harness/contracts/evaluator-prepare.json",
+      "skill": "skills/evaluator/SKILL.md",
+      "when": {
+        "all": [
+          {
+            "event": "brief-frozen"
+          },
+          {
+            "event": "design-map-frozen"
+          },
+          {
+            "not": {
+              "event": "evaluation-prepared"
+            }
+          }
+        ]
+      },
+      "retry": {
+        "dispositions": ["blocked", "failed", "interrupted"],
+        "limit": 2
+      },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "transition": "evaluation-prepared",
+          "evidence": {
+            "artifact": "coverage-map.json",
+            "validator": "prepared-coverage"
+          }
+        }
+      ]
+    },
+    "evaluator-repair": {
+      "contract": "methodologies/harness/contracts/evaluator-repair.json",
+      "skill": "skills/evaluator/SKILL.md",
+      "when": {
+        "all": [
+          {
+            "event": "brief-frozen"
+          },
+          {
+            "event": "design-map-frozen"
+          },
+          {
+            "any": [
+              {
+                "event": "verification-finalized",
+                "current": true,
+                "latest": true,
+                "fields": {
+                  "classification": "EVALUATOR_DEFECT"
+                }
+              },
+              {
+                "event": "correction-cycle-opened",
+                "current": true,
+                "fields": {
+                  "evaluatorRepair": true
+                }
+              }
+            ]
+          },
+          {
+            "not": {
+              "event": "evaluator-repair-recorded",
+              "current": true,
+              "after": "verification-finalized"
+            }
+          }
+        ]
+      },
+      "retry": {
+        "dispositions": ["blocked", "failed", "interrupted"],
+        "limit": 2
+      },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "transition": "evaluator-repair-recorded",
+          "evidence": {
+            "artifact": "coverage-map.json",
+            "validator": "prepared-coverage",
+            "fields": {
+              "outcome": "REPAIRED"
+            }
+          }
+        }
+      ]
+    },
+    "implementation": {
+      "contract": "methodologies/harness/contracts/implementation.json",
+      "skill": "skills/implementation/SKILL.md",
+      "when": {
+        "all": [
+          {
+            "event": "evaluation-prepared"
+          },
+          {
+            "not": {
+              "event": "verification-finalized",
+              "latest": true,
+              "current": true,
+              "fields": {
+                "result": "PASS"
+              },
+              "after": "implementation-handoff"
+            }
+          },
+          {
+            "any": [
+              {
+                "not": {
+                  "event": "implementation-handoff",
+                  "current": true
+                }
+              },
+              {
+                "all": [
+                  {
+                    "event": "verification-finalized",
+                    "current": true,
+                    "latest": true,
+                    "after": "implementation-handoff",
+                    "fields": {
+                      "classification": "IMPLEMENTATION_FAILURE"
+                    }
+                  },
+                  {
+                    "not": {
+                      "event": "evaluator-repair-recorded",
+                      "current": true,
+                      "after": "verification-finalized"
+                    }
+                  }
+                ]
+              },
+              {
+                "all": [
+                  {
+                    "event": "correction-cycle-opened",
+                    "current": true,
+                    "fields": {
+                      "implementationCorrection": true
+                    }
+                  },
+                  {
+                    "not": {
+                      "event": "implementation-handoff",
+                      "current": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "retry": {
+        "dispositions": ["blocked", "failed", "interrupted"],
+        "limit": 2
+      },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "transition": "implementation-handoff",
+          "evidence": {
+            "commitHead": true,
+            "counterField": "attempt"
+          }
+        }
+      ]
+    },
+    "evaluator-verify": {
+      "contract": "methodologies/harness/contracts/evaluator-verify.json",
+      "skill": "skills/evaluator/SKILL.md",
+      "when": {
+        "all": [
+          {
+            "event": "evaluation-prepared"
+          },
+          {
+            "event": "implementation-handoff",
+            "current": true
+          },
+          {
+            "any": [
+              {
+                "not": {
+                  "event": "verification-finalized",
+                  "current": true,
+                  "after": "implementation-handoff"
+                }
+              },
+              {
+                "event": "evaluator-repair-recorded",
+                "current": true,
+                "after": "verification-finalized"
+              }
+            ]
+          },
+          {
+            "not": {
+              "event": "verification-finalized",
+              "latest": true,
+              "current": true,
+              "fields": {
+                "result": "PASS"
+              },
+              "after": "implementation-handoff"
+            }
+          }
+        ]
+      },
+      "retry": {
+        "dispositions": ["blocked", "failed", "interrupted"],
+        "limit": 2
+      },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "methodology": {
+            "result": "PASS"
+          },
+          "transition": "verification-finalized",
+          "evidence": {
+            "artifact": "verification-result.json",
+            "validator": "verification-accounting",
+            "allocation": "verification-allocated"
+          }
+        },
+        {
+          "disposition": "succeeded",
+          "methodology": {
+            "result": "FAIL"
+          },
+          "transition": "verification-finalized",
+          "evidence": {
+            "artifact": "verification-result.json",
+            "validator": "verification-accounting",
+            "allocation": "verification-allocated"
+          }
+        },
+        {
+          "disposition": "succeeded",
+          "methodology": {
+            "result": "BLOCKED"
+          },
+          "transition": "verification-finalized",
+          "evidence": {
+            "artifact": "verification-result.json",
+            "validator": "verification-accounting",
+            "allocation": "verification-allocated"
+          }
+        }
+      ],
+      "onAllocate": {
+        "transition": "verification-allocated",
+        "fromInputs": {
+          "commit": "candidate",
+          "evaluatorRevision": "evaluatorRevision"
+        },
+        "counterField": "attempt"
+      }
+    },
+    "as-built": {
+      "contract": "methodologies/harness/contracts/as-built.json",
+      "skill": "skills/as-built/SKILL.md",
+      "when": {
+        "all": [
+          {
+            "event": "verification-finalized",
+            "current": true,
+            "latest": true,
+            "fields": {
+              "result": "PASS"
+            }
+          },
+          {
+            "event": "promotion-recorded",
+            "current": true
+          },
+          {
+            "not": {
+              "event": "as-built-recorded",
+              "current": true
+            }
+          }
+        ]
+      },
+      "retry": {
+        "dispositions": ["blocked", "failed", "interrupted"],
+        "limit": 2
+      },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "transition": "as-built-recorded",
+          "evidence": {
+            "artifact": "as-built.md"
+          }
+        }
+      ]
+    },
+    "outcome": {
+      "contract": "methodologies/harness/contracts/outcome.json",
+      "skill": "skills/outcome/SKILL.md",
+      "when": {
+        "all": [
+          {
+            "event": "as-built-recorded",
+            "current": true
+          },
+          {
+            "event": "human-accepted",
+            "current": true
+          },
+          {
+            "not": {
+              "event": "outcome-recorded",
+              "current": true
+            }
+          }
+        ]
+      },
+      "retry": {
+        "dispositions": ["blocked", "failed", "interrupted"],
+        "limit": 2
+      },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "transition": "outcome-recorded",
+          "evidence": {
+            "artifact": "outcome.md"
+          }
+        }
+      ]
+    }
+  },
+  "scopeEvent": {
+    "transition": "correction-cycle-opened",
+    "field": "cycle",
+    "initial": "001"
+  },
+  "gates": [
+    {
+      "when": {
+        "event": "verification-finalized",
+        "current": true,
+        "fields": { "classification": "EVALUATOR_DEFECT" },
+        "atLeast": 3
+      },
+      "reason": "two evaluator corrections exhausted; classify the remaining issue and use successor authority"
+    },
+    {
+      "when": {
+        "all": [
+          {
+            "event": "as-built-recorded",
+            "current": true
+          },
+          {
+            "not": {
+              "event": "human-accepted",
+              "current": true
+            }
+          }
+        ]
+      },
+      "reason": "human acceptance required"
+    },
+    {
+      "when": {
+        "event": "human-rejected",
+        "current": true
+      },
+      "reason": "human rejection requires bounded correction or successor authority"
+    },
+    {
+      "when": {
+        "event": "readiness-blocked",
+        "after": "brief-frozen"
+      },
+      "reason": "readiness requires a corrected brief and explicit forward authority"
+    },
+    {
+      "when": {
+        "event": "verification-finalized",
+        "current": true,
+        "latest": true,
+        "fields": {
+          "classification": "SPECIFICATION_DEFECT"
+        }
+      },
+      "reason": "specification defect requires new brief authority"
+    }
+  ],
+  "maxAllocations": 32
+}

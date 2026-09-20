@@ -193,6 +193,7 @@ async function startHarness(
       ? testHiddenEvidenceRoot
       : options.hiddenEvidenceRoot;
   const host = await startHarnessHost(0, {
+    legacyWorkflowExecution: true,
     createBackend: () => new NoopSessionBackend(),
     createWorkflowBackend,
     ...(options.evaluatorWorkspace === undefined
@@ -2158,7 +2159,12 @@ void test("the workflow-run surface belongs to the existing Harness host", async
     );
     assert.doesNotMatch(runnerSource, /detached/);
     assert.doesNotMatch(runnerSource, /from "node:process"/);
-    assert.match(runnerSource, /\/workflow-runs/);
+    assert.match(runnerSource, /\/governed\//);
+    const legacySource = readFileSync(
+      new URL("../tools/legacy-workflow.ts", import.meta.url),
+      "utf8",
+    );
+    assert.match(legacySource, /\/workflow-runs/);
   } finally {
     if (events.readyState === WebSocket.OPEN) events.close();
     await host.close();
@@ -2204,7 +2210,11 @@ async function startToolFixture(
     rmSync(spikePath, { recursive: true, force: true });
     await host.close();
   });
-  const env: NodeJS.ProcessEnv = { ...process.env, HARNESS_HOST_URL: host.url };
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    HARNESS_HOST_URL: host.url,
+    HARNESS_LEGACY_WORKFLOW: "1",
+  };
   delete env.NODE_TEST_CONTEXT;
   return { host, created, spike, spikePath, env };
 }

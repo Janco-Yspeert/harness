@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "harness",
+  "root": ".",
+  "policy": "methodologies/harness/policy.json",
+  "workflowDirectory": "spikes",
+  "ledgerName": "workflow.jsonl",
+  "workspaces": {
+    "repository": {
+      "id": "harness-repository",
+      "path": ".",
+      "mode": "write",
+      "exposure": "public"
+    }
+  },
+  "remotes": {}
+}

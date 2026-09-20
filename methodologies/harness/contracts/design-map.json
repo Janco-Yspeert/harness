@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "workspaces": ["repository"],
+  "capabilities": ["repository-read", "repository-write", "local-computation"],
+  "forbiddenExposure": [],
+  "protected": false,
+  "inputs": [
+    {
+      "name": "brief",
+      "event": "brief-frozen",
+      "committed": true
+    }
+  ],
+  "results": ["succeeded", "blocked", "refused", "failed"],
+  "methodology": {},
+  "human": ["input", "approval", "root"],
+  "postconditions": ["design-map.md"]
+}

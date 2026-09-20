@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "workspaces": ["repository", "evaluation"],
+  "capabilities": ["repository-read", "repository-write", "local-computation"],
+  "forbiddenExposure": [],
+  "protected": true,
+  "inputs": [
+    {
+      "name": "brief",
+      "event": "brief-frozen",
+      "committed": true
+    },
+    {
+      "name": "design",
+      "event": "design-map-frozen",
+      "committed": true
+    },
+    {
+      "name": "coverage",
+      "event": ["evaluation-prepared", "evaluator-repair-recorded"],
+      "committed": true,
+      "validator": "prepared-coverage"
+    },
+    {
+      "name": "candidate",
+      "event": "implementation-handoff",
+      "field": "commit"
+    },
+    {
+      "name": "evaluatorRevision",
+      "path": "coverage-map.json",
+      "jsonValue": "readiness.evaluatorRevision"
+    }
+  ],
+  "results": ["succeeded", "blocked", "refused", "failed"],
+  "methodology": {
+    "result": ["PASS", "FAIL", "BLOCKED"],
+    "classification": [
+      "IMPLEMENTATION_FAILURE",
+      "EVALUATOR_DEFECT",
+      "SPECIFICATION_DEFECT",
+      "INFRASTRUCTURE_FAILURE"
+    ]
+  },
+  "human": ["input", "approval", "root"],
+  "postconditions": []
+}

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import {
   createServer,
@@ -10,6 +11,10 @@ import type { AddressInfo } from "node:net";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
 
 import { PtyBackend } from "./pty-backend.ts";
+import { GovernedHost, type GovernedHostOptions } from "./kernel/host.ts";
+import { loadProject } from "./kernel/configuration.ts";
+import { harnessValidators } from "./methodologies/harness-public.ts";
+import type { ExecutorProfile } from "./kernel/model.ts";
 import type {
   HarnessErrorMessage,
   SessionBackend,
@@ -114,6 +119,9 @@ export interface HarnessHost {
 }
 
 export interface HarnessHostOptions {
+  governed?: GovernedHostOptions;
+  // Historical protocol replay only. The configured kernel never falls back here.
+  legacyWorkflowExecution?: boolean;
   createBackend?: SessionBackendFactory;
   createWorkflowBackend?: WorkflowRunBackendFactory;
   // This is daemon configuration, not caller-supplied allocation data. A
@@ -239,6 +247,9 @@ export async function startHarnessHost(
   let activeSession: Session | undefined;
   let creatingSession = false;
   let closed = false;
+  const governed = options.governed
+    ? new GovernedHost(options.governed)
+    : undefined;
 
   function publishEvent(
     type: string,
@@ -490,11 +501,32 @@ export async function startHarnessHost(
   server.on("request", (request, response) => {
     const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
 
+    if (pathname.startsWith("/governed/")) {
+      if (!governed || closed) {
+        sendJson(response, 503, {
+          error: "governed host is not configured or is closed",
+        });
+        return;
+      }
+      void governed.handle(request, response, pathname);
+      return;
+    }
+
     if (
       pathname === "/workflow-runs" ||
       pathname.startsWith("/workflow-runs/") ||
       pathname === "/workflow-fixtures"
     ) {
+      if (
+        request.method !== "GET" &&
+        (governed || !options.legacyWorkflowExecution)
+      ) {
+        sendJson(response, 410, {
+          error:
+            "legacy execution is retired; use a configured Workflow Execution Grant through /governed",
+        });
+        return;
+      }
       void handleWorkflowRequest(request, response, pathname);
       return;
     }
@@ -674,6 +706,8 @@ export async function startHarnessHost(
       }
       closed = true;
 
+      governed?.close();
+
       await workflowRuns.close();
 
       if (activeSession !== undefined) {
@@ -720,6 +754,38 @@ if (import.meta.main) {
         }
       : undefined;
   const host = await startHarnessHost(port, {
+    ...(process.env.HARNESS_ROOT_TOKEN
+      ? {
+          governed: {
+            rootToken: process.env.HARNESS_ROOT_TOKEN,
+            project: loadProject(
+              process.env.HARNESS_PROJECT_CONFIG ?? "harness.project.json",
+            ),
+            validators: harnessValidators,
+            ...(process.env.HARNESS_PRIVATE_DATA_ROOT
+              ? { privateDataRoot: process.env.HARNESS_PRIVATE_DATA_ROOT }
+              : {}),
+            executors: process.env.HARNESS_EXECUTOR_CONFIG
+              ? (JSON.parse(
+                  readFileSync(process.env.HARNESS_EXECUTOR_CONFIG, "utf8"),
+                ) as ExecutorProfile[])
+              : [
+                  {
+                    id: "external",
+                    provider: "external",
+                    modes: ["attached"],
+                    capabilities: [
+                      "repository-read",
+                      "repository-write",
+                      "local-computation",
+                    ],
+                    isolation: [],
+                    available: true,
+                  },
+                ],
+          },
+        }
+      : {}),
     ...(createBackend === undefined ? {} : { createBackend }),
     ...(process.env.HARNESS_EVALUATOR_WORKSPACE === undefined
       ? {}

@@ -16,7 +16,10 @@ const spike = `spikes/999-workflow-test-${String(process.pid)}`;
 const spikePath = join(repositoryRoot, spike);
 
 function run(args: string[], environment: NodeJS.ProcessEnv = process.env) {
-  const cleanEnvironment = { ...environment };
+  const cleanEnvironment: NodeJS.ProcessEnv = {
+    ...environment,
+    HARNESS_LEGACY_WORKFLOW: "1",
+  };
   delete cleanEnvironment.NODE_TEST_CONTEXT;
   return spawnSync("node", ["tools/workflow.ts", ...args], {
     cwd: repositoryRoot,
