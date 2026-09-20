@@ -200,3 +200,24 @@
 - Measurement cutoff: immediately before this manifest update; the
   promotion commit/push and any later human-acceptance activity are
   excluded.
+
+## Run 005 — As-Built
+
+- Skill: `as-built` (active repository contract).
+- Authority: canonical verification attempt `1` has `PASS` and promotion is
+  recorded; this record reconstructs the exact implementation candidate
+  `309d87ba2e1833c0bb9dade338794ec863a3d2df` before the human acceptance gate.
+- Inputs inspected: the frozen `spike.md` and `design-map.md`, candidate diff
+  from the prepared pre-implementation revision, normal kernel and configured
+  methodology surfaces, visible kernel tests and retained real-boundary proof
+  records, public implementation handoff, and the promoted public verification
+  result. No unpromoted evaluator-private material was accessed.
+- Result: `as-built.md` reports `ALIGNED`; no Missing, Contradictory, or Extra
+  material behavior or structure was identified. It records the retained
+  legacy boundary and the absence of a production Claude adapter as factual
+  implementation limits, not evaluator findings.
+- Checks: candidate reachability from the current branch, public promoted PASS
+  provenance, exact frozen public identities, candidate diff inventory, and
+  working-tree `git diff --check` before this manifest update.
+- Measurement cutoff: immediately before this manifest update; commit, push,
+  canonical `as-built-recorded`, and human-acceptance activity are excluded.
