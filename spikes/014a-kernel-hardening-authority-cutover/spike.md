@@ -156,6 +156,31 @@ satisfy this requirement.
 
 A caller disconnect must remain irrelevant to host-owned continuation.
 
+## 4. Configured role contracts must faithfully represent their skills
+
+Spike 014 introduced repository-owned configured role contracts, but the active
+Brief Readiness contract does not faithfully represent Brief Readiness v3:
+
+- the skill requires writing `feedback.md`;
+- the configured contract grants only `repository-read` and
+  `local-computation`, so a governed worker has no `workspace-write`
+  capability;
+- the configured postcondition requires `brief-readiness.md`, a different
+  artifact that the skill does not specify.
+
+This is a methodology/configuration defect, not an executor defect. A worker
+must not be forced to violate its Role Grant in order to satisfy its skill, and
+the host must not require an artifact the skill never promises to create.
+
+Spike 014a must ensure each configured role contract is materially compatible
+with the active skill it binds for required inputs, outputs/postconditions,
+capabilities, protected/private exposure, human interaction, and privileged
+host actions.
+
+The generic kernel must remain ignorant of Harness-specific filenames or skill
+semantics. Fidelity belongs in repository-owned methodology configuration and
+its validation/tests.
+
 ---
 
 # Part II — New Spike 014a hardening and cutover requirements
@@ -163,7 +188,7 @@ A caller disconnect must remain irrelevant to host-owned continuation.
 The requirements in this section are new successor scope. They are deliberately
 not part of the Spike 014 rejection classification.
 
-## 4. Separate operational retry from semantic correction/re-entry
+## 5. Separate operational retry from semantic correction/re-entry
 
 Harness must distinguish:
 
@@ -682,6 +707,15 @@ than a successful or ambiguous terminal role. The configured retry/replacement
 path can act on that state, and a valid semantic result remains distinct from
 process exit.
 
+**AC23 — Configured role contracts are skill-faithful**
+
+For every active Harness role, the configured contract is materially compatible
+with the bound skill's required inputs, outputs/postconditions, capabilities,
+protected exposure, human interactions, and privileged host actions. A
+deliberately contradictory fixture is rejected by validation or regression
+coverage. Brief Readiness specifically can produce its declared review artifact
+without exceeding its Role Grant.
+
 ---
 
 # Required regression scenarios
@@ -801,6 +835,15 @@ records an explicit missing-result failure/attention state, does not advance the
 methodology, and permits only configured retry/replacement or a human gate.
 Then prove a spawned execution returning a valid result advances normally.
 
+### R19 — Role contract contradicts bound skill
+
+Use a deliberately contradictory role fixture where the skill requires a named
+output/write responsibility but the contract either omits the required
+capability or declares a different postcondition. Prove the methodology
+validation/regression boundary catches the contradiction. Prove the corrected
+Brief Readiness contract permits the governed role to produce its actual
+declared review artifact without capability escape.
+
 ---
 
 # Real-boundary evidence
@@ -818,7 +861,9 @@ interfaces rather than being proved only by in-memory method calls:
 4. host-mediated promotion of exact evaluator evidence into a bounded local
    promoted destination;
 5. a real spawned governed-worker result handshake, including the missing-result
-   failure boundary.
+   failure boundary;
+6. a governed Brief Readiness execution using a role contract that actually
+   permits and requires the active skill's declared review artifact.
 
 Implementation-independent deterministic tests may cover budget/predicate/result
 mechanics around those live proofs.
@@ -848,7 +893,9 @@ The Design Map may choose:
 - how cross-field result constraints are represented generically;
 - exact durable continuation-stop/attention record shape;
 - exact spawned-provider semantic-result handshake/adapter and bounded
-  diagnostic evidence shape.
+  diagnostic evidence shape;
+- exact methodology validation mechanism for material skill/contract fidelity
+  without moving Harness-specific skill semantics into the generic kernel.
 
 Those choices must preserve the semantics above.
 
@@ -947,18 +994,32 @@ That sequence established two defects this successor now explicitly addresses:
 The old event must remain in the append-only ledger. It is not the final
 authority basis for this materially revised brief.
 
+A subsequent bounded semantic-result bridge exposed a further bootstrap defect.
+The governed worker returned the exact structured semantic output
+`HARNESS_ROLE_RESULT {"disposition":"succeeded","methodology":{"verdict":"READY"}}`,
+but the host correctly rejected submission because the pinned Brief Readiness
+contract requires `brief-readiness.md` as a postcondition. The active Brief
+Readiness v3 skill instead requires `feedback.md`, while the contract grants no
+`workspace-write` capability. This cannot be repaired by another executor
+retry without violating either the skill or the Role Grant.
+
 Because no Design Map was frozen after that event, recovery is forward-only:
 
 1. preserve the original bootstrap review and `brief-frozen` event as
    historical evidence;
 2. materially revise this brief;
-3. rerun Brief Readiness through a real governed Spike-014 host execution, or
-   under an explicit human bootstrap exception that records equivalent
-   execution/role provenance rather than merely artifact provenance;
-4. commit the revised reviewed brief;
-5. append a newer `brief-frozen` event binding the replacement brief and its
-   bootstrap execution evidence;
-6. require all later 014a preparation to bind the latest valid freeze.
+3. perform one explicit, bounded **methodology bootstrap repair** that makes the
+   Brief Readiness role contract faithfully executable by Brief Readiness v3
+   without changing Brief Readiness semantics or product/kernel source;
+4. pin/use that repaired methodology definition under explicit human bootstrap
+   authority and preserve the prior contradictory definition as history;
+5. rerun Brief Readiness through a real governed Spike-014 host execution using
+   the repaired contract;
+6. commit the revised reviewed brief/review checkpoint;
+7. append a newer `brief-frozen` event binding the replacement brief and its
+   governed execution evidence;
+8. require all later 014a preparation to bind the latest valid freeze and the
+   repaired pinned methodology.
 
 Do not delete or rewrite `c3bd7a1`.
 
