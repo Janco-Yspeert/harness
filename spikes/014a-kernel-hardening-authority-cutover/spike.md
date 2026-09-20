@@ -33,6 +33,15 @@ The predecessor human decision is recorded in:
 
 `spikes/014-kernel-consolidation-authority-role-grants/acceptance.md`
 
+Spike 014 itself was built on the accepted Spike 013a state integrated by
+`4b8a24235173759fb56420ba04b6c3c0df630852`. That integration is a squash of
+the accepted 013a branch, so Git ancestry does not contain the branch's detailed
+attempt history even though the accepted production tree and spike evidence were
+carried forward. Spike 014a must preserve the 013a guarantees that survived into
+014, especially deterministic contract binding, protected delegated evaluator
+authority, host-validated semantic role results, canonical checkpoint adoption,
+explicit execution-attempt identity, and host-mediated publication.
+
 ---
 
 # Question
@@ -63,6 +72,12 @@ The following Spike 014 boundaries remain authoritative design direction:
 - durable execution identity;
 - host-mediated privileged actions;
 - non-authoritative telemetry and executor-selection seams;
+- deterministic role-contract binding and delegated authority inherited from
+  accepted Spike 013a;
+- process completion remaining distinct from a host-validated semantic role
+  result;
+- provider prose or repository skill discovery never creating methodology
+  authority;
 - no Harness phase names or spike-specific branches in the generic kernel.
 
 Spike 014a must not reintroduce local `.workflow` state as authority, recreate a
@@ -258,14 +273,44 @@ superseded. Late result/action requests from it must be mechanically rejected.
 Supersession must not rewrite the old execution's historical result, grant,
 process history, or evidence.
 
-## 9. Supervisory sessions may adopt a governed role inline
+## 9. Supervisor identity and inline role adoption
 
-A persistent supervisory/orchestrator context may temporarily become the worker
-for an eligible Role Grant without spawning another provider process.
+A persistent supervisory/orchestrator context is a supervisor by default. Merely
+discovering, reading, loading, or being able to execute a repository role skill
+does not turn that context into the worker for that role.
+
+For Codex App specifically, repository instructions must make the default
+identity explicit:
+
+> Codex App coordinating a Harness workflow is the orchestrator/supervisor unless
+> it has received separate authority to adopt a governed Role Grant.
+
+The active `skills/orchestrator/SKILL.md` already distinguishes observation
+from execution and requires explicit human workflow authorization. Spike 014a
+must harden the remaining boundary: workflow execution authorization permits the
+orchestrator to **coordinate** eligible roles; it does not by itself authorize
+the orchestrator to perform those roles inline.
+
+A supervisor may temporarily become the worker for an eligible Role Grant
+without spawning another provider process only when inline adoption has an
+independent authority basis.
+
+Inline adoption is permitted when either:
+
+1. the human explicitly requests inline execution for the named/bounded role,
+   for example “fix this inline”; or
+2. the current Workflow Execution Grant/configured executor policy explicitly
+   permits inline execution as a fallback and the configured fallback condition
+   has mechanically become true.
+
+The orchestrator may not choose inline execution merely because it is cheaper,
+faster, already has the skill in context, or would avoid launching another
+agent. A fallback must be policy/grant authority, not orchestration convenience.
 
 Conceptually:
 
-supervisor → attached Role Grant → governed execution → terminal → supervisor
+supervisor → explicit/fallback inline authority → attached Role Grant →
+governed execution → terminal → supervisor
 
 The same underlying session/context may continue supervisory activity after the
 governed execution becomes terminal.
@@ -283,13 +328,74 @@ A supervisor that has received evaluator-private exposure must not be able to
 adopt an implementation Role Grant where the configured implementation contract
 forbids that provenance.
 
-This mechanism is the foundation for a future low-ceremony “fix inline” action.
 A narrow attached-only, single-role, non-continuing Workflow Execution Grant may
-be used for a small human-authorized fix without spawning another model.
+therefore provide the future low-ceremony “fix inline” path without inventing an
+ungoverned “just edit it” mode.
 
-There is no ungoverned “just edit it” authority mode in this spike.
+The implementation must harden the repository orchestration contract at the
+appropriate public instruction surfaces, including `skills/orchestrator/SKILL.md`
+and, where needed to establish the Codex-App default before role-skill
+discovery, `AGENTS.md`.
 
-## 10. Promotion becomes a host-mediated configured action
+## 10. Runtime executor/model claims must be truthful
+
+A requested executor, model, or reasoning-effort setting is an execution
+constraint, not an identity the agent may establish by saying that it used it.
+
+When a Workflow Execution Grant, Role Grant, executor policy, or explicit human
+instruction requires a particular model/effort:
+
+- Harness/orchestration must pass that constraint through the supported provider
+  launch path where the provider supports it;
+- the execution record must distinguish requested configuration from runtime-
+  confirmed configuration;
+- an orchestrator must distinguish its own parent model from a child executor's
+  model;
+- no manifest, result, or progress report may claim a model/effort level that
+  the runtime did not expose or the host did not itself mechanically enforce.
+
+If an exact model/effort is a required execution constraint and the available
+provider surface cannot enforce or attest it, allocation must stop/block rather
+than silently substitute or convert the requested setting into prose.
+
+This does not require automatic model routing, model benchmarking, or cost
+optimization. It requires truthful enforcement/attestation of an explicitly
+chosen executor policy.
+
+## 11. Role-derived canonical transitions require governed execution provenance
+
+A canonical transition that represents completion/result of a governed role
+must not be recordable merely because a correctly shaped artifact with valid Git
+provenance exists.
+
+For forward authority after the 014a cutover, role-derived transitions including
+at least:
+
+- `brief-frozen`;
+- `design-map-frozen`;
+- `evaluation-prepared`;
+- `implementation-handoff`;
+- `verification-finalized`;
+- `as-built-recorded`;
+- `outcome-recorded`;
+
+must bind the exact authorized execution that produced the result, including the
+relevant Workflow Execution Grant, Role Grant, execution identity, validated
+semantic Role Result, and artifact/result identities required by the
+methodology.
+
+The host/configured authority path must reject a valid-looking role artifact
+whose producing work did not hold the required governed role authority.
+
+Human/root-authority transitions such as explicit acceptance, rejection,
+supersession, or bounded exception authority may have a different provenance
+shape, but their authority source must likewise be explicit.
+
+Historical legacy events remain history. The legacy recorder may remain capable
+of reading/interpreting old ledgers, but after cutover it must not be an
+independent forward-authority path that can bless ungoverned role work.
+
+## 12. Promotion becomes a host-mediated configured action
 
 Spike 014 explicitly did not require full promotion migration. Spike 014a does.
 
@@ -321,7 +427,7 @@ The generic kernel must not contain a phase-specific
 generic/configured host-action seam, with publication remaining another concrete
 host action.
 
-## 11. New human acceptance/rejection must use the governed authority path
+## 13. New human acceptance/rejection must use the governed authority path
 
 Historical `legacy-workflow.ts` authority interpretation may remain for
 historical compatibility, old-cycle diagnostics, and explicitly supported
@@ -342,7 +448,7 @@ A human acceptance/rejection decision must:
 The exact host/API representation is Design Map freedom. This requirement does
 not require a polished human UI.
 
-## 12. Predicate semantics must be explicit
+## 14. Predicate semantics must be explicit
 
 The narrow declarative policy interpreter must define the semantics of its
 operators, especially `after`.
@@ -431,43 +537,64 @@ before invalidating the old execution; late semantic results/host actions from
 the superseded execution are rejected; new governed work starts only after the
 old execution has been terminated or reconciled.
 
-**AC11 — Supervisor inline role adoption**
+**AC11 — Supervisor identity is non-authoritative for worker roles**
 
-An eligible already-running supervisory session can adopt an attached Role Grant,
-perform one governed role, reach terminal state, and then remain usable as a
-supervisor without spawning a replacement provider for that role.
+A Codex-App/orchestrator context remains a supervisor when it discovers or reads
+a role skill. General workflow-execution authorization does not by itself let it
+perform the next role inline.
 
-**AC12 — Exposure still constrains inline adoption**
+**AC12 — Inline role adoption requires explicit authority**
+
+An eligible supervisory session can adopt an attached Role Grant only when the
+human explicitly selected inline execution or a pre-authorized WEG/executor
+fallback condition is mechanically satisfied. The same session can reach
+terminal state and then resume supervision.
+
+**AC13 — Exposure still constrains inline adoption**
 
 A supervisor/session with evaluator-private exposure is denied inline
 implementation adoption when the implementation contract forbids that
 provenance.
 
-**AC13 — Promotion is host mediated**
+**AC14 — Runtime model/executor claims are truthful**
+
+Requested model/effort and runtime-confirmed model/effort are distinguishable.
+A required exact model/effort that cannot be enforced or attested blocks rather
+than being silently claimed. Parent-orchestrator model identity is not reported
+as child-executor identity or vice versa.
+
+**AC15 — Role-derived authority is execution-bound**
+
+A valid-looking role artifact cannot create forward canonical authority without
+the required governed Role Grant/execution/semantic-result provenance. The same
+artifact produced by an authorized governed execution can advance through the
+configured path.
+
+**AC16 — Promotion is host mediated**
 
 A genuine evaluator PASS can request only the promotion action permitted by its
 Role Grant. The host validates and performs exact promotion, records the action
 result and resulting identities, and the executor does not require unrestricted
 direct promotion/publication authority.
 
-**AC14 — Promotion failure does not rewrite semantic PASS**
+**AC17 — Promotion failure does not rewrite semantic PASS**
 
 A failed or denied promotion remains distinct from the evaluator's semantic
 verification result, and configured methodology decides what may happen next.
 
-**AC15 — New human decisions use configured authority**
+**AC18 — New human decisions use configured authority**
 
 Human acceptance/rejection after the cutover is validated/recorded through the
 new configured authority path rather than an independent legacy state-machine
 oracle.
 
-**AC16 — Predicate language semantics are deterministic**
+**AC19 — Predicate language semantics are deterministic**
 
 `after` requires its anchor to exist; visible regression coverage proves the
 missing-anchor case and the affected Harness policy remains behaviorally
 correct.
 
-**AC17 — Existing kernel regressions remain green**
+**AC20 — Existing kernel regressions remain green**
 
 The full visible suite, including Spike 014's real-boundary tests, remains green.
 No fix may restore duplicate local-state authority, hard-coded Harness role
@@ -520,31 +647,59 @@ Start a real external governed worker under WEG A. Create WEG B with explicit
 supersession. Prove A is durably superseded, a late A result/action is denied,
 the old provider is terminated/reconciled, and only then B can execute.
 
-### R8 — Inline implementation adoption
+### R8 — Native skill discovery does not self-authorize
 
-Register/retain a clean supervisor-like attached session. Give it a narrow
-implementation-only WEG/Role Grant. Prove the same session performs the role and
-later remains usable after the execution is terminal.
+Run a supervisor/Codex-App-like context that can discover and read a role skill.
+Authorize workflow continuation but do not authorize inline adoption. Prove it
+cannot convert skill discovery into the worker Role Grant or produce accepted
+role-derived authority by doing the role itself.
 
-### R9 — Inline adoption exposure denial
+### R9 — Human-selected inline implementation adoption
+
+Register/retain a clean supervisor-like attached session. Explicitly authorize a
+narrow implementation-only inline WEG/Role Grant. Prove the same session performs
+the role and later remains usable after the execution is terminal.
+
+### R10 — Configured inline fallback
+
+Configure a WEG/executor policy that permits inline fallback only after a named
+external-executor condition fails. Prove the supervisor cannot choose inline
+before that condition and can receive the attached Role Grant after it is
+mechanically satisfied.
+
+### R11 — Inline adoption exposure denial
 
 Give the same kind of session evaluator-private exposure first. Prove
 implementation Role Grant resolution/allocation is denied.
 
-### R10 — Host promotion
+### R12 — Model/effort attestation
+
+Request an exact model/effort for a child execution. Prove the record separates
+requested from confirmed configuration. Where the provider cannot attest/enforce
+the required setting, prove the role blocks rather than reporting the requested
+setting as fact.
+
+### R13 — Ungoverned artifact cannot freeze authority
+
+Produce a valid-looking Brief Readiness artifact and committed brief without an
+authorized Brief Readiness Role Grant/execution. Prove `brief-frozen` is denied.
+Then perform the same role through an authorized governed execution and prove the
+configured transition can bind that execution and freeze the exact brief.
+
+### R14 — Host promotion
 
 Use a bounded local evaluator-evidence fixture. A governed evaluator PASS requests
 promotion through the host. Prove exact-source validation, host-performed
 promotion, resulting identity checks, and no unrestricted direct executor
 promotion authority.
 
-### R11 — Human decision cutover
+### R15 — Human decision cutover
 
 At a state ready for acceptance, record acceptance/rejection using the new
 authority path. Prove legacy local state and legacy execution completion flags
 cannot independently change legality.
 
-### R12 — Missing `after` anchor
+### R16 — Missing `after` anchor
 
 Prove `A after B` is false when B never occurred and true only for qualifying A
 events after an existing B.
@@ -558,8 +713,12 @@ interfaces rather than being proved only by in-memory method calls:
 
 1. supersession of a real running external governed worker, including denial of
    a late request from the superseded execution;
-2. inline role adoption by an already-running attached session/context;
-3. host-mediated promotion of exact evaluator evidence into a bounded local
+2. human-selected or policy-fallback inline role adoption by an already-running
+   attached supervisory session/context;
+3. rejection of a real committed role artifact that lacks governed execution
+   provenance, followed by acceptance of equivalent output from an authorized
+   role execution;
+4. host-mediated promotion of exact evaluator evidence into a bounded local
    promoted destination.
 
 Implementation-independent deterministic tests may cover budget/predicate/result
@@ -577,6 +736,12 @@ The Design Map may choose:
 - supersession record shape;
 - whether supervisor identity needs a new explicit durable type or can remain a
   session without active Role Grant;
+- exact representation of human-selected inline permission and configured
+  fallback conditions;
+- how requested versus runtime-confirmed executor/model/effort metadata is
+  represented for providers that expose different levels of attestation;
+- exact governed-execution provenance bound to role-derived canonical
+  transitions;
 - exact generic host-action registry/handler shape;
 - exact promotion request/result schemas;
 - how cross-field result constraints are represented generically;
@@ -597,7 +762,9 @@ Spike 014a does **not**:
 - redesign the Spike 014 kernel;
 - add simultaneous multi-role execution;
 - build a general scheduler or worker pool;
-- implement automatic model routing or full cost optimization;
+- implement automatic model routing, model benchmarking, or full cost
+  optimization (truthful enforcement/attestation of an explicitly requested
+  model/effort is in scope);
 - implement a polished supervisor UI;
 - implement a general secrets manager;
 - add full production Claude/Codex/Sol adapters merely for demonstration;
@@ -641,11 +808,45 @@ unrelated cleanup.
 Spike 014a changes the machinery that will eventually govern these same actions.
 
 Preparation and implementation may therefore use the currently supported Spike
-014/legacy authority surfaces where necessary.
+014/legacy authority surfaces where necessary, but bootstrap evidence must not
+claim semantics those surfaces do not actually enforce.
 
-Do not fabricate 014a Workflow Execution Grants, supersession records,
-host-promotion evidence, inline-adoption evidence, or human-decision cutover
-before those mechanisms exist.
+## Observed 014a bootstrap defect
+
+The first 014a Brief Readiness attempt was dispatched by Codex App to a Codex
+subagent outside a running Harness host. The child produced a plausible
+`READY` review, and the legacy authority CLI subsequently recorded
+`brief-frozen` at commit `c3bd7a1dad236f1a63c0780db4cfc2e1f6efbc8f`.
+
+That sequence established two defects this successor now explicitly addresses:
+
+1. provider-native subagent/skill execution is not equivalent to execution under
+   a Harness Role Grant; and
+2. the legacy recorder can record a role-derived canonical transition from
+   artifact/provenance evidence without proving that the role execution itself
+   held governed authority.
+
+The old event must remain in the append-only ledger. It is not the final
+authority basis for this materially revised brief.
+
+Because no Design Map was frozen after that event, recovery is forward-only:
+
+1. preserve the original bootstrap review and `brief-frozen` event as
+   historical evidence;
+2. materially revise this brief;
+3. rerun Brief Readiness through a real governed Spike-014 host execution, or
+   under an explicit human bootstrap exception that records equivalent
+   execution/role provenance rather than merely artifact provenance;
+4. commit the revised reviewed brief;
+5. append a newer `brief-frozen` event binding the replacement brief and its
+   bootstrap execution evidence;
+6. require all later 014a preparation to bind the latest valid freeze.
+
+Do not delete or rewrite `c3bd7a1`.
+
+During bootstrap, do not fabricate 014a Workflow Execution Grants,
+supersession records, host-promotion evidence, inline-adoption evidence, model
+attestation, or human-decision cutover before those mechanisms exist.
 
 Bootstrap activity is how the successor is built. It is not evidence that the
 successor mechanisms work.
@@ -695,8 +896,20 @@ For every existing execution:
 
 For every supervisor action:
 
-> Is the context merely supervising, or has it actually adopted a Role Grant and
-> therefore become the governed worker?
+> Is the context merely supervising, or has it actually adopted a Role Grant
+> under explicit human inline authority or a pre-authorized fallback condition?
+
+For every role-derived canonical transition:
+
+> Which exact governed execution and validated semantic Role Result authorize
+> this transition? Would the same artifact be rejected if it came from an
+> ungoverned child?
+
+For every executor/model claim:
+
+> Is this requested configuration, host-enforced configuration, or
+> runtime-confirmed configuration? Are we reporting only what can actually be
+> proved?
 
 For every privileged mechanical action:
 
