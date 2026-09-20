@@ -1,7 +1,11 @@
 {
   "schemaVersion": 1,
   "workspaces": ["repository"],
-  "capabilities": ["repository-read", "local-computation"],
+  "capabilities": [
+    "repository-read",
+    "repository-write",
+    "local-computation"
+  ],
   "forbiddenExposure": [],
   "protected": false,
   "inputs": [
@@ -15,5 +19,5 @@
     "verdict": ["READY", "NOT_READY"]
   },
   "human": ["input", "approval", "root"],
-  "postconditions": ["brief-readiness.md"]
+  "postconditions": ["feedback.md"]
 }
