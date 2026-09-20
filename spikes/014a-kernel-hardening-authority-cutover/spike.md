@@ -501,6 +501,35 @@ depending on `findLastIndex(...) === -1` as accidental language semantics.
 
 The visible suite must lock this behavior down.
 
+## 16. Spawned executions require a deterministic semantic-result handshake
+
+A governed spawned executor must not be considered operationally complete merely
+because its provider process exited cleanly.
+
+Spike 014 currently permits a spawned process to exit with `process: exited`
+and no semantic Role Result when the worker never calls the result endpoint.
+For a role whose retry policy does not include raw process `exited`, that can
+leave the governed role in a terminal-looking but non-advancing state with no
+natural retry path.
+
+For spawned governed execution:
+
+- the provider/adapter must have a deterministic supported mechanism for
+  receiving its exact assignment/contract and returning a semantic Role Result;
+- a clean provider exit without a valid Role Result is **not** role success;
+- missing or invalid semantic-result delivery must become a durable, inspectable
+  execution failure/attention/stop fact with an explicit reason;
+- configured retry/replacement policy must be able to reason about that state;
+- automatic continuation must not silently stop because the provider exited
+  without the semantic handshake;
+- bounded diagnostics must distinguish failure before assignment delivery,
+  during provider execution, or during result submission without requiring
+  unrestricted raw private-output retention.
+
+The exact adapter/protocol is Design Map freedom. The invariant is that the host,
+not provider optimism or process exit code, knows whether the governed role
+completed.
+
 ---
 
 # Evaluation requirements
@@ -645,6 +674,14 @@ The full visible suite, including Spike 014's real-boundary tests, remains green
 No fix may restore duplicate local-state authority, hard-coded Harness role
 logic, or weakened evaluator-private exposure.
 
+**AC22 — Spawned result handshake cannot disappear**
+
+A spawned governed worker that exits without submitting a valid semantic Role
+Result leaves an explicit durable missing-result failure/attention fact rather
+than a successful or ambiguous terminal role. The configured retry/replacement
+path can act on that state, and a valid semantic result remains distinct from
+process exit.
+
 ---
 
 # Required regression scenarios
@@ -756,6 +793,14 @@ cannot independently change legality or record the decision.
 Prove `A after B` is false when B never occurred and true only for qualifying A
 events after an existing B.
 
+### R18 — Spawned worker exits without semantic result
+
+Launch a real supported spawned executor under a governed Role Grant and make it
+exit cleanly without returning the semantic-result handshake. Prove Harness
+records an explicit missing-result failure/attention state, does not advance the
+methodology, and permits only configured retry/replacement or a human gate.
+Then prove a spawned execution returning a valid result advances normally.
+
 ---
 
 # Real-boundary evidence
@@ -771,7 +816,9 @@ interfaces rather than being proved only by in-memory method calls:
    provenance, followed by acceptance of equivalent output from an authorized
    role execution;
 4. host-mediated promotion of exact evaluator evidence into a bounded local
-   promoted destination.
+   promoted destination;
+5. a real spawned governed-worker result handshake, including the missing-result
+   failure boundary.
 
 Implementation-independent deterministic tests may cover budget/predicate/result
 mechanics around those live proofs.
@@ -799,7 +846,9 @@ The Design Map may choose:
 - exact generic host-action registry/handler shape;
 - exact promotion request/result schemas;
 - how cross-field result constraints are represented generically;
-- exact durable continuation-stop/attention record shape.
+- exact durable continuation-stop/attention record shape;
+- exact spawned-provider semantic-result handshake/adapter and bounded
+  diagnostic evidence shape.
 
 Those choices must preserve the semantics above.
 
@@ -873,6 +922,19 @@ The first 014a Brief Readiness attempt was dispatched by Codex App to a Codex
 subagent outside a running Harness host. The child produced a plausible
 `READY` review, and the legacy authority CLI subsequently recorded
 `brief-frozen` at commit `c3bd7a1dad236f1a63c0780db4cfc2e1f6efbc8f`.
+
+A later replacement attempt did use a real bounded Spike-014 WEG/root
+exception/Role Grant/execution, but the orchestrator's checkout was stale: it
+lacked the already-pushed bootstrap incident file and bound the old
+`sha256:49d0daa4…9b80bc4d` brief rather than the materially revised 014a
+brief. The spawned provider process then exited cleanly without submitting a
+semantic Role Result. No replacement freeze was recorded. Those facts remain
+bootstrap evidence and must not be cosmetically rewritten.
+
+Before another replacement bootstrap allocation, orchestration must verify that
+the local checkout contains the expected committed current brief and named
+bootstrap artifacts. If local and remote provenance disagree, synchronize or
+stop before allocating authority.
 
 That sequence established two defects this successor now explicitly addresses:
 
