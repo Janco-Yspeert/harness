@@ -555,6 +555,69 @@ The exact adapter/protocol is Design Map freedom. The invariant is that the host
 not provider optimism or process exit code, knows whether the governed role
 completed.
 
+## 19. The assembled Harness workflow needs a real product-composition canary
+
+Synthetic role fixtures remain required for cheap, deterministic kernel
+regression coverage. They are not sufficient evidence that the configured
+Harness product works.
+
+Spike 014 proved important real host/process boundaries using a purpose-built
+fixture role/executor, but did not prove that the actual configured Harness
+methodology could compose its real skills, role contracts, provider adapters,
+authority transitions, and postconditions end to end.
+
+Spike 014a must add one evaluator-owned disposable-project canary whose purpose
+is composition, not task difficulty.
+
+The canary project must be deliberately tiny and independent of the Harness
+repository working tree. It should contain only the minimum project instructions,
+source/test scaffolding, and one trivial deterministic spike. A suitable task is
+equivalent to:
+
+> implement a program/command that emits the exact integer value of `5^32` and
+> add a deterministic test for it.
+
+The task may differ in wording or equally trivial deterministic behavior, but it
+must remain small enough that AI task intelligence and repository context are not
+material sources of difficulty.
+
+The canary must exercise the **actual candidate product composition**, including:
+
+- the actual configured Harness methodology definition;
+- the actual active role contracts;
+- the actual active skills;
+- the actual governed host/authority path;
+- actual supported provider adapters/executor profiles rather than
+  `tools/fixtures/governed-executor.ts` or an equivalent purpose-built
+  semantic-result fixture;
+- actual role-derived canonical transitions;
+- actual promotion and As-Built behavior;
+- the configured human-decision path using bounded evaluator-controlled root
+  authority for the disposable canary only;
+- Outcome if the configured workflow permits it after that bounded decision.
+
+The evaluator may choose cheaper supported models for this canary only when the
+frozen execution policy explicitly permits that substitution. It must not
+silently replace a model constraint that the spike requires.
+
+The canary must run in a fresh temporary/disposable directory so Harness roles do
+not ingest the Harness repository's accumulated documentation merely to perform
+the trivial task.
+
+A canary PASS requires the workflow to reach its configured terminal state and
+the external deterministic product oracle to pass. The evaluator must preserve
+enough bounded evidence to identify each role/execution/result/transition and
+the final product assertion.
+
+A synthetic fixture PASS cannot substitute for a failed or blocked product
+canary.
+
+The canary is not a general benchmark suite, arbitrary-language portability
+proof, or performance target. Its first purpose is to prove that the machine
+works when assembled. Its observed context/usage metrics, where reliably
+available, should be preserved as baseline evidence for the later runtime-context
+optimization spike.
+
 ---
 
 # Evaluation requirements
@@ -567,6 +630,10 @@ The evaluator must include implementation-independent negative cases for the
 human-review defects. Manual inspection alone is not sufficient for result
 vocabulary fidelity, deduplication identity, continuation failure handling, or
 supersession.
+
+The evaluator must also personally execute the disposable product-composition
+canary against the exact candidate. Candidate-authored synthetic fixtures or
+static inspection cannot stand in for this proof.
 
 At minimum, evaluation must prove the following acceptance criteria.
 
@@ -716,6 +783,15 @@ deliberately contradictory fixture is rejected by validation or regression
 coverage. Brief Readiness specifically can produce its declared review artifact
 without exceeding its Role Grant.
 
+**AC24 — Real disposable project completes the assembled workflow**
+
+The evaluator personally runs one fresh tiny disposable project through the
+actual candidate Harness composition. Real configured skills, contracts,
+provider adapters, authority transitions, promotion, As-Built, bounded
+human-decision path, and terminal workflow behavior compose successfully without
+substituting the purpose-built kernel fixture executor. The project's external
+deterministic product oracle passes.
+
 ---
 
 # Required regression scenarios
@@ -844,6 +920,27 @@ validation/regression boundary catches the contradiction. Prove the corrected
 Brief Readiness contract permits the governed role to produce its actual
 declared review artifact without capability escape.
 
+### R20 — Disposable full-workflow composition canary
+
+Create a fresh temporary project containing only minimal project instructions,
+minimal source/test scaffolding, and one trivial deterministic implementation
+brief such as exact `5^32` output.
+
+Run the actual candidate Harness workflow using the real configured methodology,
+skills, role contracts, supported provider adapters, authority/result path,
+promotion, As-Built, bounded canary human decision, and terminal continuation.
+
+Prove:
+
+- no purpose-built semantic-result fixture substitutes for a real provider role;
+- every required governed role leaves an inspectable Role Grant/execution and
+  semantic result;
+- canonical transitions arise from those executions;
+- the workflow reaches its configured terminal state;
+- the independent deterministic product test/output passes;
+- any reliably available context/usage measurements are preserved without
+  inventing unavailable metrics.
+
 ---
 
 # Real-boundary evidence
@@ -863,7 +960,10 @@ interfaces rather than being proved only by in-memory method calls:
 5. a real spawned governed-worker result handshake, including the missing-result
    failure boundary;
 6. a governed Brief Readiness execution using a role contract that actually
-   permits and requires the active skill's declared review artifact.
+   permits and requires the active skill's declared review artifact;
+7. one evaluator-owned fresh disposable-project run through the actual assembled
+   Harness workflow and real supported provider adapters, ending in a
+   deterministic external product assertion.
 
 Implementation-independent deterministic tests may cover budget/predicate/result
 mechanics around those live proofs.
@@ -895,7 +995,10 @@ The Design Map may choose:
 - exact spawned-provider semantic-result handshake/adapter and bounded
   diagnostic evidence shape;
 - exact methodology validation mechanism for material skill/contract fidelity
-  without moving Harness-specific skill semantics into the generic kernel.
+  without moving Harness-specific skill semantics into the generic kernel;
+- exact minimal disposable-canary project layout and deterministic trivial task,
+  provided it proves the required product composition without depending on the
+  Harness repository's large context.
 
 Those choices must preserve the semantics above.
 
@@ -926,7 +1029,9 @@ Spike 014a does **not**:
 - require arbitrary provider-process resurrection after host restart;
 - solve the PID-reuse stale-lock edge case unless a trivial local hardening
   naturally falls out of the implementation;
-- complete the second-project portability pilot;
+- complete the general second-project/arbitrary-language portability pilot (the
+  disposable canary proves composition in one tiny external project only);
+- build a benchmark suite or optimize canary token/context usage in this spike;
 - change the historical Spike 014 verification result.
 
 ---
@@ -1049,9 +1154,12 @@ Spike 014a completes only after:
    real-boundary evidence;
 6. promotion is exercised through the implemented host-mediated promotion path;
 7. As-Built records the actual successor delta;
-8. the human makes the acceptance decision through the new governed
+8. the evaluator-owned disposable project completes the real assembled workflow
+   and passes its deterministic external product oracle;
+9. the human makes the acceptance decision through the new governed
    acceptance/rejection authority path;
-9. Outcome records the final kernel boundary, remaining scars, and deferred work.
+10. Outcome records the final kernel boundary, remaining scars, and deferred
+    work.
 
 ---
 
@@ -1100,6 +1208,11 @@ For every legacy workflow operation:
 > Is this strictly historical interpretation, or can it still create current
 > authority? If it can mutate forward authority after cutover, the cutover is
 > incomplete.
+
+For every architectural proof:
+
+> Did we prove only that the mechanism works with a fixture, or did at least one
+> actual configured Harness workflow use the assembled mechanism successfully?
 
 And for the cutover as a whole:
 
