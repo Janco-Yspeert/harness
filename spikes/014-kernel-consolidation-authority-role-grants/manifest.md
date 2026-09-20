@@ -221,3 +221,31 @@
   working-tree `git diff --check` before this manifest update.
 - Measurement cutoff: immediately before this manifest update; commit, push,
   canonical `as-built-recorded`, and human-acceptance activity are excluded.
+
+
+## Run 006 — Human Acceptance Review
+
+- Authority: explicit human acceptance decision after canonical verification
+  attempt `1` PASS, promotion, and As-Built.
+- Result: **REJECTED / SUCCESSOR REQUIRED**. The technical PASS remains genuine
+  historical evidence and was not reclassified.
+- Public decision artifact: `acceptance.md`.
+- Human rejection classifications: `IMPLEMENTATION_GAP` and
+  `EVALUATOR_COVERAGE_DEFECT`.
+- Material implementation findings: configured evaluator-result vocabulary and
+  cross-field semantics drift from the active methodology; allocation can
+  misreport a non-equivalent in-flight Role Grant as a duplicate; host-owned
+  automatic continuation can swallow an HTTP non-success without durable
+  stop/escalation evidence.
+- Evaluator finding: revision `001` did not include negative cases that would
+  falsify those three defects, so its 35/35 PASS remains valid against the frozen
+  evaluator but insufficient for human acceptance.
+- Non-blocking deferred concerns recorded in `acceptance.md`: concentrated
+  readability/conditional complexity in the execution/host surfaces, the
+  PID-only stale-lock edge case, and broader provider/routing/transport cleanup.
+- Disposition: do not reopen Spike 014 as a normal correction cycle. Preserve
+  its complete evidence chain. A separately authored successor brief now exists
+  at `spikes/014a-kernel-hardening-authority-cutover/spike.md`; requirements
+  introduced there beyond the rejection findings are new successor scope, not
+  retroactive Spike 014 failures.
+- Canonical authority: `human-rejected` recorded after `as-built-recorded`.
