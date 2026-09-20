@@ -1,7 +1,13 @@
 {
   "schemaVersion": 1,
   "workspaces": ["repository"],
-  "capabilities": ["repository-read", "repository-write", "local-computation"],
+  "capabilities": [
+    "repository-read",
+    "repository-write",
+    "local-computation",
+    "git-inspect",
+    "git-commit"
+  ],
   "forbiddenExposure": [],
   "protected": false,
   "inputs": [
@@ -14,5 +20,5 @@
   "results": ["succeeded", "blocked", "refused", "failed"],
   "methodology": {},
   "human": ["input", "approval", "root"],
-  "postconditions": ["design-map.md"]
+  "postconditions": ["design-map.md", "manifest.md"]
 }
