@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "result": "PASS",
+  "passingAttempt": "001",
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:309d87ba2e1833c0bb9dade338794ec863a3d2df",
+      "resultPath": "evaluation/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:9fb2d05ebcf189d4aa5134df9d7b028ccbe8d5494460af42caf977de66edb7c0",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:9efea74e2a35deac7bdf256e961394f5622fb0ecca10a1f6622167918d03257f",
+      "freezePath": "evaluation/freeze/001.json",
+      "revisionPath": "evaluation/revisions/001",
+      "revisionDisposition": "copied"
+    }
+  ],
+  "historicalArtifacts": [
+    {
+      "sourceIdentity": "sha256:600fd2ff5e8b839b2308c0fc0fcdfe3a91b4011d1d96ea7a9bd40eba608a0cc6",
+      "publicPath": "evaluation/attempt-ledger.json",
+      "promotedIdentity": "sha256:600fd2ff5e8b839b2308c0fc0fcdfe3a91b4011d1d96ea7a9bd40eba608a0cc6",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:9fb2d05ebcf189d4aa5134df9d7b028ccbe8d5494460af42caf977de66edb7c0",
+      "publicPath": "evaluation/attempts/001/eval-result.md",
+      "promotedIdentity": "sha256:9fb2d05ebcf189d4aa5134df9d7b028ccbe8d5494460af42caf977de66edb7c0",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:9efea74e2a35deac7bdf256e961394f5622fb0ecca10a1f6622167918d03257f",
+      "publicPath": "evaluation/freeze/001.json",
+      "promotedIdentity": "sha256:9efea74e2a35deac7bdf256e961394f5622fb0ecca10a1f6622167918d03257f",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:022c4070169133e45be50609ad58d884a56bc2a6a42b2e272bdcacf6eb587035",
+      "publicPath": "evaluation/revisions/001/eval-spec.md",
+      "promotedIdentity": "sha256:022c4070169133e45be50609ad58d884a56bc2a6a42b2e272bdcacf6eb587035",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:e8d6941658dd5b462302da7388cd5f2c6370c1affdf9b2686b113dd6c71ad7ee",
+      "publicPath": "evaluation/revisions/001/case-manifest.json",
+      "promotedIdentity": "sha256:e8d6941658dd5b462302da7388cd5f2c6370c1affdf9b2686b113dd6c71ad7ee",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:5e5731cd99998ac87fbe3b8afb3a0537f84c15446c336db21c08052f74dbe6ed",
+      "publicPath": "evaluation/revisions/001/.hidden-test/manifest.json",
+      "promotedIdentity": "sha256:5e5731cd99998ac87fbe3b8afb3a0537f84c15446c336db21c08052f74dbe6ed",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:caf3aff30d709920887bf8001a2b8b9811b88732a38aba599ad2b16cf6cb9dfa",
+      "publicPath": "evaluation/revisions/001/.hidden-test/prior-spike-history-and-011-boundary-preserved.test.ts",
+      "promotedIdentity": "sha256:caf3aff30d709920887bf8001a2b8b9811b88732a38aba599ad2b16cf6cb9dfa",
+      "disposition": "copied"
+    }
+  ],
+  "notPromotedRevisions": []
+}

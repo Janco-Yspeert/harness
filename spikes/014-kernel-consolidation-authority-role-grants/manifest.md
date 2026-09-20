@@ -139,3 +139,64 @@
   full process resurrection and dynamic executor routing remain out of scope.
 - Measurement cutoff: immediately before this final implementation manifest
   update; commit, push, handoff recording, and response activity are excluded.
+
+## Run 004 — Evaluator Verification attempt 1
+
+- Skill: `evaluator` v11 (no bootstrap pin applies to this spike; executed
+  directly under the plain working-tree `skills/evaluator/SKILL.md`,
+  `sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`).
+- Authority: independent verification of the exact allocated candidate,
+  canonical `implementation-handoff` attempt 1,
+  `309d87ba2e1833c0bb9dade338794ec863a3d2df`, against frozen evaluator
+  revision `001`.
+- Inputs: frozen brief
+  `sha256:35aa888c5bb12209e675b90bb40f54d2f31126cc0e9bc0e3cb289737fadd170e`
+  (`d69b1be4908e43ede4b4f5f1ce248411d063ca5b`); frozen Design Map
+  `sha256:848a79c193f809a5252f94dbc1ec0ee605aa7ea63cb6034884bd7c72225988f9`
+  (`1571bd108c8fa2c6a3a456c8a14aeb609e4ea9e3`); public prepared coverage
+  `sha256:286b7ff910dcdf0e64eeb75f3ae35dd4b6f73cea43dd9ae107246046b8f0418a`
+  (`62b40d748f29040c0c47ef9efe18cafebb3be915`); public evaluation
+  requirements `sha256:0502c53027824586c18f6711e77774c5f34105363f3834633e5d9597974041b1`.
+  All frozen content identities and Git provenance were re-verified against
+  the candidate commit at verification time; no drift was found.
+- Result: **PASS**. All 35 required acceptance criteria (AC01-AC35), across
+  15 frozen evaluation procedures (1 executable hidden regression, 11
+  visible-regression/manual-inspection procedures, 3 mandatory live
+  real-boundary proofs), were independently evaluated and satisfied.
+  Canonical `verification-finalized: PASS` recorded with per-criterion
+  `coverageResults` for all 35 required criteria.
+- Checks performed: the sole frozen executable hidden test run directly
+  against the candidate (2/2 pass); full public visible suite `npm test`
+  (102/102 pass); the new Spike-014 visible suite alone (16/16 pass);
+  `npm run typecheck` (0 errors); `npm run lint` (0 errors); `npm run
+  format:check` (pass); `git diff --check` on the candidate commit (clean);
+  all four mandatory real-boundary proofs (attached execution, spawned
+  execution, host-mediated local bare-remote publication, human
+  wait/resume) independently exercised end to end through the real
+  supported host/process/Git boundaries in this verification session, not
+  merely reviewed from committed evidence; manual source/data-model/schema
+  inspection of the implementation's identified normal kernel path for
+  portability, configured-policy, executor-selection, and schema-version
+  requirements.
+- Evaluator integrity: frozen evaluation bundle unmodified and re-hashed
+  identical to its frozen/archived identities; no specification drift; no
+  evaluator defect; no evaluator correction performed this cycle.
+- Diagnostics: one non-mandatory, informational finding was recorded and
+  root-caused to an evaluation-session-local environment variable
+  unrelated to the candidate implementation; it did not affect the Overall
+  Result (full suite re-confirmed 102/102 pass with that variable absent,
+  consistent with the candidate's own independently reported
+  implementation-time test run).
+- Promotion: canonical `promotion-recorded`. The complete evidence chain
+  (private attempt ledger, immutable attempt result, evaluator revision
+  `001` freeze metadata and full frozen bundle) was promoted unchanged to
+  `evaluation/` under this spike, with recomputed content identities
+  matching their source identities exactly.
+- Restricted evaluator material inspected: this spike's own private
+  evaluator-verification workspace only
+  (`eval-spec.md`, `case-manifest.json`, `.hidden-test/**`, `.eval/**`),
+  confirmed limited to the public Harness repository plus that one private
+  path before use.
+- Measurement cutoff: immediately before this manifest update; the
+  promotion commit/push and any later human-acceptance activity are
+  excluded.

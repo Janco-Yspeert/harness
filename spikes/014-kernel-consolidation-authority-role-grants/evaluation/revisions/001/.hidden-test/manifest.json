@@ -1,0 +1,27 @@
+{
+  "revision": "001",
+  "note": "One evaluator-authored executable hidden test exists in this revision: a pre-authored, implementation-independent regression control pinning the Git tree identity of every prior, already-adjudicated spike directory (AC23, 'Historical truth preserved'). It was validated pre-freeze against the unimplemented baseline (project commit 3543159): both subtests PASS today (the pinned identities are exactly the current committed identities, as they must be for something that has not yet been touched); a deliberately corrupted temporary copy of the same assertion was executed and confirmed to FAIL for the exact intended reason, then discarded (never committed). Every other criterion relies on the implementation's own visible regression suite, mandatory real-boundary proofs, and manual source/data-model inspection, per the modes and evidence plans frozen in eval-spec.md and case-manifest.json, because the frozen Design Map's 'Implementation freedom' section deliberately leaves the underlying representations, storage, and API/transport as implementation choices that a hidden test would otherwise have to invent.",
+  "cases": [
+    {
+      "id": "E1",
+      "mode": "EXECUTABLE",
+      "tests": [
+        ".hidden-test/prior-spike-history-and-011-boundary-preserved.test.ts"
+      ]
+    },
+    { "id": "PR1", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "PR2", "mode": "COMPOSITE", "tests": [] },
+    { "id": "PR3", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "LB1", "mode": "LIVE_BOUNDARY_PROOF", "tests": [] },
+    { "id": "PR4", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "PR5", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "LB2", "mode": "LIVE_BOUNDARY_PROOF", "tests": [] },
+    { "id": "PR6", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "LB3", "mode": "LIVE_BOUNDARY_PROOF", "tests": [] },
+    { "id": "PR7", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "PR8", "mode": "MANUAL_REVIEW", "tests": [] },
+    { "id": "PR9", "mode": "PUBLIC_REGRESSION", "tests": [] },
+    { "id": "PR10", "mode": "COMPOSITE", "tests": [] },
+    { "id": "PR11", "mode": "COMPOSITE", "tests": [] }
+  ]
+}
