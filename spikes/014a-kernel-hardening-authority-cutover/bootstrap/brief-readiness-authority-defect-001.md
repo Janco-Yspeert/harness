@@ -54,3 +54,49 @@ and role provenance.
 
 Only the later reviewed/frozen brief may be used as the authority basis for
 Design Map, evaluator preparation, implementation, or verification.
+
+
+## Governed replacement attempt — stale checkout and missing semantic result
+
+A later replacement attempt used the Spike 014 governed host rather than native
+Codex subagent dispatch.
+
+It created:
+
+- Workflow Execution Grant:
+  `4cd413ff-82ea-4af8-95af-f65883230ae8`;
+- root bootstrap exception:
+  `866b5baa-5c83-44df-b4d6-a677c378b3d9`;
+- Role Grant:
+  `sha256:83312ac…3c615c`;
+- governed execution:
+  `9e187ba7-3460-49ba-8b64-48a39053755f`.
+
+The executor profile requested `gpt-5.6-terra` with medium reasoning through
+the Codex CLI and was launched by the governed localhost host.
+
+The attempt did not establish replacement readiness authority for two reasons.
+
+First, the orchestrator checkout was stale. It did not contain this incident
+record and the Role Grant bound the earlier brief identity
+`sha256:49d0daa4…9b80bc4d`, not the materially revised 014a brief.
+
+Second, the spawned worker exited cleanly without submitting a semantic Role
+Result. The host recorded process spawn and exit but no `kernel.result`, human
+request, host action, or replacement `brief-frozen`.
+
+The preserved ledger append contains exactly the factual kernel definition,
+Workflow Execution Grant, root authority, session registration/workspace
+delivery, allocation, running-process, and exited-process events. It must not be
+rewritten into semantic success.
+
+Diagnosis of the spawned path found that the worker was expected to discover its
+assignment through the authenticated Harness session endpoint and then POST its
+semantic result. The Spike 014 host launches spawned workers with stdio ignored,
+so it retained no provider stdout/stderr and cannot prove whether assignment
+fetch occurred or distinguish provider execution failure from result-submission
+failure.
+
+This attempt therefore exposed the spawned semantic-result handshake requirement
+now incorporated into the 014a brief. It is bootstrap evidence, not acceptance
+evidence for the future 014a mechanism.
