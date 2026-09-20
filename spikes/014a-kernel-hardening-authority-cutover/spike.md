@@ -391,8 +391,8 @@ Human/root-authority transitions such as explicit acceptance, rejection,
 supersession, or bounded exception authority may have a different provenance
 shape, but their authority source must likewise be explicit.
 
-Historical legacy events remain history. The legacy recorder may remain capable
-of reading/interpreting old ledgers, but after cutover it must not be an
+Historical legacy events remain history. The legacy implementation may remain
+capable of reading/interpreting old ledgers, but after cutover it must not be an
 independent forward-authority path that can bless ungoverned role work.
 
 ## 12. Promotion becomes a host-mediated configured action
@@ -427,14 +427,52 @@ The generic kernel must not contain a phase-specific
 generic/configured host-action seam, with publication remaining another concrete
 host action.
 
-## 13. New human acceptance/rejection must use the governed authority path
+## 13. Legacy workflow becomes historical read-only compatibility
 
-Historical `legacy-workflow.ts` authority interpretation may remain for
-historical compatibility, old-cycle diagnostics, and explicitly supported
-legacy operations.
+After the Spike 014a cutover, `legacy-workflow.ts` must not be a second
+executable workflow engine or forward authority mutator for active/current
+workflows.
 
-It must cease to be an independent authority oracle for new human acceptance or
-rejection decisions once the Spike 014a cutover is active.
+Its remaining supported responsibility may include:
+
+- reading and projecting historical ledgers;
+- validating or explaining historical records under the methodology/version
+  that created them;
+- diagnostics needed to understand old spikes and preserved evidence;
+- narrowly scoped compatibility helpers that do not create new canonical
+  methodology authority.
+
+For active/current workflows after cutover, legacy machinery must not:
+
+- dispatch or complete governed roles;
+- create or adopt role-completion state;
+- record `brief-frozen`, `design-map-frozen`, `evaluation-prepared`,
+  `implementation-handoff`, `verification-finalized`, promotion, As-Built,
+  Outcome, acceptance/rejection, correction-cycle, or equivalent forward
+  methodology authority;
+- manufacture current authority from artifact presence, Git provenance, local
+  `.workflow` state, or provider prose.
+
+The restriction must be mechanical. A repository instruction saying “do not use
+legacy for new work” is insufficient if the mutating command remains a valid
+path that an orchestrator can invoke.
+
+Spike 014a does not require deleting every historical parser or immediately
+renaming the file. It requires removing or disabling legacy **forward mutation**
+for the post-cutover workflow path so there is one executable authority path for
+new work.
+
+A later cleanup may rename or reduce the remaining reader to something like
+`historical-workflow` or `legacy-ledger-reader` once compatibility needs are
+known.
+
+## 14. New human acceptance/rejection must use the governed authority path
+
+Historical legacy authority interpretation may remain for read-only historical
+compatibility and diagnostics.
+
+It must not decide or record new human acceptance/rejection after the Spike 014a
+cutover.
 
 A human acceptance/rejection decision must:
 
@@ -448,7 +486,7 @@ A human acceptance/rejection decision must:
 The exact host/API representation is Design Map freedom. This requirement does
 not require a polished human UI.
 
-## 14. Predicate semantics must be explicit
+## 15. Predicate semantics must be explicit
 
 The narrow declarative policy interpreter must define the semantics of its
 operators, especially `after`.
@@ -582,19 +620,26 @@ direct promotion/publication authority.
 A failed or denied promotion remains distinct from the evaluator's semantic
 verification result, and configured methodology decides what may happen next.
 
-**AC18 — New human decisions use configured authority**
+**AC18 — Legacy cannot create forward authority**
+
+For post-cutover active workflows, legacy workflow machinery can inspect
+historical state but cannot dispatch governed roles or record forward canonical
+methodology transitions. Attempted legacy mutation is mechanically rejected or
+the mutating surface is absent.
+
+**AC19 — New human decisions use configured authority**
 
 Human acceptance/rejection after the cutover is validated/recorded through the
 new configured authority path rather than an independent legacy state-machine
 oracle.
 
-**AC19 — Predicate language semantics are deterministic**
+**AC20 — Predicate language semantics are deterministic**
 
 `after` requires its anchor to exist; visible regression coverage proves the
 missing-anchor case and the affected Harness policy remains behaviorally
 correct.
 
-**AC20 — Existing kernel regressions remain green**
+**AC21 — Existing kernel regressions remain green**
 
 The full visible suite, including Spike 014's real-boundary tests, remains green.
 No fix may restore duplicate local-state authority, hard-coded Harness role
@@ -693,13 +738,20 @@ promotion through the host. Prove exact-source validation, host-performed
 promotion, resulting identity checks, and no unrestricted direct executor
 promotion authority.
 
-### R15 — Human decision cutover
+### R15 — Legacy forward mutation is unavailable
+
+For an active post-cutover workflow, attempt to use legacy workflow machinery to
+record a role-derived transition and a human/root transition. Prove neither can
+create forward authority. Prove historical status/inspection of an older ledger
+still works where compatibility is retained.
+
+### R16 — Human decision cutover
 
 At a state ready for acceptance, record acceptance/rejection using the new
 authority path. Prove legacy local state and legacy execution completion flags
-cannot independently change legality.
+cannot independently change legality or record the decision.
 
-### R16 — Missing `after` anchor
+### R17 — Missing `after` anchor
 
 Prove `A after B` is false when B never occurred and true only for qualifying A
 events after an existing B.
@@ -742,6 +794,8 @@ The Design Map may choose:
   represented for providers that expose different levels of attestation;
 - exact governed-execution provenance bound to role-derived canonical
   transitions;
+- exact boundary/API retained for read-only historical legacy interpretation
+  after forward mutation is disabled;
 - exact generic host-action registry/handler shape;
 - exact promotion request/result schemas;
 - how cross-field result constraints are represented generically;
@@ -770,6 +824,8 @@ Spike 014a does **not**:
 - add full production Claude/Codex/Sol adapters merely for demonstration;
 - perform a broad rewrite of `execution.ts` or `host.ts`;
 - replace the evaluator skill wholesale;
+- delete all historical legacy parsing/compatibility code merely for neatness
+  (legacy forward mutation is in scope; physical reader cleanup may follow);
 - solve distributed locking;
 - require arbitrary provider-process resurrection after host restart;
 - solve the PID-reuse stale-lock edge case unless a trivial local hardening
@@ -915,6 +971,12 @@ For every privileged mechanical action:
 
 > Can the semantic agent request a narrow host action while the host owns the
 > credential/mechanical authority?
+
+For every legacy workflow operation:
+
+> Is this strictly historical interpretation, or can it still create current
+> authority? If it can mutate forward authority after cutover, the cutover is
+> incomplete.
 
 And for the cutover as a whole:
 
