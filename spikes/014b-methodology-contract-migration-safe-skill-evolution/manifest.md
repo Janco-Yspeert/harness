@@ -363,3 +363,50 @@
 - Publication: intentionally withheld by the Spike 014b bootstrap exception.
   The exact local checkpoint is reported to the human for publication.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 007 — Evaluator Verification attempt 2
+
+- Skill: `evaluator` v11, executed under the explicit Spike 014b bootstrap
+  exception. Sole evaluator instruction authority: the frozen snapshot at
+  `../harness-014b-authority/skills/evaluator/SKILL.md`
+  (`sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`),
+  re-confirmed byte-identical at verification time.
+- Inputs: implementation commit
+  `399cd61d43f7b914b1195d47bee0c1040b6f42c8` (working tree clean). Verified
+  against **evaluator revision 002** (the repaired revision,
+  `sha256:ee4107a51a9e6f2e4767a06d02cca0ff2dd061258bbfc521569f61cae112b5fd`),
+  not revision 001. All frozen inputs re-hashed and matched
+  `.eval/freeze.json` (revision 002) exactly; no specification drift.
+- Result: **PASS** (attempt `002`). All 18 required criteria (AC01-AC18)
+  satisfied. 18/18 mandatory hidden-test sub-assertions passed (E1-E7,
+  including the two cases added under the repair — E6 and E7 — which
+  correctly failed against the prior implementation commit and now pass
+  against this one). M-A/M-B held on inspection; C-C's strengthened
+  decision rule (D03) held via the candidate's real `design-map`-role
+  exercise.
+- Regression checks (independently run): `npm test` 109/109; `npm run
+  typecheck`, `npm run lint`, `npm run format:check`, `git diff --check`
+  all clean.
+- Diagnostic probes (read-only, non-authoritative): direct CLI
+  reproduction of `candidate`/`check`/`exercise` against the real
+  repository exactly matched the implementation's reported identities and
+  the new candidate-specific exercise output (role, artifact, contract/
+  skill identities). A spliced revision/manifest promotion probe was
+  correctly rejected ("candidate methodology does not match its exact
+  repository revision"), independently confirming the D01 fix against the
+  real repository. A self-evaluation promotion probe was re-run and
+  remains correctly rejected, confirming no regression. This evaluator
+  independently reviewed the small `eventFields`/`current`/`after` input-
+  selector extension to `src/kernel/model.ts`/`src/kernel/resolver.ts` (the
+  mechanism making the D05 binding real) and agrees it is narrow, backward
+  compatible, and proportionate — not scope creep into kernel/executor
+  territory.
+- Evaluator integrity: frozen evaluation not modified; no drift; no
+  evaluator defects.
+- Not performed: evaluator-owned promotion (evidence archival, and any
+  candidate-methodology trust promotion) — awaits separate explicit
+  authorization, as with attempt 001.
+- Publication: per the explicit bootstrap authority, this run does not
+  push. The exact local checkpoint is reported to the human for
+  bootstrap-authorized publication.
+- Measurement cutoff: immediately before this manifest update.
