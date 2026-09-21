@@ -1,0 +1,14 @@
+{
+  "revision": "001",
+  "note": "AC01-AC18 are grouped into 8 evaluation cases (E1-E5 executable, M-A/M-B manual review, C-C composite). Full detail, procedures, and decision rules are in ../case-manifest.json and ../eval-spec.md.",
+  "cases": [
+    { "id": "E1", "mode": "EXECUTABLE", "tests": ["contracts-git-checkpoint-and-exposure.test.ts"] },
+    { "id": "E2", "mode": "EXECUTABLE", "tests": ["evaluator-verify-vocabulary.test.ts"] },
+    { "id": "E3", "mode": "EXECUTABLE", "tests": ["skills-no-direct-publication.test.ts"] },
+    { "id": "E4", "mode": "EXECUTABLE", "tests": ["outcome-completion-mode.test.ts"] },
+    { "id": "E5", "mode": "EXECUTABLE", "tests": ["bootstrap-evidence-durable.test.ts"] },
+    { "id": "M-A", "mode": "PUBLIC_EVIDENCE", "tests": [] },
+    { "id": "M-B", "mode": "MANUAL_REVIEW", "tests": [] },
+    { "id": "C-C", "mode": "COMPOSITE", "tests": [] }
+  ]
+}

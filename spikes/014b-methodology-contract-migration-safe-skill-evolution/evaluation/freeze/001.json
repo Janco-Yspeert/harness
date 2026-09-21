@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "001",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 11,
+    "identity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802"
+  },
+  "bootstrapAuthority": {
+    "record": "spikes/014b-methodology-contract-migration-safe-skill-evolution/bootstrap/authority.md",
+    "baselineCommit": "e2bd3fa35ddb76935bf811cc7cbaed3d383abd32",
+    "authorityWorktree": "../harness-014b-authority",
+    "evaluatorTreeIdentity": "821e1a85e75c43794eba2e0d820be9b46e05ba15",
+    "evaluatorSkillGitBlob": "b9e2601dbd4575cfbafc8d1ab4cc81f8c434fe51",
+    "evaluatorSkillContentIdentity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802",
+    "implementationSkillGitBlob": "c9a340b00e31352bcd0abc5751a2703b96baa2c5",
+    "implementationSkillContentIdentity": "sha256:bd10992f2d46103e603063230fe2c7dc150f876cee14e23b320a669312682605",
+    "note": "Explicit one-time human bootstrap exception (frozen spike.md 'Bootstrap process exception'; bootstrap/authority.md). The frozen evaluator bundle at ../harness-014b-authority/skills/evaluator/SKILL.md is confirmed byte-identical (diff -q) to the plain working-tree skills/evaluator/SKILL.md at preparation time, so this preparation executes directly under the working-tree copy with no divergence to reconcile."
+  },
+  "inputs": {
+    "brief": "sha256:d627fd302a04e778f4100fef2b897df16e4c97c3fb728e9bfcd3bf7dc30d298a",
+    "briefCommit": "e2bd3fa35ddb76935bf811cc7cbaed3d383abd32",
+    "designMap": "sha256:2f12c72f8a382a44a53c4478ee08379d136f652f382305a88f63fb16711f3b40",
+    "designMapCommit": "f141bb0226a6d15c90b4b895ae0b7fdd00bd78f7",
+    "bootstrapAuthorityRecord": "sha256:c63fddcb220444158c98b5e1aef5f5116a1ee1d2bd803c7aa0369cf753b33809",
+    "bootstrapAuthorityRecordCommit": "f141bb0226a6d15c90b4b895ae0b7fdd00bd78f7",
+    "evaluationRequirements": "sha256:f66af67075b5b91aa522397fc2b9b16f0577b917bdba31111af7dc04f9f25c47"
+  },
+  "artifacts": {
+    "eval-spec.md": "sha256:5e574ecdec129001f6fbd98cac530fd1ac508bbf025962505c7da7b093b9a407",
+    "case-manifest.json": "sha256:618bdfb53e6fffa887026d8408f2e599305b2f25429919a5d3c6a313bbe9dca1",
+    ".hidden-test/manifest.json": "sha256:2f2e7010d8101b3d25e503491cd169c417c80f5e667b4e617e534403479af547",
+    ".hidden-test/contracts-git-checkpoint-and-exposure.test.ts": "sha256:675db72226fd4794f45d860317465203e6c68cb8175bdd32bd4797b01fd696be",
+    ".hidden-test/evaluator-verify-vocabulary.test.ts": "sha256:ac1d930ce9e18cc79e9e634dad4aad57bfc5763c882b30d61582ac6687eafa7a",
+    ".hidden-test/skills-no-direct-publication.test.ts": "sha256:3e18a702388f540ce706a1ac24100154659d2393753e3075e0141c4181c4f36b",
+    ".hidden-test/outcome-completion-mode.test.ts": "sha256:c1017da5e8942eb5f8372cd057ab049a81d7597ddf14580f7df93d3b7d2bba5f",
+    ".hidden-test/bootstrap-evidence-durable.test.ts": "sha256:a9752aec86079fd2c78d4155ff0a3f02d0d237617bcf88da8c05b61bc5c68d80"
+  },
+  "freezeInventory": [
+    "eval-spec.md",
+    "case-manifest.json",
+    ".hidden-test/manifest.json",
+    ".hidden-test/contracts-git-checkpoint-and-exposure.test.ts",
+    ".hidden-test/evaluator-verify-vocabulary.test.ts",
+    ".hidden-test/skills-no-direct-publication.test.ts",
+    ".hidden-test/outcome-completion-mode.test.ts",
+    ".hidden-test/bootstrap-evidence-durable.test.ts"
+  ],
+  "integrityChecks": [
+    "validatePreparedEvaluatorBundle (tools/evaluator-integrity.ts) over the assembled 18-criterion / 8-procedure bundle: PASS, 0 diagnostics",
+    "every required criterion (AC01-AC18) has exactly one explicit criterion evidence record with a non-empty disposition/sufficiency reason in coverage-map.json, mirrored by case-manifest.json",
+    "every criterion.procedures entry resolves to an existing case-manifest.json/bundle procedure, and every procedure maps back to at least one criterion",
+    "every executable procedure's (E1-E5) required material (.hidden-test/*.test.ts) is present in materialPaths and freezeInventory",
+    "coverage-map.json (public) and case-manifest.json (private) criterion/procedure sets are mutually consistent: same 18 criterion ids, same procedure assignments",
+    "E1-E5 executed via `node --test .hidden-test/*.test.ts` against the unimplemented baseline (project commit f141bb0226a6d15c90b4b895ae0b7fdd00bd78f7): 16 sub-assertions total, 10 PASS / 6 FAIL, every failure matching a gap the frozen Design Map's fidelity matrix already names and every pass a fact already true today",
+    "negative control: evaluator-verify.json.methodology.result temporarily narrowed to [\"PASS\",\"FAIL\"] (uncommitted); the E2 regression-guard sub-test re-run and confirmed FAIL for exactly that reason; file restored; `git status --porcelain` confirmed clean afterward",
+    "all five hidden test files typecheck with 0 errors under the project's own `tsc --noEmit` and are clean under `eslint`/`prettier --check` (verified via temporary copies placed under test/ so they resolve the repository's \"type\": \"module\" package.json and typed-lint project service, then removed; `git status --porcelain` confirmed clean afterward)",
+    "skills/evaluator/SKILL.md (working tree) sha256sum matches evaluatorSkill.identity above, and matches ../harness-014b-authority/skills/evaluator/SKILL.md byte-for-byte (diff -q); no divergence between candidate worktree and frozen bootstrap authority at preparation time",
+    "design-map.md and bootstrap/authority.md confirmed committed at f141bb0226a6d15c90b4b895ae0b7fdd00bd78f7 (git cat-file -t; git merge-base --is-ancestor against HEAD) with content identities matching the working-tree copies reviewed during preparation"
+  ],
+  "preFreezeIntegrityValidation": {
+    "status": "PASS",
+    "diagnostics": [],
+    "privateInventoryIdentity": "sha256:136d0b7bb1b386ecf8175d8864a43a3f8d5ffd18e6d016e89397c8711c1127ce",
+    "validatorResultBinding": "sha256:623ad03c2a97064be21bd10ce166813d07af8ab301152b60d632c89835f8209d"
+  }
+}

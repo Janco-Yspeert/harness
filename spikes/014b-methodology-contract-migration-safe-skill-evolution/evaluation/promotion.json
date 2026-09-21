@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "result": "PASS",
+  "passingAttempt": "001",
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:0d000d94e22016381f0642905b731474c4dd0afe",
+      "resultPath": "evaluation/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:fd97141ceef61adff5a4e93bfb06c316d610b6a201f9a1d43179b6dbecc4b53f",
+      "evaluatorRevision": "001",
+      "evaluatorRevisionIdentity": "sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31",
+      "freezePath": "evaluation/freeze/001.json",
+      "revisionPath": "evaluation/revisions/001",
+      "revisionDisposition": "copied"
+    }
+  ],
+  "historicalArtifacts": [
+    {
+      "sourceIdentity": "sha256:5e574ecdec129001f6fbd98cac530fd1ac508bbf025962505c7da7b093b9a407",
+      "publicPath": "evaluation/revisions/001/eval-spec.md",
+      "promotedIdentity": "sha256:5e574ecdec129001f6fbd98cac530fd1ac508bbf025962505c7da7b093b9a407",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:618bdfb53e6fffa887026d8408f2e599305b2f25429919a5d3c6a313bbe9dca1",
+      "publicPath": "evaluation/revisions/001/case-manifest.json",
+      "promotedIdentity": "sha256:618bdfb53e6fffa887026d8408f2e599305b2f25429919a5d3c6a313bbe9dca1",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:2f2e7010d8101b3d25e503491cd169c417c80f5e667b4e617e534403479af547",
+      "publicPath": "evaluation/revisions/001/.hidden-test/manifest.json",
+      "promotedIdentity": "sha256:2f2e7010d8101b3d25e503491cd169c417c80f5e667b4e617e534403479af547",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:675db72226fd4794f45d860317465203e6c68cb8175bdd32bd4797b01fd696be",
+      "publicPath": "evaluation/revisions/001/.hidden-test/contracts-git-checkpoint-and-exposure.test.ts",
+      "promotedIdentity": "sha256:675db72226fd4794f45d860317465203e6c68cb8175bdd32bd4797b01fd696be",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:ac1d930ce9e18cc79e9e634dad4aad57bfc5763c882b30d61582ac6687eafa7a",
+      "publicPath": "evaluation/revisions/001/.hidden-test/evaluator-verify-vocabulary.test.ts",
+      "promotedIdentity": "sha256:ac1d930ce9e18cc79e9e634dad4aad57bfc5763c882b30d61582ac6687eafa7a",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:3e18a702388f540ce706a1ac24100154659d2393753e3075e0141c4181c4f36b",
+      "publicPath": "evaluation/revisions/001/.hidden-test/skills-no-direct-publication.test.ts",
+      "promotedIdentity": "sha256:3e18a702388f540ce706a1ac24100154659d2393753e3075e0141c4181c4f36b",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:c1017da5e8942eb5f8372cd057ab049a81d7597ddf14580f7df93d3b7d2bba5f",
+      "publicPath": "evaluation/revisions/001/.hidden-test/outcome-completion-mode.test.ts",
+      "promotedIdentity": "sha256:c1017da5e8942eb5f8372cd057ab049a81d7597ddf14580f7df93d3b7d2bba5f",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:a9752aec86079fd2c78d4155ff0a3f02d0d237617bcf88da8c05b61bc5c68d80",
+      "publicPath": "evaluation/revisions/001/.hidden-test/bootstrap-evidence-durable.test.ts",
+      "promotedIdentity": "sha256:a9752aec86079fd2c78d4155ff0a3f02d0d237617bcf88da8c05b61bc5c68d80",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31",
+      "publicPath": "evaluation/freeze/001.json",
+      "promotedIdentity": "sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:fd97141ceef61adff5a4e93bfb06c316d610b6a201f9a1d43179b6dbecc4b53f",
+      "publicPath": "evaluation/attempts/001/eval-result.md",
+      "promotedIdentity": "sha256:fd97141ceef61adff5a4e93bfb06c316d610b6a201f9a1d43179b6dbecc4b53f",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:627f2caf92f127c992a3803dfd7b9122368ba6868cbe1f9d3c497049c59e5f8b",
+      "publicPath": "evaluation/attempt-ledger.json",
+      "promotedIdentity": "sha256:627f2caf92f127c992a3803dfd7b9122368ba6868cbe1f9d3c497049c59e5f8b",
+      "disposition": "copied"
+    }
+  ],
+  "notPromotedRevisions": []
+}

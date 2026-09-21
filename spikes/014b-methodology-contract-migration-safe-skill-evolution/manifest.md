@@ -198,3 +198,41 @@
   attempt ledger/result under the Spike 014b private evaluator workspace)
   is reported to the human for bootstrap-authorized publication.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 004 — Evaluation Promotion (archival)
+
+- Skill: `evaluator` v11, executed under the explicit Spike 014b bootstrap
+  exception. Sole evaluator instruction authority: the frozen snapshot at
+  `../harness-014b-authority/skills/evaluator/SKILL.md`
+  (`sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`),
+  re-confirmed byte-identical at promotion time.
+- Resumed from the already-finalized `verify` attempt `001` `PASS` against
+  implementation commit `0d000d94e22016381f0642905b731474c4dd0afe`. No new
+  verification attempt was allocated and no evaluation was rerun; this run
+  performed only the archival/promotion step of `verify` step 5.
+- Eligibility: evaluator revision `001`
+  (`sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31`)
+  determined eligible as one all-or-nothing bundle — five static,
+  already-public-schema hidden tests plus `eval-spec.md`/`case-manifest.json`,
+  none containing secrets, credentials, or mechanism that must remain
+  private. No revision was found ineligible; `notPromotedRevisions` is
+  empty.
+- Archived byte-for-byte to `evaluation/`: `attempt-ledger.json`,
+  `attempts/001/eval-result.md`, `freeze/001.json`, and
+  `revisions/001/{eval-spec.md,case-manifest.json,.hidden-test/**}` (5 hidden
+  tests + `.hidden-test/manifest.json`). `evaluation/promotion.json` written
+  last, recording the passing attempt, evaluator-revision identity, and
+  every archived file's source/promoted identity (all `copied`).
+- Integrity: every archived file's recomputed SHA-256 matched its recorded
+  private source identity and its `.eval/freeze.json`-recorded identity
+  exactly (11/11 files checked); `promotion.json` parsed as valid JSON with
+  internally consistent identities. No mismatch found; promotion is
+  complete.
+- Not performed, per explicit instruction: candidate-methodology trust
+  promotion (`methodologies/harness/trusted.jsonl` untouched by this run).
+  This archival step is not human acceptance.
+- Publication: per the explicit bootstrap authority, this run does not
+  push. The exact local checkpoint (this manifest update plus all archived
+  `evaluation/**` files) is reported to the human for bootstrap-authorized
+  publication.
+- Measurement cutoff: immediately before this manifest update.
