@@ -24,6 +24,9 @@ export interface InputRule {
   name: string;
   path?: string;
   event?: string | string[];
+  eventFields?: Data;
+  current?: boolean;
+  after?: string;
   field?: string;
   committed?: boolean;
   optional?: boolean;

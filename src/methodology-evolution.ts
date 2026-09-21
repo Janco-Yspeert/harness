@@ -440,6 +440,43 @@ function inspectMethodology(manifest: MethodologyManifest): CheckResult {
       manifest.policy.path,
       "policy must configure exactly the eight active methodology roles",
     );
+  const implementationFeedback = manifest.roles[
+    "implementation"
+  ]?.contract.content.inputs.find(
+    (input) => input.name === "implementationFeedback",
+  );
+  const configuredTransitions = new Set(
+    Object.values(policyRoles).flatMap((entry) => {
+      const policyEntry = object(entry);
+      return Array.isArray(policyEntry.outcomes)
+        ? policyEntry.outcomes
+            .map((outcome) => object(outcome).transition)
+            .filter(
+              (transition): transition is string =>
+                typeof transition === "string",
+            )
+        : [];
+    }),
+  );
+  const feedbackEvents = Array.isArray(implementationFeedback?.event)
+    ? implementationFeedback.event
+    : implementationFeedback?.event
+      ? [implementationFeedback.event]
+      : [];
+  if (
+    !implementationFeedback ||
+    !implementationFeedback.current ||
+    implementationFeedback.after !== "implementation-handoff" ||
+    implementationFeedback.eventFields?.classification !==
+      "IMPLEMENTATION_FAILURE" ||
+    !feedbackEvents.some((event) => configuredTransitions.has(event))
+  )
+    addDiagnostic(
+      diagnostics,
+      "IMPLEMENTATION_FEEDBACK_BINDING",
+      "implementation",
+      "implementation retry feedback must bind a configured current IMPLEMENTATION_FAILURE transition after its handoff",
+    );
   if (manifest.policy.identity !== contentId(manifest.policy.content))
     addDiagnostic(
       diagnostics,
@@ -873,25 +910,44 @@ function requirePromotionAuthority(value: unknown): PromotionAuthority {
   return raw as unknown as PromotionAuthority;
 }
 
+function repositoryRootForHistory(trustHistoryPath: string): string {
+  return git(dirname(resolve(trustHistoryPath)), [
+    "rev-parse",
+    "--show-toplevel",
+  ]);
+}
+
 export function promoteMethodology(
   candidate: CandidateMethodology,
   trustHistoryPath: string,
   rawAuthority: unknown,
 ): TrustedMethodologyEvent {
-  const checked = checkMethodology(candidate.manifest);
+  const reconstructed = candidateMethodology(
+    repositoryRootForHistory(trustHistoryPath),
+    candidate.revision,
+    trustHistoryPath,
+  );
+  if (
+    reconstructed.revision !== candidate.revision ||
+    canonical(reconstructed.manifest) !== canonical(candidate.manifest)
+  )
+    throw new Error(
+      "candidate methodology does not match its exact repository revision",
+    );
+  const checked = checkMethodology(reconstructed.manifest);
   if (!checked.valid)
     throw new Error("candidate methodology failed coherence validation");
   const authority = requirePromotionAuthority(rawAuthority);
   const history = readTrustedHistory(trustHistoryPath);
   const current = history.at(-1)?.methodology ?? null;
-  if (current !== candidate.trustedIdentity)
+  if (current !== reconstructed.trustedIdentity)
     throw new Error("trusted methodology changed after candidate construction");
-  if (current === candidate.manifest.id)
+  if (current === reconstructed.manifest.id)
     throw new Error("candidate is already the trusted methodology");
   if (authority.evaluation.kind === "trusted-methodology") {
     if (
       authority.evaluation.methodology !== current ||
-      authority.evaluation.methodology === candidate.manifest.id ||
+      authority.evaluation.methodology === reconstructed.manifest.id ||
       authority.evaluation.evidence.length === 0
     )
       throw new Error(
@@ -903,8 +959,8 @@ export function promoteMethodology(
   const event: TrustedMethodologyEvent = {
     schemaVersion: 1,
     sequence: history.length + 1,
-    methodology: candidate.manifest.id,
-    revision: candidate.revision,
+    methodology: reconstructed.manifest.id,
+    revision: reconstructed.revision,
     previous: current,
     authority: {
       kind: "human",
@@ -923,6 +979,11 @@ export function exerciseMethodology(
   readonly schemaVersion: 1;
   readonly operation: "exercise";
   readonly methodology: string;
+  readonly role: "design-map";
+  readonly artifact: "design-map.md";
+  readonly artifactIdentity: string;
+  readonly contractIdentity: string;
+  readonly skillIdentity: string;
   readonly valid: true;
   readonly checkpoint: string;
   readonly published: false;
@@ -932,17 +993,35 @@ export function exerciseMethodology(
   const checked = checkMethodology(candidate.manifest);
   if (!checked.valid)
     throw new Error("cannot exercise an incoherent candidate methodology");
+  const roleName = "design-map" as const;
+  const role = candidate.manifest.roles[roleName];
+  if (
+    !role ||
+    !role.contract.content.results.includes("succeeded") ||
+    !role.contract.content.capabilities.includes("repository-write") ||
+    !role.contract.content.capabilities.includes("git-commit") ||
+    !role.contract.content.postconditions.includes("design-map.md") ||
+    role.skill.content.trim().length === 0
+  )
+    throw new Error("candidate design-map role cannot produce its checkpoint");
   const trustedBefore = trustedIdentity(trustHistoryPath);
   const directory = mkdtempSync(
     join(tmpdir(), "harness-methodology-exercise-"),
   );
   try {
     git(directory, ["init", "-b", "exercise"]);
-    writeFileSync(
-      join(directory, "role-evidence.json"),
-      `${JSON.stringify({ methodology: candidate.manifest.id, result: "succeeded" }, null, 2)}\n`,
-    );
-    git(directory, ["add", "role-evidence.json"]);
+    const artifact = [
+      "# Disposable candidate Design Map",
+      "",
+      `- Methodology: \`${candidate.manifest.id}\``,
+      `- Role: \`${roleName}\``,
+      `- Contract: \`${role.contract.identity}\``,
+      `- Skill: \`${role.skill.identity}\``,
+      "- Result: `succeeded`",
+      "",
+    ].join("\n");
+    writeFileSync(join(directory, "design-map.md"), artifact);
+    git(directory, ["add", "design-map.md"]);
     execFileSync("git", ["commit", "-m", "exercise: local role checkpoint"], {
       cwd: directory,
       stdio: "pipe",
@@ -955,6 +1034,12 @@ export function exerciseMethodology(
       },
     });
     const checkpoint = git(directory, ["rev-parse", "HEAD"]);
+    const artifactIdentity = identity(artifact);
+    if (
+      identity(readRevisionFile(directory, checkpoint, "design-map.md")) !==
+      artifactIdentity
+    )
+      throw new Error("disposable role artifact is absent from its checkpoint");
     const trustedAfter = trustedIdentity(trustHistoryPath);
     if (trustedAfter !== trustedBefore)
       throw new Error(
@@ -964,6 +1049,11 @@ export function exerciseMethodology(
       schemaVersion: 1,
       operation: "exercise",
       methodology: candidate.manifest.id,
+      role: roleName,
+      artifact: "design-map.md",
+      artifactIdentity,
+      contractIdentity: role.contract.identity,
+      skillIdentity: role.skill.identity,
       valid: true,
       checkpoint,
       published: false,

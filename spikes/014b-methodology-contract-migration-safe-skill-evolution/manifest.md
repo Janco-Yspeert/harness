@@ -309,3 +309,57 @@
   push. The exact local checkpoint is reported to the human for
   bootstrap-authorized publication.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 006 — Implementation Correction
+
+- Skill: `implementation` v3 under the explicit Spike 014b bootstrap
+  exception. Sole implementation instruction authority remains baseline commit
+  `e2bd3fa35ddb76935bf811cc7cbaed3d383abd32`,
+  `skills/implementation/SKILL.md` content identity
+  `sha256:bd10992f2d46103e603063230fe2c7dc150f876cee14e23b320a669312682605`.
+  Candidate edits to the active implementation and evaluator skills did not
+  alter this run's bootstrap authority.
+- Inputs: frozen `spike.md`
+  `sha256:d627fd302a04e778f4100fef2b897df16e4c97c3fb728e9bfcd3bf7dc30d298a`;
+  frozen `design-map.md`
+  `sha256:2f12c72f8a382a44a53c4478ee08379d136f652f382305a88f63fb16711f3b40`;
+  original public `eval-requirements.md`
+  `sha256:f66af67075b5b91aa522397fc2b9b16f0577b917bdba31111af7dc04f9f25c47`;
+  bootstrap authority
+  `sha256:c63fddcb220444158c98b5e1aef5f5116a1ee1d2bd803c7aa0369cf753b33809`;
+  human correction scope
+  `sha256:d5cfabfb87e68c6ce24d1440276f5290ba08261309f760b927c2de7ec0720e12`;
+  preserved historical review
+  `sha256:7c4ad9a038efe9d8d6a6b275ee002652ea53c9449c39cf7fded847c9c254169d`;
+  and sanitized repaired public evaluation feedback in the current
+  `eval-requirements.md`
+  `sha256:cdb8c0506c23c6b1c101df72d629f298a229d7de3b0a920564d37e2059cad350`.
+- Result: corrected. D05 now binds the exact current, post-handoff committed
+  public `IMPLEMENTATION_FAILURE` verification record into the implementation
+  retry through the existing `verification-finalized` producer. D01 rebuilds
+  the candidate manifest from its claimed repository revision before
+  promotion. D03 exercises the candidate `design-map` skill/contract and its
+  declared artifact in a disposable local checkpoint.
+- Output: corrected candidate methodology
+  `sha256:f8a08dfe1017f222fe168726180705e35c38e30585b9852cd48bad0d41cdb129`,
+  distinct from unchanged trusted methodology
+  `sha256:0ed6e2c936462ff00222e6e345bab8a600cc52428160cf17165992e3d50078d8`.
+  Candidate `check` returned valid with no diagnostics. Candidate `exercise`
+  used role `design-map`, produced disposable artifact `design-map.md` and a
+  local checkpoint, reported `published: false`, and left the trusted identity
+  unchanged.
+- Visible verification: `npm test` PASS (109/109; Node test runner reported
+  19,308 ms); `npm run typecheck` PASS; `npm run lint` PASS after removing
+  three redundant test-only narrowing guards; `npm run format:check` PASS;
+  `git diff --check` PASS; focused D01/D03/D05 tests PASS; exact candidate
+  `check` PASS; exact candidate disposable `exercise` PASS. Direct CLI
+  diagnostics initially encountered the environment's known `spawnSync git
+  EPERM`; rerunning with permission for local Git subprocesses passed.
+- Scope held: D02, D04, D06, and D07 were not expanded into blocking work. The
+  existing Spike 014a `KERNEL_SUPPORT_REQUIRED` handback remains unchanged.
+- Not performed: evaluator invocation or preparation, evaluator promotion,
+  candidate-methodology trust promotion, canonical transition, direct
+  publication, or push.
+- Publication: intentionally withheld by the Spike 014b bootstrap exception.
+  The exact local checkpoint is reported to the human for publication.
+- Measurement cutoff: immediately before this manifest update.

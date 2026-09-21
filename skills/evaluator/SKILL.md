@@ -394,10 +394,13 @@ that states the violated public requirement, expected and observed public
 behavior, classification, and safe diagnostics. Do not reveal hidden mechanics.
 Always emit public `verification-result.json` for a terminal verification,
 binding the allocation, candidate, evaluator revision, complete coverage
-accounting, result, and classification invariant. Follow **Final execution
-record** below, then create the public-result/feedback local checkpoint.
-Implementation retries against the same frozen evaluation; do not rerun
-`prepare`.
+accounting, result, and classification invariant. For `IMPLEMENTATION_FAILURE`,
+that committed public record is also the canonical machine-bound retry feedback
+and must carry the same sanitized requirement, expected behavior, observed
+behavior, and safe diagnostics as the separate human-readable feedback artifact.
+Follow **Final execution record** below, then create the public-result/feedback
+local checkpoint. Implementation retries against the same frozen evaluation; do
+not rerun `prepare`.
 
 For an evaluator defect, preserve the prior frozen revision, create a
 distinguishable corrected revision, record which verification used each, and

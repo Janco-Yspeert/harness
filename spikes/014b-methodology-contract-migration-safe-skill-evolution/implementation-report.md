@@ -21,8 +21,37 @@ The safe-evolution entry points are:
 `test/methodology-evolution.test.ts` is the visible regression suite for stable
 complete identities, trusted/candidate isolation, structural and authority
 validation, component-level diffs, a deliberately contradictory skill/contract
-fixture, disposable local checkpoint exercise, recursion rejection, monotonic
-promotion, and unchanged existing workflow bindings.
+fixture, candidate-bound disposable checkpoint exercise, recursion rejection,
+revision/manifest promotion coherence, monotonic promotion, and unchanged
+existing workflow bindings.
+
+## Post-verification correction
+
+The bounded correction keeps the original candidate shape and changes only the
+three required defects:
+
+- **D01:** `promoteMethodology` locates the repository containing canonical
+  trust history, rebuilds the candidate from its exact claimed revision, and
+  requires byte-derived manifest equality before appending a trust event. An
+  independently supplied revision and manifest can no longer drift by ordinary
+  handoff mistake.
+- **D03:** `exerciseMethodology` loads the candidate's real `design-map` skill
+  and contract, checks the role's checkpoint capabilities and declared
+  `design-map.md` postcondition, commits that candidate-derived artifact in a
+  disposable repository, and reports the exact role/component/artifact
+  identities. It neither publishes nor changes trusted methodology history.
+- **D05:** the implementation contract now selects the current
+  `verification-finalized` event after the corresponding handoff only when it is
+  classified `IMPLEMENTATION_FAILURE`, validates the committed public
+  verification record, and binds that exact identity as retry feedback. The
+  evaluator and implementation skills agree that this sanitized public record
+  is the machine-bound retry authority; no ambient discovery or orphan
+  transition remains.
+
+The small generic input-event selector (`eventFields`, `current`, and `after`)
+exists solely to make that exact binding real at allocation time. It reuses the
+existing event predicate semantics rather than adding a feedback registry or a
+new workflow phase.
 
 ## Kernel boundary
 
@@ -35,15 +64,18 @@ postcondition validation, or protected Git workspace realization.
 
 ## Visible verification
 
-The exact candidate methodology identity is
-`sha256:d1b50f5633911a69a81071e6cf316056015e2c78223f8ca6349362713dbb1324`.
+The corrected candidate methodology identity is
+`sha256:f8a08dfe1017f222fe168726180705e35c38e30585b9852cd48bad0d41cdb129`.
 Candidate construction reports it as different from trusted methodology
 `sha256:0ed6e2c936462ff00222e6e345bab8a600cc52428160cf17165992e3d50078d8`;
-`check` returns valid, and an actual bounded `exercise` created a disposable
-local commit while leaving the trusted identity unchanged and performing no
+`check` returns valid with no diagnostics, and an actual bounded `exercise`
+used the candidate `design-map` role to create a disposable `design-map.md`
+checkpoint while leaving the trusted identity unchanged and performing no
 publication.
 
-Visible verification completed successfully: all 107 `npm test` cases,
+Visible verification completed successfully: all 109 `npm test` cases,
 `npm run typecheck`, `npm run lint`, `npm run format:check`, and
 `git diff --check`. Independent evaluator verification was not run by the
-implementation role.
+implementation role. No evaluator preparation, evaluator promotion,
+methodology trust promotion, canonical transition, direct publication, or push
+was performed.

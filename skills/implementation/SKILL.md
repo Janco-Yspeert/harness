@@ -15,10 +15,12 @@ Answer one question: **does the frozen spike now exist in the repository?**
 
 Require and read the frozen `spike.md`, frozen `design-map.md`, public
 `eval-requirements.md`, repository instructions, and any public implementation
-feedback bound from the exact earlier confirmed implementation failure. Verify
-their recorded content identities and committed provenance before changing
-files. Do not discover retry authority from mutable repository state or select a
-different skill/evaluator authority.
+feedback bound from the exact current `verification-finalized` event after the
+prior implementation handoff and classified `IMPLEMENTATION_FAILURE`. The
+committed public verification record is the retry-feedback authority; verify its
+recorded content identity, classification, and committed provenance before
+changing files. Do not discover retry authority from mutable repository state or
+select a different skill/evaluator authority.
 
 An explicitly frozen process exception may omit named inputs. Do not infer an
 exception after work begins.

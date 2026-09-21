@@ -4,6 +4,7 @@ import { relative, resolve } from "node:path";
 import {
   contentId,
   identity,
+  matches,
   object,
   predicate,
   required,
@@ -66,10 +67,24 @@ export function roleInputs(
     path.split(".").reduce<unknown>((v, key) => object(v)[key], value);
   for (const rule of role.contract.inputs) {
     const eventNames = Array.isArray(rule.event) ? rule.event : [rule.event];
+    const findEvent = (candidates: LedgerEvent[]): LedgerEvent | undefined => {
+      const afterIndex = rule.after
+        ? events.findLastIndex((event) => event.transition === rule.after)
+        : -1;
+      const latest = candidates.findLast(
+        (event) =>
+          eventNames.includes(event.transition) &&
+          events.indexOf(event) > afterIndex,
+      );
+      return latest && matches(latest.evidence, rule.eventFields ?? {})
+        ? latest
+        : undefined;
+    };
     const event = rule.event
-      ? (scopedEvents(events, definition.policy).findLast((e) =>
-          eventNames.includes(e.transition),
-        ) ?? events.findLast((e) => eventNames.includes(e.transition)))
+      ? rule.current
+        ? findEvent(scopedEvents(events, definition.policy))
+        : (findEvent(scopedEvents(events, definition.policy)) ??
+          findEvent(events))
       : undefined;
     if (rule.event && !event) {
       if (rule.optional) continue;

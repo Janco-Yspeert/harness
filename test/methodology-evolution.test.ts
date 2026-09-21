@@ -67,7 +67,7 @@ function fixture(t: TestContext): {
   git(root, ["init", "-b", "main"]);
   const baseline = commit(root, "trusted methodology");
   const baselineIdentity = buildMethodologyManifest(root, baseline).manifest.id;
-  const history = join(directory, "trusted.jsonl");
+  const history = join(root, "trusted.jsonl");
   const initial: TrustedMethodologyEvent = {
     schemaVersion: 1,
     sequence: 1,
@@ -91,7 +91,7 @@ function validCandidate(
   f: ReturnType<typeof fixture>,
 ): ReturnType<typeof candidateMethodology> {
   appendFileSync(
-    join(f.root, "skills", "evaluator", "SKILL.md"),
+    join(f.root, "skills", "design-map", "SKILL.md"),
     "\nCandidate revision marker with no authority semantics.\n",
   );
   const revision = commit(f.root, "candidate methodology");
@@ -161,6 +161,36 @@ void test("check validates coherence and rejects a contradictory skill/contract 
   );
 });
 
+void test("check requires implementation retry feedback to have an exact configured producer", (t) => {
+  const f = fixture(t);
+  const candidate = candidateMethodology(f.root, f.baseline, f.history);
+  assert.equal(checkMethodology(candidate.manifest).valid, true);
+
+  const contractPath = join(
+    f.root,
+    "methodologies",
+    "harness",
+    "contracts",
+    "implementation.json",
+  );
+  const contract = JSON.parse(readFileSync(contractPath, "utf8")) as {
+    inputs: Array<{ name: string; event?: string }>;
+  };
+  const feedback = contract.inputs.find(
+    (input) => input.name === "implementationFeedback",
+  );
+  assert.ok(feedback);
+  feedback.event = "implementation-feedback-recorded";
+  writeFileSync(contractPath, `${JSON.stringify(contract, null, 2)}\n`);
+  const revision = commit(f.root, "disconnect retry feedback producer");
+  const disconnected = candidateMethodology(f.root, revision, f.history);
+  assert.ok(
+    checkMethodology(disconnected.manifest).diagnostics.some(
+      (diagnostic) => diagnostic.code === "IMPLEMENTATION_FEEDBACK_BINDING",
+    ),
+  );
+});
+
 void test("diff reports material component categories", (t) => {
   const f = fixture(t);
   const before = buildMethodologyManifest(f.root, f.baseline).manifest;
@@ -212,11 +242,22 @@ void test("diff reports material component categories", (t) => {
   ]);
 });
 
-void test("exercise creates only a disposable local checkpoint", (t) => {
+void test("exercise uses a candidate role to create only a disposable local checkpoint", (t) => {
   const f = fixture(t);
   const candidate = validCandidate(f);
   const result = exerciseMethodology(candidate, f.history);
   assert.equal(result.valid, true);
+  assert.equal(result.role, "design-map");
+  assert.equal(result.artifact, "design-map.md");
+  assert.match(result.artifactIdentity, /^sha256:/);
+  assert.equal(
+    result.contractIdentity,
+    candidate.manifest.roles["design-map"]?.contract.identity,
+  );
+  assert.equal(
+    result.skillIdentity,
+    candidate.manifest.roles["design-map"]?.skill.identity,
+  );
   assert.match(result.checkpoint, /^[a-f0-9]{40,64}$/);
   assert.equal(result.published, false);
   assert.equal(result.trustedBefore, f.baselineIdentity);
@@ -244,6 +285,23 @@ void test("promotion requires human and prior-trusted authority and affects only
       }),
     /current trusted methodology/,
   );
+
+  assert.throws(
+    () =>
+      promoteMethodology({ ...candidate, revision: f.baseline }, f.history, {
+        kind: "human",
+        decision: "promote",
+        evidence: "human:test",
+        evaluation: {
+          kind: "trusted-methodology",
+          methodology: f.baselineIdentity,
+          result: "PASS",
+          evidence: "evaluation:test",
+        },
+      }),
+    /does not match its exact repository revision/,
+  );
+  assert.equal(readTrustedHistory(f.history).length, 1);
 
   const event = promoteMethodology(candidate, f.history, {
     kind: "human",

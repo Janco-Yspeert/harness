@@ -37,9 +37,17 @@
     },
     {
       "name": "implementationFeedback",
-      "event": "implementation-feedback-recorded",
+      "event": "verification-finalized",
+      "eventFields": {
+        "classification": "IMPLEMENTATION_FAILURE"
+      },
+      "current": true,
+      "after": "implementation-handoff",
       "committed": true,
-      "optional": true
+      "optional": true,
+      "jsonChecks": {
+        "classification": "IMPLEMENTATION_FAILURE"
+      }
     }
   ],
   "results": ["succeeded", "blocked", "refused", "failed"],

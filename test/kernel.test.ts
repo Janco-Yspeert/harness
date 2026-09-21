@@ -332,6 +332,81 @@ void test("TR2: policy, contract and skill changes create new immutable definiti
   assert.deepEqual(f.kernel.definition(f.workflow, first.methodology), initial);
 });
 
+void test("implementation feedback input binds only the current post-handoff implementation failure", (t) => {
+  const f = fixture(t, "retry-feedback");
+  f.policy.scopeEvent = {
+    transition: "correction-cycle-opened",
+    field: "cycle",
+    initial: "001",
+  };
+  f.contract.inputs.push({
+    name: "implementationFeedback",
+    event: "verification-finalized",
+    eventFields: { classification: "IMPLEMENTATION_FAILURE" },
+    current: true,
+    after: "implementation-handoff",
+    committed: true,
+    optional: true,
+    jsonChecks: { classification: "IMPLEMENTATION_FAILURE" },
+  });
+  json(join(f.root, "policy.json"), f.policy);
+  json(join(f.root, "contracts/produce.json"), f.contract);
+  git(f.root, ["init", "-b", "candidate"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "feedback fixture"]);
+  const grant = f.authorize();
+  const cycle = "002";
+  f.event("correction-cycle-opened", { cycle });
+  f.event("implementation-handoff", {
+    cycle,
+    commit: git(f.root, ["rev-parse", "HEAD"]),
+  });
+  f.event("verification-finalized", {
+    cycle,
+    classification: "EVALUATOR_DEFECT",
+    path: "unrelated.json",
+  });
+  const unrelated = f.kernel.inspect(f.workflow, grant.id);
+  assert.equal(unrelated.kind, "grant");
+  assert.equal(unrelated.grant.inputs.implementationFeedback, undefined);
+
+  const feedbackPath = join(
+    f.root,
+    "items",
+    f.workflow,
+    "verification-result.json",
+  );
+  json(feedbackPath, {
+    result: "FAIL",
+    classification: "IMPLEMENTATION_FAILURE",
+    requirement: "public:test",
+    expected: "expected behavior",
+    observed: "observed behavior",
+  });
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "record public implementation feedback"]);
+  const commit = git(f.root, ["rev-parse", "HEAD"]);
+  f.event("verification-finalized", {
+    cycle,
+    result: "FAIL",
+    classification: "IMPLEMENTATION_FAILURE",
+    path: "verification-result.json",
+    identity: identity(readFileSync(feedbackPath)),
+    commit,
+  });
+  const retry = f.kernel.inspect(f.workflow, grant.id);
+  assert.equal(retry.kind, "grant");
+  assert.equal(
+    retry.grant.inputs.implementationFeedback,
+    identity(readFileSync(feedbackPath)),
+  );
+
+  f.event("correction-cycle-opened", { cycle: "003" });
+  const nextCycle = f.kernel.inspect(f.workflow, grant.id);
+  assert.equal(nextCycle.kind, "grant");
+  assert.equal(nextCycle.grant.inputs.implementationFeedback, undefined);
+});
+
 void test("TR3: bounded workflow authority, immutable Role Grants and non-consuming observation; prompt text cannot authorize", async (t) => {
   const f = fixture(t);
   const host = await startHarnessHost(0, {
