@@ -1,0 +1,160 @@
+{
+  "spike": "014b-methodology-contract-migration-safe-skill-evolution",
+  "evaluationRequirements": "sha256:f66af67075b5b91aa522397fc2b9b16f0577b917bdba31111af7dc04f9f25c47",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 11,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31",
+    "privateInventoryIdentity": "sha256:136d0b7bb1b386ecf8175d8864a43a3f8d5ffd18e6d016e89397c8711c1127ce",
+    "validatorResultBinding": "sha256:623ad03c2a97064be21bd10ce166813d07af8ab301152b60d632c89835f8209d",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 18
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; \"§1 Complete Skill ↔ Contract Fidelity Audit\"",
+      "mode": "PUBLIC_EVIDENCE",
+      "required": true,
+      "procedures": ["M-A"],
+      "sufficiency": "M-A directly reviews design-map.md's already-frozen, implementation-immutable fidelity matrix (all 8 roles x all listed dimensions, each with exactly one disposition), reviewed at preparation time and re-confirmed at verify time only by the content-identity match the evaluator skill's own 'Establish immutable inputs' step already requires."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; \"§1\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E1", "M-A"],
+      "sufficiency": "E1 statically checks the contract-level dimensions of the fidelity matrix (git capabilities, workspaces, forbiddenExposure, methodology enums) against the final committed contracts; M-A confirms the frozen matrix itself leaves no unresolved finding (every row carries MATCH/SKILL_MUST_CHANGE/CONTRACT_MUST_CHANGE/KERNEL_SUPPORT_REQUIRED/INTENTIONALLY_ARTIFACT_ONLY)."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03; \"§3 Git checkpoint contract\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 reads all 8 committed role contracts and asserts each grants git-inspect and git-commit; the JSON contract schema is a pre-existing, already-public repository format, not a 014b invention, so this is fairly checked without waiting for implementation to choose a representation."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; \"§2 Common governed-role boundary\", §3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E1", "E3", "M-B"],
+      "sufficiency": "E1 checks no contract grants git-publish/network capability or an out-of-bounds workspace; E3 checks no active role skill's prose contains \"push\" or claims git-publish; M-B manually confirms no skill instructs itself to record its own canonical transition (a grammatical-subject judgment a pattern match cannot fairly make)."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; \"§2\"",
+      "mode": "MANUAL_REVIEW",
+      "required": true,
+      "procedures": ["M-B"],
+      "sufficiency": "M-B reviews each migrated skill's completion/postcondition section for an explicit instruction to report the exact produced local commit; the exact phrasing is not fixed by frozen authority, so this is a reading-comprehension judgment, not a stable hidden-test seam."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; \"§4 Brief Readiness\"",
+      "mode": "MANUAL_REVIEW",
+      "required": true,
+      "procedures": ["M-B"],
+      "sufficiency": "M-B confirms brief-readiness/SKILL.md explicitly states that \"Ready after minor clarification\" maps to machine verdict READY as a non-blocking finding; a hidden regex would be fragile against equally-compliant rephrasing of the frozen Design Map's target sentence, so this stays manual."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07; \"§4 Evaluator verify\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E2"],
+      "sufficiency": "E2 reads the committed evaluator-verify.json and asserts methodology.classification is exactly the five frozen values with no SPECIFICATION_DEFECT anywhere under methodologies/; this is a deterministic, implementation-independent check of an already-public contract field."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08; \"§4 Evaluator verify\"",
+      "mode": "MANUAL_REVIEW",
+      "required": true,
+      "procedures": ["M-B"],
+      "sufficiency": "The frozen Design Map classifies cross-field enforcement itself as KERNEL_SUPPORT_REQUIRED (out of 014b's implementation scope); AC08 only requires the invariant be documented, which M-B confirms by reading the evaluator skill/contract for an explicit PASS-no-classification / non-PASS-exactly-one-classification statement."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09; \"§4 Evaluator repair\"",
+      "mode": "MANUAL_REVIEW",
+      "required": true,
+      "procedures": ["M-B"],
+      "sufficiency": "M-B confirms evaluator-repair.json's inputs (or the skill's repair-mode prose) bind an exact authoritative trigger rather than leaving repair eligibility discoverable from mutable repository state; the exact field name/shape is not fixed by frozen authority, so this is judged by reading the final artifact, not a pre-authored hidden test."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10; \"§4 As-Built\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 asserts as-built.json's methodology object stays empty, i.e. Missing/Contradictory/Extra remain artifact findings and are never promoted into a singular workflow result."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11; \"§4 Outcome\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E4"],
+      "sufficiency": "E4 reads outcome.json and asserts its methodology object exposes some field with both a STANDARD-shaped and a PROCESS_EXCEPTION-shaped value, and never combines PASS-shaped with PROCESS_EXCEPTION-shaped values in the same enum; tolerant of the exact field name, which frozen brief §4 explicitly leaves free."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12; \"§6 Coherent methodology version\", §7",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["C-C"],
+      "sufficiency": "C-C requires the implementation's own visible npm test suite to demonstrate one deterministic, stable methodology identity binding policy/contracts/skills/validators, corroborated by manual inspection of the implementation-identified entry point; the mechanism's storage/representation is explicit Design Map implementation freedom, so no pre-implementation hidden-test seam is justified beyond that obligation."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; \"§7 candidate\", §8",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["C-C"],
+      "sufficiency": "C-C's manual-inspection component confirms editing any skill (including evaluator) produces a candidate identity that cannot alter the identity already bound to a running workflow grant, reviewed against the implementation-identified mechanism rather than a pre-authored hidden test that would have to invent its shape."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md AC14; \"§8 Evaluator recursion rule\"",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["C-C"],
+      "sufficiency": "C-C's manual-inspection component confirms the frozen bootstrap-pinned evaluator (this very preparation's own authority, per bootstrap/authority.md) governs Spike 014b's own evaluation, and that no code path in the implemented mechanism lets a candidate evaluator gain authority over its own migration."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md AC15; \"§9 Validation and exercise\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["C-C"],
+      "sufficiency": "C-C requires the implementation's own visible test suite to include at least one deliberately contradictory skill/contract fixture that the check operation rejects, reviewed by the evaluator at verify time for genuineness (the fixture must actually exercise structural validation, not merely assert a trivial constant)."
+    },
+    {
+      "id": "AC16",
+      "frozenAuthority": "spike.md AC16; \"§7 exercise\", §9",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["C-C"],
+      "sufficiency": "C-C requires the implementation's own visible test suite to demonstrate a bounded disposable exercise scenario against a candidate without granting it trusted workflow authority or publishing; the scenario's exact shape is implementation freedom bounded by frozen brief §9."
+    },
+    {
+      "id": "AC17",
+      "frozenAuthority": "spike.md AC17; \"Bootstrap process exception\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E5"],
+      "sufficiency": "E5 asserts spike.md, design-map.md, and bootstrap/authority.md remain present and that authority.md still preserves the recorded bootstrap baseline commit and frozen evaluator/implementation content identities, guarding against deletion or silent rewrite during migration work."
+    },
+    {
+      "id": "AC18",
+      "frozenAuthority": "spike.md AC18; \"§1\"",
+      "mode": "PUBLIC_EVIDENCE",
+      "required": true,
+      "procedures": ["M-A"],
+      "sufficiency": "M-A confirms the frozen design-map.md's own \"Generic kernel handback to Spike 014a\" table already durably records every KERNEL_SUPPORT_REQUIRED item; because design-map.md is frozen and not edited by the implementation, this is re-confirmed at verify time only via the mandatory content-identity check, not a separate hidden test."
+    }
+  ]
+}
