@@ -1,7 +1,13 @@
 {
   "schemaVersion": 1,
   "workspaces": ["repository"],
-  "capabilities": ["repository-read", "repository-write", "local-computation"],
+  "capabilities": [
+    "repository-read",
+    "repository-write",
+    "local-computation",
+    "git-inspect",
+    "git-commit"
+  ],
   "forbiddenExposure": ["evaluator-private"],
   "protected": false,
   "inputs": [
@@ -28,6 +34,12 @@
         "input": "coverage",
         "field": "evaluationRequirements"
       }
+    },
+    {
+      "name": "implementationFeedback",
+      "event": "implementation-feedback-recorded",
+      "committed": true,
+      "optional": true
     }
   ],
   "results": ["succeeded", "blocked", "refused", "failed"],

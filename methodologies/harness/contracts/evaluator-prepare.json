@@ -1,7 +1,13 @@
 {
   "schemaVersion": 1,
   "workspaces": ["repository", "evaluation"],
-  "capabilities": ["repository-read", "repository-write", "local-computation"],
+  "capabilities": [
+    "repository-read",
+    "repository-write",
+    "local-computation",
+    "git-inspect",
+    "git-commit"
+  ],
   "forbiddenExposure": [],
   "protected": true,
   "inputs": [
@@ -19,5 +25,5 @@
   "results": ["succeeded", "blocked", "refused", "failed"],
   "methodology": {},
   "human": ["input", "approval", "root"],
-  "postconditions": ["coverage-map.json", "eval-requirements.md"]
+  "postconditions": ["coverage-map.json", "eval-requirements.md", "manifest.md"]
 }

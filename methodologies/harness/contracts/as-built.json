@@ -1,18 +1,44 @@
 {
   "schemaVersion": 1,
   "workspaces": ["repository"],
-  "capabilities": ["repository-read", "repository-write", "local-computation"],
-  "forbiddenExposure": [],
+  "capabilities": [
+    "repository-read",
+    "repository-write",
+    "local-computation",
+    "git-inspect",
+    "git-commit"
+  ],
+  "forbiddenExposure": ["evaluator-private"],
   "protected": false,
   "inputs": [
     {
       "name": "candidate",
       "event": "implementation-handoff",
       "field": "commit"
+    },
+    {
+      "name": "brief",
+      "event": "brief-frozen",
+      "committed": true
+    },
+    {
+      "name": "design",
+      "event": "design-map-frozen",
+      "committed": true
+    },
+    {
+      "name": "verification",
+      "event": "verification-finalized",
+      "committed": true
+    },
+    {
+      "name": "promotion",
+      "event": "promotion-recorded",
+      "field": "promotionIdentity"
     }
   ],
   "results": ["succeeded", "blocked", "refused", "failed"],
   "methodology": {},
   "human": ["input", "approval", "root"],
-  "postconditions": ["as-built.md"]
+  "postconditions": ["as-built.md", "manifest.md"]
 }

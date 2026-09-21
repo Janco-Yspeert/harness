@@ -29,7 +29,10 @@
           "methodology": {
             "verdict": "NOT_READY"
           },
-          "transition": "readiness-blocked"
+          "transition": "readiness-blocked",
+          "evidence": {
+            "artifact": "feedback.md"
+          }
         }
       ]
     },
@@ -109,28 +112,44 @@
           {
             "any": [
               {
-                "event": "verification-finalized",
-                "current": true,
-                "latest": true,
-                "fields": {
-                  "classification": "EVALUATOR_DEFECT"
-                }
+                "all": [
+                  {
+                    "event": "verification-finalized",
+                    "current": true,
+                    "latest": true,
+                    "fields": {
+                      "classification": "EVALUATOR_DEFECT"
+                    }
+                  },
+                  {
+                    "not": {
+                      "event": "evaluator-repair-recorded",
+                      "current": true,
+                      "after": "verification-finalized"
+                    }
+                  }
+                ]
               },
               {
-                "event": "correction-cycle-opened",
-                "current": true,
-                "fields": {
-                  "evaluatorRepair": true
-                }
+                "all": [
+                  {
+                    "event": "human-evaluator-correction-authorized",
+                    "current": true,
+                    "latest": true,
+                    "fields": {
+                      "classification": "EVALUATOR_COVERAGE_DEFECT"
+                    }
+                  },
+                  {
+                    "not": {
+                      "event": "evaluator-repair-recorded",
+                      "current": true,
+                      "after": "human-evaluator-correction-authorized"
+                    }
+                  }
+                ]
               }
             ]
-          },
-          {
-            "not": {
-              "event": "evaluator-repair-recorded",
-              "current": true,
-              "after": "verification-finalized"
-            }
           }
         ]
       },
@@ -144,10 +163,7 @@
           "transition": "evaluator-repair-recorded",
           "evidence": {
             "artifact": "coverage-map.json",
-            "validator": "prepared-coverage",
-            "fields": {
-              "outcome": "REPAIRED"
-            }
+            "validator": "prepared-coverage"
           }
         }
       ]
@@ -372,12 +388,44 @@
       "when": {
         "all": [
           {
-            "event": "as-built-recorded",
+            "event": "human-accepted",
             "current": true
           },
           {
-            "event": "human-accepted",
-            "current": true
+            "any": [
+              {
+                "all": [
+                  {
+                    "event": "as-built-recorded",
+                    "current": true
+                  },
+                  {
+                    "event": "promotion-recorded",
+                    "current": true
+                  },
+                  {
+                    "event": "verification-finalized",
+                    "current": true,
+                    "latest": true,
+                    "fields": {
+                      "result": "PASS"
+                    }
+                  }
+                ]
+              },
+              {
+                "all": [
+                  {
+                    "event": "process-exception-authorized",
+                    "current": true
+                  },
+                  {
+                    "event": "process-exception-evidence-recorded",
+                    "current": true
+                  }
+                ]
+              }
+            ]
           },
           {
             "not": {
@@ -394,9 +442,28 @@
       "outcomes": [
         {
           "disposition": "succeeded",
+          "methodology": {
+            "completionMode": "STANDARD"
+          },
           "transition": "outcome-recorded",
           "evidence": {
-            "artifact": "outcome.md"
+            "artifact": "outcome.md",
+            "fields": {
+              "completionMode": "STANDARD"
+            }
+          }
+        },
+        {
+          "disposition": "succeeded",
+          "methodology": {
+            "completionMode": "PROCESS_EXCEPTION"
+          },
+          "transition": "outcome-recorded",
+          "evidence": {
+            "artifact": "outcome.md",
+            "fields": {
+              "completionMode": "PROCESS_EXCEPTION"
+            }
           }
         }
       ]
@@ -454,10 +521,32 @@
         "current": true,
         "latest": true,
         "fields": {
-          "classification": "SPECIFICATION_DEFECT"
+          "classification": "SPECIFICATION_AMBIGUITY"
         }
       },
-      "reason": "specification defect requires new brief authority"
+      "reason": "specification ambiguity requires new brief authority"
+    },
+    {
+      "when": {
+        "event": "verification-finalized",
+        "current": true,
+        "latest": true,
+        "fields": {
+          "classification": "SPECIFICATION_DRIFT"
+        }
+      },
+      "reason": "specification drift requires restored or successor authority"
+    },
+    {
+      "when": {
+        "event": "verification-finalized",
+        "current": true,
+        "latest": true,
+        "fields": {
+          "classification": "INFRASTRUCTURE_FAILURE"
+        }
+      },
+      "reason": "infrastructure failure requires recovery before continuation"
     }
   ],
   "maxAllocations": 32

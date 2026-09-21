@@ -15,7 +15,7 @@ compatibility:
 
 # Evaluator
 
-Contract version: 11
+Contract version: 12
 
 Mode: `$mode`
 
@@ -95,6 +95,19 @@ non-circular identity is canonical for revision comparison.
 Authority, in order, is the frozen brief, frozen Design Map, public evaluation
 requirements, repository contracts, and relevant public interfaces. Existing
 behavior and tests are evidence, not automatic requirements.
+
+Consume the exact mode, coherent methodology identity, public inputs, evaluator
+revision, predecessor, and workspaces bound by Harness. Never select a different
+skill or evaluator authority from mutable repository files. `repair`
+additionally requires its exact source evaluator revision and immutable defect
+trigger as bound inputs; repository discovery and conversation are not repair
+authority.
+
+The worker may create its public local checkpoint and report evidence, but never
+publishes, writes canonical workflow authority, allocates a successor, or makes
+an evaluator candidate authoritative over its own migration. Harness owns those
+privileged actions and preserves their results separately from semantic role
+completion.
 
 Prefer black-box observable behavior. Never impose undisclosed architecture,
 internal state exposure, dependency choice, or evaluator-convenience seams.
@@ -196,10 +209,10 @@ Several records may name the same procedure, but a broad grouping never replaces
 a per-criterion record and reason. The map also carries a public-safe readiness
 attestation binding the prepared evaluator revision to its deterministic private
 inventory identity and declaring that pre-freeze integrity validation passed; it
-exposes no private paths, cases, fixtures, or grader logic. Record
-`evaluation-prepared` through the authority after the public checkpoint; do not
-complete preparation with missing, duplicate, or blocked required coverage, or
-without a passing readiness attestation.
+exposes no private paths, cases, fixtures, or grader logic. Harness records
+`evaluation-prepared` after validating the public checkpoint; do not complete
+preparation with missing, duplicate, or blocked required coverage, or without a
+passing readiness attestation.
 
 Exercise every mandatory executable case against controlled positive and
 negative conditions before freeze. Confirm setup, teardown, helper integrity,
@@ -258,11 +271,19 @@ private evaluator revision using deterministic content identities. Private
 - the pre-freeze integrity checks performed and their passing result.
 
 Confirm the frozen public content identity, then follow **Final execution
-record** below. Commit and push the exact public requirements and safe public
-manifest entry, and confirm committed public content matches the identity in the
-private freeze. Implementation must not begin before both sides correspond.
+record** below. Create a local checkpoint containing the exact public
+requirements and safe public manifest entry, report the exact produced local
+commit, and confirm committed public content matches the identity in the private
+freeze. Implementation must not begin before both sides correspond.
 
 ## `verify`
+
+A completed evaluation reports semantic disposition `succeeded` with methodology
+result `PASS`, `FAIL`, or `BLOCKED`. Use role disposition `blocked` only when
+the evaluator cannot complete and finalize the semantic role at all. `PASS`
+carries no classification. Every `FAIL` or `BLOCKED` carries exactly one of
+`IMPLEMENTATION_FAILURE`, `EVALUATOR_DEFECT`, `SPECIFICATION_AMBIGUITY`,
+`SPECIFICATION_DRIFT`, or `INFRASTRUCTURE_FAILURE`.
 
 ### 1. Establish immutable inputs
 
@@ -371,9 +392,12 @@ implementation, evaluator, specification, infrastructure, or drift.
 For confirmed implementation failure, emit a separate public feedback artifact
 that states the violated public requirement, expected and observed public
 behavior, classification, and safe diagnostics. Do not reveal hidden mechanics.
-Follow **Final execution record** below, then commit the public feedback and
-safe manifest entry. Implementation retries against the same frozen evaluation;
-do not rerun `prepare`.
+Always emit public `verification-result.json` for a terminal verification,
+binding the allocation, candidate, evaluator revision, complete coverage
+accounting, result, and classification invariant. Follow **Final execution
+record** below, then create the public-result/feedback local checkpoint.
+Implementation retries against the same frozen evaluation; do not rerun
+`prepare`.
 
 For an evaluator defect, preserve the prior frozen revision, create a
 distinguishable corrected revision, record which verification used each, and
@@ -387,107 +411,36 @@ attempt and all failure evidence, follow the correction/revision or
 implementation-retry rules above, and follow **Final execution record**. Do not
 proceed as though the evaluator cycle passed.
 
-### 5. Complete `PASS` and promote
+### 5. Complete `PASS` and request promotion
 
 `PASS` means that the implementation satisfies the frozen machine-verifiable
-evaluation contract. Human product acceptance is a separate, later gate. After
-finalizing a `PASS`, complete the promotion procedure below before yielding
-control for human acceptance. Do not ask for human permission to perform normal
-evaluator-owned promotion, and do not describe the result as an "accepted PASS".
+evaluation contract. Human product acceptance is a separate, later gate. The
+evaluator determines promotion eligibility and reports the exact source
+identities, attempt history, revision lineage, all-or-nothing eligibility of
+each frozen revision, and destination mapping required for archival. It does not
+copy public artifacts, publish commits, or declare host promotion complete.
 
-Promotion eligibility is unchanged. The ledger and immutable attempt results
-belong to the completed evidence chain and are eligible after `PASS`. Treat each
-frozen evaluator revision, including its freeze metadata, as one eligibility
-unit: promote its entire exact bundle only when it provides durable, repeatable
-regression coverage suitable for the public repository and every component is
-safe to publish. If any component contains a secret, credential, unrelated
-sensitive material, or evaluator mechanism that must remain private, do not
-promote a partial revision or its freeze metadata. Diagnostic probes and
-discarded exploratory material are not part of a frozen revision and are
-ineligible. A `PASS` does not make every hidden test public; promotion may
-therefore record a passing attempt without copying its evaluator revision.
-Record only that revision's canonical identity and all-or-nothing eligibility
-decision in `promotion.json`. Eligibility judgment may remain necessary;
-promotion layout and preservation mechanics may not be invented case by case.
+Eligible evidence is the immutable attempt ledger, every immutable terminal
+result in the successful cycle, and each complete frozen evaluator revision
+whose full bundle is safe and suitable for durable public regression. A revision
+is eligible as one unit with its freeze metadata; never expose a partial bundle.
+Secrets, credentials, unrelated sensitive material, evaluator mechanisms that
+must remain private, diagnostics, and discarded exploration are ineligible. A
+passing attempt may therefore be eligible while its evaluator revision is not.
 
-Treat promotion as an archival operation. A historical artifact is the frozen or
-result artifact that actually participated in verification. Copy it byte for
-byte or reference one already preserved with the same deterministic content
-identity. Never use an editor or generation tool to rewrite, normalize, clean
-up, improve, summarize, or recreate it. Do not change embedded private paths in
-the attempt ledger or results. Historical artifacts may consequently retain
-private-relative paths; `promotion.json` supplies the public mapping.
+Request the narrow Harness promotion action with the exact passing attempt,
+implementation identity, evaluator revision identities, source artifact
+identities, eligibility decisions, and canonical destination mapping. Harness
+performs byte-preserving archival, identity validation, deduplication, and
+`promotion.json` creation. The host action must preserve every prior terminal
+attempt and superseded eligible revision; an unchanged suite is stored once and
+referenced by each attempt. The action result is separate from evaluator `PASS`.
+A failed or denied action neither fabricates promoted evidence nor rewrites the
+semantic verification result.
 
-`promotion.json` is the only required newly generated promotion metadata. It is
-not frozen evaluation evidence. Create it from
-`templates/promotion.example.json`, preserving the schema and adding no
-explanatory prose or semantic claims. Do not create promotion READMEs or
-indexes.
-
-Perform promotion in this order without consulting prior spikes:
-
-1. Select the finalized passing ledger entry and its immutable result. Confirm
-   their attempt, implementation, evaluator-revision, and result identities.
-2. Determine eligibility for each frozen evaluator revision as an all-or-nothing
-   bundle using the rules above. Record an ineligible revision only by its
-   revision identity and `not-promoted` disposition; do not expose its content
-   or hidden mechanics.
-3. Allocate no new verification attempt. The public attempt identifier is the
-   existing private `NNN`; attempt numbering was allocated before verification
-   and is never renumbered during promotion.
-4. Copy the complete private attempt ledger unchanged to
-   `evaluation/attempt-ledger.json`. Copy every immutable attempt result
-   unchanged to `evaluation/attempts/NNN/eval-result.md`, including all prior
-   `FAIL` and `BLOCKED` results in the successful cycle. For each eligible
-   revision, copy its exact freeze metadata unchanged to
-   `evaluation/freeze/NNN.json`. For an ineligible revision, publish neither the
-   freeze metadata nor artifact bundle; record only the revision identity and
-   `not-promoted` disposition in promotion metadata.
-5. For every eligible evaluator revision used by an attempt, establish its
-   canonical directory as `evaluation/revisions/NNN/`. The revision number and
-   identity are those in `freeze.json` and the ledger; never infer them from
-   directory order. Copy the exact frozen artifact bundle: specification, case
-   manifest, and all hidden tests and support files present in that revision.
-   The separately preserved freeze metadata proves its identity. A corrected
-   revision gets its own canonical directory, and every superseded revision used
-   in the cycle is preserved. For the current top-level private revision, copy
-   directly from the frozen top-level sources; for a superseded revision, copy
-   from its pre-correction archive.
-6. If the same revision identity is already present canonically, hash its files
-   and reference that directory; do not duplicate it. First-attempt and
-   later-attempt `PASS` use the same procedure. An unchanged suite is stored
-   once, and each attempt-to-revision relationship lives in the unchanged ledger
-   plus `promotion.json`.
-7. Write `evaluation/promotion.json` last among promotion artifacts. For each
-   attempt, record its identifier, result identity/path, implementation
-   identity, evaluator revision number and identity, and canonical revision path
-   plus `copied`/`referenced` disposition, or a `not-promoted` disposition and
-   null path. For every copied or referenced historical file, record its source
-   identity, public path, promoted identity, and `copied` or `referenced`
-   disposition. Record the passing attempt and overall `PASS` only; do not claim
-   human acceptance.
-8. Recompute every promoted historical file's identity and require equality with
-   its recorded source identity. Also verify each canonical revision identity
-   and every ledger/result reference. A mismatch is a promotion integrity
-   failure: do not declare promotion complete, do not rewrite either artifact to
-   make it match, and do not yield to human acceptance until the
-   source/destination or metadata error is resolved without altering history.
-9. Follow **Final execution record**, then commit and push promoted evaluation
-   separately from implementation. Only after all eligible artifacts, metadata,
-   hashes, manifest entries, and Git provenance are complete may the evaluator
-   yield to human acceptance.
-
-If no revision qualifies for public promotion, still preserve the
-ledger/results, write `promotion.json` with revision dispositions, perform the
-integrity checks, and finish the evaluator-owned `PASS` work. If all historical
-artifacts already exist canonically, write only the required new promotion
-metadata and manifest entry, referencing the verified identities.
-
-Promotion preserves the complete eligible evidence chain; it does not curate or
-recreate it. Historical documents remain immutable. Never edit an earlier
-spike's promoted artifacts to conform to this contract; report any discovered
-provenance defect separately and use an existing explicit correction mechanism
-only when independently authorized.
+The candidate evaluator never approves or promotes its own methodology change.
+Ordinary evolution is evaluated by the currently trusted methodology; an
+incompatible authority change stops at explicit human bootstrap authority.
 
 ## `repair`
 
@@ -511,20 +464,20 @@ revisions and identities, affected criteria/procedures, changed artifacts,
 frozen-authority identities, integrity result, and an explicit
 acceptance-semantics-preserved attestation. Run full deterministic structural
 integrity validation over the complete resulting revision before it becomes
-current. Then record the public-safe `evaluator-repair-recorded` authority
-binding; it must carry the same lineage and PASS/attestation without exposing
-private mechanics. Verification attempts remain bound to their original revision
-and are never rewritten.
+current. Then produce a public-safe repair binding carrying the same lineage and
+PASS/attestation without exposing private mechanics. Harness validates the
+binding and records `evaluator-repair-recorded`. Verification attempts remain
+bound to their original revision and are never rewritten.
 
-For Spike 012 itself, never use this v11 repair mode as bootstrap recovery or
+For Spike 012 itself, never use this v12 repair mode as bootstrap recovery or
 grading authority before human acceptance: its pinned v10 evaluator authority
 governs that exceptional cycle.
 
 ## Final execution record
 
-This is the final repository-content step for `prepare`, each terminal `verify`
-result, and PASS promotion. If useful statistics require a start baseline,
-capture it privately without appending a provisional public entry.
+This is the final repository-content step for `prepare`, `repair`, and each
+terminal `verify` result. If useful statistics require a start baseline, capture
+it privately without appending a provisional public entry.
 
 First write any richer execution statistics to the private evaluator workspace.
 Then append only safe aggregates, skill/version, mode, public identities, and
@@ -532,5 +485,8 @@ high-level result to public `manifest.md`. The measurement cutoff is immediately
 before the public update: do not measure the entry itself, estimate unavailable
 metrics, or expose hidden tests, cases, fixtures, inputs, oracle/timing
 strategy, diagnostics, or private evidence. If control remains after a blocked
-or failed run, record it too. Private detail may become public only through
-successful evaluation promotion under the existing rules.
+or failed run, record it too. Create one local checkpoint containing all public
+role artifacts and the final manifest entry. Report the Role Result, exact
+evidence identities, requested host actions, and exact produced local commit.
+Private detail may become public only through a successful Harness-owned
+promotion action.

@@ -8,7 +8,7 @@ description:
 
 # Design Map
 
-Contract version: 2
+Contract version: 3
 
 Answer one question: **what is the smallest shared design contract that
 implementation and evaluation must interpret consistently?**
@@ -75,8 +75,10 @@ repository-content step. Record its deterministic content identity, skill
 version, result, and statistics reliably available through immediately before
 that update. Capture a start baseline only for a directly measurable value; do
 not create a provisional entry, estimate metrics, or measure the entry itself.
-Commit and push the resulting checkpoint before evaluator preparation. A
+Create one local checkpoint containing the map and final manifest entry. Report
+the Role Result, artifact identities, and exact produced local commit. Harness
+validates the checkpoint, performs any configured publication, and records
+`design-map-frozen`; the worker does none of those privileged actions. A later
+publication failure does not change a genuinely completed Design Map result. A
 material revision requires a new identity and invalidates downstream evaluation
 where affected.
-
-For authority-enabled spikes, record `design-map-frozen` after this checkpoint.

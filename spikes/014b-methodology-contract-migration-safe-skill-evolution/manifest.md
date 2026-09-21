@@ -87,3 +87,57 @@
   `eval-requirements.md` and `coverage-map.json`) is committed locally only;
   its SHA is reported to the human for bootstrap-authorized publication.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 002 — Implementation
+
+- Skill: `implementation` v3 under the explicit Spike 014b bootstrap
+  exception. Sole implementation instruction authority: baseline commit
+  `e2bd3fa35ddb76935bf811cc7cbaed3d383abd32`, `skills/implementation/SKILL.md`
+  Git blob `c9a340b00e31352bcd0abc5751a2703b96baa2c5`, content identity
+  `sha256:bd10992f2d46103e603063230fe2c7dc150f876cee14e23b320a669312682605`.
+  Candidate edits to the active implementation and evaluator skills did not
+  alter this run's bootstrap authority.
+- Inputs: frozen `spike.md`
+  `sha256:d627fd302a04e778f4100fef2b897df16e4c97c3fb728e9bfcd3bf7dc30d298a`
+  (committed `e2bd3fa35ddb76935bf811cc7cbaed3d383abd32`); frozen
+  `design-map.md`
+  `sha256:2f12c72f8a382a44a53c4478ee08379d136f652f382305a88f63fb16711f3b40`
+  and `bootstrap/authority.md`
+  `sha256:c63fddcb220444158c98b5e1aef5f5116a1ee1d2bd803c7aa0369cf753b33809`
+  (committed `f141bb0226a6d15c90b4b895ae0b7fdd00bd78f7`); public
+  `eval-requirements.md`
+  `sha256:f66af67075b5b91aa522397fc2b9b16f0577b917bdba31111af7dc04f9f25c47`
+  and `coverage-map.json`
+  `sha256:1218aa5ec959c70551c39d50ca90ca0200abefa25966e6009536bd77a0267b78`
+  (committed `3c0e4934b351fa860dcf3a8f3cf4a3a527915444`).
+- Result: implemented. All eight active role skills, contracts, and configured
+  policy entries were migrated to the frozen fidelity target. The durable
+  methodology-evolution API is `src/methodology-evolution.ts`; its command
+  surface is `tools/methodology.ts`; trusted methodology history is
+  `methodologies/harness/trusted.jsonl`; and visible regression coverage is
+  `test/methodology-evolution.test.ts`.
+- Output: candidate methodology
+  `sha256:d1b50f5633911a69a81071e6cf316056015e2c78223f8ca6349362713dbb1324`,
+  distinct from trusted methodology
+  `sha256:0ed6e2c936462ff00222e6e345bab8a600cc52428160cf17165992e3d50078d8`.
+  `check` returned valid. The implementation report is
+  `sha256:125f613c21568f77bfadaeb6b5be87747304117d2c0190be8fa38ef109009e43`.
+- Exercise: the exact candidate created a disposable local Git checkpoint,
+  reported no publication, and left the trusted identity unchanged. Promotion
+  was not invoked.
+- Kernel handback: no frozen `KERNEL_SUPPORT_REQUIRED` finding was implemented
+  as a methodology-specific workaround. The frozen Design Map remains the
+  authoritative 014a handback.
+- Checks: `npm test` PASS (107/107, Node test runner reported 18,404 ms);
+  `npm run typecheck` PASS; `npm run lint` PASS; `npm run format:check` PASS;
+  `git diff --check` PASS; exact candidate `check` PASS; exact candidate
+  disposable `exercise` PASS. The pre-existing `WORKLOG.md` formatting failure
+  recorded by evaluator preparation was repaired mechanically with Prettier so
+  the required repository-wide format check could pass.
+- Independent evaluation: not run by implementation. No evaluator invocation,
+  evaluation promotion, candidate-methodology promotion, canonical transition,
+  or publication was performed.
+- Publication: intentionally withheld by the Spike 014b bootstrap exception.
+  The exact local checkpoint is reported to the human for bootstrap-authorized
+  publication.
+- Measurement cutoff: immediately before this manifest update.

@@ -4,9 +4,11 @@
   "capabilities": [
     "repository-read",
     "repository-write",
-    "local-computation"
+    "local-computation",
+    "git-inspect",
+    "git-commit"
   ],
-  "forbiddenExposure": [],
+  "forbiddenExposure": ["evaluator-private"],
   "protected": false,
   "inputs": [
     {
@@ -19,5 +21,5 @@
     "verdict": ["READY", "NOT_READY"]
   },
   "human": ["input", "approval", "root"],
-  "postconditions": ["feedback.md"]
+  "postconditions": ["feedback.md", "manifest.md"]
 }

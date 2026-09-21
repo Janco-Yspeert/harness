@@ -3,5 +3,6 @@ dist/
 node_modules/
 spikes/
 package-lock.json
+methodologies/harness/trusted.jsonl
 AGENTS.md
 GOALS.md

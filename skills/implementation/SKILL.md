@@ -7,7 +7,7 @@ description:
 
 # Spike Implementation
 
-Contract version: 3
+Contract version: 4
 
 Answer one question: **does the frozen spike now exist in the repository?**
 
@@ -15,8 +15,10 @@ Answer one question: **does the frozen spike now exist in the repository?**
 
 Require and read the frozen `spike.md`, frozen `design-map.md`, public
 `eval-requirements.md`, repository instructions, and any public implementation
-feedback from earlier confirmed failures. Verify their recorded content
-identities and committed provenance before changing files.
+feedback bound from the exact earlier confirmed implementation failure. Verify
+their recorded content identities and committed provenance before changing
+files. Do not discover retry authority from mutable repository state or select a
+different skill/evaluator authority.
 
 An explicitly frozen process exception may omit named inputs. Do not infer an
 exception after work begins.
@@ -44,11 +46,10 @@ with evidence instead of quietly fixing them.
 
 ## Revision and retry
 
-Create a focused implementation checkpoint containing the complete candidate and
-its manifest entry. Stage intended paths explicitly, inspect the staged diff,
-and exclude private evaluation, promoted evaluation, Outcomes, and unrelated
-work. Push the commit before external verification when the branch is the
-handoff surface.
+Create a focused local implementation checkpoint containing the complete
+candidate and its manifest entry. Stage intended paths explicitly, inspect the
+staged diff, and exclude private evaluation, promoted evaluation, Outcomes, and
+unrelated work.
 
 On a confirmed implementation failure, consume only sanitized public feedback
 and the same frozen contract. Produce a new implementation commit. Do not ask
@@ -59,15 +60,14 @@ entry the final repository-content step. Record skill/version, inputs, output
 content identity, status, and statistics reliably available through immediately
 before that update. Capture a start baseline only for a directly measurable
 value; do not create a provisional entry, estimate metrics, or measure the entry
-itself. Preserve prior attempts. Then commit and push the checkpoint as required
-for evaluator handoff.
+itself. Preserve prior attempts. Then create the checkpoint and report its
+evidence for Harness validation.
 
 ## Completion
 
 Report branch, commit hash, changes, decisions, visible tests, checks, skipped
 checks, assumptions, and limitations. Do not claim independent evaluation has
 passed. The committed revision, not uncommitted residue, is the evaluator's
-input.
-
-For authority-enabled spikes, record `implementation-handoff` after the pushed
-candidate checkpoint; its commit and attempt are the canonical handoff.
+input. Report the exact produced local commit. Harness owns any later
+publication and the canonical `implementation-handoff`; failure of that host
+action does not rewrite a truthful `succeeded` implementation result.

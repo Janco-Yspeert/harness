@@ -1,18 +1,63 @@
 {
   "schemaVersion": 1,
   "workspaces": ["repository"],
-  "capabilities": ["repository-read", "repository-write", "local-computation"],
-  "forbiddenExposure": [],
+  "capabilities": [
+    "repository-read",
+    "repository-write",
+    "local-computation",
+    "git-inspect",
+    "git-commit"
+  ],
+  "forbiddenExposure": ["evaluator-private"],
   "protected": false,
   "inputs": [
     {
       "name": "candidate",
       "event": "implementation-handoff",
       "field": "commit"
+    },
+    {
+      "name": "brief",
+      "event": "brief-frozen",
+      "committed": true
+    },
+    {
+      "name": "design",
+      "event": "design-map-frozen",
+      "committed": true
+    },
+    {
+      "name": "history",
+      "path": "manifest.md"
+    },
+    {
+      "name": "asBuilt",
+      "event": "as-built-recorded",
+      "committed": true,
+      "optional": true
+    },
+    {
+      "name": "acceptance",
+      "event": "human-accepted",
+      "field": "candidate"
+    },
+    {
+      "name": "promotion",
+      "event": "promotion-recorded",
+      "field": "promotionIdentity",
+      "optional": true
+    },
+    {
+      "name": "processException",
+      "event": "process-exception-evidence-recorded",
+      "field": "evidenceIdentity",
+      "optional": true
     }
   ],
   "results": ["succeeded", "blocked", "refused", "failed"],
-  "methodology": {},
+  "methodology": {
+    "completionMode": ["STANDARD", "PROCESS_EXCEPTION"]
+  },
   "human": ["input", "approval", "root"],
-  "postconditions": ["outcome.md"]
+  "postconditions": ["outcome.md", "manifest.md"]
 }

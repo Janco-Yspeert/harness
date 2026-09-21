@@ -232,12 +232,28 @@ void test("TR1: configured Harness As-Built resolves from canonical PASS/promoti
     cpSync(`skills/${name}/SKILL.md`, join(f.root, "skills", name, "SKILL.md"));
   }
   f.project.policy = "methodologies/harness/policy.json";
-  f.event("brief-frozen");
-  f.event("design-map-frozen");
+  const item = join(f.root, "items", f.workflow);
+  writeFileSync(join(item, "spike.md"), "brief\n");
+  writeFileSync(join(item, "design-map.md"), "design\n");
+  json(join(item, "verification-result.json"), { result: "PASS" });
+  git(f.root, ["init", "-b", "candidate"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "canonical inputs"]);
+  const commit = git(f.root, ["rev-parse", "HEAD"]);
+  const artifact = (path: string) => ({
+    path,
+    commit,
+    identity: identity(readFileSync(join(item, path))),
+  });
+  f.event("brief-frozen", artifact("spike.md"));
+  f.event("design-map-frozen", artifact("design-map.md"));
   f.event("evaluation-prepared");
-  f.event("implementation-handoff", { commit: "a".repeat(40), attempt: 1 });
-  f.event("verification-finalized", { result: "PASS" });
-  f.event("promotion-recorded");
+  f.event("implementation-handoff", { commit, attempt: 1 });
+  f.event("verification-finalized", {
+    ...artifact("verification-result.json"),
+    result: "PASS",
+  });
+  f.event("promotion-recorded", { promotionIdentity: identity("promotion") });
   const local = join(f.root, "items", f.workflow, ".workflow");
   mkdirSync(local);
   json(join(local, "state.json"), {
@@ -857,6 +873,9 @@ void test("TR2/TR3: all eight bundled roles resolve pinned public inputs; damage
     join(item, "eval-requirements.md"),
     "public frozen requirements\n",
   );
+  writeFileSync(join(item, "manifest.md"), "public execution history\n");
+  writeFileSync(join(item, "verification-result.json"), '{"result":"PASS"}\n');
+  writeFileSync(join(item, "as-built.md"), "public reconstruction\n");
   const coverage = {
     evaluationRequirements: identity(
       readFileSync(join(item, "eval-requirements.md")),
@@ -894,6 +913,26 @@ void test("TR2/TR3: all eight bundled roles resolve pinned public inputs; damage
       identity: identity(readFileSync(join(item, required(path)))),
     });
   f.event("implementation-handoff", { commit, attempt: 1 });
+  f.event("verification-finalized", {
+    path: "verification-result.json",
+    commit,
+    identity: identity(readFileSync(join(item, "verification-result.json"))),
+    result: "PASS",
+    semanticResult: identity("verification-result"),
+  });
+  f.event("promotion-recorded", {
+    promotionIdentity: identity("promotion"),
+  });
+  f.event("as-built-recorded", {
+    path: "as-built.md",
+    commit,
+    identity: identity(readFileSync(join(item, "as-built.md"))),
+  });
+  f.event("human-accepted", { candidate: commit });
+  f.event("human-evaluator-correction-authorized", {
+    classification: "EVALUATOR_COVERAGE_DEFECT",
+    semanticResult: identity("human-evaluator-correction"),
+  });
   const k = new ExecutionKernel({
     project: f.project,
     executors: profiles,

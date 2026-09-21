@@ -7,7 +7,7 @@ description:
 
 # Spike Outcome
 
-Contract version: 3
+Contract version: 4
 
 Answer one question: **what did this spike establish and teach us?**
 
@@ -70,13 +70,16 @@ Include compact sections appropriate to the evidence:
 Record which material skill versions ran and whether entries were retrospective.
 State limitations plainly.
 
+Report the structured completion mode as exactly `STANDARD` or
+`PROCESS_EXCEPTION`. The latter never represents or implies evaluator `PASS`.
+
 After checking Outcome, make its `manifest.md` entry the final
 repository-content step. Record the result and statistics reliably available
 through immediately before that update. Capture a start baseline only for a
 directly measurable value; do not create a provisional entry, estimate metrics,
-or measure the entry itself. Commit Outcome with that final manifest update and
-push it to the spike branch.
-
-For authority-enabled spikes, require canonical `human-accepted` before
-recording `outcome-recorded`; a human rejection is historical evidence, never a
-successful Outcome path.
+or measure the entry itself. Create one local checkpoint containing Outcome and
+the final manifest update. Report the completion mode, artifact identity, and
+exact produced local commit. Harness validates and publishes the checkpoint and
+records `outcome-recorded`; the worker does not mutate canonical authority. A
+human rejection is historical evidence, never a successful Outcome path, and a
+later host-action failure does not rewrite the completed synthesis.

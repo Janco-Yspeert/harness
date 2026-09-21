@@ -13,6 +13,7 @@
     "start": "node src/index.ts",
     "dev": "node --watch src/index.ts",
     "workflow": "node tools/workflow.ts",
+    "methodology": "node tools/methodology.ts",
     "test": "node --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

@@ -8,17 +8,17 @@ description:
 
 # Brief Readiness
 
-Contract version: 3
+Contract version: 4
 
 Answer one question: **is this proposed brief ready to become a frozen
 implementation contract?**
 
 ## Inputs and authority
 
-Identify one `spikes/NNN-*/spike.md`. Read it completely, then inspect only the
-repository evidence needed to test its requirements: `AGENTS.md`, relevant
-product documentation, implementation, public APIs, visible tests, tooling, and
-selective prior public Outcomes.
+Consume the exact draft `spike.md` bound by the Role Grant. Read it completely,
+then inspect only the repository evidence needed to test its requirements:
+`AGENTS.md`, relevant product documentation, implementation, public APIs,
+visible tests, tooling, and selective prior public Outcomes.
 
 Do not inspect evaluator-private `eval-spec.md`, `.hidden-test/**`, or
 `.eval/**` material. Do not implement, evaluate, create a Design Map, or resolve
@@ -26,8 +26,10 @@ product decisions on the author's behalf.
 
 ## Review
 
-For authority-enabled spikes, record `brief-frozen` after the committed frozen
-brief checkpoint. A manifest is execution history, not canonical state.
+The worker does not freeze the brief or write canonical authority. Harness may
+record `brief-frozen` or `readiness-blocked` only after validating the Role
+Result and committed evidence. A manifest is execution history, not canonical
+state.
 
 Trace material requirements to repository contracts. Report only issues that
 change scope, implementation, fair evaluation, feasibility, lifecycle,
@@ -58,8 +60,8 @@ If the verdict is **Not ready to freeze**:
    next monotonically numbered `preliminary/NNN/` directory;
 2. never overwrite an earlier preliminary directory;
 3. update the spike manifest when one exists; and
-4. commit and push the blocked evidence before materially revising the live
-   brief when operating in the canonical workflow.
+4. create the blocked-evidence local checkpoint before materially revising the
+   live brief when operating in the canonical workflow.
 
 The live root `spike.md` remains the working copy. If the verdict is passing, do
 not duplicate it under `preliminary/`; retain it at the root with its feedback.
@@ -73,6 +75,11 @@ End with exactly one:
 - **Ready after minor clarification**
 - **Not ready to freeze**
 
+The machine verdict is binary: both **Ready to freeze** and **Ready after minor
+clarification** report `READY`; the latter retains each clarification as a
+non-blocking finding. **Not ready to freeze** reports `NOT_READY`. A completed
+review has semantic disposition `succeeded` for either machine verdict.
+
 State review limitations, files changed, and checks run.
 
 As the final repository-content step, append the run to `manifest.md` when the
@@ -80,5 +87,8 @@ revised workflow applies. Include this skill's name/version, inputs, result,
 outputs, and statistics reliably available through immediately before the
 manifest update. Capture a start baseline only when needed for a directly
 measurable statistic. Do not append a provisional start entry, estimate metrics,
-or record the manifest update itself. Then commit/push the checkpoint where the
-workflow requires it and return the verdict.
+or record the manifest update itself. Create one local checkpoint containing
+`feedback.md`, the conditional preliminary snapshot, and `manifest.md`. Report
+the semantic Role Result, the artifacts produced, and the exact produced local
+commit. Publication is a later Harness-owned host action; its outcome cannot
+rewrite the truthful review result.

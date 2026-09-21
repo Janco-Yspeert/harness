@@ -1,7 +1,13 @@
 {
   "schemaVersion": 1,
   "workspaces": ["repository", "evaluation"],
-  "capabilities": ["repository-read", "repository-write", "local-computation"],
+  "capabilities": [
+    "repository-read",
+    "repository-write",
+    "local-computation",
+    "git-inspect",
+    "git-commit"
+  ],
   "forbiddenExposure": [],
   "protected": true,
   "inputs": [
@@ -38,10 +44,11 @@
     "classification": [
       "IMPLEMENTATION_FAILURE",
       "EVALUATOR_DEFECT",
-      "SPECIFICATION_DEFECT",
+      "SPECIFICATION_AMBIGUITY",
+      "SPECIFICATION_DRIFT",
       "INFRASTRUCTURE_FAILURE"
     ]
   },
   "human": ["input", "approval", "root"],
-  "postconditions": []
+  "postconditions": ["verification-result.json", "manifest.md"]
 }
