@@ -1,15 +1,18 @@
 {
   "spike": "014b-methodology-contract-migration-safe-skill-evolution",
-  "evaluationRequirements": "sha256:f66af67075b5b91aa522397fc2b9b16f0577b917bdba31111af7dc04f9f25c47",
+  "evaluationRequirements": "sha256:cdb8c0506c23c6b1c101df72d629f298a229d7de3b0a920564d37e2059cad350",
   "readiness": {
     "skill": "evaluator",
     "skillVersion": 11,
-    "evaluatorRevision": "001",
-    "evaluatorRevisionIdentity": "sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31",
-    "privateInventoryIdentity": "sha256:136d0b7bb1b386ecf8175d8864a43a3f8d5ffd18e6d016e89397c8711c1127ce",
-    "validatorResultBinding": "sha256:623ad03c2a97064be21bd10ce166813d07af8ab301152b60d632c89835f8209d",
+    "evaluatorRevision": "002",
+    "evaluatorRevisionIdentity": "sha256:ee4107a51a9e6f2e4767a06d02cca0ff2dd061258bbfc521569f61cae112b5fd",
+    "privateInventoryIdentity": "sha256:cee0b42921a428099deeff3d452ba06523caed45408a9a7e58b124991ba7425b",
+    "validatorResultBinding": "sha256:53b4b29e0fbd1bb4f5e294e9c288dfa37ebbcbce9753e99ad64946b922dab41c",
     "integrityValidation": "PASS",
-    "criterionRecordCount": 18
+    "criterionRecordCount": 18,
+    "priorRevision": "001",
+    "priorRevisionIdentity": "sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31",
+    "repairTrigger": "spikes/014b-methodology-contract-migration-safe-skill-evolution/post-verification-review.md (committed 08a138d)"
   },
   "criteria": [
     {
@@ -25,8 +28,8 @@
       "frozenAuthority": "spike.md AC02; \"§1\"",
       "mode": "COMPOSITE",
       "required": true,
-      "procedures": ["E1", "M-A"],
-      "sufficiency": "E1 statically checks the contract-level dimensions of the fidelity matrix (git capabilities, workspaces, forbiddenExposure, methodology enums) against the final committed contracts; M-A confirms the frozen matrix itself leaves no unresolved finding (every row carries MATCH/SKILL_MUST_CHANGE/CONTRACT_MUST_CHANGE/KERNEL_SUPPORT_REQUIRED/INTENTIONALLY_ARTIFACT_ONLY)."
+      "procedures": ["E1", "M-A", "E7"],
+      "sufficiency": "E1 statically checks the contract-level dimensions of the fidelity matrix (git capabilities, workspaces, forbiddenExposure, methodology enums) against the final committed contracts; E7 (added revision 002, post-verification repair) statically checks that no role contract's inputs[].event references an event nothing can produce, closing a cross-file (contract vs. policy) consistency gap the review's D05 identified; M-A confirms the frozen matrix itself leaves no unresolved finding (every row carries MATCH/SKILL_MUST_CHANGE/CONTRACT_MUST_CHANGE/KERNEL_SUPPORT_REQUIRED/INTENTIONALLY_ARTIFACT_ONLY)."
     },
     {
       "id": "AC03",
@@ -105,16 +108,16 @@
       "frozenAuthority": "spike.md AC12; \"§6 Coherent methodology version\", §7",
       "mode": "COMPOSITE",
       "required": true,
-      "procedures": ["C-C"],
-      "sufficiency": "C-C requires the implementation's own visible npm test suite to demonstrate one deterministic, stable methodology identity binding policy/contracts/skills/validators, corroborated by manual inspection of the implementation-identified entry point; the mechanism's storage/representation is explicit Design Map implementation freedom, so no pre-implementation hidden-test seam is justified beyond that obligation."
+      "procedures": ["C-C", "E6"],
+      "sufficiency": "C-C requires the implementation's own visible npm test suite to demonstrate one deterministic, stable methodology identity binding policy/contracts/skills/validators, corroborated by manual inspection of the implementation-identified entry point; the mechanism's storage/representation is explicit Design Map implementation freedom, so no pre-implementation hidden-test seam is justified beyond that obligation. E6 (added revision 002, post-verification repair, bounded per explicit human clarification to the minimal structural check) statically confirms promotion rejects a candidate whose manifest does not reconstruct from its own claimed revision, using only the already-exported public API."
     },
     {
       "id": "AC13",
       "frozenAuthority": "spike.md AC13; \"§7 candidate\", §8",
       "mode": "COMPOSITE",
       "required": true,
-      "procedures": ["C-C"],
-      "sufficiency": "C-C's manual-inspection component confirms editing any skill (including evaluator) produces a candidate identity that cannot alter the identity already bound to a running workflow grant, reviewed against the implementation-identified mechanism rather than a pre-authored hidden test that would have to invent its shape."
+      "procedures": ["C-C", "E6"],
+      "sufficiency": "C-C's manual-inspection component confirms editing any skill (including evaluator) produces a candidate identity that cannot alter the identity already bound to a running workflow grant, reviewed against the implementation-identified mechanism rather than a pre-authored hidden test that would have to invent its shape. E6 (added revision 002) covers the minimal revision/manifest-binding component only; broader exact-candidate promotion-authority binding beyond non-self-reference (the review's D02) was considered and not added as a requirement, per explicit human bootstrap clarification that it is not independently and unambiguously required by frozen text."
     },
     {
       "id": "AC14",
@@ -138,7 +141,7 @@
       "mode": "PUBLIC_REGRESSION",
       "required": true,
       "procedures": ["C-C"],
-      "sufficiency": "C-C requires the implementation's own visible test suite to demonstrate a bounded disposable exercise scenario against a candidate without granting it trusted workflow authority or publishing; the scenario's exact shape is implementation freedom bounded by frozen brief §9."
+      "sufficiency": "C-C requires the implementation's own visible test suite to demonstrate a bounded disposable exercise scenario against a candidate without granting it trusted workflow authority or publishing; the scenario's exact shape is implementation freedom bounded by frozen brief §9. Strengthened under revision 002 (post-verification repair, bounded per explicit human clarification): the exercise scenario must truthfully reference something genuinely derived from the specific candidate's own content, not only a generic environment-capability proof indistinguishable across any candidate — full role/workflow simulation is explicitly not required."
     },
     {
       "id": "AC17",

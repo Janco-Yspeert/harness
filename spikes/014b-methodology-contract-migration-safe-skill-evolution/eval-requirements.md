@@ -21,6 +21,19 @@
   changes only the trusted identity used by *future* workflow grants, and
   does not retroactively alter a workflow already bound to the prior trusted
   identity.
+  - **Strengthened under evaluator revision 002 (post-verification repair;
+    see `evaluation/revisions/002/eval-spec.md` R21/R23 once promoted), each
+    bounded per explicit human bootstrap clarification to the smallest
+    structural/truthfulness check rather than adversarial-hardening
+    machinery:** additionally, `promote` must reject a candidate whose
+    supplied manifest does not reconstruct from its own claimed revision
+    (the minimal check needed to preserve one coherent methodology
+    identity); and `exercise` must truthfully perform its already-required
+    bounded compatibility/smoke-test function by demonstrably referencing
+    something genuinely derived from the specific candidate's own content,
+    not only a generic environment-capability proof indistinguishable
+    across any candidate — full role/workflow simulation is explicitly not
+    required.
   - Reason: frozen Design Map "Implementation freedom" fixes the command
     names and storage layout of these five operations as implementation
     freedom ("Command names and storage layout are implementation freedom")
@@ -114,6 +127,29 @@
   frozen `design-map.md`/`bootstrap/authority.md` (committed
   `f141bb0226a6d15c90b4b895ae0b7fdd00bd78f7`), and this `eval-requirements.md`.
   Existing behavior and tests are evidence, not automatic requirements.
+- **A6** *(added under evaluator revision 002)* - Evaluator revision 002 is
+  a post-verification repair triggered by the human review
+  `post-verification-review.md` (committed `08a138d`), which raised seven
+  findings (D01-D07). Mid-repair, an explicit human bootstrap clarification
+  fixed the scope: findings do not automatically become new mandatory
+  criteria; only a finding demonstrating failure to satisfy an
+  already-frozen, unambiguous requirement may strengthen coverage; and
+  Harness's threat model is cooperative fallible agents, not adversarial
+  hardening. Under that clarification, only D01 and D03 strengthened TR1
+  (each bounded to the smallest structural/truthfulness check), and only
+  D05 became a new requirement (TR2's existing fidelity-reconciliation
+  scope already covers it; it is independently re-checked via a new hidden
+  test). D02, D04, D06, and D07 were examined and **not** incorporated as
+  blocking requirements: none is independently and unambiguously required
+  by the frozen `spike.md`/`design-map.md`, so each is recorded only as a
+  non-blocking design observation. This repair's own first draft had
+  briefly added D02 and D06 as blocking requirements before the
+  clarification arrived; both were withdrawn before this evaluator revision
+  was frozen — the private `eval-spec.md` records this transparently as
+  repair overreach that was caught and corrected, not as authority.
+  Verification attempt 001's `PASS` result remains immutable historical
+  fact and is not retroactively altered by this revision; it remains bound
+  to evaluator revision 001.
 
 ## Blocking Questions
 

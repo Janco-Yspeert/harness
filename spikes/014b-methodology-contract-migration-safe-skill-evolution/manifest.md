@@ -236,3 +236,76 @@
   `evaluation/**` files) is reported to the human for bootstrap-authorized
   publication.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 005 — Evaluator Repair (revision 001 -> 002)
+
+- Skill: `evaluator` v11, executed under the explicit Spike 014b bootstrap
+  exception. Sole evaluator instruction authority: the frozen snapshot at
+  `../harness-014b-authority/skills/evaluator/SKILL.md`
+  (`sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`),
+  re-confirmed byte-identical at repair time.
+- Trigger: human post-verification review
+  `post-verification-review.md` (committed `08a138d`), raising findings
+  D01-D07 against implementation commit
+  `0d000d94e22016381f0642905b731474c4dd0afe`. Mid-repair, an explicit human
+  bootstrap clarification fixed the scope: findings do not automatically
+  become new mandatory criteria; only findings demonstrating failure to
+  satisfy an already-frozen, unambiguous requirement may strengthen
+  coverage; Harness's threat model is cooperative fallible agents, not
+  adversarial hardening.
+- Result: repaired. Source revision `001`
+  (`sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31`)
+  preserved unchanged, byte-for-byte, at `.eval/revisions/001/`. Corrected
+  revision `002`
+  (`sha256:ee4107a51a9e6f2e4767a06d02cca0ff2dd061258bbfc521569f61cae112b5fd`)
+  frozen after structural integrity validation PASSED with 0 diagnostics
+  (18 criteria / 10 procedures).
+- Disposition of findings: **D05 accepted** (new requirement, new case E7 —
+  a material existing-contract defect, directly within scope). **D01
+  accepted, bounded** (new requirement, new case E6 — minimal structural
+  revision/manifest-binding check only, not adversarial anti-forgery).
+  **D03 accepted, bounded** (existing case C-C's decision rule lightly
+  strengthened — truthfulness of exercise's already-required smoke-test
+  function only, not full role/workflow simulation). **D02, D04, D06, D07
+  not accepted** as blocking requirements — recorded as non-blocking design
+  observations, since none is independently and unambiguously required by
+  the frozen `spike.md`/`design-map.md`.
+- Repair overreach identified and corrected before freeze: this repair's
+  own first draft briefly added D02 and D06 as blocking requirements
+  (labeled R22 and R24) before the human clarification arrived; both were
+  withdrawn before structural integrity validation ran and before anything
+  was committed. Neither exists in the frozen revision 002 bundle. Recorded
+  transparently in the private repair record per explicit instruction not
+  to freeze overreach as authority.
+- New hidden tests: `promotion-binds-exact-revision.test.ts` (E6, D01) uses
+  only the already-exported `methodology-evolution.ts` public API — no new
+  field or seam. `contract-event-producers-bound.test.ts` (E7, D05) is
+  purely structural — cross-references existing `inputs[].event` and
+  `outcomes[].transition` fields already present in the public schema.
+- Verification against the unchanged implementation commit (diagnostic,
+  not a new verify attempt — attempt 001 remains bound to revision 001):
+  E6 and E7 run via `node --test` against commit `0d000d94...` **correctly
+  FAIL**, proving the repaired evaluator now falsifies real,
+  previously-undetected gaps without any change to the implementation
+  target. E1-E5 re-run against the same commit remain 16/16 passing,
+  confirming the repair did not alter or weaken revision 001's existing
+  coverage.
+- Checks: `tools/evaluator-integrity.ts` structural validation (PASS, 0
+  diagnostics); both new hidden test files typecheck with 0 errors and are
+  clean under `eslint`/`prettier --check`; positive control for E7
+  (temporarily wiring a matching policy outcome, then reverting) confirmed
+  discriminating power; `git status --porcelain` confirmed clean after
+  every probe/control.
+- Output: `eval-requirements.md`, `coverage-map.json` (public, updated);
+  private `eval-spec.md`, `case-manifest.json`, `.hidden-test/manifest.json`
+  (updated), two new hidden tests, `.eval/freeze.json` (revision 002),
+  `.eval/repairs/001-repair-record.md`, and `.eval/revisions/001/` (archive
+  of the prior revision) under the Spike 014b private evaluator workspace.
+- Not performed: verification attempt 001's `PASS` result was not altered
+  or invalidated (it remains immutable historical fact, bound to revision
+  001); no new verification attempt was allocated; candidate-methodology
+  trust promotion was not touched.
+- Publication: per the explicit bootstrap authority, this run does not
+  push. The exact local checkpoint is reported to the human for
+  bootstrap-authorized publication.
+- Measurement cutoff: immediately before this manifest update.
