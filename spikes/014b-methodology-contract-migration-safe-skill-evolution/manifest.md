@@ -141,3 +141,60 @@
   The exact local checkpoint is reported to the human for bootstrap-authorized
   publication.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 003 — Evaluator Verification attempt 1
+
+- Skill: `evaluator` v11, executed under the explicit Spike 014b bootstrap
+  exception. Sole evaluator instruction authority: the frozen snapshot at
+  `../harness-014b-authority/skills/evaluator/SKILL.md`
+  (`sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`),
+  re-confirmed byte-identical at verification time. The candidate's own
+  migrated `skills/evaluator/SKILL.md` (v12) was evaluated as content, never
+  used as operating authority.
+- Inputs: implementation commit
+  `0d000d94e22016381f0642905b731474c4dd0afe` (working tree clean; not partly
+  represented by uncommitted changes). All frozen inputs (`spike.md`,
+  `design-map.md`, `bootstrap/authority.md`, `eval-requirements.md`, private
+  `eval-spec.md`/`case-manifest.json`/`.hidden-test/**`, evaluator revision
+  `001` `sha256:63ce677b...d282d1b31`) re-hashed at verify time and matched
+  `.eval/freeze.json` exactly; no specification drift.
+- Result: **PASS**. All 18 required criteria (AC01-AC18) satisfied across
+  all 8 frozen evaluation procedures. 16/16 mandatory hidden-test
+  sub-assertions passed (E1-E5); the frozen manual-review procedure (M-A)
+  held via unchanged `design-map.md` content identity; the frozen
+  manual-review procedure (M-B) held on inspection of the final candidate's
+  6 governed-role skills and `evaluator-repair.json`; the frozen composite
+  procedure (C-C) held via the implementation's own
+  `test/methodology-evolution.test.ts` plus this evaluation's manual
+  inspection of `src/methodology-evolution.ts`/`tools/methodology.ts`, and
+  independent direct-CLI reproduction against the real repository.
+- Regression checks (independently run by the evaluator, not merely trusted
+  from the implementation's report): `npm test` 107/107; `npm run
+  typecheck` clean; `npm run lint` clean; `npm run format:check` clean
+  (including the two files flagged during preparation, now also clean);
+  `git diff --check` clean.
+- Diagnostic probes (read-only, non-authoritative, recorded but not
+  affecting the result): direct CLI reproduction of `candidate`/`check`/
+  `exercise` against the real repository reproduced the implementation's
+  reported candidate methodology identity
+  (`sha256:d1b50f5633911a69a81071e6cf316056015e2c78223f8ca6349362713dbb1324`)
+  and trusted identity exactly, with `check` valid and `exercise` disposable/
+  unpublished/trust-preserving; a self-evaluation promotion probe against
+  the real `methodologies/harness/trusted.jsonl` was correctly rejected
+  (`candidate must be evaluated by the current trusted methodology`), file
+  confirmed unmodified afterward. The implementation's reported sandbox
+  `EPERM` on direct CLI execution did not reproduce in this evaluation
+  environment and falls outside the frozen evidentiary requirement (visible
+  `npm test` evidence, which passed in both reports); it was not classified
+  as an evaluator or implementation defect.
+- Evaluator integrity: the frozen evaluation was not modified during
+  verification; no specification drift; no evaluator defects discovered.
+- Per this bootstrap request's explicit instruction, evaluator-owned
+  promotion (of evaluation evidence to `evaluation/**`, and any promotion of
+  the candidate methodology to trusted status) was **not** performed and
+  awaits separate explicit authorization.
+- Publication: per the explicit bootstrap authority, this run does not
+  push. The exact local checkpoint (this manifest update plus the private
+  attempt ledger/result under the Spike 014b private evaluator workspace)
+  is reported to the human for bootstrap-authorized publication.
+- Measurement cutoff: immediately before this manifest update.
