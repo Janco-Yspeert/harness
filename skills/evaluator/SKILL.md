@@ -15,7 +15,7 @@ compatibility:
 
 # Evaluator
 
-Contract version: 12
+Contract version: 13
 
 Mode: `$mode`
 
@@ -449,9 +449,12 @@ incompatible authority change stops at explicit human bootstrap authority.
 
 Repair is separate from `prepare` and `verify`. It may begin only from immutable
 authority evidence: a finalized verification attempt classified
-`EVALUATOR_DEFECT`, or a closed human-rejected correction cycle containing
-`EVALUATOR_COVERAGE_DEFECT`. An observation, chat comment, or desire to tidy an
-evaluator is not authority. Refuse it.
+`EVALUATOR_DEFECT`, a closed human-rejected correction cycle containing
+`EVALUATOR_COVERAGE_DEFECT`, or an explicitly recorded human correction-cycle
+authority classified `IMPLEMENTATION_AND_EVALUATOR_DEFECT` that binds the exact
+canonical PASS and demonstrated coverage defect. The latter opens a distinct
+successor cycle; it never reclassifies or rewrites that PASS. An observation,
+chat comment, or desire to tidy an evaluator is not authority. Refuse it.
 
 Read the frozen brief, Design Map, public `eval-requirements.md`, source
 revision, and authoritative defect trigger. Preserve the source revision and its

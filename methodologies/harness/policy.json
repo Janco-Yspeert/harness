@@ -148,6 +148,25 @@
                     }
                   }
                 ]
+              },
+              {
+                "all": [
+                  {
+                    "event": "human-correction-cycle-authorized",
+                    "current": true,
+                    "latest": true,
+                    "fields": {
+                      "classification": "IMPLEMENTATION_AND_EVALUATOR_DEFECT"
+                    }
+                  },
+                  {
+                    "not": {
+                      "event": "evaluator-repair-recorded",
+                      "current": true,
+                      "after": "human-correction-cycle-authorized"
+                    }
+                  }
+                ]
               }
             ]
           }

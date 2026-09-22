@@ -44,7 +44,8 @@
       "name": "repairTrigger",
       "event": [
         "verification-finalized",
-        "human-evaluator-correction-authorized"
+        "human-evaluator-correction-authorized",
+        "human-correction-cycle-authorized"
       ],
       "field": "semanticResult"
     }
