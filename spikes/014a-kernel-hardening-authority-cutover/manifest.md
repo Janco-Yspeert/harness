@@ -66,3 +66,24 @@
 - Restricted evaluator material inspected: current Spike 014a private evaluator
   workspace only.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 004 — Evaluator preparation correction
+
+- Skill: `evaluator` v12,
+  `sha256:ab89688a2016644d03a6a05bb37f8f18a82d77aba079788b0d6b9e79e8f8c29d`.
+- Inputs: frozen `spike.md`
+  `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`
+  and frozen `design-map.md`
+  `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`.
+- Result: succeeded; evaluator revision `002`
+  `sha256:33cc04f03c0b8fede97604a20be75fd97a3db103c15d18286b40cd1aef7811b4`
+  preserves revision `001` and its acceptance semantics while correcting the
+  public readiness binding for `eval-requirements.md`.
+- Public outputs: unchanged `eval-requirements.md`
+  `sha256:ccc99e8ea39dd9cfccbf6fa920c9bb7b152beb25e4091dff6c6bc80336baab65`
+  and corrected `coverage-map.json`
+  `sha256:6a2e044e461dcc86cbcdd54b7e88df7bbf3a7dbf93cfbdfa3d1dfa4730919a45`.
+- Checks: deterministic pre-freeze integrity validation passed: 23 criteria,
+  19 procedures, complete bidirectional traceability, and public/private
+  readiness consistency. No candidate implementation was inspected or run.
+- Measurement cutoff: immediately before this manifest update.

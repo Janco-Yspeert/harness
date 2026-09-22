@@ -1,10 +1,16 @@
 {
   "schemaVersion": 1,
+  "evaluationRequirements": "sha256:ccc99e8ea39dd9cfccbf6fa920c9bb7b152beb25e4091dff6c6bc80336baab65",
   "readiness": {
-    "evaluatorRevision": "001",
-    "privateInventoryIdentity": "sha256:63f29aaad17b8fc5cfe57a7e66c181e2e139c994083bb324fb88439e089be792",
-    "validatorResultBinding": "sha256:f5b005952d12e6d5c8599212d76b5e0b8c0b462cca476f902d90bbfcf8a42dd9",
-    "integrityValidation": "PASS"
+    "skill": "evaluator",
+    "skillVersion": 12,
+    "evaluatorRevision": "002",
+    "privateInventoryIdentity": "sha256:bdc540381d176a312593089c382195e38ce67fc456abdcd5096e9218e8d85d21",
+    "validatorResultBinding": "sha256:db8eff9458bd2e3674a764e03a39e71271193df98efe86315cd7bc1f318519f6",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 23,
+    "priorRevision": "001",
+    "priorRevisionIdentity": "sha256:d44a06c755bc57ec14b976c48f9bfbda2e04c7eb795c855666c2131e8f2aaceb"
   },
   "criteria": [
     {
