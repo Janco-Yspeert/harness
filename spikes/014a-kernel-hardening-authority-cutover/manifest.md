@@ -112,3 +112,22 @@
   `npm run format:check`; and `npm test` (113 passing, 0 failing).
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 006 — Evaluator verification
+
+- Skill: `evaluator` v12,
+  `sha256:ab89688a2016644d03a6a05bb37f8f18a82d77aba079788b0d6b9e79e8f8c29d`.
+- Inputs: candidate `git:42925c4f0e9028e9647a4d35b27ac1e4df4aed8a`, frozen
+  `spike.md` `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`,
+  Design Map `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  prepared coverage `sha256:6a2e044e461dcc86cbcdd54b7e88df7bbf3a7dbf93cfbdfa3d1dfa4730919a45`,
+  and evaluator revision `002`.
+- Result: `FAIL` / `IMPLEMENTATION_FAILURE`. AC11 failed: ordinary attached
+  continuation can grant a supervisor a worker role without explicit inline or
+  configured fallback authority.
+- Public outputs: `verification-result.json` and
+  `verification-feedback.md`.
+- Checks: frozen input and private-bundle identity verification; required
+  public `npm test` regression (113 passing, 0 failing); and a bounded
+  supported authority-boundary proof.
+- Measurement cutoff: immediately before this manifest update.
