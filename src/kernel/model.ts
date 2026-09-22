@@ -148,6 +148,23 @@ export interface WorkflowGrant {
   inline?: boolean;
   executor?: { model?: string; reasoning?: string };
 }
+export interface HumanEvaluatorCorrectionAuthority {
+  schemaVersion: 1;
+  id: string;
+  project: string;
+  workflow: string;
+  origin: "human";
+  classification: "EVALUATOR_COVERAGE_DEFECT";
+  sourceEvaluatorRevision: string;
+  attempt: number;
+  execution: string;
+  rejectionEvent: string;
+  evidenceCommit: string;
+  evidencePath: string;
+  evidenceIdentity: string;
+  reason: string;
+  semanticResult: string;
+}
 export interface ExecutorProfile {
   id: string;
   provider: string;

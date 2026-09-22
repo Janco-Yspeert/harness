@@ -31,6 +31,7 @@ import type {
   ExecutorSelector,
   HostActionRequest,
   HostActionResult,
+  HumanEvaluatorCorrectionAuthority,
   HumanRequest,
   LedgerEvent,
   MethodologyDefinition,
@@ -197,6 +198,131 @@ export class ExecutionKernel {
       }
       this.#append(workflow, "kernel.workflow-grant", value);
       return value;
+    });
+  }
+  authorizeEvaluatorCorrection(
+    workflow: string,
+    request: {
+      classification: string;
+      sourceEvaluatorRevision: string;
+      attempt: number;
+      execution: string;
+      rejectionEvent: string;
+      evidenceCommit: string;
+      evidencePath: string;
+      evidenceIdentity: string;
+      reason: string;
+    },
+  ): HumanEvaluatorCorrectionAuthority {
+    return this.#transaction(workflow, () => {
+      if (
+        request.classification !== "EVALUATOR_COVERAGE_DEFECT" ||
+        !/^\d{3}$/.test(request.sourceEvaluatorRevision) ||
+        !Number.isSafeInteger(request.attempt) ||
+        request.attempt < 1 ||
+        !request.execution ||
+        !request.rejectionEvent ||
+        !request.evidenceCommit ||
+        !request.evidencePath ||
+        !/^sha256:[a-f0-9]{64}$/.test(request.evidenceIdentity) ||
+        !request.reason
+      )
+        throw new Error("invalid evaluator correction authority");
+      const events = this.events(workflow);
+      if (
+        events.some(
+          (event) =>
+            event.transition === "human-evaluator-correction-authorized" &&
+            event.evidence.execution === request.execution &&
+            event.evidence.attempt === request.attempt,
+        )
+      )
+        throw new Error("evaluator correction authority already recorded");
+      const allocation = events.find(
+        (event) =>
+          event.transition === "verification-allocated" &&
+          event.evidence.execution === request.execution &&
+          event.evidence.attempt === request.attempt &&
+          event.evidence.evaluatorRevision === request.sourceEvaluatorRevision,
+      );
+      const rejection = events.find(
+        (event) =>
+          event.id === request.rejectionEvent &&
+          event.transition === "kernel.process" &&
+          event.evidence.execution === request.execution,
+      );
+      const update = rejection ? object(rejection.evidence.update) : {};
+      if (!allocation || update.process !== "failed")
+        throw new Error(
+          "evaluator correction authority lacks exact rejected verification evidence",
+        );
+      const roleGrant = allocation.evidence.roleGrant;
+      const allocatedGrant = events
+        .filter((event) => event.transition === "kernel.allocation")
+        .map((event) => object(event.evidence.grant))
+        .find((grant) => grant.id === roleGrant);
+      const allocationKey =
+        typeof allocation.evidence.allocationKey === "string"
+          ? allocation.evidence.allocationKey
+          : allocatedGrant?.allocationKey;
+      if (typeof allocationKey !== "string")
+        throw new Error("verification allocation identity is unavailable");
+      const directory = required(this.project.workflows[workflow]).directory;
+      const artifact = inside(
+        resolve(this.project.root, directory),
+        request.evidencePath,
+      );
+      let bytes: Buffer;
+      try {
+        bytes = execFileSync(
+          "git",
+          [
+            "show",
+            `${request.evidenceCommit}:${relative(this.project.root, artifact)}`,
+          ],
+          { cwd: this.project.root },
+        );
+      } catch {
+        throw new Error("evaluator correction evidence commit is unavailable");
+      }
+      if (identity(bytes) !== request.evidenceIdentity)
+        throw new Error("evaluator correction evidence identity mismatch");
+      const result = object(JSON.parse(bytes.toString("utf8")));
+      if (
+        result.attempt !== String(request.attempt).padStart(3, "0") ||
+        result.allocationKey !== allocationKey ||
+        result.commit !== allocation.evidence.commit ||
+        result.evaluatorRevision !== request.sourceEvaluatorRevision
+      )
+        throw new Error(
+          "evaluator correction artifact does not bind the rejected allocation",
+        );
+      const decision = {
+        schemaVersion: 1 as const,
+        id: randomUUID(),
+        project: this.project.id,
+        workflow,
+        origin: "human" as const,
+        classification: "EVALUATOR_COVERAGE_DEFECT" as const,
+        sourceEvaluatorRevision: request.sourceEvaluatorRevision,
+        attempt: request.attempt,
+        execution: request.execution,
+        rejectionEvent: request.rejectionEvent,
+        evidenceCommit: request.evidenceCommit,
+        evidencePath: request.evidencePath,
+        evidenceIdentity: request.evidenceIdentity,
+        reason: request.reason,
+      };
+      const authority: HumanEvaluatorCorrectionAuthority = {
+        ...decision,
+        semanticResult: contentId(decision),
+      };
+      this.#append(
+        workflow,
+        "human-evaluator-correction-authorized",
+        authority,
+      );
+      return authority;
     });
   }
   inspect(

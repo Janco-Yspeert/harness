@@ -392,6 +392,95 @@ void test("014a: inline adoption is a separate, explicit grant capability", (t) 
   );
 });
 
+void test("014a: human evaluator correction authority binds rejected verification evidence", async (t) => {
+  const f = fixture(t, "014a-evaluator-correction-authority");
+  writeFileSync(
+    join(f.root, "items", f.workflow, "verification-result.json"),
+    `${JSON.stringify({
+      schemaVersion: 1,
+      attempt: "004",
+      allocationKey: "sha256:attempt-004",
+      commit: "candidate-004",
+      evaluatorRevision: "002",
+      result: "PASS",
+    })}\n`,
+  );
+  git(f.root, ["init", "-b", "candidate"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "preserve rejected evaluator result"]);
+  const evidenceCommit = git(f.root, ["rev-parse", "HEAD"]);
+  const evidenceIdentity = identity(
+    readFileSync(join(f.root, "items", f.workflow, "verification-result.json")),
+  );
+  f.event("verification-allocated", {
+    execution: "verify-004",
+    roleGrant: "role-grant-004",
+    allocationKey: "sha256:attempt-004",
+    commit: "candidate-004",
+    evaluatorRevision: "002",
+    attempt: 4,
+    cycle: "001",
+  });
+  const rejected = f.event("kernel.process", {
+    execution: "verify-004",
+    update: {
+      process: "failed",
+      failure: "provider process failed",
+      attention: "terminal",
+    },
+  });
+
+  const request = {
+    classification: "EVALUATOR_COVERAGE_DEFECT",
+    sourceEvaluatorRevision: "002",
+    attempt: 4,
+    execution: "verify-004",
+    rejectionEvent: rejected.id,
+    evidenceCommit,
+    evidencePath: "verification-result.json",
+    evidenceIdentity,
+    reason: "AC03 valid PASS coverage omitted",
+  };
+  const host = await startHarnessHost(0, {
+    governed: { project: f.project, executors: profiles, rootToken },
+  });
+  t.after(() => host.close());
+  const unauthorized = await fetch(
+    `${host.url}/governed/work-item/evaluator-corrections`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(request),
+    },
+  );
+  assert.equal(unauthorized.status, 403);
+  const { authority } = await api<{
+    authority: ReturnType<ExecutionKernel["authorizeEvaluatorCorrection"]>;
+  }>(host.url, "evaluator-corrections", request);
+
+  assert.equal(authority.classification, "EVALUATOR_COVERAGE_DEFECT");
+  assert.equal(authority.sourceEvaluatorRevision, "002");
+  assert.equal(authority.attempt, 4);
+  assert.equal(authority.execution, "verify-004");
+  assert.equal(authority.rejectionEvent, rejected.id);
+  assert.equal(authority.evidenceIdentity, evidenceIdentity);
+  assert.match(authority.semanticResult, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(
+    f.kernel.events(f.workflow).at(-1)?.transition,
+    "human-evaluator-correction-authorized",
+  );
+  const duplicate = await fetch(
+    `${host.url}/governed/work-item/evaluator-corrections`,
+    {
+      method: "POST",
+      headers: auth,
+      body: JSON.stringify({ ...request, reason: "duplicate" }),
+    },
+  );
+  assert.equal(duplicate.status, 409);
+  assert.match(await duplicate.text(), /already recorded/);
+});
+
 void test("TR1: configured Harness As-Built resolves from canonical PASS/promotion despite blocked publication and absent/stale local history", (t) => {
   const f = fixture(t, "canonical");
   cpSync("methodologies", join(f.root, "methodologies"), { recursive: true });

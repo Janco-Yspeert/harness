@@ -150,6 +150,27 @@ export class GovernedHost {
         );
         return;
       }
+      if (operation === "evaluator-corrections") {
+        needRoot();
+        if (get)
+          throw new Error("evaluator correction authority requires POST");
+        if (typeof body.attempt !== "number")
+          throw new Error("evaluator correction attempt is required");
+        send(201, {
+          authority: this.kernel.authorizeEvaluatorCorrection(workflow, {
+            classification: text(body.classification),
+            sourceEvaluatorRevision: text(body.sourceEvaluatorRevision),
+            attempt: body.attempt,
+            execution: text(body.execution),
+            rejectionEvent: text(body.rejectionEvent),
+            evidenceCommit: text(body.evidenceCommit),
+            evidencePath: text(body.evidencePath),
+            evidenceIdentity: text(body.evidenceIdentity),
+            reason: text(body.reason),
+          }),
+        });
+        return;
+      }
       if (operation === "sessions") {
         if (!get) {
           needRoot();
