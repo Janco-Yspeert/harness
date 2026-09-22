@@ -144,6 +144,7 @@ function fixture(t: TestContext, name = "unit") {
       continuation: true,
       delegation: ["attached", "spawned"],
       maxAllocations: 8,
+      inline: true,
     });
   const event = (transition: string, evidence: object = {}) =>
     appendLedger(kernel.path(workflow), transition, evidence);
@@ -302,6 +303,7 @@ void test("014a: automatic-work budgets are per grant and supersession invalidat
     delegation: ["attached"],
     maxAllocations: 4,
     maxAutomaticWork: 1,
+    inline: true,
   });
   const session = f.kernel.register(f.workflow, "fixture").session;
   const first = allocate(f, firstGrant, "produce", session).execution;
@@ -317,6 +319,7 @@ void test("014a: automatic-work budgets are per grant and supersession invalidat
     delegation: ["attached"],
     maxAllocations: 4,
     maxAutomaticWork: 2,
+    inline: true,
   });
   const fresh = allocate(f, secondGrant, "check", session);
   assert.equal(
@@ -330,6 +333,7 @@ void test("014a: automatic-work budgets are per grant and supersession invalidat
     continuation: true,
     delegation: ["attached"],
     maxAllocations: 4,
+    inline: true,
   });
   const third = allocate(f, thirdGrant, "check", session).execution;
   const superseding = f.kernel.authorize(f.workflow, {
@@ -337,6 +341,7 @@ void test("014a: automatic-work budgets are per grant and supersession invalidat
     delegation: ["attached"],
     maxAllocations: 4,
     supersedes: third.id,
+    inline: true,
   });
   assert.equal(f.kernel.execution(f.workflow, third.id).superseded, true);
   assert.equal(f.kernel.execution(f.workflow, third.id).process, "cancelled");
@@ -350,7 +355,19 @@ void test("014a: automatic-work budgets are per grant and supersession invalidat
 void test("014a: inline adoption is a separate, explicit grant capability", (t) => {
   const f = fixture(t, "014a-inline");
   const session = f.kernel.register(f.workflow, "fixture").session;
-  const ordinary = f.authorize();
+  const ordinary = f.kernel.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached"],
+    maxAllocations: 1,
+  });
+  assert.throws(
+    () =>
+      f.kernel.allocate(f.workflow, ordinary.id, {
+        session: session.id,
+        mode: "attached",
+      }),
+    /lacks explicit workflow authority/,
+  );
   assert.throws(
     () =>
       f.kernel.allocate(f.workflow, ordinary.id, {
@@ -370,7 +387,6 @@ void test("014a: inline adoption is a separate, explicit grant capability", (t) 
     f.kernel.allocate(f.workflow, inline.id, {
       session: session.id,
       mode: "attached",
-      inline: true,
     }).duplicate,
     false,
   );
@@ -589,6 +605,7 @@ void test("TR3: bounded workflow authority, immutable Role Grants and non-consum
     roles: ["produce"],
     stopAfter: ["produced"],
     maxAllocations: 1,
+    inline: true,
   });
   assert.equal(grant.schemaVersion, 1);
   assert.equal(grant.maxAllocations, 1);
@@ -699,6 +716,7 @@ void test("TR6/TR11: semantic PASS survives later action failure, dimensions sta
     continuation: true,
     delegation: ["attached"],
     maxAllocations: 3,
+    inline: true,
   });
   const { session } = k.register(f.workflow, "fixture");
   const { execution } = k.allocate(f.workflow, parent.id, {
@@ -780,6 +798,7 @@ void test("TR10: concurrent continuation deduplicates; changed input and explici
     continuation: true,
     delegation: ["attached"],
     maxAllocations: 8,
+    inline: true,
   });
   const { session } = await api<{ session: Session }>(host.url, "sessions", {
     profile: "fixture",
@@ -889,6 +908,7 @@ void test("TR4/TR7/TR9: real attached process waits/resumes the same execution a
     continuation: false,
     delegation: ["attached"],
     maxAllocations: 1,
+    inline: true,
   });
   const allocated = await api<{ execution: Execution; grant: RoleGrant }>(
     host.url,
@@ -1277,6 +1297,7 @@ void test("TR5/TR9: private human payloads are host-owned; another executor cann
     continuation: false,
     delegation: ["attached"],
     maxAllocations: 1,
+    inline: true,
   });
   const worker = await api<{ session: Session; token: string }>(
     host.url,

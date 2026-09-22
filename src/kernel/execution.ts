@@ -405,7 +405,10 @@ export class ExecutionKernel {
       const parent = this.grant(workflow, workflowGrant);
       if (!parent.delegation.includes(request.mode))
         throw new Error("delegation mode denied");
-      if (request.inline && (request.mode !== "attached" || !parent.inline))
+      if (
+        (request.mode === "attached" && !parent.inline) ||
+        (request.inline && request.mode !== "attached")
+      )
         throw new Error(
           "inline role adoption lacks explicit workflow authority",
         );

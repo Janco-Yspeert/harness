@@ -131,3 +131,32 @@
   public `npm test` regression (113 passing, 0 failing); and a bounded
   supported authority-boundary proof.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 007 — Implementation correction
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`.
+- Inputs: frozen `spike.md`
+  `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`,
+  frozen `design-map.md`
+  `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  prepared coverage `sha256:6a2e044e461dcc86cbcdd54b7e88df7bbf3a7dbf93cfbdfa3d1dfa4730919a45`,
+  public `eval-requirements.md`
+  `sha256:ccc99e8ea39dd9cfccbf6fa920c9bb7b152beb25e4091dff6c6bc80336baab65`,
+  and committed AC11 retry feedback
+  `sha256:d3a6394aa522e0a4bc03016663368f1ed7e7c6c40cce6665eff7fd74b9a18e43`
+  from `dcac33bdfb8e1174c9bc35c043f9bd97fdfacdce`; evaluator revision `002`
+  remains unchanged.
+- Result: succeeded; every attached allocation now requires inline authority
+  on its immutable Workflow Execution Grant, whether or not the continuation
+  request supplies an `inline` flag. Existing attached-path regressions declare
+  that authority explicitly.
+- Output: focused implementation/test diff
+  `sha256:f8adf1ecf9efb6b56038fafaefd00b7b380b6c9f8640d278a3cb2938292982af`
+  before this manifest update (2 files, 27 insertions, 3 deletions).
+- Checks: the new focused negative test failed against the prior candidate as
+  expected; focused inline-adoption test passed; `test/kernel.test.ts` passed
+  (21 passing, 0 failing); and `npm run check` passed, including typecheck,
+  lint, formatting, and the full suite (113 passing, 0 failing).
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.
