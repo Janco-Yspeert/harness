@@ -6,8 +6,10 @@
   methodology authority. A role-derived canonical transition is accepted only
   when the configured authority path binds its exact governed execution, Role
   Grant, validated semantic result, and required artifact/result identities.
+  Post-cutover human acceptance or rejection likewise binds its explicit human
+  authority and relevant cycle/candidate evidence through that configured path.
   Artifact content, Git provenance, provider prose, legacy state, and process
-  exit are not substitutes for that binding.
+  exit are not substitutes for either binding.
 - Workflow Execution Grant (WEG) authority is finite and scoped to that grant.
   The configured operational retry allowance and the semantic automatic-work
   budget are distinct counters; a fresh human WEG starts both afresh. Exhausted
