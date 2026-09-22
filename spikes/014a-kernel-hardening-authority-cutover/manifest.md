@@ -269,3 +269,33 @@
   `003`, prior attempts/revisions, and unrelated working-tree residue were
   preserved.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 011 — Evaluator verification
+
+- Skill: `evaluator` v12,
+  `sha256:ab89688a2016644d03a6a05bb37f8f18a82d77aba079788b0d6b9e79e8f8c29d`.
+- Inputs: candidate `git:53ba9067eed21e53b148aeb8d35696e6b327b2b1`, frozen
+  `spike.md` `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`,
+  Design Map `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  prepared coverage `sha256:5d69abc778d71f32308b4edc9eff3d476fc6c4207f8e7df617e7b17fa068ad7d`,
+  and evaluator revision `003`
+  `sha256:d169cf26cb187c904697e6be6ca31d6d15ed8fbaf055404418d1aef3e57a8e4f`
+  (unchanged; not re-prepared or repaired by this run).
+- Result: `PASS`. All 23 frozen criteria satisfied, including the revision-003
+  -repaired P02/AC03 cross-field matrix: a valid PASS with no classification is
+  now accepted and reaches its configured transition against this candidate.
+- Public output: `verification-result.json` (attempt `005`).
+- Checks: frozen input identity verification (candidate content identical to
+  current HEAD for every file this evaluation touches); required public
+  `npm run check` regression (typecheck, lint, format, 115 tests passing, 0
+  failing) with a deliberately nonexistent negative control confirmed to fail
+  first; bounded, independently authored live fixtures against the real
+  kernel/host exercising 18 of the 19 frozen procedures (P01-P12, P14, P16,
+  P18), including the full repaired P02/AC03 cross-field matrix; P13, P15, and
+  half of P19 evidenced by the passing public regression per the frozen
+  evaluator's documented non-executable coverage mode; and the actual pinned
+  `verification-accounting` validator run against the complete public
+  artifact using this attempt's exact Role Grant inputs, confirming it before
+  finalization.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.
