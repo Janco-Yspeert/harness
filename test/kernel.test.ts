@@ -290,6 +290,113 @@ void test("014a: result constraints and non-equivalent active authority are enfo
   );
 });
 
+void test("014a: independently optional result checks govern semantic results and transitions", (t) => {
+  const cases = [
+    {
+      name: "valid PASS without classification",
+      methodology: { result: "PASS" },
+      accepted: true,
+    },
+    {
+      name: "invalid PASS with classification",
+      methodology: {
+        result: "PASS",
+        classification: "IMPLEMENTATION_FAILURE",
+      },
+      accepted: false,
+    },
+    {
+      name: "invalid FAIL without classification",
+      methodology: { result: "FAIL" },
+      accepted: false,
+    },
+    {
+      name: "invalid BLOCKED without classification",
+      methodology: { result: "BLOCKED" },
+      accepted: false,
+    },
+    {
+      name: "valid classified FAIL",
+      methodology: {
+        result: "FAIL",
+        classification: "IMPLEMENTATION_FAILURE",
+      },
+      accepted: true,
+    },
+    {
+      name: "valid classified BLOCKED",
+      methodology: {
+        result: "BLOCKED",
+        classification: "EVALUATOR_DEFECT",
+      },
+      accepted: true,
+    },
+  ] as const;
+
+  for (const [index, scenario] of cases.entries()) {
+    const f = fixture(t, `014a-result-check-${String(index)}`);
+    f.contract.methodology = {
+      result: ["PASS", "FAIL", "BLOCKED"],
+      classification: ["IMPLEMENTATION_FAILURE", "EVALUATOR_DEFECT"],
+    };
+    f.contract.resultConstraints = [
+      { when: { result: "PASS" }, absent: ["classification"] },
+      { when: { result: "FAIL" }, required: ["classification"] },
+      { when: { result: "BLOCKED" }, required: ["classification"] },
+    ];
+    required(f.policy.roles.produce).outcomes = [
+      ...["PASS", "FAIL", "BLOCKED"].map((result) => ({
+        disposition: "succeeded",
+        methodology: { result },
+        transition: "verification-finalized",
+      })),
+    ];
+    json(join(f.root, "contracts/produce.json"), f.contract);
+    json(join(f.root, "policy.json"), f.policy);
+
+    const grant = f.authorize();
+    const execution = allocate(f, grant).execution;
+    f.kernel.process(f.workflow, execution.id, "running");
+
+    if (scenario.accepted) {
+      const completed = f.kernel.result(
+        f.workflow,
+        execution.id,
+        "succeeded",
+        scenario.methodology,
+      );
+      assert.deepEqual(completed.result?.methodology, scenario.methodology);
+      assert.equal(
+        f.kernel
+          .events(f.workflow)
+          .filter((event) => event.transition === "verification-finalized")
+          .length,
+        1,
+        `${scenario.name} reaches its configured canonical transition`,
+      );
+    } else {
+      assert.throws(
+        () =>
+          f.kernel.result(
+            f.workflow,
+            execution.id,
+            "succeeded",
+            scenario.methodology,
+          ),
+        /cross-field/,
+        scenario.name,
+      );
+      assert.equal(
+        f.kernel
+          .events(f.workflow)
+          .some((event) => event.transition === "kernel.result"),
+        false,
+        `${scenario.name} is rejected before semantic-result acceptance`,
+      );
+    }
+  }
+});
+
 void test("014a: automatic-work budgets are per grant and supersession invalidates old authority", (t) => {
   const f = fixture(t, "014a-budget-supersession");
   f.policy.roles.check = {

@@ -234,3 +234,38 @@
   `002`, but it is not and must never be treated as a canonical PASS.
 - Revision `003` repair authority and lineage remain unchanged; the repair was
   recorded canonically by Harness before this append-only clarification.
+
+## Run 010 — Implementation correction
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`.
+- Authority: explicit human root Role Grant
+  `sha256:e0ce7736f41551f98aaadaaeb1c4bafbe083f30cb769a8d508ba6e309a05d577`
+  for the bounded result-constraint correction. Attempt 004 produced no
+  canonical `verification-finalized` / `IMPLEMENTATION_FAILURE` event, so the
+  grant's exact human root decision is the retry authority; no event was
+  fabricated.
+- Inputs: frozen `spike.md`
+  `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`,
+  frozen `design-map.md`
+  `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  evaluator revision `003` prepared coverage
+  `sha256:5d69abc778d71f32308b4edc9eff3d476fc6c4207f8e7df617e7b17fa068ad7d`,
+  and public `eval-requirements.md`
+  `sha256:ccc99e8ea39dd9cfccbf6fa920c9bb7b152beb25e4091dff6c6bc80336baab65`.
+- Result: succeeded; the generic checker treats omitted `required` and `absent`
+  arrays independently as imposing no check, without changing configured
+  evaluator vocabulary, outcomes, acceptance semantics, or workflow authority.
+- Output: implementation, visible-test, and public-report content set
+  `sha256:91b36c93236a9c6148639c1d590063b68391414111d4bf9b7905e91a75ce6842`
+  before this manifest update.
+- Visible evidence: the focused governed-result/canonical-transition regression
+  failed against the prior checker on valid PASS, then passed after correction;
+  `test/kernel.test.ts` passed (23 passing, 0 failing); and `npm run check`
+  passed typecheck, lint, formatting, and the full suite (115 passing, 0
+  failing).
+- Restricted evaluator material inspected: none. Evaluator preparation and
+  verification were not rerun; the existing AC11 correction, evaluator revision
+  `003`, prior attempts/revisions, and unrelated working-tree residue were
+  preserved.
+- Measurement cutoff: immediately before this manifest update.

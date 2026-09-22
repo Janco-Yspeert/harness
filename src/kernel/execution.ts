@@ -837,8 +837,10 @@ export class ExecutionKernel {
         resultConstraints.some(
           (constraint) =>
             matches(methodology, constraint.when) &&
-            (!constraint.required?.every((field) => field in methodology) ||
-              constraint.absent?.some((field) => field in methodology)),
+            (!(constraint.required ?? []).every(
+              (field) => field in methodology,
+            ) ||
+              (constraint.absent ?? []).some((field) => field in methodology)),
         )
       )
         throw new Error("result violates pinned cross-field contract");
