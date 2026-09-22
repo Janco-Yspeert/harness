@@ -160,3 +160,25 @@
   lint, formatting, and the full suite (113 passing, 0 failing).
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 008 — Evaluator verification
+
+- Skill: `evaluator` v12,
+  `sha256:ab89688a2016644d03a6a05bb37f8f18a82d77aba079788b0d6b9e79e8f8c29d`.
+- Inputs: candidate `git:b1a4ed833db84b2f4736c2454d5f19103f9af7aa`, frozen
+  `spike.md` `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`,
+  Design Map `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  prepared coverage `sha256:6a2e044e461dcc86cbcdd54b7e88df7bbf3a7dbf93cfbdfa3d1dfa4730919a45`,
+  and evaluator revision `002` (unchanged; not re-prepared or repaired).
+- Result: `PASS`. AC11 is now satisfied: every attached-mode allocation
+  requires explicit Workflow-Execution-Grant-level inline authority,
+  regardless of the per-request `inline` flag.
+- Public output: `verification-result.json`.
+- Checks: frozen input and private-bundle identity verification; required
+  public `npm test` regression (113 passing, 0 failing); and bounded,
+  independently authored live fixtures against the real kernel/host exercising
+  all 19 frozen procedures (P01-P19), including a live re-run of the
+  previously-failing AC11 boundary and a real spawned-process supersession
+  proof.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.

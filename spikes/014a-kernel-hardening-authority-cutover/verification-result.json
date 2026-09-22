@@ -1,24 +1,33 @@
 {
   "schemaVersion": 1,
-  "allocationKey": "sha256:aa460e97d032a4e2ac10a1e804bd0086d19d698333bbee1a0443a4074efd9343",
-  "attempt": "001",
-  "candidate": "git:42925c4f0e9028e9647a4d35b27ac1e4df4aed8a",
+  "attempt": "004",
+  "allocationKey": "sha256:149011263d5253ad0e81084252b40521c5f9b70c6bf0a73afa2b91f3e09a2bb6",
+  "commit": "b1a4ed833db84b2f4736c2454d5f19103f9af7aa",
   "evaluatorRevision": "002",
-  "result": "FAIL",
-  "classification": "IMPLEMENTATION_FAILURE",
-  "coverage": {
-    "requiredCriteria": 23,
-    "passedCriteria": ["AC01", "AC21"],
-    "failedCriteria": ["AC11"],
-    "notRunCriteria": [
-      "AC02", "AC03", "AC04", "AC05", "AC06", "AC07", "AC08",
-      "AC09", "AC10", "AC12", "AC13", "AC14", "AC15", "AC16",
-      "AC17", "AC18", "AC19", "AC20", "AC22", "AC23"
-    ],
-    "reasonNotRun": "Terminal implementation failure was confirmed; unrun criteria are not reported as passes."
-  },
-  "requirement": "AC11 — supervisor identity is non-authoritative for worker roles.",
-  "expected": "Ordinary workflow-execution authority cannot grant an attached supervisor a worker role without explicit inline or mechanically satisfied fallback authority.",
-  "observed": "The ordinary attached continuation path grants a worker allocation when inline authority is absent.",
-  "diagnostics": "The authority check is conditional on an explicit inline request flag, leaving the ordinary attached path available to a supervisor."
+  "result": "PASS",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "SATISFIED",
+    "AC14": "SATISFIED",
+    "AC15": "SATISFIED",
+    "AC16": "SATISFIED",
+    "AC17": "SATISFIED",
+    "AC18": "SATISFIED",
+    "AC19": "SATISFIED",
+    "AC20": "SATISFIED",
+    "AC21": "SATISFIED",
+    "AC22": "SATISFIED",
+    "AC23": "SATISFIED"
+  }
 }
