@@ -41,3 +41,28 @@
   boundary review against the frozen brief; output SHA-256; and `git diff --check`
   for the Design Map before this manifest update.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 003 — Evaluator preparation
+
+- Skill: `evaluator` v12,
+  `sha256:ab89688a2016644d03a6a05bb37f8f18a82d77aba079788b0d6b9e79e8f8c29d`.
+- Inputs: frozen `spike.md`
+  `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`
+  and frozen `design-map.md`
+  `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  both verified against committed provenance at
+  `22715165436e71bf3e577ead25ffec7de7f6616a`.
+- Result: succeeded; private evaluator revision `001`
+  `sha256:d44a06c755bc57ec14b976c48f9bfbda2e04c7eb795c855666c2131e8f2aaceb`
+  is frozen after passing implementation-independent integrity validation.
+- Public outputs: `eval-requirements.md`
+  `sha256:ccc99e8ea39dd9cfccbf6fa920c9bb7b152beb25e4091dff6c6bc80336baab65`
+  and `coverage-map.json`
+  `sha256:6cbf1fb3111750ed315e890015fef9db21c44f6fc8690a7b2a3894545ddab29c`.
+- Checks: public coverage structural validation; complete criterion/procedure
+  traceability and private inventory validation; controlled invalid-target
+  negative control; and committed pre-implementation `npm test` baseline
+  (109 passing, 0 failing). No candidate implementation was inspected or run.
+- Restricted evaluator material inspected: current Spike 014a private evaluator
+  workspace only.
+- Measurement cutoff: immediately before this manifest update.
