@@ -220,3 +220,17 @@
 - Restricted evaluator material inspected: none beyond this repair's own
   scope.
 - Measurement cutoff: immediately before this manifest update.
+
+## Canonical-status correction — attempt 004
+
+- The Run 008 and Run 009 wording above records the evaluator's semantic
+  `PASS` report, but incorrectly describes it as finalized/accepted.
+- Harness rejected attempt 004's canonical transition with
+  `result violates pinned cross-field contract`; its governed execution ended
+  `failed`, and no `verification-finalized` event was recorded for that
+  attempt.
+- Attempt 004 therefore remains useful immutable evaluation evidence bound to
+  candidate `b1a4ed833db84b2f4736c2454d5f19103f9af7aa` and evaluator revision
+  `002`, but it is not and must never be treated as a canonical PASS.
+- Revision `003` repair authority and lineage remain unchanged; the repair was
+  recorded canonically by Harness before this append-only clarification.
