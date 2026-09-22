@@ -588,6 +588,70 @@ void test("014a: human evaluator correction authority binds rejected verificatio
   assert.match(await duplicate.text(), /already recorded/);
 });
 
+void test("014a: root-only correction-cycle authority binds a canonical PASS without rewriting it", async (t) => {
+  const f = fixture(t, "014a-correction-cycle-authority");
+  const source = {
+    execution: "verify-005",
+    roleGrant: "role-grant-005",
+    semanticResult: "semantic-pass-005",
+    commit: "53ba9067eed21e53b148aeb8d35696e6b327b2b1",
+    evaluatorRevision: "003",
+    attempt: 5,
+    artifactCommit: "89b0934c3352bd80848a32a310e8be60e1589dd0",
+    artifactPath: "verification-result.json",
+    artifactIdentity: `sha256:${"a".repeat(64)}`,
+  };
+  f.event("verification-finalized", {
+    result: "PASS",
+    cycle: "001",
+    ...source,
+    path: source.artifactPath,
+    identity: source.artifactIdentity,
+  });
+  const request = {
+    cycle: "002",
+    classification: "IMPLEMENTATION_AND_EVALUATOR_DEFECT",
+    ...source,
+    defects: ["AC16 host promotion absent", "AC19 human decision path absent"],
+    reason: "bounded correction cycle",
+  };
+  const host = await startHarnessHost(0, {
+    governed: { project: f.project, executors: profiles, rootToken },
+  });
+  t.after(() => host.close());
+  const unauthorized = await fetch(
+    `${host.url}/governed/work-item/correction-cycles`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(request),
+    },
+  );
+  assert.equal(unauthorized.status, 403);
+  const { authority } = await api<{
+    authority: {
+      cycle: string;
+      sourceSemanticResult: string;
+      semanticResult: string;
+    };
+  }>(host.url, "correction-cycles", request);
+  assert.equal(authority.cycle, "002");
+  assert.equal(authority.sourceSemanticResult, source.semanticResult);
+  assert.match(authority.semanticResult, /^sha256:[a-f0-9]{64}$/);
+  const events = f.kernel.events(f.workflow);
+  assert.equal(events.at(-2)?.transition, "human-correction-cycle-authorized");
+  assert.equal(events.at(-1)?.transition, "correction-cycle-opened");
+  assert.equal(
+    events.at(-1)?.evidence.sourceSemanticResult,
+    source.semanticResult,
+  );
+  const duplicate = await fetch(
+    `${host.url}/governed/work-item/correction-cycles`,
+    { method: "POST", headers: auth, body: JSON.stringify(request) },
+  );
+  assert.equal(duplicate.status, 409);
+});
+
 void test("TR1: configured Harness As-Built resolves from canonical PASS/promotion despite blocked publication and absent/stale local history", (t) => {
   const f = fixture(t, "canonical");
   cpSync("methodologies", join(f.root, "methodologies"), { recursive: true });

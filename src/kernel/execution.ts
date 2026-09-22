@@ -31,6 +31,7 @@ import type {
   ExecutorSelector,
   HostActionRequest,
   HostActionResult,
+  HumanCorrectionCycleAuthority,
   HumanEvaluatorCorrectionAuthority,
   HumanRequest,
   LedgerEvent,
@@ -322,6 +323,121 @@ export class ExecutionKernel {
         "human-evaluator-correction-authorized",
         authority,
       );
+      return authority;
+    });
+  }
+  authorizeCorrectionCycle(
+    workflow: string,
+    request: {
+      cycle: string;
+      classification: string;
+      execution: string;
+      roleGrant: string;
+      semanticResult: string;
+      commit: string;
+      evaluatorRevision: string;
+      attempt: number;
+      artifactCommit: string;
+      artifactPath: string;
+      artifactIdentity: string;
+      defects: string[];
+      reason: string;
+    },
+  ): HumanCorrectionCycleAuthority {
+    return this.#transaction(workflow, () => {
+      if (
+        !/^\d{3}$/.test(request.cycle) ||
+        request.classification !== "IMPLEMENTATION_AND_EVALUATOR_DEFECT" ||
+        !request.execution ||
+        !request.roleGrant ||
+        !request.semanticResult ||
+        !/^[a-f0-9]{40,64}$/.test(request.commit) ||
+        !/^\d{3}$/.test(request.evaluatorRevision) ||
+        !Number.isSafeInteger(request.attempt) ||
+        request.attempt < 1 ||
+        !/^[a-f0-9]{40,64}$/.test(request.artifactCommit) ||
+        !request.artifactPath ||
+        !/^sha256:[a-f0-9]{64}$/.test(request.artifactIdentity) ||
+        !Array.isArray(request.defects) ||
+        request.defects.length === 0 ||
+        !request.defects.every(
+          (defect) => typeof defect === "string" && defect,
+        ) ||
+        !request.reason
+      )
+        throw new Error("invalid correction-cycle authority");
+      const events = this.events(workflow);
+      const existingCycles = events
+        .filter((event) => event.transition === "correction-cycle-opened")
+        .map((event) => String(event.evidence.cycle));
+      const prior = existingCycles.at(-1) ?? "001";
+      if (Number(request.cycle) !== Number(prior) + 1)
+        throw new Error(
+          "correction cycle must immediately succeed current cycle",
+        );
+      if (
+        events.some(
+          (event) =>
+            event.transition === "human-correction-cycle-authorized" &&
+            event.evidence.cycle === request.cycle,
+        )
+      )
+        throw new Error("correction-cycle authority already recorded");
+      const source = events.find(
+        (event) =>
+          event.transition === "verification-finalized" &&
+          event.evidence.result === "PASS" &&
+          event.evidence.execution === request.execution &&
+          event.evidence.roleGrant === request.roleGrant &&
+          event.evidence.semanticResult === request.semanticResult &&
+          event.evidence.commit === request.commit &&
+          event.evidence.evaluatorRevision === request.evaluatorRevision &&
+          event.evidence.attempt === request.attempt &&
+          event.evidence.artifactCommit === request.artifactCommit &&
+          event.evidence.path === request.artifactPath &&
+          event.evidence.identity === request.artifactIdentity,
+      );
+      if (!source)
+        throw new Error(
+          "correction-cycle authority lacks exact canonical PASS evidence",
+        );
+      const authority: HumanCorrectionCycleAuthority = {
+        schemaVersion: 1,
+        id: randomUUID(),
+        project: this.project.id,
+        workflow,
+        origin: "human",
+        cycle: request.cycle,
+        predecessorCycle: prior,
+        classification: "IMPLEMENTATION_AND_EVALUATOR_DEFECT",
+        sourceExecution: request.execution,
+        sourceRoleGrant: request.roleGrant,
+        sourceSemanticResult: request.semanticResult,
+        sourceCommit: request.commit,
+        sourceEvaluatorRevision: request.evaluatorRevision,
+        sourceAttempt: request.attempt,
+        sourceArtifactCommit: request.artifactCommit,
+        sourceArtifactPath: request.artifactPath,
+        sourceArtifactIdentity: request.artifactIdentity,
+        defects: request.defects,
+        reason: request.reason,
+        semanticResult: "",
+      };
+      authority.semanticResult = contentId({
+        ...authority,
+        semanticResult: undefined,
+      });
+      this.#append(workflow, "human-correction-cycle-authorized", authority);
+      this.#append(workflow, "correction-cycle-opened", {
+        authorityOrigin: "human",
+        authority: authority.id,
+        cycle: authority.cycle,
+        predecessorCycle: authority.predecessorCycle,
+        implementationCorrection: true,
+        classification: authority.classification,
+        sourceVerification: source.id,
+        sourceSemanticResult: authority.sourceSemanticResult,
+      });
       return authority;
     });
   }

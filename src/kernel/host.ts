@@ -171,6 +171,34 @@ export class GovernedHost {
         });
         return;
       }
+      if (operation === "correction-cycles") {
+        needRoot();
+        if (get) throw new Error("correction-cycle authority requires POST");
+        const defects = body.defects;
+        if (
+          !Array.isArray(defects) ||
+          !defects.every((v) => typeof v === "string")
+        )
+          throw new Error("correction-cycle defects are required");
+        send(201, {
+          authority: this.kernel.authorizeCorrectionCycle(workflow, {
+            cycle: text(body.cycle),
+            classification: text(body.classification),
+            execution: text(body.execution),
+            roleGrant: text(body.roleGrant),
+            semanticResult: text(body.semanticResult),
+            commit: text(body.commit),
+            evaluatorRevision: text(body.evaluatorRevision),
+            attempt: Number(body.attempt),
+            artifactCommit: text(body.artifactCommit),
+            artifactPath: text(body.artifactPath),
+            artifactIdentity: text(body.artifactIdentity),
+            defects,
+            reason: text(body.reason),
+          }),
+        });
+        return;
+      }
       if (operation === "sessions") {
         if (!get) {
           needRoot();

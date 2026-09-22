@@ -165,6 +165,31 @@ export interface HumanEvaluatorCorrectionAuthority {
   reason: string;
   semanticResult: string;
 }
+// A canonical PASS is not a failed execution, so it cannot use the narrowly
+// scoped evaluator-correction authority above. This record opens one explicit
+// successor correction cycle while retaining the exact PASS it responds to.
+export interface HumanCorrectionCycleAuthority {
+  schemaVersion: 1;
+  id: string;
+  project: string;
+  workflow: string;
+  origin: "human";
+  cycle: string;
+  predecessorCycle: string;
+  classification: "IMPLEMENTATION_AND_EVALUATOR_DEFECT";
+  sourceExecution: string;
+  sourceRoleGrant: string;
+  sourceSemanticResult: string;
+  sourceCommit: string;
+  sourceEvaluatorRevision: string;
+  sourceAttempt: number;
+  sourceArtifactCommit: string;
+  sourceArtifactPath: string;
+  sourceArtifactIdentity: string;
+  defects: string[];
+  reason: string;
+  semanticResult: string;
+}
 export interface ExecutorProfile {
   id: string;
   provider: string;
