@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "002",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 11,
+    "identity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802"
+  },
+  "bootstrapAuthority": {
+    "record": "spikes/014b-methodology-contract-migration-safe-skill-evolution/bootstrap/authority.md",
+    "baselineCommit": "e2bd3fa35ddb76935bf811cc7cbaed3d383abd32",
+    "authorityWorktree": "../harness-014b-authority",
+    "evaluatorTreeIdentity": "821e1a85e75c43794eba2e0d820be9b46e05ba15",
+    "evaluatorSkillGitBlob": "b9e2601dbd4575cfbafc8d1ab4cc81f8c434fe51",
+    "evaluatorSkillContentIdentity": "sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802",
+    "implementationSkillGitBlob": "c9a340b00e31352bcd0abc5751a2703b96baa2c5",
+    "implementationSkillContentIdentity": "sha256:bd10992f2d46103e603063230fe2c7dc150f876cee14e23b320a669312682605",
+    "note": "Unchanged from revision 001. Re-confirmed byte-identical (diff -q) at repair time."
+  },
+  "inputs": {
+    "brief": "sha256:d627fd302a04e778f4100fef2b897df16e4c97c3fb728e9bfcd3bf7dc30d298a",
+    "briefCommit": "e2bd3fa35ddb76935bf811cc7cbaed3d383abd32",
+    "designMap": "sha256:2f12c72f8a382a44a53c4478ee08379d136f652f382305a88f63fb16711f3b40",
+    "designMapCommit": "f141bb0226a6d15c90b4b895ae0b7fdd00bd78f7",
+    "bootstrapAuthorityRecord": "sha256:c63fddcb220444158c98b5e1aef5f5116a1ee1d2bd803c7aa0369cf753b33809",
+    "bootstrapAuthorityRecordCommit": "f141bb0226a6d15c90b4b895ae0b7fdd00bd78f7",
+    "evaluationRequirements": "sha256:cdb8c0506c23c6b1c101df72d629f298a229d7de3b0a920564d37e2059cad350"
+  },
+  "repair": {
+    "priorRevision": "001",
+    "priorRevisionIdentity": "sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31",
+    "priorRevisionArchive": ".eval/revisions/001/",
+    "trigger": {
+      "kind": "human-post-verification-review",
+      "document": "spikes/014b-methodology-contract-migration-safe-skill-evolution/post-verification-review.md",
+      "documentCommit": "08a138d",
+      "note": "Findings D01-D07 raised. This repair independently re-derived each against frozen spike.md/design-map.md rather than accepting the review's own classification at face value."
+    },
+    "scopeClarification": {
+      "kind": "explicit-human-bootstrap-clarification",
+      "receivedMidRepair": true,
+      "summary": "D01-D07 do not automatically become 7 new mandatory criteria; only findings demonstrating failure to satisfy an already-frozen unambiguous requirement may strengthen coverage; Harness threat model is cooperative fallible agents, not adversarial hardening."
+    },
+    "accepted": [
+      { "finding": "D05", "requirement": "R25", "case": "E7", "scope": "existing-contract fidelity defect, directly within Spike 014b scope" },
+      { "finding": "D01", "requirement": "R21", "case": "E6", "scope": "minimal structural revision/manifest binding check only; not adversarial anti-forgery" },
+      { "finding": "D03", "requirement": "R23", "case": "C-C (strengthened decision rule)", "scope": "bounded truthfulness of exercise's already-required smoke-test function; not full role/workflow simulation" }
+    ],
+    "notAccepted": [
+      { "finding": "D02", "reason": "not independently and unambiguously required by frozen text; falls under cooperative-agent (not adversarial-hardening) threat model", "disposition": "non-blocking design observation" },
+      { "finding": "D04", "reason": "not independently actionable without an open-ended new test seam; substantially duplicated by existing M-A/M-B/E1", "disposition": "non-blocking design observation" },
+      { "finding": "D06", "reason": "not independently and unambiguously required by frozen text; Design Map's own disposition for this dimension is a single merged KERNEL_SUPPORT_REQUIRED row", "disposition": "non-blocking design observation" },
+      { "finding": "D07", "reason": "absent from frozen brief/design-map.md entirely (zero text matches for concurrency/locking/serialization); a specification matter for a possible future brief, not an evaluator repair", "disposition": "out-of-scope observation" }
+    ],
+    "overreachCorrected": {
+      "note": "This repair's own first draft briefly added D02 (as a requirement then labeled R22, strengthening case C-C) and D06 (as a requirement then labeled R24, strengthening case M-B) as blocking requirements before the explicit human bootstrap clarification arrived. Both were withdrawn and never frozen or committed publicly; corrected before this freeze. Recorded here transparently per instruction not to freeze overreach as authority.",
+      "withdrawnLabels": ["R22 (draft D02)", "R24 (draft D06)"]
+    },
+    "acceptanceSemanticsPreserved": true,
+    "acceptanceSemanticsAttestation": "Every requirement added in this revision (R21, R23, R25) is traced to text already present in the frozen spike.md/design-map.md, cited in eval-spec.md's per-requirement Source line. No new product requirement was introduced. Verification attempt 001's PASS result and its evidence remain immutable historical fact, unaltered and unrewritten by this revision; it remains bound to evaluator revision 001. This revision does not retroactively invalidate that result."
+  },
+  "artifacts": {
+    "eval-spec.md": "sha256:bbee33693c99d02b2d4b098cd04b19a71d46b9529e5b53ad3ecce7ec197cd87f",
+    "case-manifest.json": "sha256:671c6cebed0d3a3eae7bb4a710c93c8bed5363cd0838216510af896bb699c9dd",
+    ".hidden-test/manifest.json": "sha256:8edd196caeece548aee11ee55301948f6499440949c290a463121f370e6ce835",
+    ".hidden-test/contracts-git-checkpoint-and-exposure.test.ts": "sha256:675db72226fd4794f45d860317465203e6c68cb8175bdd32bd4797b01fd696be",
+    ".hidden-test/evaluator-verify-vocabulary.test.ts": "sha256:ac1d930ce9e18cc79e9e634dad4aad57bfc5763c882b30d61582ac6687eafa7a",
+    ".hidden-test/skills-no-direct-publication.test.ts": "sha256:3e18a702388f540ce706a1ac24100154659d2393753e3075e0141c4181c4f36b",
+    ".hidden-test/outcome-completion-mode.test.ts": "sha256:c1017da5e8942eb5f8372cd057ab049a81d7597ddf14580f7df93d3b7d2bba5f",
+    ".hidden-test/bootstrap-evidence-durable.test.ts": "sha256:a9752aec86079fd2c78d4155ff0a3f02d0d237617bcf88da8c05b61bc5c68d80",
+    ".hidden-test/promotion-binds-exact-revision.test.ts": "sha256:f83e06767ae2fd0a183cf3468e03a90996c140be7cfb0c25b809fea6f3cfa091",
+    ".hidden-test/contract-event-producers-bound.test.ts": "sha256:d2f900b866425c0df82dd459f9fa667eaf5757fa1aacafb7d3932d2b7598ad22"
+  },
+  "freezeInventory": [
+    "eval-spec.md",
+    "case-manifest.json",
+    ".hidden-test/manifest.json",
+    ".hidden-test/contracts-git-checkpoint-and-exposure.test.ts",
+    ".hidden-test/evaluator-verify-vocabulary.test.ts",
+    ".hidden-test/skills-no-direct-publication.test.ts",
+    ".hidden-test/outcome-completion-mode.test.ts",
+    ".hidden-test/bootstrap-evidence-durable.test.ts",
+    ".hidden-test/promotion-binds-exact-revision.test.ts",
+    ".hidden-test/contract-event-producers-bound.test.ts"
+  ],
+  "integrityChecks": [
+    "validatePreparedEvaluatorBundle (tools/evaluator-integrity.ts) over the assembled 18-criterion / 10-procedure bundle: PASS, 0 diagnostics",
+    "every required criterion (AC01-AC18) has exactly one explicit criterion evidence record with a non-empty disposition/sufficiency reason in coverage-map.json, mirrored by case-manifest.json",
+    "every criterion.procedures entry resolves to an existing case-manifest.json/bundle procedure, and every procedure maps back to at least one criterion",
+    "every executable procedure's required material (.hidden-test/*.test.ts, 7 files) is present in materialPaths and freezeInventory",
+    "coverage-map.json (public) and case-manifest.json (private) criterion/procedure sets are mutually consistent: same 18 criterion ids, same procedure assignments",
+    "E6, E7 executed via `node --test` against implementation commit 0d000d94e22016381f0642905b731474c4dd0afe (the same commit already finalized PASS under revision 001): both correctly FAIL, proving the repaired evaluator now falsifies real gaps revision 001 did not test for, without any change to the implementation target",
+    "E1-E5 re-run via `node --test` against the same commit: 16/16 pass (unchanged from attempt 001's result), confirming the repair did not alter or weaken revision 001's existing coverage",
+    "E6 pre-freeze exercise: run against the unimplemented D01 gap and confirmed to fail for exactly the intended reason (\"Missing expected exception\")",
+    "E7 pre-freeze exercise: run and confirmed to flag exactly implementation.json's implementationFeedback -> implementation-feedback-recorded; a positive control (temporarily wiring a matching policy outcome, then reverting) confirmed the test passes once closed; git status --porcelain confirmed clean afterward",
+    "both new hidden test files typecheck with 0 errors under tsc --noEmit and are clean under eslint/prettier --check (verified via temporary copies under test/, then removed; git status --porcelain confirmed clean afterward)",
+    "skills/evaluator/SKILL.md (working tree, candidate-migrated v12) sha256sum differs from evaluatorSkill.identity above by design (bootstrap exception); the frozen bootstrap bundle at ../harness-014b-authority/skills/evaluator/SKILL.md was re-confirmed byte-identical to evaluatorSkill.identity at repair time",
+    "prior revision 001's exact bundle and freeze metadata copied unchanged to .eval/revisions/001/ before any correction was made"
+  ],
+  "preFreezeIntegrityValidation": {
+    "status": "PASS",
+    "diagnostics": [],
+    "privateInventoryIdentity": "sha256:cee0b42921a428099deeff3d452ba06523caed45408a9a7e58b124991ba7425b",
+    "validatorResultBinding": "sha256:53b4b29e0fbd1bb4f5e294e9c288dfa37ebbcbce9753e99ad64946b922dab41c"
+  }
+}

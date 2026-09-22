@@ -1,0 +1,113 @@
+{
+  "revision": "002",
+  "note": "Revision 002 is a post-verification repair. Trigger: human review post-verification-review.md (committed 08a138d), independently re-derived against frozen spike.md/design-map.md rather than accepted at face value. Per explicit human bootstrap clarification received during this repair: D01-D07 do not automatically become seven new mandatory criteria; only a finding demonstrating failure to satisfy an already-frozen, unambiguous requirement may strengthen coverage, and Harness's threat model is cooperative fallible agents, not adversarial hardening. Under that clarification: D05 is accepted (existing-contract fidelity defect, directly within scope). D01 is accepted only in its minimal structural sense (promotion must not record a methodology/revision pairing inconsistent with the actual candidate revision) - not an adversarial anti-forgery check. D03 is accepted only to the extent that exercise must truthfully perform its already-required bounded compatibility/smoke-test function - not full role/workflow simulation. D02, D04, D06, and D07 are explicitly NOT accepted as blocking requirements: they are recorded as non-blocking design observations in eval-spec.md, since none is independently and unambiguously required by the frozen brief/Design Map text. Revision 001's prior bundle is preserved unchanged at .eval/revisions/001/. Original revision 001 note: five evaluator-authored executable hidden tests (E1-E5) statically check already-public, pre-014b JSON contract/skill-file formats that the frozen Design Map's fidelity matrix requires to change. M-A rides on the already-frozen, implementation-immutable design-map.md. M-B covers prose-fidelity criteria. C-C covers the new candidate/check/diff/exercise/promote mechanism (AC12-AC16). Revision 002 adds E6 (D01) and E7 (D05), and lightly strengthens C-C's decision rule for D03 (bounded smoke-test truthfulness only).",
+  "cases": [
+    {
+      "id": "E1",
+      "criteria": ["AC02", "AC03", "AC04", "AC10"],
+      "verifies": ["R1", "R3", "R4", "R5", "R6", "R7", "I2", "I3", "N1"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/contracts-git-checkpoint-and-exposure.test.ts"],
+      "procedure": "node --test .hidden-test/contracts-git-checkpoint-and-exposure.test.ts against the final candidate commit's methodologies/harness/contracts/*.json.",
+      "decisionRule": "Any of: a role contract missing git-inspect/git-commit; a contract granting git-publish or a network/publish/credential-shaped capability; a workspaces entry outside {repository, evaluation}; a protected evaluator contract missing the evaluation workspace; a non-evaluator contract missing forbiddenExposure: [\"evaluator-private\"]; as-built.json or design-map.json methodology becoming non-empty; is a FAIL for the corresponding criterion."
+    },
+    {
+      "id": "E2",
+      "criteria": ["AC07"],
+      "verifies": ["R8", "R9", "N3", "I1"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/evaluator-verify-vocabulary.test.ts"],
+      "procedure": "node --test .hidden-test/evaluator-verify-vocabulary.test.ts against the final candidate commit's methodologies/harness/contracts/evaluator-verify.json and the whole methodologies/ tree.",
+      "decisionRule": "A classification set that is not exactly the 5 frozen values, a result set that is not exactly PASS/FAIL/BLOCKED, or any surviving SPECIFICATION_DEFECT token under methodologies/, is a FAIL for AC07."
+    },
+    {
+      "id": "E3",
+      "criteria": ["AC04"],
+      "verifies": ["R2", "R11", "N1", "N2", "I2"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/skills-no-direct-publication.test.ts"],
+      "procedure": "node --test .hidden-test/skills-no-direct-publication.test.ts against the final candidate commit's skills/{brief-readiness,design-map,evaluator,implementation,as-built,outcome}/SKILL.md.",
+      "decisionRule": "Any occurrence of \"push\" (case-insensitive) or \"git-publish\" in any of the six governed-role skill files is a FAIL for AC04."
+    },
+    {
+      "id": "E4",
+      "criteria": ["AC11"],
+      "verifies": ["R10", "N4"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/outcome-completion-mode.test.ts"],
+      "procedure": "node --test .hidden-test/outcome-completion-mode.test.ts against the final candidate commit's methodologies/harness/contracts/outcome.json.",
+      "decisionRule": "A methodology object with no field exposing both a STANDARD-shaped and a PROCESS_EXCEPTION-shaped value, or any field combining a PASS-shaped value with a PROCESS_EXCEPTION-shaped value, is a FAIL for AC11."
+    },
+    {
+      "id": "E5",
+      "criteria": ["AC17"],
+      "verifies": ["R12"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/bootstrap-evidence-durable.test.ts"],
+      "procedure": "node --test .hidden-test/bootstrap-evidence-durable.test.ts against the final candidate commit's spikes/014b-.../{spike.md,design-map.md,bootstrap/authority.md}.",
+      "decisionRule": "A missing spike.md/design-map.md/bootstrap/authority.md, or authority.md no longer preserving the recorded bootstrap baseline commit or evaluator/implementation content identities, is a FAIL for AC17."
+    },
+    {
+      "id": "M-A",
+      "criteria": ["AC01", "AC02", "AC18"],
+      "verifies": ["R13"],
+      "mode": "public-evidence",
+      "executable": false,
+      "tests": [],
+      "reason": "design-map.md is frozen and immutable through implementation; its fidelity-matrix completeness and kernel-handback table were reviewed directly at preparation time and cannot regress. Re-confirmed at verify time only via the mandatory design-map.md content-identity match already required by the evaluator skill's 'Establish immutable inputs' step.",
+      "procedure": "Direct review of design-map.md's 'Skill <-> Contract Fidelity Matrix' (all 8 roles x all listed dimensions, each with exactly one disposition) and 'Generic kernel handback to Spike 014a' table, performed at preparation time; re-verified only by content-identity equality at verify time.",
+      "decisionRule": "A design-map.md content-identity mismatch at verify time is SPECIFICATION_DRIFT, not an AC01/AC02/AC18 implementation failure, per the evaluator skill's step-1 rule."
+    },
+    {
+      "id": "M-B",
+      "criteria": ["AC04", "AC05", "AC06", "AC08", "AC09"],
+      "verifies": ["R14", "R15", "R16", "R17", "R18", "N5", "I1", "I2"],
+      "mode": "manual-review",
+      "executable": false,
+      "tests": [],
+      "reason": "Each sub-check judges the semantic subject/intent of prose (who performs an action, whether an invariant is stated, whether a trigger is bound vs. merely discoverable); the frozen brief/Design Map leave exact wording free, so a pattern match risks a false PASS on reworded-but-noncompliant prose or a false FAIL on compliant prose worded differently than a hidden test assumed. Unchanged from revision 001: the post-verification review's D06 (contract, not only skill prose, should declare the PASS/classification invariant) was considered under revision 002 and NOT added here, per explicit human bootstrap clarification that D06 is a non-blocking design observation, not independently and unambiguously required by frozen brief/Design Map text (the Design Map's own disposition for this exact dimension is a single merged KERNEL_SUPPORT_REQUIRED row, not a distinct SKILL_MUST_CHANGE plus CONTRACT_MUST_CHANGE pair).",
+      "procedure": "At verify time, read the final skills/*/SKILL.md (8 active roles) and methodologies/harness/contracts/evaluator-repair.json. Confirm: (R14/N5) every self-referential 'record <transition>' instruction has Harness/the host as its grammatical subject, never the worker; (R15) each skill's completion/postcondition section instructs reporting the exact produced commit; (R16) brief-readiness/SKILL.md explicitly states 'Ready after minor clarification' maps to READY as a non-blocking finding; (R17) the evaluator skill or evaluator-verify.json states the PASS-no-classification / non-PASS-exactly-one-classification invariant; (R18) evaluator-repair.json's inputs (or the skill's repair-mode prose) bind an exact trigger identity rather than deriving eligibility from ambient mutable state.",
+      "decisionRule": "A skill instructing the worker itself to record a canonical transition or push; a completion section omitting exact-commit reporting; brief-readiness/SKILL.md omitting the explicit minor-clarification-maps-to-READY statement; the evaluator skill/contract omitting the PASS/classification invariant statement; or evaluator-repair.json/skill leaving repair authority discoverable from mutable state without an exact bound trigger; is a FAIL for the corresponding criterion."
+    },
+    {
+      "id": "C-C",
+      "criteria": ["AC12", "AC13", "AC14", "AC15", "AC16"],
+      "verifies": ["R19", "R20", "R23", "I4", "N6"],
+      "mode": "composite",
+      "executable": true,
+      "materializedBy": "implementation (frozen brief §7-§8, AC12-AC16), plus evaluator inspection of the implementation-identified entry point(s)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenarios covering: candidate construction and diff-vs-trusted detection; check rejecting >=1 deliberately contradictory skill/contract fixture the implementation wrote; diff reporting component-level material changes; exercise running a bounded disposable scenario without granting trusted authority or publishing; promote requiring explicit simulated human authority and changing only the identity used by future grants. Manual component (reviewed at verify time against the implementation's own As-Built/implementation-report entry-point identification): inspect the identified module(s) for any path letting a candidate (including a candidate evaluator) supply authority over itself, and confirm promotion is monotonic (no in-place rewrite of a prior trusted identity, no retroactive change to a workflow already bound to it). Added under revision 002, bounded per explicit human clarification: confirm (R23) exercise truthfully performs its already-required bounded compatibility/smoke-test function by referencing something genuinely derived from the specific candidate's own content (e.g. its manifest identity or a specific role/skill identifier), not a scenario that would be byte-identical for any candidate regardless of content. This is a minimal truthfulness check, not a requirement for full role or workflow simulation. Considered and NOT added, per explicit human bootstrap clarification: D02 (promotion authority bound to the exact evaluated candidate beyond non-self-reference) and D04 (broadening check's validated surface) are non-blocking design observations, not independently and unambiguously required by frozen text; see eval-spec.md.",
+      "decisionRule": "A missing behavior among candidate/check/diff/exercise/promote, a check operation with no evaluator-reviewable contradictory-fixture rejection test, a candidate (including a candidate evaluator) able to supply authority over itself, promotion that mutates history/rewrites an already-bound grant's identity, or an exercise scenario that is byte-identical regardless of candidate content (rev 002, D03 only), is a FAIL for the corresponding AC12-AC16 criterion."
+    },
+    {
+      "id": "E6",
+      "criteria": ["AC12", "AC13"],
+      "verifies": ["R21", "I5", "N7"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/promotion-binds-exact-revision.test.ts"],
+      "procedure": "node --test .hidden-test/promotion-binds-exact-revision.test.ts. Constructs a disposable temp-repo fixture from the candidate commit's own methodologies/, skills/, and src/methodologies/harness-public.ts, builds a genuine candidate, splices its manifest onto a different revision's identity, and asserts promoteMethodology rejects the splice.",
+      "decisionRule": "promoteMethodology accepting a candidate whose manifest does not reconstruct from its own claimed revision is a FAIL for AC12/AC13.",
+      "addedUnderRevision": "002",
+      "trigger": "post-verification-review.md D01 (committed 08a138d)"
+    },
+    {
+      "id": "E7",
+      "criteria": ["AC02"],
+      "verifies": ["R25"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/contract-event-producers-bound.test.ts"],
+      "procedure": "node --test .hidden-test/contract-event-producers-bound.test.ts. Cross-references every role contract's inputs[].event against policy.json's outcomes[].transition/onAllocate.transition and a narrow, individually-justified exemption list (human-* events, the configured scopeEvent, promotion-recorded, process-exception-evidence-recorded).",
+      "decisionRule": "Any contract input bound to an event that is neither producible by policy nor in the justified exemption list is a FAIL for AC02.",
+      "addedUnderRevision": "002",
+      "trigger": "post-verification-review.md D05 (committed 08a138d)"
+    }
+  ]
+}

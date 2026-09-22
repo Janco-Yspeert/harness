@@ -410,3 +410,47 @@
   push. The exact local checkpoint is reported to the human for
   bootstrap-authorized publication.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 008 — Evaluation Promotion (archival, attempts 001+002)
+
+- Skill: `evaluator` v11, executed under the explicit Spike 014b bootstrap
+  exception. Sole evaluator instruction authority: the frozen snapshot at
+  `../harness-014b-authority/skills/evaluator/SKILL.md`
+  (`sha256:5dea02ee0b1219e0bb954e52bbc3525c2d806d594d3094d44b25ed15e060a802`),
+  re-confirmed byte-identical at promotion time.
+- Resumed from the already-finalized `verify` attempt `002` `PASS` (evaluator
+  revision `002`) against implementation commit
+  `399cd61d43f7b914b1195d47bee0c1040b6f42c8`. No new verification attempt
+  was allocated and no evaluation was rerun; extends the Run 004 archival
+  (attempt `001` / evaluator revision `001` only) to the complete two-attempt
+  evidence chain, per explicit request.
+- Eligibility: both evaluator revisions determined eligible as
+  all-or-nothing bundles — `001`
+  (`sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31`)
+  and `002`
+  (`sha256:ee4107a51a9e6f2e4767a06d02cca0ff2dd061258bbfc521569f61cae112b5fd`).
+  Both are pure static/regression test material with no secrets, credentials,
+  or private mechanism; the superseded revision `001` is preserved
+  alongside `002` as historical record of the evaluator's own repair, per
+  the frozen skill's "every superseded revision used in the cycle is
+  preserved." `notPromotedRevisions` is empty.
+- Archived byte-for-byte: `evaluation/attempts/002/eval-result.md`,
+  `evaluation/freeze/002.json`, `evaluation/revisions/002/{eval-spec.md,
+  case-manifest.json,.hidden-test/**}` (newly added); `evaluation/attempt-ledger.json`
+  updated to its current complete two-entry state (both entries unchanged
+  from their original finalized content). `evaluation/promotion.json`
+  rewritten to record both attempts, both revisions (both `copied`), and
+  every archived file's source/promoted identity; `passingAttempt` updated
+  to `002` (the latest).
+- Integrity: every archived file's recomputed SHA-256 matched its recorded
+  source/freeze identity exactly — 23 historical-artifact entries checked,
+  plus both attempts' `resultIdentity`/`evaluatorRevisionIdentity`
+  cross-checks. No mismatch found; promotion is complete.
+- Not performed: candidate-methodology trust promotion
+  (`methodologies/harness/trusted.jsonl` untouched). This archival is not
+  human acceptance.
+- Publication: per the explicit bootstrap authority, this run does not
+  push. The exact local checkpoint (this manifest update plus all
+  archived/updated `evaluation/**` files) is reported to the human for
+  bootstrap-authorized publication.
+- Measurement cutoff: immediately before this manifest update.

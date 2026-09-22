@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "result": "PASS",
-  "passingAttempt": "001",
+  "passingAttempt": "002",
   "attempts": [
     {
       "id": "001",
@@ -12,6 +12,17 @@
       "evaluatorRevisionIdentity": "sha256:63ce677b308818a9adeb618649ee33b605c0a05664eb26c23ce7917d282d1b31",
       "freezePath": "evaluation/freeze/001.json",
       "revisionPath": "evaluation/revisions/001",
+      "revisionDisposition": "copied"
+    },
+    {
+      "id": "002",
+      "implementation": "git:399cd61d43f7b914b1195d47bee0c1040b6f42c8",
+      "resultPath": "evaluation/attempts/002/eval-result.md",
+      "resultIdentity": "sha256:31c0cfa791852f96d1d2850714acfd82527cc4cafcb9c19deaecf3c0d8baf90d",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:ee4107a51a9e6f2e4767a06d02cca0ff2dd061258bbfc521569f61cae112b5fd",
+      "freezePath": "evaluation/freeze/002.json",
+      "revisionPath": "evaluation/revisions/002",
       "revisionDisposition": "copied"
     }
   ],
@@ -77,9 +88,81 @@
       "disposition": "copied"
     },
     {
-      "sourceIdentity": "sha256:627f2caf92f127c992a3803dfd7b9122368ba6868cbe1f9d3c497049c59e5f8b",
+      "sourceIdentity": "sha256:bbee33693c99d02b2d4b098cd04b19a71d46b9529e5b53ad3ecce7ec197cd87f",
+      "publicPath": "evaluation/revisions/002/eval-spec.md",
+      "promotedIdentity": "sha256:bbee33693c99d02b2d4b098cd04b19a71d46b9529e5b53ad3ecce7ec197cd87f",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:671c6cebed0d3a3eae7bb4a710c93c8bed5363cd0838216510af896bb699c9dd",
+      "publicPath": "evaluation/revisions/002/case-manifest.json",
+      "promotedIdentity": "sha256:671c6cebed0d3a3eae7bb4a710c93c8bed5363cd0838216510af896bb699c9dd",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:8edd196caeece548aee11ee55301948f6499440949c290a463121f370e6ce835",
+      "publicPath": "evaluation/revisions/002/.hidden-test/manifest.json",
+      "promotedIdentity": "sha256:8edd196caeece548aee11ee55301948f6499440949c290a463121f370e6ce835",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:675db72226fd4794f45d860317465203e6c68cb8175bdd32bd4797b01fd696be",
+      "publicPath": "evaluation/revisions/002/.hidden-test/contracts-git-checkpoint-and-exposure.test.ts",
+      "promotedIdentity": "sha256:675db72226fd4794f45d860317465203e6c68cb8175bdd32bd4797b01fd696be",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:ac1d930ce9e18cc79e9e634dad4aad57bfc5763c882b30d61582ac6687eafa7a",
+      "publicPath": "evaluation/revisions/002/.hidden-test/evaluator-verify-vocabulary.test.ts",
+      "promotedIdentity": "sha256:ac1d930ce9e18cc79e9e634dad4aad57bfc5763c882b30d61582ac6687eafa7a",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:3e18a702388f540ce706a1ac24100154659d2393753e3075e0141c4181c4f36b",
+      "publicPath": "evaluation/revisions/002/.hidden-test/skills-no-direct-publication.test.ts",
+      "promotedIdentity": "sha256:3e18a702388f540ce706a1ac24100154659d2393753e3075e0141c4181c4f36b",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:c1017da5e8942eb5f8372cd057ab049a81d7597ddf14580f7df93d3b7d2bba5f",
+      "publicPath": "evaluation/revisions/002/.hidden-test/outcome-completion-mode.test.ts",
+      "promotedIdentity": "sha256:c1017da5e8942eb5f8372cd057ab049a81d7597ddf14580f7df93d3b7d2bba5f",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:a9752aec86079fd2c78d4155ff0a3f02d0d237617bcf88da8c05b61bc5c68d80",
+      "publicPath": "evaluation/revisions/002/.hidden-test/bootstrap-evidence-durable.test.ts",
+      "promotedIdentity": "sha256:a9752aec86079fd2c78d4155ff0a3f02d0d237617bcf88da8c05b61bc5c68d80",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:f83e06767ae2fd0a183cf3468e03a90996c140be7cfb0c25b809fea6f3cfa091",
+      "publicPath": "evaluation/revisions/002/.hidden-test/promotion-binds-exact-revision.test.ts",
+      "promotedIdentity": "sha256:f83e06767ae2fd0a183cf3468e03a90996c140be7cfb0c25b809fea6f3cfa091",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:d2f900b866425c0df82dd459f9fa667eaf5757fa1aacafb7d3932d2b7598ad22",
+      "publicPath": "evaluation/revisions/002/.hidden-test/contract-event-producers-bound.test.ts",
+      "promotedIdentity": "sha256:d2f900b866425c0df82dd459f9fa667eaf5757fa1aacafb7d3932d2b7598ad22",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:ee4107a51a9e6f2e4767a06d02cca0ff2dd061258bbfc521569f61cae112b5fd",
+      "publicPath": "evaluation/freeze/002.json",
+      "promotedIdentity": "sha256:ee4107a51a9e6f2e4767a06d02cca0ff2dd061258bbfc521569f61cae112b5fd",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:31c0cfa791852f96d1d2850714acfd82527cc4cafcb9c19deaecf3c0d8baf90d",
+      "publicPath": "evaluation/attempts/002/eval-result.md",
+      "promotedIdentity": "sha256:31c0cfa791852f96d1d2850714acfd82527cc4cafcb9c19deaecf3c0d8baf90d",
+      "disposition": "copied"
+    },
+    {
+      "sourceIdentity": "sha256:a8e7d556737c0379b54a484d494871ff416c599c88f26393dd04f90fdaf23c9f",
       "publicPath": "evaluation/attempt-ledger.json",
-      "promotedIdentity": "sha256:627f2caf92f127c992a3803dfd7b9122368ba6868cbe1f9d3c497049c59e5f8b",
+      "promotedIdentity": "sha256:a8e7d556737c0379b54a484d494871ff416c599c88f26393dd04f90fdaf23c9f",
       "disposition": "copied"
     }
   ],
