@@ -114,6 +114,10 @@ export class ExecutionKernel {
       roles?: string[];
       stopAfter?: string[];
       maxAllocations: number;
+      maxAutomaticWork?: number;
+      supersedes?: string;
+      inline?: boolean;
+      executor?: { model?: string; reasoning?: string };
     },
   ): WorkflowGrant {
     return this.#transaction(workflow, () => {
@@ -125,7 +129,17 @@ export class ExecutionKernel {
         !request.delegation.length ||
         request.delegation.some((m) => !["attached", "spawned"].includes(m)) ||
         !Number.isSafeInteger(request.maxAllocations) ||
-        request.maxAllocations < 1
+        request.maxAllocations < 1 ||
+        (request.maxAutomaticWork !== undefined &&
+          (!Number.isSafeInteger(request.maxAutomaticWork) ||
+            request.maxAutomaticWork < 1)) ||
+        (request.executor !== undefined &&
+          (!Object.values(request.executor).every(
+            (value) => typeof value === "string" && value.length > 0,
+          ) ||
+            Object.keys(request.executor).some(
+              (key) => key !== "model" && key !== "reasoning",
+            )))
       )
         throw new Error("invalid execution authorization");
       const events = this.events(workflow);
@@ -153,7 +167,34 @@ export class ExecutionKernel {
           request.maxAllocations,
           definition.policy.maxAllocations,
         ),
+        maxAutomaticWork: Math.min(
+          request.maxAutomaticWork ?? request.maxAllocations,
+          definition.policy.maxAllocations,
+        ),
+        ...(request.inline ? { inline: true } : {}),
+        ...(request.executor ? { executor: request.executor } : {}),
       };
+      if (request.supersedes) {
+        const old = this.execution(workflow, request.supersedes);
+        if (!["allocated", "running"].includes(old.process))
+          throw new Error("supersession requires an active governed execution");
+        value.supersedes = old.id;
+        // The new authority is durable before old authority becomes invalid.
+        this.#append(workflow, "kernel.workflow-grant", value);
+        this.#append(workflow, "kernel.supersession", {
+          execution: old.id,
+          workflowGrant: value.id,
+        });
+        this.#append(workflow, "kernel.process", {
+          execution: old.id,
+          update: {
+            process: "cancelled",
+            failure: "superseded by new workflow authority",
+            attention: "terminal",
+          },
+        });
+        return value;
+      }
       this.#append(workflow, "kernel.workflow-grant", value);
       return value;
     });
@@ -301,6 +342,7 @@ export class ExecutionKernel {
         run.requests.push(event.evidence as unknown as HumanRequest);
         run.attention = "WAITING_FOR_HUMAN";
       }
+      if (event.transition === "kernel.supersession") run.superseded = true;
       if (event.transition === "kernel.human-response") {
         const request = run.requests.find(
           (r) => r.id === event.evidence.request,
@@ -337,7 +379,11 @@ export class ExecutionKernel {
         p.modes.includes(mode) &&
         grant.capabilities.every((c) => p.capabilities.includes(c)) &&
         (!grant.executorConstraints.protected ||
-          p.isolation.includes("private-workspace")),
+          p.isolation.includes("private-workspace")) &&
+        (!grant.executorConstraints.model ||
+          p.model === grant.executorConstraints.model) &&
+        (!grant.executorConstraints.reasoning ||
+          p.reasoning === grant.executorConstraints.reasoning),
     );
     const chosen = this.options.selectExecutor
       ? this.options.selectExecutor(grant, structuredClone(eligible))
@@ -352,12 +398,17 @@ export class ExecutionKernel {
       session: string;
       mode: "attached" | "spawned";
       predecessor?: string;
+      inline?: boolean;
     },
   ): { execution: Execution; grant: RoleGrant; duplicate: boolean } {
     return this.#transaction(workflow, () => {
       const parent = this.grant(workflow, workflowGrant);
       if (!parent.delegation.includes(request.mode))
         throw new Error("delegation mode denied");
+      if (request.inline && (request.mode !== "attached" || !parent.inline))
+        throw new Error(
+          "inline role adoption lacks explicit workflow authority",
+        );
       const session = this.session(request.session);
       if (
         !session.profile.available ||
@@ -417,21 +468,34 @@ export class ExecutionKernel {
       if (resolution.kind !== "grant")
         throw new Error(`${resolution.kind}: ${resolution.reason}`);
       const grant = resolution.grant;
-      const inFlight = this.executions(workflow).find(
-        (e) =>
-          e.workflowGrant === parent.id &&
-          ["allocated", "running"].includes(e.process),
+      const inFlight = this.executions(workflow).find((e) =>
+        ["allocated", "running"].includes(e.process),
       );
-      if (inFlight)
-        return {
-          execution: inFlight,
-          grant: this.roleGrant(workflow, inFlight.roleGrant),
-          duplicate: true,
-        };
+      if (inFlight) {
+        const activeGrant = this.roleGrant(workflow, inFlight.roleGrant);
+        if (activeGrant.id === grant.id)
+          return { execution: inFlight, grant: activeGrant, duplicate: true };
+        throw new Error(
+          "active governed execution conflicts with non-equivalent authority; explicit supersession required",
+        );
+      }
       const prior = this.executions(workflow).find(
         (e) => e.roleGrant === grant.id,
       );
       if (prior) return { execution: prior, grant, duplicate: true };
+      const operationalRetry =
+        previous &&
+        this.roleGrant(workflow, previous.roleGrant).role === grant.role;
+      const automaticUsed = this.events(workflow).filter(
+        (e) =>
+          e.transition === "kernel.automatic-work" &&
+          e.evidence.workflowGrant === parent.id,
+      ).length;
+      if (
+        !operationalRetry &&
+        automaticUsed >= (parent.maxAutomaticWork ?? parent.maxAllocations)
+      )
+        throw new Error("gate: workflow automatic-work budget exhausted");
       const active = Object.keys(this.project.workflows)
         .flatMap((w) => this.executions(w))
         .some(
@@ -445,7 +509,11 @@ export class ExecutionKernel {
           session.profile.capabilities.includes(c),
         ) ||
         (grant.executorConstraints.protected &&
-          !session.profile.isolation.includes("private-workspace"))
+          !session.profile.isolation.includes("private-workspace")) ||
+        (grant.executorConstraints.model !== undefined &&
+          session.profile.model !== grant.executorConstraints.model) ||
+        (grant.executorConstraints.reasoning !== undefined &&
+          session.profile.reasoning !== grant.executorConstraints.reasoning)
       )
         throw new Error("executor capabilities/isolation denied");
       const execution: Execution = {
@@ -463,6 +531,20 @@ export class ExecutionKernel {
         result: null,
         actions: [],
         requests: [],
+        executor: {
+          requested: {
+            ...(grant.executorConstraints.model
+              ? { model: grant.executorConstraints.model }
+              : {}),
+            ...(grant.executorConstraints.reasoning
+              ? { reasoning: grant.executorConstraints.reasoning }
+              : {}),
+          },
+          confirmed: {
+            model: session.profile.model ?? null,
+            reasoning: session.profile.reasoning ?? null,
+          },
+        },
       };
       // Record exposure before delivering any workspace or contract to an executor.
       for (const workspace of grant.workspaces)
@@ -484,6 +566,13 @@ export class ExecutionKernel {
         grant,
         execution,
       });
+      if (!operationalRetry)
+        this.#append(workflow, "kernel.automatic-work", {
+          workflowGrant: parent.id,
+          execution: execution.id,
+          roleGrant: grant.id,
+          used: automaticUsed + 1,
+        });
       const allocation = required(definition.roles[grant.role]).policy
         .onAllocate;
       if (allocation) {
@@ -574,6 +663,18 @@ export class ExecutionKernel {
           );
     }
   }
+  continuationStopped(
+    workflow: string,
+    workflowGrant: string,
+    reason: string,
+  ): void {
+    this.#transaction(workflow, () => {
+      this.#append(workflow, "kernel.continuation-stopped", {
+        workflowGrant,
+        reason,
+      });
+    });
+  }
   result(
     workflow: string,
     id: string,
@@ -584,6 +685,7 @@ export class ExecutionKernel {
       const execution = this.execution(workflow, id);
       if (
         execution.result ||
+        execution.superseded ||
         execution.attention === "WAITING_FOR_HUMAN" ||
         !["allocated", "running", "exited"].includes(execution.process)
       )
@@ -592,6 +694,7 @@ export class ExecutionKernel {
       const role = required(
         this.definition(workflow, grant.methodology).roles[grant.role],
       );
+      const resultConstraints = role.contract.resultConstraints ?? [];
       if (
         !role.contract.results.includes(disposition) ||
         !Object.entries(methodology).every(
@@ -601,6 +704,22 @@ export class ExecutionKernel {
         )
       )
         throw new Error("result violates pinned contract");
+      if (
+        resultConstraints.some(
+          (constraint) =>
+            matches(methodology, constraint.when) &&
+            (!constraint.required?.every((field) => field in methodology) ||
+              constraint.absent?.some((field) => field in methodology)),
+        )
+      )
+        throw new Error("result violates pinned cross-field contract");
+      const matchingOutcomes = role.policy.outcomes.filter(
+        (rule) =>
+          rule.disposition === disposition &&
+          matches(methodology, rule.methodology ?? {}),
+      );
+      if (resultConstraints.length && matchingOutcomes.length !== 1)
+        throw new Error("result lacks an explicit configured outcome");
       for (const path of disposition === "succeeded"
         ? role.contract.postconditions
         : [])
@@ -959,6 +1078,7 @@ export class ExecutionKernel {
         const allowed = grant.hostActions.publication;
         if (
           !allowed ||
+          execution.superseded ||
           allowed.workspace !== workspace ||
           allowed.commit !== commit ||
           allowed.ref !== ref ||

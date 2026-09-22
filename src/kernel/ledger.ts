@@ -109,13 +109,18 @@ export function predicate(
   const candidates = (p.current ? scopedEvents(events, policy) : events).filter(
     (e) => e.transition === p.event,
   );
+  const anchor = p.after
+    ? events.findLastIndex((v) => v.transition === p.after)
+    : -1;
+  // `after` has a real anchor requirement. Treating a missing anchor as -1
+  // accidentally made every matching event qualify, which is a remarkably
+  // efficient way to invent authority from nothing.
+  if (p.after && anchor < 0) return false;
   return (
     (p.latest ? candidates.slice(-1) : candidates).filter(
       (e) =>
         matches(e.evidence, p.fields ?? {}) &&
-        (!p.after ||
-          events.indexOf(e) >
-            events.findLastIndex((v) => v.transition === p.after)),
+        (!p.after || events.indexOf(e) > anchor),
     ).length >= (p.atLeast ?? 1)
   );
 }

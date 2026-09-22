@@ -23,6 +23,7 @@ import {
   appendLedger,
   contentId,
   identity,
+  predicate,
   required,
 } from "../src/kernel/ledger.ts";
 import type {
@@ -216,6 +217,164 @@ async function external(
   await once(child, "spawn");
   return child;
 }
+
+void test("014a: predicates require an existing after anchor", () => {
+  const policy: WorkflowPolicy = {
+    schemaVersion: 1,
+    roles: {},
+    gates: [],
+    maxAllocations: 1,
+  };
+  const events = [
+    { transition: "A", evidence: {} },
+    { transition: "B", evidence: {} },
+    { transition: "A", evidence: {} },
+  ];
+  assert.equal(
+    predicate({ event: "A", after: "missing" }, events, policy),
+    false,
+  );
+  assert.equal(predicate({ event: "A", after: "B" }, events, policy), true);
+});
+
+void test("014a: result constraints and non-equivalent active authority are enforced", (t) => {
+  const f = fixture(t, "014a-result-contract");
+  f.contract.methodology = {
+    result: ["PASS", "FAIL"],
+    classification: ["IMPLEMENTATION_FAILURE"],
+  };
+  f.contract.resultConstraints = [
+    { when: { result: "PASS" }, absent: ["classification"] },
+    { when: { result: "FAIL" }, required: ["classification"] },
+  ];
+  required(f.policy.roles.produce).outcomes = [
+    {
+      disposition: "succeeded",
+      methodology: { result: "PASS" },
+      transition: "passed",
+    },
+    {
+      disposition: "succeeded",
+      methodology: { result: "FAIL" },
+      transition: "failed",
+    },
+  ];
+  json(join(f.root, "contracts/produce.json"), f.contract);
+  json(join(f.root, "policy.json"), f.policy);
+  const grant = f.authorize();
+  const session = f.kernel.register(f.workflow, "fixture").session;
+  const first = allocate(f, grant, "produce", session).execution;
+  f.kernel.process(f.workflow, first.id, "running");
+  assert.throws(
+    () =>
+      f.kernel.result(f.workflow, first.id, "succeeded", {
+        result: "PASS",
+        classification: "IMPLEMENTATION_FAILURE",
+      }),
+    /cross-field/,
+  );
+  assert.throws(
+    () =>
+      f.kernel.result(f.workflow, first.id, "succeeded", { result: "FAIL" }),
+    /cross-field/,
+  );
+  writeFileSync(
+    join(f.root, "items/work-item/input.txt"),
+    "changed authority basis\n",
+  );
+  const other = f.kernel.register(f.workflow, "fixture").session;
+  assert.throws(
+    () => allocate(f, grant, "produce", other),
+    /non-equivalent authority/,
+  );
+});
+
+void test("014a: automatic-work budgets are per grant and supersession invalidates old authority", (t) => {
+  const f = fixture(t, "014a-budget-supersession");
+  f.policy.roles.check = {
+    ...required(f.policy.roles.produce),
+    when: { event: "produced" },
+    outcomes: [{ disposition: "succeeded", transition: "checked" }],
+  };
+  json(join(f.root, "policy.json"), f.policy);
+  const firstGrant = f.kernel.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached"],
+    maxAllocations: 4,
+    maxAutomaticWork: 1,
+  });
+  const session = f.kernel.register(f.workflow, "fixture").session;
+  const first = allocate(f, firstGrant, "produce", session).execution;
+  f.kernel.process(f.workflow, first.id, "running");
+  f.kernel.result(f.workflow, first.id, "succeeded", {});
+  f.kernel.process(f.workflow, first.id, "exited");
+  assert.throws(
+    () => allocate(f, firstGrant, "check", session),
+    /automatic-work budget exhausted/,
+  );
+  const secondGrant = f.kernel.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached"],
+    maxAllocations: 4,
+    maxAutomaticWork: 2,
+  });
+  const fresh = allocate(f, secondGrant, "check", session);
+  assert.equal(
+    fresh.duplicate,
+    false,
+    "a new human grant receives a fresh budget",
+  );
+  f.kernel.process(f.workflow, fresh.execution.id, "cancelled");
+
+  const thirdGrant = f.kernel.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached"],
+    maxAllocations: 4,
+  });
+  const third = allocate(f, thirdGrant, "check", session).execution;
+  const superseding = f.kernel.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached"],
+    maxAllocations: 4,
+    supersedes: third.id,
+  });
+  assert.equal(f.kernel.execution(f.workflow, third.id).superseded, true);
+  assert.equal(f.kernel.execution(f.workflow, third.id).process, "cancelled");
+  assert.throws(
+    () => f.kernel.result(f.workflow, third.id, "succeeded", {}),
+    /not permitted/,
+  );
+  assert.ok(superseding.supersedes);
+});
+
+void test("014a: inline adoption is a separate, explicit grant capability", (t) => {
+  const f = fixture(t, "014a-inline");
+  const session = f.kernel.register(f.workflow, "fixture").session;
+  const ordinary = f.authorize();
+  assert.throws(
+    () =>
+      f.kernel.allocate(f.workflow, ordinary.id, {
+        session: session.id,
+        mode: "attached",
+        inline: true,
+      }),
+    /lacks explicit workflow authority/,
+  );
+  const inline = f.kernel.authorize(f.workflow, {
+    continuation: false,
+    delegation: ["attached"],
+    maxAllocations: 1,
+    inline: true,
+  });
+  assert.equal(
+    f.kernel.allocate(f.workflow, inline.id, {
+      session: session.id,
+      mode: "attached",
+      inline: true,
+    }).duplicate,
+    false,
+  );
+});
 
 void test("TR1: configured Harness As-Built resolves from canonical PASS/promotion despite blocked publication and absent/stale local history", (t) => {
   const f = fixture(t, "canonical");

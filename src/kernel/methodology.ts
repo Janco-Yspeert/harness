@@ -44,7 +44,9 @@ export function loadDefinition(
       !Array.isArray(contract.forbiddenExposure) ||
       !Array.isArray(contract.results) ||
       !Array.isArray(contract.human) ||
-      !Array.isArray(contract.postconditions)
+      !Array.isArray(contract.postconditions) ||
+      (contract.resultConstraints !== undefined &&
+        !Array.isArray(contract.resultConstraints))
     )
       throw new Error(`invalid contract for ${name}`);
     if (
@@ -54,6 +56,14 @@ export function loadDefinition(
       throw new Error("governed publication is host-mediated");
     if (!Number.isSafeInteger(entry.retry.limit) || entry.retry.limit < 0)
       throw new Error("invalid retry bound");
+    for (const constraint of contract.resultConstraints ?? []) {
+      if (
+        (constraint.required !== undefined &&
+          !Array.isArray(constraint.required)) ||
+        (constraint.absent !== undefined && !Array.isArray(constraint.absent))
+      )
+        throw new Error(`invalid result constraint for ${name}`);
+    }
     for (const name of [
       ...contract.inputs.map((i) => i.validator),
       ...entry.outcomes.map((o) => o.evidence?.validator),

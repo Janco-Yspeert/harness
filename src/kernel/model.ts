@@ -44,6 +44,13 @@ export interface RoleContract {
   inputs: InputRule[];
   results: string[];
   methodology: Record<string, string[]>;
+  // Declarative cross-field result checks keep role vocabulary out of the
+  // kernel. A matching `when` may require fields or require them to be absent.
+  resultConstraints?: Array<{
+    when: Data;
+    required?: string[];
+    absent?: string[];
+  }>;
   human: Array<"input" | "approval" | "root">;
   postconditions: string[];
   publication?: {
@@ -136,6 +143,10 @@ export interface WorkflowGrant {
   roles: string[];
   stopAfter: string[];
   maxAllocations: number;
+  maxAutomaticWork?: number;
+  supersedes?: string;
+  inline?: boolean;
+  executor?: { model?: string; reasoning?: string };
 }
 export interface ExecutorProfile {
   id: string;
@@ -181,7 +192,12 @@ export interface RoleGrant {
       base: string;
     };
   };
-  executorConstraints: { forbiddenExposure: string[]; protected: boolean };
+  executorConstraints: {
+    forbiddenExposure: string[];
+    protected: boolean;
+    model?: string;
+    reasoning?: string;
+  };
   predecessor: string | null;
   rootAuthority: string | null;
 }
@@ -208,8 +224,13 @@ export interface Execution {
   predecessor: string | null;
   result: RoleResult | null;
   transition?: { status: "recorded" | "blocked"; reason: string | null };
+  superseded?: boolean;
   actions: HostActionResult[];
   requests: HumanRequest[];
+  executor?: {
+    requested: { model?: string; reasoning?: string };
+    confirmed: { model: string | null; reasoning: string | null };
+  };
 }
 export interface RootAuthority {
   schemaVersion: 1;

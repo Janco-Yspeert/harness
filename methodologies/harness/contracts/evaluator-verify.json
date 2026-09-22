@@ -49,6 +49,11 @@
       "INFRASTRUCTURE_FAILURE"
     ]
   },
+  "resultConstraints": [
+    { "when": { "result": "PASS" }, "absent": ["classification"] },
+    { "when": { "result": "FAIL" }, "required": ["classification"] },
+    { "when": { "result": "BLOCKED" }, "required": ["classification"] }
+  ],
   "human": ["input", "approval", "root"],
   "postconditions": ["verification-result.json", "manifest.md"]
 }

@@ -95,6 +95,16 @@ Treat Harness as a remote code-execution control surface.
 
 ## Development workflow
 
+### Supervisor identity
+
+Codex App coordinating a Harness workflow is the orchestrator/supervisor by
+default. Reading a role skill, inspecting a grant, or receiving workflow
+execution authorization does not make that context the worker for a governed
+role. Inline role work requires a separately granted attached Role Grant with
+explicit inline authority (or a mechanically satisfied configured fallback).
+Until then, the supervisor must not edit role artifacts, submit role results, or
+claim a worker's executor/model identity.
+
 ### Autonomous orchestration
 
 A phase boundary is not a human gate. Before returning control, determine

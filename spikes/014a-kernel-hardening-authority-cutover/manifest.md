@@ -87,3 +87,28 @@
   19 procedures, complete bidirectional traceability, and public/private
   readiness consistency. No candidate implementation was inspected or run.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 005 — Implementation
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`.
+- Inputs: frozen `spike.md`
+  `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`,
+  frozen `design-map.md`
+  `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  prepared coverage `sha256:6a2e044e461dcc86cbcdd54b7e88df7bbf3a7dbf93cfbdfa3d1dfa4730919a45`,
+  and public `eval-requirements.md`
+  `sha256:ccc99e8ea39dd9cfccbf6fa920c9bb7b152beb25e4091dff6c6bc80336baab65`,
+  verified against committed provenance. No retry feedback applies.
+- Result: succeeded; implementation candidate adds generic result constraints,
+  equivalent-grant-only deduplication, durable continuation-stop facts,
+  grant-scoped automatic-work bounds, safe supersession, explicit inline
+  adoption, executor requested/confirmed attestation, deterministic `after`
+  semantics, and missing spawned-result failure handling.
+- Output: candidate implementation diff
+  `sha256:b56eeac19d25e564082276fb3c58d017ca4e9b5964886c374066f9e06faa9526`
+  before this manifest update.
+- Checks: `git diff --check`; `npm run typecheck`; `npm run lint`;
+  `npm run format:check`; and `npm test` (113 passing, 0 failing).
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.

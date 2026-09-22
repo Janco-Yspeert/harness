@@ -41,6 +41,8 @@ const MECHANICS = new Set([
   "kernel.transition",
   "kernel.transition-blocked",
   "kernel.result",
+  "kernel.automatic-work",
+  "kernel.continuation-stopped",
 ]);
 export function authorityBasis(events: LedgerEvent[]): string {
   return contentId(
@@ -311,6 +313,7 @@ export function resolveAuthority(
     executorConstraints: {
       forbiddenExposure: role.contract.forbiddenExposure,
       protected: role.contract.protected,
+      ...workflow.executor,
     },
     predecessor,
     rootAuthority: override?.id ?? null,

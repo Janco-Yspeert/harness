@@ -3,6 +3,14 @@
 The orchestrator coordinates Harness workflow roles. It does not acquire
 authority merely because a workflow transition is mechanically eligible.
 
+Codex App is a supervisor by default. Skill discovery and general workflow
+execution authority permit coordination only; they never authorize inline role
+execution. A supervisor may become a governed worker only through an explicit
+attached Role Grant carrying inline authority, or a configured inline fallback
+whose condition the host has mechanically recorded. Parent model/effort facts
+remain parent facts and must not be reported as an adopted worker's runtime
+attestation.
+
 ## Human intent is the outer authority
 
 Distinguish between observation and execution.

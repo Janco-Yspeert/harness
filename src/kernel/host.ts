@@ -100,7 +100,16 @@ export class GovernedHost {
           !Array.isArray(delegation) ||
           !delegation.every((m) => m === "attached" || m === "spawned") ||
           typeof body.continuation !== "boolean" ||
-          typeof body.maxAllocations !== "number"
+          typeof body.maxAllocations !== "number" ||
+          (body.maxAutomaticWork !== undefined &&
+            typeof body.maxAutomaticWork !== "number") ||
+          (body.supersedes !== undefined &&
+            typeof body.supersedes !== "string") ||
+          (body.inline !== undefined && typeof body.inline !== "boolean") ||
+          (body.executor !== undefined &&
+            (body.executor === null ||
+              typeof body.executor !== "object" ||
+              Array.isArray(body.executor)))
         )
           throw new Error("invalid workflow grant request");
         const strings = (v: unknown): string[] => {
@@ -108,15 +117,22 @@ export class GovernedHost {
             throw new Error("expected string array");
           return v;
         };
-        send(201, {
-          grant: this.kernel.authorize(workflow, {
-            continuation: body.continuation,
-            delegation: delegation as Array<"attached" | "spawned">,
-            maxAllocations: body.maxAllocations,
-            ...(body.roles ? { roles: strings(body.roles) } : {}),
-            ...(body.stopAfter ? { stopAfter: strings(body.stopAfter) } : {}),
-          }),
+        const grant = this.kernel.authorize(workflow, {
+          continuation: body.continuation,
+          delegation: delegation as Array<"attached" | "spawned">,
+          maxAllocations: body.maxAllocations,
+          ...(body.roles ? { roles: strings(body.roles) } : {}),
+          ...(body.stopAfter ? { stopAfter: strings(body.stopAfter) } : {}),
+          ...(body.maxAutomaticWork !== undefined
+            ? { maxAutomaticWork: body.maxAutomaticWork }
+            : {}),
+          ...(body.supersedes ? { supersedes: body.supersedes } : {}),
+          ...(body.inline ? { inline: true } : {}),
+          ...(body.executor ? { executor: object(body.executor) } : {}),
         });
+        if (grant.supersedes)
+          this.#children.get(grant.supersedes)?.kill("SIGTERM");
+        send(201, { grant });
         return;
       }
       if (operation === "resolve") {
@@ -171,12 +187,16 @@ export class GovernedHost {
         const role = typeof body.role === "string" ? body.role : undefined;
         const predecessor =
           typeof body.predecessor === "string" ? body.predecessor : undefined;
+        const inline = body.inline === true;
+        if (inline && body.mode !== "attached")
+          throw new Error("inline adoption requires attached execution");
         if (body.mode === "attached") {
           const result = this.kernel.allocate(workflow, grantId, {
             session: text(body.session),
             mode: "attached",
             ...(role ? { role } : {}),
             ...(predecessor ? { predecessor } : {}),
+            ...(inline ? { inline: true } : {}),
           });
           send(result.duplicate ? 200 : 201, result);
           return;
@@ -256,9 +276,13 @@ export class GovernedHost {
               this.kernel.process(
                 workflow,
                 execution.id,
-                code === 0 ? "exited" : "failed",
+                code === 0 && execution.result ? "exited" : "failed",
                 null,
-                code === 0 ? null : "provider process failed",
+                code === 0 && execution.result
+                  ? null
+                  : code === 0
+                    ? "missing semantic result handshake"
+                    : "provider process failed",
               );
             this.#continue(workflow, grantId, required(address));
           });
@@ -400,7 +424,10 @@ export class GovernedHost {
     const grant = this.kernel.grant(workflow, grantId);
     if (!grant.continuation || !grant.delegation.includes("spawned")) return;
     const resolution = this.kernel.inspect(workflow, grantId);
-    if (resolution.kind !== "grant") return;
+    if (resolution.kind !== "grant") {
+      this.kernel.continuationStopped(workflow, grantId, resolution.reason);
+      return;
+    }
     const existing = this.kernel
       .executions(workflow)
       .find((e) => e.roleGrant === resolution.grant.id);
@@ -434,7 +461,24 @@ export class GovernedHost {
           ...(existing ? { predecessor: existing.id } : {}),
         }),
       },
-    ).catch(() => {});
+    )
+      .then(async (response) => {
+        if (!response.ok)
+          this.kernel.continuationStopped(
+            workflow,
+            grantId,
+            `automatic continuation rejected: ${await response.text()}`,
+          );
+      })
+      .catch((error: unknown) => {
+        this.kernel.continuationStopped(
+          workflow,
+          grantId,
+          `automatic continuation transport failure: ${
+            error instanceof Error ? error.message : "unknown error"
+          }`,
+        );
+      });
   }
   close(): void {
     this.#closed = true;
