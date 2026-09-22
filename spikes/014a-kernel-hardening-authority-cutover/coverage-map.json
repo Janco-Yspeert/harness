@@ -4,13 +4,23 @@
   "readiness": {
     "skill": "evaluator",
     "skillVersion": 12,
-    "evaluatorRevision": "002",
-    "privateInventoryIdentity": "sha256:bdc540381d176a312593089c382195e38ce67fc456abdcd5096e9218e8d85d21",
-    "validatorResultBinding": "sha256:db8eff9458bd2e3674a764e03a39e71271193df98efe86315cd7bc1f318519f6",
+    "evaluatorRevision": "003",
+    "privateInventoryIdentity": "sha256:b444132d3be0332e5bbdb46b693dc1b646842d733b31be8a5617d12bb400050f",
+    "validatorResultBinding": "sha256:fb039463e5927caf12db911a57ca106d094c6fd95112160813b8c3f0c9395d1b",
     "integrityValidation": "PASS",
     "criterionRecordCount": 23,
-    "priorRevision": "001",
-    "priorRevisionIdentity": "sha256:d44a06c755bc57ec14b976c48f9bfbda2e04c7eb795c855666c2131e8f2aaceb"
+    "priorRevision": "002",
+    "priorRevisionIdentity": "sha256:33cc04f03c0b8fede97604a20be75fd97a3db103c15d18286b40cd1aef7811b4"
+  },
+  "repair": {
+    "trigger": "human-evaluator-correction-authorized",
+    "triggerSemanticResult": "sha256:a4becba0b8b22448a1d8f20b0e7542cbdeb36056e0169fc6307822407bfae7c2",
+    "classification": "EVALUATOR_COVERAGE_DEFECT",
+    "sourceEvaluatorRevision": "002",
+    "resultEvaluatorRevision": "003",
+    "affectedCriteria": ["AC03"],
+    "acceptanceSemanticsPreserved": true,
+    "integrityValidation": "PASS"
   },
   "criteria": [
     {

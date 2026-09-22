@@ -182,3 +182,41 @@
   proof.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 009 — Evaluator repair
+
+- Skill: `evaluator` v12,
+  `sha256:ab89688a2016644d03a6a05bb37f8f18a82d77aba079788b0d6b9e79e8f8c29d`.
+- Trigger: `human-evaluator-correction-authorized`, classification
+  `EVALUATOR_COVERAGE_DEFECT`, against attempt 004's otherwise validator-valid
+  `PASS` (source evaluator revision `002`, semantic result
+  `sha256:a4becba0b8b22448a1d8f20b0e7542cbdeb36056e0169fc6307822407bfae7c2`).
+- Inputs: frozen `spike.md`
+  `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`,
+  frozen `design-map.md`
+  `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  source evaluator revision `002`
+  `sha256:33cc04f03c0b8fede97604a20be75fd97a3db103c15d18286b40cd1aef7811b4`.
+- Result: succeeded; evaluator revision `003`
+  `sha256:d169cf26cb187c904697e6be6ca31d6d15ed8fbaf055404418d1aef3e57a8e4f`
+  preserves revision `002` (archived byte-for-byte) and corrects only
+  procedure P02's frozen wording, which had omitted exercising the canonical
+  valid PASS-without-classification path required by AC03's already-frozen
+  invariant. AC02, AC03, their `frozenAuthority`, `sufficiency`, `mode`, and
+  every other criterion/procedure/coverage-mode are byte-for-byte unchanged;
+  acceptance semantics are preserved.
+- Public output: corrected `coverage-map.json`
+  `sha256:5d69abc778d71f32308b4edc9eff3d476fc6c4207f8e7df617e7b17fa068ad7d`.
+- Checks: deterministic structural pre-freeze integrity validation passed (23
+  criteria, 19 procedures, complete bidirectional traceability, public/private
+  readiness consistency). A separate, explicitly bounded repair-control
+  exercise (not a new verification attempt) confirmed the corrected procedure
+  is genuinely executable through the real governed result/canonical-
+  transition path against the unchanged, already-accepted candidate
+  `b1a4ed833db84b2f4736c2454d5f19103f9af7aa`; it also surfaced an
+  implementation-side finding on that candidate, reported out-of-scope for a
+  follow-on process and not actioned by this repair. Attempt 004's finalized
+  `PASS`, bound to evaluator revision `002`, is unchanged.
+- Restricted evaluator material inspected: none beyond this repair's own
+  scope.
+- Measurement cutoff: immediately before this manifest update.
