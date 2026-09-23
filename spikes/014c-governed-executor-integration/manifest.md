@@ -211,3 +211,32 @@
 - Restricted evaluator material inspected: none. The private workspace was
   empty.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 007 — Evaluator Prepare (blocked, repeat)
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`
+  (pinned bytes delivered by Role Grant
+  `sha256:5231afd3b8b5d64842722387ba0fdbce6fcba89cd38a5ab6a312f712b6324cb0`,
+  assignment `b248de13-d5fd-41ee-9a41-82c08497969c`, predecessor
+  `6c2ca818-f8e0-4722-b044-d6e5b3131860`; human-authorized 014c bootstrap
+  execution), mode `prepare`.
+- Inputs: frozen `spike.md`
+  `sha256:0e86f034efd3b3f4217f5049fdc063c47f4b36147b309b9d6b4fbf1f095d2d18`
+  and frozen `design-map.md`
+  `sha256:9f98ebfcc201736737cb9e0f5dcebc29cafd1235a8e9465b02c81764013e82e1`.
+  Working-tree bytes match the host-bound identities.
+- Result: **blocked** (infrastructure, unchanged from Run 006). The bound
+  private evaluation workspace `/tmp/harness-014c-private/evaluation` is still
+  mounted read-only in this execution (`ro` bind mount), and the file tools are
+  still confined to the repository and the bootstrap scratch directory. No
+  private artifact could be created and no evaluator revision was frozen.
+- Outputs: none. No `eval-requirements.md` or `coverage-map.json` was produced.
+  `evaluation-prepared` must not be recorded.
+- Required recovery: fix the executor profile or sandbox so that the
+  evaluator-private workspace is writable, then rerun. Reallocating the same
+  profile again will not help. This needs separate authorization. It is not a
+  change to the brief or the Design Map.
+- Restricted evaluator material inspected: none. The private workspace was
+  empty.
+- Measurement cutoff: immediately before this manifest update.
