@@ -91,6 +91,14 @@ Target repository touchpoints: migrate the relevant functions in `src/claude-wor
 
 Production governed profiles must select a registered repository-owned adapter, not a caller-provided arbitrary executable/script or a generated `/tmp` wrapper. Existing fixture command profiles may remain available **only to explicit tests**. Temporary workspaces for data, sockets, logs, and provider scratch are allowed; temporary *generated orchestration code* is not. If no eligible registered adapter is installed or configured, the host stops with an inspectable error instead of accepting a makeshift command.
 
+Before a new production Workflow Execution Grant binds its methodology, the host
+must establish that the current kernel definition is the component-equivalent
+projection of the append-only trusted methodology manifest at its recorded
+revision. A changed active policy, role contract, role skill, or validator
+source must produce an inspectable denial; the host must not silently adopt the
+working tree merely because it is readable. The manifest and kernel-definition
+aggregate identities may differ because they encode different schemas.
+
 ## 3. One versioned worker-to-host protocol
 
 Define and implement a small, provider-neutral, typed interface with the following operations and separation of authority:
@@ -186,6 +194,7 @@ Before independent verification, commit the implementation, selected interface d
 | AC13 | Orchestrator explicitly uses Harness and may not generate substitute bridges, with mechanical rejection in configured production execution. | Versioned skill edit, production profile validation and no-bridge regression test. |
 | AC14 | Legacy `/workflow-runs` cannot mutate/dispatch active governed workflows, and 014a's canonical history remains unchanged. | Existing legacy rejection regression and exact ledger-history comparison. |
 | AC15 | Full repository checks and independent frozen-authority verification pass, with real-provider tests separately evidenced rather than inferred from unit tests. | `npm run check`, deterministic integration results, independent evaluation and a concise as-built file change/evidence map. |
+| AC16 | New governed workflow grants reject an untrusted active methodology edit rather than silently binding the working tree. | Trust-equivalence validation and regression coverage for changed policy, role contract/skill, or validator source; the normal trusted manifest/kernel projection remains accepted. |
 
 A failure of AC02's permitted-authentication gate, AC05's real provider launch or AC09's real host action is a **genuine blocker**, not permission to declare an infrastructure exception PASS. Preserve successful partial evidence without inflating it into completion.
 

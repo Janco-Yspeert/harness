@@ -1,6 +1,6 @@
 # 014c Bootstrap Authority — Governed Evaluator Launch Path
 
-**Status:** inactive pending trusted-methodology provenance resolution
+**Status:** active human-authorized bootstrap; trust equivalence verified
 
 ## Human authority
 
@@ -57,8 +57,40 @@ while the repository's current definition and the latest canonical 014a kernel
 definition both resolve to
 `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`.
 
-The bootstrap executable must not be activated until an explicit human decision
-identifies which definition is authoritative or supplies a bounded correction
-that restores the trusted-record binding. This exception otherwise expires as
-soon as a repository-owned governed adapter and a separately pinned independent
-evaluator path are established; it cannot become a production executor.
+The original conclusion was intentionally conservative and is retained above as
+historical context. Human review identified the two identities as distinct
+schemas rather than competing definitions. The equivalence evidence below
+resolves that conclusion. This exception otherwise expires as soon as a
+repository-owned governed adapter and a separately pinned independent evaluator
+path are established; it cannot become a production executor.
+
+## Addendum 1 — trusted manifest ↔ kernel definition equivalence
+
+Read-only reconstruction used `buildMethodologyManifest` from
+`src/methodology-evolution.ts` against exact revision
+`0a3dafe8e103cc7376bdd7fae32493710613d0c0`. It reconstructed manifest
+`sha256:5fc66acdc6e2701ded4f729aa987b1db119845ae1bfca5f385725ba34f42ac48`,
+which exactly equals the final append-only trusted-history record. Resolving
+the present kernel through `loadDefinition` produced the expected distinct
+kernel-definition identity
+`sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`.
+
+The representations agree component-for-component:
+
+- policy: `sha256:c038371aa60236bd5a4dc907c8a7fde03755ebe89feab7b5724fd57701c31aca`;
+- every active role's contract and skill identity, including evaluator v13;
+- `prepared-coverage` and `verification-accounting`, each sourced from
+  `src/methodologies/harness-public.ts` at
+  `sha256:5323695f5917f969c90530d15048df4250c653cf1d8ab59a2dac2820fd2a3508`.
+
+The trusted revision through this addendum changes no policy, active contract,
+active skill, or validator source; the only methodology-related later change is
+the append-only trust-history record. The bootstrap may therefore bind the
+current kernel definition only as the verified projection of the stated trusted
+manifest/revision, not as an independently chosen working-tree authority.
+
+014c's permanent governed integration must enforce that same relationship: a
+new Workflow Execution Grant must reject an untrusted working-tree methodology
+edit rather than silently binding it. The implementation must include a
+regression test that changes a relevant policy, role contract, role skill, or
+validator after the trusted revision and observes an inspectable grant denial.
