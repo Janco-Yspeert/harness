@@ -240,3 +240,49 @@
 - Restricted evaluator material inspected: none. The private workspace was
   empty.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 008 — Evaluator Prepare
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`
+  (pinned bytes delivered by Role Grant
+  `sha256:3a1e1b51a592ec422a9c532b31620cb803b31ca01fdb482bf9b495b3898c26ec`,
+  assignment `15719326-5827-4ed3-bc89-ea6b06763c3e`; human-authorized 014c
+  bootstrap execution after the Addendum 2 launch correction), mode `prepare`.
+- Inputs: frozen `spike.md`
+  `sha256:0e86f034efd3b3f4217f5049fdc063c47f4b36147b309b9d6b4fbf1f095d2d18`
+  and frozen `design-map.md`
+  `sha256:9f98ebfcc201736737cb9e0f5dcebc29cafd1235a8e9465b02c81764013e82e1`.
+  Working-tree and committed bytes match the host-bound identities. The
+  pre-implementation baseline is `3830c992bccae2aec2d3a6b7f647f62f81b70e81`.
+- Result: **succeeded**. The private evaluation workspace was writable this
+  time.
+  - Private evaluator revision `001` is frozen with identity
+    `sha256:0f5e6846ac07c260f135e05d844a6487f29d35b64a3ba0d5a1738928c2687db8`.
+  - The pre-freeze integrity validation passed with 0 diagnostics.
+  - Every executable case passed under controlled compliant conditions and
+    failed under controlled non-compliant conditions. No candidate
+    implementation existed or was executed.
+- Outputs:
+  - `eval-requirements.md`
+    `sha256:4208a00410787a09eb4fafdaacd1756fd4f5f00a9bb1bf26e077a52f1ef4338c`.
+    It has 5 testability requirements, 4 evaluator assumptions and no blocking
+    questions.
+  - `coverage-map.json`
+    `sha256:d9a843edfc9557e4e9e80af0b69b7855fc33447ba56dab471173baabdc7aecdf`.
+    It has 16 criterion records (AC01–AC16) and a readiness attestation
+    `integrityValidation: PASS`, with private inventory
+    `sha256:bc16be57bb7ba358cafdfff75dc1d9374c316c741f35bf4ddb91a4e8f56fdc77`
+    and validator result binding
+    `sha256:417a459c39e1df084d538f1bac57b75eab844635f6f785abca996d322c745103`.
+- Safe aggregates:
+  - 9 evidence procedures: 4 executable, plus public regression, decision
+    record, smoke evidence, code review and orchestrator review.
+  - 58 mandatory cases, 15 of them executable.
+- Checks: the repository's `prepared-coverage` validator
+  (`validatePreparedMap`) accepts `coverage-map.json`. Prettier checks pass
+  for both public artifacts.
+- Requested host action: record `evaluation-prepared` after validating this
+  checkpoint. Implementation may then begin against revision `001`.
+- Restricted evaluator material inspected: only this run's own private bundle.
+- Measurement cutoff: immediately before this manifest update.

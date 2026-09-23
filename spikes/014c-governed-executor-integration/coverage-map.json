@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "spike": "014c-governed-executor-integration",
+  "evaluationRequirements": "sha256:4208a00410787a09eb4fafdaacd1756fd4f5f00a9bb1bf26e077a52f1ef4338c",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 13,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:0f5e6846ac07c260f135e05d844a6487f29d35b64a3ba0d5a1738928c2687db8",
+    "privateInventoryIdentity": "sha256:bc16be57bb7ba358cafdfff75dc1d9374c316c741f35bf4ddb91a4e8f56fdc77",
+    "validatorResultBinding": "sha256:417a459c39e1df084d538f1bac57b75eab844635f6f785abca996d322c745103",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 16
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; §2 'One governed executor boundary'; design-map.md 'One governed launch path per provider'",
+      "mode": "MANUAL_REVIEW",
+      "required": true,
+      "procedures": ["M-CODE"],
+      "sufficiency": "Reuse versus copy is a property of the code diff, and module layout is explicit Design Map freedom. M-CODE requires the committed file-level before/after map to separate retained legacy readers from governed launchers. It also confirms that the relevant claude-workflow/workflow-backend logic was moved or factored rather than duplicated, and that each provider has exactly one production governed launch path."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; §1 'Bounded Claude interface experiment' and decision rule; design-map.md §6 executor-decision.md",
+      "mode": "PUBLIC_EVIDENCE",
+      "required": true,
+      "procedures": ["M-DEC"],
+      "sufficiency": "The worksheet, versions, probe outcomes and the choice exist only as the committed executor-decision.md. M-DEC checks every §1 worksheet row for both routes, with evidence and a verdict. It also checks the probe bound (at most one per permitted route), the literal application of the decision rule, and the selection of exactly one production route with a replacement path."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03; §1 decision rule (separate explicit human authorization); Explicit non-goals",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["M-DEC", "M-CODE", "R-REG"],
+      "sufficiency": "Unauthorized billing or permission weakening can appear in the decision record, in configuration or code, or in untested paths. So M-DEC checks for an operator authorization record or an explicit 'none required', and for no token extraction. M-CODE checks that no API-key or billed path and no permission weakening exists without committed human authorization. R-REG requires a visible negative configuration test."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; §2 production profiles; design-map.md §1 'Production configuration is the entrypoint environment' and provider-program overrides",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E3", "R-REG"],
+      "sufficiency": "E3 drives the production entrypoint environment named by the Design Map. It shows that each forbidden production profile form (command-bearing, generated temporary-directory program, unregistered provider, override pointing to a non-provider) has one of two outcomes. Either the host deliberately refuses to start, or the allocation is non-2xx with no running process. In both cases the generated program never runs. R-REG adds the visible registered-adapter selection and the missing-provider category tests."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; §6 real-provider governed smoke tests; design-map.md §7 steps 1–5 and 7",
+      "mode": "PUBLIC_EVIDENCE",
+      "required": true,
+      "procedures": ["M-SMOKE"],
+      "sufficiency": "Real provider launches cannot be reproduced by the evaluator without quota and credentials, and the brief forbids fixture substitution. M-SMOKE checks the committed transcripts and the SHA-256-identified ledger copy against Design Map §7. It requires two distinct real runs, one Codex and one Claude, that are allocated from gated Role Grants through the production host, read their pinned assignments and submit typed results. It recomputes the cited identities. Unproven runs leave the criterion unsatisfied."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; §4 capability mapping; design-map.md §8 permission boundary, publication and remotes",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-REG", "M-SMOKE", "M-CODE"],
+      "sufficiency": "Provider permission flags are implementation-owned. R-REG requires deterministic tests of the capability mapping and of fail-closed unknown capabilities. M-CODE confirms a single reviewed mapping with no bypass or unrestricted mode, excluded ambient settings, and commit without push. M-SMOKE requires the protected real run, or a controlled isolation probe, to evidence the private-workspace boundary."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07; §1 'Model and effort'; design-map.md 'Executor records separate requested from confirmed'",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-REG", "M-DEC", "M-SMOKE"],
+      "sufficiency": "Truthful confirmation depends on provider-reported evidence. R-REG requires tests showing that an unsupported exact constraint is refused before launch, and that confirmed values never come from profile configuration. M-DEC requires the route's capability report. M-SMOKE requires the recorded requested value versus the confirmed-or-unavailable value for each real run."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08; §3 worker-to-host protocol; design-map.md §2 protocol version 1",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["M-CODE", "R-REG"],
+      "sufficiency": "The schema module location and the tool transport are Design Map freedom. So M-CODE reviews that one module defines the v1 request and response schemas, that the four exact operation names are shared by both adapters, that the version appears in the assignment, that the model cannot pass binding or credentials through tool arguments, and that no terminal-prose parser remains. R-REG requires the both-adapter, exact-assignment and unauthorized-action tests."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09; §6 Claude synthetic host action; design-map.md §7 step 5",
+      "mode": "PUBLIC_EVIDENCE",
+      "required": true,
+      "procedures": ["M-SMOKE"],
+      "sufficiency": "Only a genuine real Claude run can establish the transport. M-SMOKE requires the committed host action log and ledger copy to show one requestAction(promotion) of the precreated fixture bytes after a typed result, host byte validation, and a recorded action result and transition. The evaluator recomputes the byte and ledger identities, and treats the result as transport proof only."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10; §3 'valid semantic result followed by a missing or failed required host action'; design-map.md 'Required host actions reuse the existing mechanism'",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["R-REG"],
+      "sufficiency": "The Design Map fixes the observable facts: kernel.result is preserved, no transition occurs without a successful required action, and the action state stays inspectable. But the PASS-then-action scenario needs a trusted synthetic methodology whose declaration shape is implementation freedom. So R-REG requires visible host integration tests. They must cover PASS followed by a successful, failed or omitted synthetic promotion, including a clean exit after PASS with no action, and each test must fail if the promotion were fabricated."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11; §4 diagnostics; design-map.md §5 diagnostic categories",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-REG", "M-SMOKE"],
+      "sufficiency": "Fault injection needs the implementation's own mock seams. So R-REG requires controlled tests that map each fault (launch or CLI error, missing or malformed result, tool denial, submission failure, action failure, cancellation) to its Design Map §5 category with redaction. M-SMOKE requires at least one categorized real-provider diagnostic case."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12; §3 credential rules; design-map.md §8 threat model",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-REG", "M-CODE"],
+      "sufficiency": "The brief asks for both negative tests and a code-level threat-model inspection. R-REG requires environment, permission and sandbox negative tests, including sanitized diagnostics and denial of other-execution or superseded requests. M-CODE checks each threat-model row against the code: where the root token and the session token go, credential handling, and the absence of any push or publication path other than the host-configured requestAction(publication)."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; §5 orchestrator rule and mechanical guard",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["M-ORCH", "E3", "R-REG"],
+      "sufficiency": "The prose rule and its mechanical guard are both required. M-ORCH reviews the versioned orchestrator skill for the brief §5 meaning and for preserved boundaries. E3 mechanically shows that production configuration cannot launch a generated bridge. R-REG requires the visible no-bridge regression and proof that no production switch enables fixture profiles."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md AC14; §Immutable history; design-map.md Invariants '014a history is untouched' and 'Legacy /workflow-runs stays retired'",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E4", "E1"],
+      "sufficiency": "Both halves are directly observable. E4 posts to every legacy mutation route of a real governed host, with the legacy option requested, and requires HTTP 410. E1 compares the 014a canonical ledger byte for byte with its brief-freeze content."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md AC15; §6 layers; §7 handoff; Deliverables 5–6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-REG", "M-CODE", "M-SMOKE", "E1", "E2", "E3", "E4"],
+      "sufficiency": "AC15 is the conjunction of full checks and independent verification. R-REG runs npm run check offline, with no provider CLI or credential available. E1–E4 are the independent frozen executable cases. M-SMOKE keeps live evidence separate. M-CODE confirms the as-built file-change/evidence map and that real-provider results are not inferred from unit tests."
+    },
+    {
+      "id": "AC16",
+      "frozenAuthority": "spike.md AC16; §2 trust-equivalence paragraphs; design-map.md §3–§4 and Invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E2", "E1", "R-REG", "M-SMOKE"],
+      "sufficiency": "E2 shows on a clean candidate checkout that the trusted Harness projection is granted. A policy, role contract or role skill working-tree edit is denied with trust-identifying text, no grant is recorded, and restoring the bytes is granted again. A project with an absent, missing or empty trust history is denied. E1 shows that Harness trust inputs are unchanged. R-REG covers validator-source edits and the post-freeze synthetic-fixture denial, whose declaration shape is free. M-SMOKE shows the fixture root is human-authorized."
+    }
+  ]
+}
