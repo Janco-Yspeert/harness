@@ -385,3 +385,42 @@
   semantics, historical results/classifications, workflow authority, and
   prior evidence were preserved.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 014 — Evaluator verification
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`.
+- Inputs: candidate `git:0a3dafe8e103cc7376bdd7fae32493710613d0c0`, frozen
+  `spike.md` `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`,
+  Design Map `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  prepared coverage `sha256:b607ce1a7587ebe1f5e1dfbb1d906d8884ad642aadc55533fbf02581822df6e2`,
+  and evaluator revision `004`
+  `sha256:687cad57999c88dd282cc7a33d9cce34d2d5fbc95d7b65b168647bba50e592e8`
+  (unchanged; not re-prepared or repaired by this run).
+- Result: `PASS`. All 23 frozen criteria satisfied, including the revision-004
+  -repaired P13/AC16-AC17 and P15/AC19 procedures: a fresh, independent live
+  fixture against the real `ExecutionKernel` now exercises the candidate's new
+  host-mediated promotion action and configured human-decision authority
+  directly, rather than citing an off-point regression.
+- Public output: `verification-result.json` (attempt `006`).
+- Checks: frozen input identity verification (candidate `src/`/`test/`
+  content identical to current HEAD for every file this evaluation touches);
+  required public `npm run check` regression (typecheck, lint, format, 120
+  tests passing, 0 failing) with a deliberately nonexistent negative control
+  confirmed to fail first; source-level diff scoping confirmed this
+  candidate's changes relative to attempt 005's candidate are strictly
+  additive; 16 of 19 frozen procedures (P01-P12, P14, P16, P18) validly cited
+  from attempt 005's fresh on-point live fixtures against the now-confirmed-
+  unchanged code paths they exercise; P13 and P15 freshly, independently
+  re-exercised this attempt with new live fixtures directly driving the
+  candidate's `promote()` and `decide()` methods (positive, denied, and failed
+  scenarios, plus a legacy-flag-has-no-authority scenario for P15), with the
+  fixture's own failure oracle sanity-checked against a deliberately broken
+  copy of the kernel before being trusted; half of P19 evidenced per the
+  frozen evaluator's documented non-executable coverage mode; and the actual
+  pinned `verification-accounting` validator run against the complete public
+  artifact using this attempt's exact Role Grant inputs, confirming it before
+  finalization.
+- Restricted evaluator material inspected: none beyond this attempt's own
+  scope.
+- Measurement cutoff: immediately before this manifest update.
