@@ -4,7 +4,10 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { buildClaudeWorkflowCommand } from "../src/claude-workflow.ts";
+import {
+  buildClaudeWorkflowCommand,
+  claudeWorkflowDirectory,
+} from "../src/claude-workflow.ts";
 import { workflowScratchEnvironment } from "../src/workflow-backend.ts";
 import type { ResolvedWorkflowRunSpec } from "../src/workflow-run.ts";
 
@@ -229,13 +232,9 @@ async function main(): Promise<void> {
   )
     throw new Error("pinned skill identity mismatch");
   const spec = bootstrapSpec(role, grant, skill, contract);
-  const grantWorkspaces = grant.workspaces;
-  if (!Array.isArray(grantWorkspaces) || grantWorkspaces.length === 0)
+  const launchWorkspace = claudeWorkflowDirectory(spec);
+  if (launchWorkspace === undefined)
     throw new Error("assignment has no launch workspace");
-  const launchWorkspace = text(
-    object(grantWorkspaces[0], "launch workspace").path,
-    "launch workspace path",
-  );
   const scratch = mkdtempSync(join(tmpdir(), "harness-014c-bootstrap-"));
   mkdirSync(join(scratch, "cache"));
   mkdirSync(join(scratch, "npm-cache"));
