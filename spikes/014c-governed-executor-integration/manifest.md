@@ -63,3 +63,34 @@
 - Checks: SHA-256 comparison of the input against the host-bound identity and
   the preliminary snapshots; Prettier check of the feedback files.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 003 — Brief Readiness
+
+- Skill: `brief-readiness` v4,
+  `sha256:fd93e80b353c7cb386aae6d133ce4cc0226a20f5e1d8dea87200084f3ef210a1`
+  (pinned bytes delivered by Role Grant
+  `sha256:71ea1023f4b40c016a923e0b37f428cb9504ac9f0ed3c06bcc0c282e86dd4de3`,
+  assignment `01e707aa-a305-4b6d-b7f4-36a63841fe0c`; human-authorized 014c
+  bootstrap execution).
+- Input: draft `spike.md`
+  `sha256:08da03d098ab511e467eea9bbc1d8ff90e5a7a8b97a3982d1b7037e35c245dc0`
+  (byte-identical to the Run 001 and Run 002 inputs), reviewed against
+  `feat/spike-014` at `bf8bc140338427904d4305fc1c9273345fbcf8aa`.
+- Result: succeeded; verdict **Not ready to freeze** (`NOT_READY`). The brief is
+  unrevised and the repository evidence is unchanged, so blocker B1
+  (trust-equivalence gate scope versus synthetic smoke tests), material
+  clarifications M1 and M2, and editorial notes E1–E3 persist.
+- Outputs: `feedback.md`
+  `sha256:283874d28ef8ed3cde9bfe92258ee274bc9226faba338121be5f6c066fdfcf29`;
+  preliminary snapshot `preliminary/003/spike.md` (identical to the input) and
+  `preliminary/003/feedback.md` (identical to `feedback.md`).
+  `preliminary/001` and `preliminary/002` were left untouched.
+- Repository evidence inspected: the draft brief; the Run 002 feedback and
+  manifest; `bootstrap/authority.md`; `harness.project.json`;
+  `methodologies/harness/trusted.jsonl`; `src/methodology-evolution.ts`;
+  `src/kernel/host.ts` and a trust search over `src/kernel/`; `src/index.ts`;
+  and `git diff` stats since `2765500` and `fd60b07`.
+- Restricted evaluator material inspected: none.
+- Checks: SHA-256 comparison of the input against the host-bound identity and
+  the preliminary snapshots; Prettier check of the feedback files.
+- Measurement cutoff: immediately before this manifest update.
