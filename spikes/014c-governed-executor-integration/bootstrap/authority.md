@@ -94,3 +94,29 @@ new Workflow Execution Grant must reject an untrusted working-tree methodology
 edit rather than silently binding it. The implementation must include a
 regression test that changes a relevant policy, role contract, role skill, or
 validator after the trusted revision and observes an inspectable grant denial.
+
+## Addendum 2 — evaluator workspace launch correction
+
+The first three governed `evaluator-prepare` attempts were preserved as
+`BLOCKED` infrastructure results. Their public evidence identifies the cause:
+the bootstrap runner asked `buildClaudeWorkflowCommand` for the evaluator's
+private working directory, then mistakenly spawned the provider in the public
+repository directory. In Claude restricted mode that made the private evaluator
+workspace an added read-only directory, so the worker correctly refused to
+create private evaluation artifacts there.
+
+The human-authorized smallest correction is
+`tools/governed-claude-bootstrap.ts` at commit
+`60f97be21bd0c1b57cca7a014a2785a3f8a44f55`. It uses the existing
+`claudeWorkflowDirectory` helper from `src/claude-workflow.ts` for the spawned
+process working directory. This changes neither the governed host, provider
+command construction, role contract, capabilities, result protocol, nor
+private-workspace exposure. It supersedes the executable pin in the
+"Permitted correction" section only for the independently pinned evaluator
+bootstrap. The old pin and all blocked attempts remain historical evidence.
+
+The replacement runner must be a detached repository worktree pinned to that
+commit, with the host itself launched from the same pinned revision. The
+bootstrap exception remains limited to that path and expires when the
+repository-owned governed adapters and pinned independent evaluator path have
+been established.
