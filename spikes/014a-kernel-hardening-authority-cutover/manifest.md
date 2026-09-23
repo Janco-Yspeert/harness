@@ -299,3 +299,48 @@
   finalization.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 012 — Evaluator repair
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`.
+- Trigger: `human-correction-cycle-authorized`, classification
+  `IMPLEMENTATION_AND_EVALUATOR_DEFECT`, cycle `002`, bound to the exact
+  canonical `PASS` of attempt 005 (source evaluator revision `003`, candidate
+  `53ba9067eed21e53b148aeb8d35696e6b327b2b1`, semantic result
+  `sha256:4922ca6299f7c983cab8b3d6f808220303c328440fa558c6ecfd0e77d0119d53`).
+  Attempt 005's finalized `PASS` is unchanged and unmoved.
+- Inputs: frozen `spike.md`
+  `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`,
+  frozen `design-map.md`
+  `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  source evaluator revision `003`
+  `sha256:d169cf26cb187c904697e6be6ca31d6d15ed8fbaf055404418d1aef3e57a8e4f`.
+- Result: succeeded; evaluator revision `004`
+  `sha256:687cad57999c88dd282cc7a33d9cce34d2d5fbc95d7b65b168647bba50e592e8`
+  preserves revision `003` (archived byte-for-byte) and corrects only
+  procedures P13 (AC16, AC17) and P15 (AC19), whose frozen evidence-
+  sufficiency wording had allowed a differently-scoped regression from an
+  unrelated subsystem to satisfy these criteria. AC16, AC17, AC19, their
+  `frozenAuthority`, `sufficiency`, `mode`, and every other
+  criterion/procedure/coverage-mode are byte-for-byte unchanged; acceptance
+  semantics are preserved.
+- Public output: corrected `coverage-map.json`
+  `sha256:b607ce1a7587ebe1f5e1dfbb1d906d8884ad642aadc55533fbf02581822df6e2`.
+- Checks: deterministic structural pre-freeze integrity validation passed (23
+  criteria, 19 procedures, complete bidirectional traceability, public/private
+  readiness consistency). A separate, explicitly bounded repair-control
+  exercise (not a new verification attempt) confirmed by source-level
+  structural inspection, against the unchanged candidate
+  `53ba9067eed21e53b148aeb8d35696e6b327b2b1` in an isolated detached
+  worktree, that the corrected procedures now correctly find no valid
+  evidence for AC16, AC17, or AC19 against that candidate, because it lacks
+  both a host-mediated evaluator-promotion action route and a post-cutover
+  configured human-decision authority route; the previously-accepted
+  substitute evidence is now explicitly disqualified. This confirms an
+  implementation-side gap on that candidate, reported out-of-scope for a
+  follow-on process and not actioned by this repair. Attempt 005's finalized
+  `PASS`, bound to evaluator revision `003`, is unchanged.
+- Restricted evaluator material inspected: none beyond this repair's own
+  scope.
+- Measurement cutoff: immediately before this manifest update.

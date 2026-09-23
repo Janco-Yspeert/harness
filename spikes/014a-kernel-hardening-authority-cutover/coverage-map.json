@@ -3,24 +3,32 @@
   "evaluationRequirements": "sha256:ccc99e8ea39dd9cfccbf6fa920c9bb7b152beb25e4091dff6c6bc80336baab65",
   "readiness": {
     "skill": "evaluator",
-    "skillVersion": 12,
-    "evaluatorRevision": "003",
-    "privateInventoryIdentity": "sha256:b444132d3be0332e5bbdb46b693dc1b646842d733b31be8a5617d12bb400050f",
-    "validatorResultBinding": "sha256:fb039463e5927caf12db911a57ca106d094c6fd95112160813b8c3f0c9395d1b",
+    "skillVersion": 13,
+    "evaluatorRevision": "004",
+    "privateInventoryIdentity": "sha256:9130a4178dc0844ec1834498d40bab679dd138a77f4ba6126a11f6a1c8e6ce46",
+    "validatorResultBinding": "sha256:a06f8b4ac5194ab67b37220fdb014b2b6a29a89c070c8acc4c1c26f6ba7e3364",
     "integrityValidation": "PASS",
     "criterionRecordCount": 23,
-    "priorRevision": "002",
-    "priorRevisionIdentity": "sha256:33cc04f03c0b8fede97604a20be75fd97a3db103c15d18286b40cd1aef7811b4"
+    "priorRevision": "003",
+    "priorRevisionIdentity": "sha256:d169cf26cb187c904697e6be6ca31d6d15ed8fbaf055404418d1aef3e57a8e4f"
   },
   "repair": {
-    "trigger": "human-evaluator-correction-authorized",
-    "triggerSemanticResult": "sha256:a4becba0b8b22448a1d8f20b0e7542cbdeb36056e0169fc6307822407bfae7c2",
-    "classification": "EVALUATOR_COVERAGE_DEFECT",
-    "sourceEvaluatorRevision": "002",
-    "resultEvaluatorRevision": "003",
-    "affectedCriteria": ["AC03"],
+    "trigger": "human-correction-cycle-authorized",
+    "triggerSemanticResult": "sha256:4922ca6299f7c983cab8b3d6f808220303c328440fa558c6ecfd0e77d0119d53",
+    "classification": "IMPLEMENTATION_AND_EVALUATOR_DEFECT",
+    "sourceEvaluatorRevision": "003",
+    "resultEvaluatorRevision": "004",
+    "affectedCriteria": ["AC16", "AC17", "AC19"],
     "acceptanceSemanticsPreserved": true,
-    "integrityValidation": "PASS"
+    "integrityValidation": "PASS",
+    "priorRepairs": [
+      {
+        "trigger": "human-evaluator-correction-authorized",
+        "sourceEvaluatorRevision": "002",
+        "resultEvaluatorRevision": "003",
+        "affectedCriteria": ["AC03"]
+      }
+    ]
   },
   "criteria": [
     {
