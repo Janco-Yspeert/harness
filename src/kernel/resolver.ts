@@ -281,7 +281,7 @@ export function resolveAuthority(
       reason: "protected role requires a configured private workspace",
     };
   const publication = role.contract.publication;
-  const action = publication
+  const publicationAction = publication
     ? {
         workspace: publication.workspace,
         remote: publication.remote,
@@ -291,13 +291,35 @@ export function resolveAuthority(
       }
     : undefined;
   if (
-    action &&
-    (!/^[a-f0-9]{40,64}$/.test(action.commit) ||
-      !/^[a-f0-9]{40,64}$/.test(action.base))
+    publicationAction &&
+    (!/^[a-f0-9]{40,64}$/.test(publicationAction.commit) ||
+      !/^[a-f0-9]{40,64}$/.test(publicationAction.base))
   )
     return {
       kind: "denied",
       reason: "publication requires exact commit/base inputs",
+    };
+  const promotion = role.contract.promotion;
+  const promotionAction = promotion
+    ? {
+        sourceWorkspace: promotion.sourceWorkspace,
+        destinationWorkspace: promotion.destinationWorkspace,
+        destination: promotion.destination,
+        candidate: inputs[promotion.candidateInput] ?? "",
+        evaluatorRevision: inputs[promotion.revisionInput] ?? "",
+        when: promotion.when,
+        allocationEvent: promotion.allocationEvent,
+        attemptField: promotion.attemptField,
+        transition: promotion.transition,
+      }
+    : undefined;
+  if (
+    promotionAction &&
+    (!promotionAction.candidate || !promotionAction.evaluatorRevision)
+  )
+    return {
+      kind: "denied",
+      reason: "promotion requires exact candidate/revision inputs",
     };
   const semantics = {
     workflowGrant: workflow.id,
@@ -309,7 +331,10 @@ export function resolveAuthority(
     inputs,
     workspaces,
     capabilities: role.contract.capabilities,
-    hostActions: action ? { publication: action } : {},
+    hostActions: {
+      ...(publicationAction ? { publication: publicationAction } : {}),
+      ...(promotionAction ? { promotion: promotionAction } : {}),
+    },
     executorConstraints: {
       forbiddenExposure: role.contract.forbiddenExposure,
       protected: role.contract.protected,

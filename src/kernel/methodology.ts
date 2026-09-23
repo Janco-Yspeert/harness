@@ -20,13 +20,19 @@ export function loadDefinition(
   project: Project,
   validators: ArtifactValidators = {},
 ): MethodologyDefinition {
-  const policy = JSON.parse(
+  const parsed: unknown = JSON.parse(
     readFileSync(inside(project.root, project.policy), "utf8"),
-  ) as WorkflowPolicy;
+  );
+  const rawPolicy = object(parsed);
+  const policy = parsed as WorkflowPolicy;
   if (
-    object(policy).schemaVersion !== 1 ||
+    rawPolicy.schemaVersion !== 1 ||
     !Number.isSafeInteger(policy.maxAllocations) ||
-    policy.maxAllocations < 1
+    policy.maxAllocations < 1 ||
+    (rawPolicy.humanDecisions !== undefined &&
+      (typeof rawPolicy.humanDecisions !== "object" ||
+        rawPolicy.humanDecisions === null ||
+        Array.isArray(rawPolicy.humanDecisions)))
   )
     throw new Error("invalid workflow policy version/bound");
   object(policy.roles);
@@ -46,7 +52,18 @@ export function loadDefinition(
       !Array.isArray(contract.human) ||
       !Array.isArray(contract.postconditions) ||
       (contract.resultConstraints !== undefined &&
-        !Array.isArray(contract.resultConstraints))
+        !Array.isArray(contract.resultConstraints)) ||
+      (contract.promotion !== undefined &&
+        (!contract.workspaces.includes(contract.promotion.sourceWorkspace) ||
+          !contract.workspaces.includes(
+            contract.promotion.destinationWorkspace,
+          ) ||
+          !contract.promotion.destination ||
+          !contract.promotion.candidateInput ||
+          !contract.promotion.revisionInput ||
+          !contract.promotion.allocationEvent ||
+          !contract.promotion.attemptField ||
+          !contract.promotion.transition))
     )
       throw new Error(`invalid contract for ${name}`);
     if (
@@ -88,6 +105,20 @@ export function loadDefinition(
         content: skillContent,
       },
     };
+  }
+  for (const [name, decision] of Object.entries(policy.humanDecisions ?? {})) {
+    const rawDecision = object(decision);
+    if (
+      !name ||
+      typeof rawDecision.transition !== "string" ||
+      rawDecision.when === undefined ||
+      typeof rawDecision.bindings !== "object" ||
+      rawDecision.bindings === null ||
+      Array.isArray(rawDecision.bindings) ||
+      !Array.isArray(rawDecision.requiredStrings ?? []) ||
+      !Array.isArray(rawDecision.requiredStringArrays ?? [])
+    )
+      throw new Error(`invalid human decision: ${name}`);
   }
   const definition = {
     schemaVersion: 1 as const,

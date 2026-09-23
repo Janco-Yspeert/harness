@@ -1,19 +1,23 @@
 import { execFileSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import {
+  existsSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   realpathSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, relative, resolve } from "node:path";
+import { dirname, isAbsolute, relative, resolve } from "node:path";
 import {
   appendLedger,
   contentId,
   identity,
   matches,
   object,
+  predicate,
   readLedger,
   required,
   scopedEvents,
@@ -29,8 +33,12 @@ import type {
   Execution,
   ExecutorProfile,
   ExecutorSelector,
-  HostActionRequest,
   HostActionResult,
+  PromotionActionRequest,
+  PromotionActionResult,
+  PromotionArtifact,
+  PublicationActionRequest,
+  PublicationActionResult,
   HumanCorrectionCycleAuthority,
   HumanEvaluatorCorrectionAuthority,
   HumanRequest,
@@ -53,6 +61,15 @@ export interface KernelOptions {
   selectExecutor?: ExecutorSelector;
   privateDataRoot?: string;
   validators?: ArtifactValidators;
+}
+function boundedPath(root: string, path: string): string {
+  if (!path || isAbsolute(path))
+    throw new Error("action path must be relative");
+  const absolute = resolve(root, path);
+  const delta = relative(root, absolute);
+  if (delta === ".." || delta.startsWith("../") || isAbsolute(delta))
+    throw new Error("action path escapes its configured boundary");
+  return absolute;
 }
 // One host owns a project's executions. Synchronous ledger transactions serialize
 // request races; the on-disk lock also rejects competing host/CLI writers.
@@ -1141,6 +1158,73 @@ export class ExecutionKernel {
       result: execution.result.id,
     });
   }
+  decide(
+    workflow: string,
+    workflowGrant: string,
+    decision: string,
+    evidence: Data,
+  ): LedgerEvent {
+    return this.#transaction(workflow, () => {
+      const grant = this.grant(workflow, workflowGrant);
+      const definition = this.definition(workflow, grant.methodology);
+      const rule = definition.policy.humanDecisions?.[decision];
+      if (!rule) throw new Error("human decision is not configured");
+      const events = this.events(workflow);
+      if (!predicate(rule.when, events, definition.policy))
+        throw new Error("human decision precondition not satisfied");
+      const current = scopedEvents(events, definition.policy);
+      if (current.some((event) => event.transition === rule.transition))
+        throw new Error("human decision already recorded in current scope");
+      for (const [field, binding] of Object.entries(rule.bindings)) {
+        let expected: unknown;
+        if ("scope" in binding) {
+          const scope = required(
+            definition.policy.scopeEvent,
+            "human decision scope binding is not configured",
+          );
+          expected =
+            events.findLast((event) => event.transition === scope.transition)
+              ?.evidence[scope.field] ?? scope.initial;
+        } else {
+          expected = (binding.current ? current : events).findLast(
+            (event) => event.transition === binding.event,
+          )?.evidence[binding.field];
+        }
+        if (
+          expected === undefined ||
+          evidence[field] === undefined ||
+          contentId(evidence[field]) !== contentId(expected)
+        )
+          throw new Error(`human decision evidence mismatch: ${field}`);
+      }
+      for (const field of rule.requiredStrings ?? []) {
+        const value = evidence[field];
+        if (typeof value !== "string" || value.trim().length === 0)
+          throw new Error(`human decision requires ${field}`);
+      }
+      for (const field of rule.requiredStringArrays ?? []) {
+        const value = evidence[field];
+        if (
+          !Array.isArray(value) ||
+          value.length === 0 ||
+          !value.every(
+            (item) => typeof item === "string" && item.trim().length > 0,
+          )
+        )
+          throw new Error(`human decision requires ${field}`);
+      }
+      const canonical: Data = {
+        ...evidence,
+        authorityOrigin: "human",
+        decision,
+        workflowGrant: grant.id,
+        methodology: definition.id,
+        authorityBasis: authorityBasis(events),
+      };
+      this.#append(workflow, rule.transition, canonical);
+      return { transition: rule.transition, evidence: canonical };
+    });
+  }
   root(
     workflow: string,
     workflowGrant: string,
@@ -1296,11 +1380,11 @@ export class ExecutionKernel {
     workspace: string,
     commit: string,
     ref: string,
-  ): HostActionResult {
+  ): PublicationActionResult {
     return this.#transaction(workflow, () => {
       const execution = this.execution(workflow, id);
       const grant = this.roleGrant(workflow, execution.roleGrant);
-      const request: HostActionRequest = {
+      const request: PublicationActionRequest = {
         schemaVersion: 1,
         id: randomUUID(),
         execution: id,
@@ -1311,7 +1395,7 @@ export class ExecutionKernel {
         ref,
       };
       this.#append(workflow, "kernel.action-request", { ...request });
-      const action: HostActionResult = {
+      const action: PublicationActionResult = {
         schemaVersion: 1,
         id: randomUUID(),
         request,
@@ -1409,6 +1493,190 @@ export class ExecutionKernel {
         ...action,
         execution: id,
       });
+      this.#transition(workflow, id);
+      this.#telemetry("host-action", execution, action.id);
+      return action;
+    });
+  }
+  promote(
+    workflow: string,
+    id: string,
+    candidate: string,
+    evaluatorRevision: string,
+    attempt: number,
+    artifacts: PromotionArtifact[],
+  ): PromotionActionResult {
+    return this.#transaction(workflow, () => {
+      const execution = this.execution(workflow, id);
+      const grant = this.roleGrant(workflow, execution.roleGrant);
+      const request: PromotionActionRequest = {
+        schemaVersion: 1,
+        id: randomUUID(),
+        execution: id,
+        roleGrant: grant.id,
+        kind: "promotion",
+        candidate,
+        evaluatorRevision,
+        attempt,
+        artifacts,
+      };
+      this.#append(workflow, "kernel.action-request", { ...request });
+      const action: PromotionActionResult = {
+        schemaVersion: 1,
+        id: randomUUID(),
+        request,
+        status: "denied",
+        artifacts: {},
+        integrityIdentity: null,
+        promotionIdentity: null,
+        reason: null,
+        directPublication: false,
+      };
+      let staging: string | undefined;
+      try {
+        const allowed = grant.hostActions.promotion;
+        const allocation = allowed
+          ? this.events(workflow).findLast(
+              (event) =>
+                event.transition === allowed.allocationEvent &&
+                event.evidence.execution === id,
+            )
+          : undefined;
+        if (
+          !allowed ||
+          !execution.result ||
+          !matches(execution.result.methodology, allowed.when) ||
+          execution.superseded ||
+          execution.attention === "WAITING_FOR_HUMAN" ||
+          ["interrupted", "cancelled", "failed"].includes(execution.process) ||
+          allowed.candidate !== candidate ||
+          allowed.evaluatorRevision !== evaluatorRevision ||
+          !Number.isSafeInteger(attempt) ||
+          attempt < 1 ||
+          allocation?.evidence[allowed.attemptField] !== attempt ||
+          artifacts.length === 0
+        )
+          throw new Error("promotion outside role grant");
+        const workspace = (name: string) =>
+          this.project.workflows[workflow]?.workspaces?.[name] ??
+          this.project.workspaces[name];
+        const source = workspace(allowed.sourceWorkspace);
+        const destination = workspace(allowed.destinationWorkspace);
+        if (
+          !source ||
+          !destination ||
+          destination.mode !== "write" ||
+          !grant.workspaces.some(
+            (item) => item.id === source.id && item.path === source.path,
+          ) ||
+          !grant.workspaces.some(
+            (item) =>
+              item.id === destination.id && item.path === destination.path,
+          )
+        )
+          throw new Error("promotion workspace outside role grant");
+        action.status = "failed";
+        const workflowRoot = realpathSync(
+          resolve(
+            this.project.root,
+            required(this.project.workflows[workflow]).directory,
+          ),
+        );
+        const destinationRoot = boundedPath(workflowRoot, allowed.destination);
+        const destinationWorkspace = realpathSync(destination.path);
+        const destinationParent = realpathSync(dirname(destinationRoot));
+        const destinationDelta = relative(
+          destinationWorkspace,
+          destinationRoot,
+        );
+        const parentDelta = relative(workflowRoot, destinationParent);
+        if (
+          destinationDelta === ".." ||
+          destinationDelta.startsWith("../") ||
+          isAbsolute(destinationDelta) ||
+          parentDelta === ".." ||
+          parentDelta.startsWith("../") ||
+          isAbsolute(parentDelta)
+        )
+          throw new Error("promotion destination escapes configured workspace");
+        if (existsSync(destinationRoot))
+          throw new Error("promotion destination already exists");
+        staging = mkdtempSync(resolve(workflowRoot, ".promotion-"));
+        const sourceRoot = realpathSync(source.path);
+        for (const artifact of artifacts) {
+          if (!artifact.source || !artifact.destination)
+            throw new Error("invalid promotion artifact mapping");
+          const sourcePath = inside(
+            sourceRoot,
+            boundedPath(sourceRoot, artifact.source),
+          );
+          const bytes = readFileSync(sourcePath);
+          if (identity(bytes) !== artifact.identity)
+            throw new Error("promotion source identity mismatch");
+          const output = boundedPath(staging, artifact.destination);
+          const promotedPath = relative(staging, output);
+          if (
+            promotedPath === "promotion.json" ||
+            Object.hasOwn(action.artifacts, promotedPath)
+          )
+            throw new Error("invalid promotion artifact mapping");
+          mkdirSync(dirname(output), { recursive: true });
+          writeFileSync(output, bytes);
+          action.artifacts[promotedPath] = artifact.identity;
+        }
+        action.integrityIdentity = contentId(action.artifacts);
+        const manifest = Buffer.from(
+          `${JSON.stringify(
+            {
+              schemaVersion: 1,
+              request: {
+                id: request.id,
+                execution: id,
+                roleGrant: grant.id,
+                candidate,
+                evaluatorRevision,
+                attempt,
+                destination: allowed.destination,
+                artifacts: request.artifacts,
+              },
+              result: {
+                artifacts: action.artifacts,
+                integrityIdentity: action.integrityIdentity,
+              },
+            },
+            null,
+            2,
+          )}\n`,
+        );
+        action.promotionIdentity = identity(manifest);
+        writeFileSync(resolve(staging, "promotion.json"), manifest);
+        renameSync(staging, destinationRoot);
+        staging = undefined;
+        action.status = "succeeded";
+      } catch (error) {
+        if (staging) rmSync(staging, { recursive: true, force: true });
+        action.reason =
+          (error as Error).message.split("\n")[0] ?? "promotion failed";
+      }
+      this.#append(workflow, "kernel.action-result", {
+        ...action,
+        execution: id,
+      });
+      const allowed = grant.hostActions.promotion;
+      if (action.status === "succeeded" && allowed)
+        this.#append(workflow, allowed.transition, {
+          candidate,
+          evaluatorRevision,
+          attempt,
+          destination: allowed.destination,
+          artifacts: action.artifacts,
+          integrityIdentity: required(action.integrityIdentity),
+          promotionIdentity: required(action.promotionIdentity),
+          execution: id,
+          roleGrant: grant.id,
+          semanticResult: required(execution.result).id,
+          action: action.id,
+        });
       this.#transition(workflow, id);
       this.#telemetry("host-action", execution, action.id);
       return action;

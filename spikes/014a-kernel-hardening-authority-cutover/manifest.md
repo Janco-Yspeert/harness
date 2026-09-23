@@ -344,3 +344,44 @@
 - Restricted evaluator material inspected: none beyond this repair's own
   scope.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 013 — Implementation correction
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`.
+- Authority: explicit human Role Grant
+  `sha256:c5cd2124a08ea7b98c5afd953664685b667cb1fb0eab95d8b6a19ea4a2e21862`
+  under committed cycle-002 authority
+  `sha256:4922ca6299f7c983cab8b3d6f808220303c328440fa558c6ecfd0e77d0119d53`,
+  classified `IMPLEMENTATION_AND_EVALUATOR_DEFECT`. The bounded correction
+  covers AC16, AC17, and AC19 only.
+- Inputs: frozen `spike.md`
+  `sha256:56a125810cf34896658cfff975f9b0b1626244fc51b33b8b13d6d9cb73d01910`,
+  frozen `design-map.md`
+  `sha256:2a17dc60d81cab8b44e48ab498cef2643962d87efccaf40cc440f1a735085c95`,
+  evaluator revision `004` prepared coverage
+  `sha256:b607ce1a7587ebe1f5e1dfbb1d906d8884ad642aadc55533fbf02581822df6e2`,
+  and public `eval-requirements.md`
+  `sha256:ccc99e8ea39dd9cfccbf6fa920c9bb7b152beb25e4091dff6c6bc80336baab65`.
+  No current post-handoff `verification-finalized` event classified
+  `IMPLEMENTATION_FAILURE` exists, so the contract's optional retry-feedback
+  input is absent; no event was fabricated.
+- Result: succeeded; the configured generic kernel now provides a narrowly
+  granted host promotion action with exact candidate/revision/attempt and
+  artifact-integrity binding, durable denial/failure distinct from semantic
+  PASS, and root-only configured human acceptance/rejection bound to current
+  candidate, cycle, verification, promotion, and As-Built evidence. Evaluators
+  receive no publication credential, remote, or ref authority, and generic
+  mechanics do not branch on Harness role names.
+- Output: implementation, configuration, visible-test, and public-report diff
+  `sha256:e1b0a1619a9d8b5579323e85367a89feea751334c1f852ed93a62ac963628a13`
+  before this manifest update (9 files, 917 insertions, 20 deletions).
+- Visible evidence: the new focused host tests failed against the prior host,
+  then passed after correction; focused host/action regressions passed (5
+  tests, 0 failing); and `npm run check` passed typecheck, lint, formatting,
+  and the complete visible suite (120 passing, 0 failing).
+- Restricted evaluator material inspected: none. Evaluator preparation and
+  verification were not run; public evaluation requirements, acceptance
+  semantics, historical results/classifications, workflow authority, and
+  prior evidence were preserved.
+- Measurement cutoff: immediately before this manifest update.

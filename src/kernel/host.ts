@@ -3,7 +3,12 @@ import { timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { ExecutionKernel, type KernelOptions } from "./execution.ts";
 import { object, required, text } from "./ledger.ts";
-import type { Data, Execution, HumanRequest } from "./model.ts";
+import type {
+  Data,
+  Execution,
+  HumanRequest,
+  PromotionArtifact,
+} from "./model.ts";
 
 export interface GovernedHostOptions extends KernelOptions {
   rootToken: string;
@@ -197,6 +202,20 @@ export class GovernedHost {
             reason: text(body.reason),
           }),
         });
+        return;
+      }
+      if (operation === "decisions") {
+        needRoot();
+        if (get) throw new Error("human decision requires POST");
+        send(
+          201,
+          this.kernel.decide(
+            workflow,
+            text(body.workflowGrant),
+            text(body.decision),
+            object(body.evidence),
+          ),
+        );
         return;
       }
       if (operation === "sessions") {
@@ -441,6 +460,31 @@ export class GovernedHost {
               text(body.workspace),
               text(body.commit),
               text(body.ref),
+            ),
+          );
+          return;
+        }
+        if (sub === "promote") {
+          const artifacts = body.artifacts;
+          if (!Array.isArray(artifacts))
+            throw new Error("promotion artifacts are required");
+          const parsed = artifacts.map((entry): PromotionArtifact => {
+            const artifact = object(entry);
+            return {
+              source: text(artifact.source),
+              destination: text(artifact.destination),
+              identity: text(artifact.identity),
+            };
+          });
+          send(
+            200,
+            this.kernel.promote(
+              workflow,
+              execution.id,
+              text(body.candidate),
+              text(body.evaluatorRevision),
+              Number(body.attempt),
+              parsed,
             ),
           );
           return;

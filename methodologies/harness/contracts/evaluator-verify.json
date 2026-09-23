@@ -55,5 +55,16 @@
     { "when": { "result": "BLOCKED" }, "required": ["classification"] }
   ],
   "human": ["input", "approval", "root"],
-  "postconditions": ["verification-result.json", "manifest.md"]
+  "postconditions": ["verification-result.json", "manifest.md"],
+  "promotion": {
+    "sourceWorkspace": "evaluation",
+    "destinationWorkspace": "repository",
+    "destination": "evaluation",
+    "candidateInput": "candidate",
+    "revisionInput": "evaluatorRevision",
+    "when": { "result": "PASS" },
+    "allocationEvent": "verification-allocated",
+    "attemptField": "attempt",
+    "transition": "promotion-recorded"
+  }
 }

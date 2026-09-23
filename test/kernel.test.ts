@@ -27,6 +27,7 @@ import {
   required,
 } from "../src/kernel/ledger.ts";
 import type {
+  Data,
   Execution,
   ExecutorProfile,
   Project,
@@ -1231,6 +1232,9 @@ void test("TR4/TR7/TR9: real attached process waits/resumes the same execution a
   assert.equal(f.kernel.executions(f.workflow).length, 1);
   const action = required(final.execution.actions[0]);
   assert.equal(action.status, "succeeded", action.reason ?? "");
+  assert.equal(action.request.kind, "publication");
+  if (!("before" in action))
+    assert.fail("expected a publication action result");
   assert.equal(action.before, base);
   assert.equal(action.after, candidate);
   assert.equal(action.request.commit, candidate);
@@ -1724,6 +1728,302 @@ void test("TR1/TR2: project discovery and workflow-specific workspace bindings c
     "only-this-item",
   );
   assert.equal(loaded.policy, "policy.json");
+});
+
+void test("014a: host promotion validates exact evidence and keeps failure distinct from semantic PASS", async (t) => {
+  const f = fixture(t, "host-promotion");
+  const candidate = "a".repeat(40);
+  const evaluatorRevision = "004";
+  const source = required(f.project.workspaces.evaluation).path;
+  const sourcePath = "attempts/006/eval-result.md";
+  const sourceBytes = "bounded evaluator result\n";
+  mkdirSync(join(source, "attempts/006"), { recursive: true });
+  writeFileSync(join(source, sourcePath), sourceBytes);
+  f.event("candidate", { commit: candidate, evaluatorRevision });
+  f.contract.workspaces.push("evaluation");
+  f.contract.inputs.push(
+    { name: "candidate", event: "candidate", field: "commit" },
+    {
+      name: "evaluatorRevision",
+      event: "candidate",
+      field: "evaluatorRevision",
+    },
+  );
+  f.contract.promotion = {
+    sourceWorkspace: "evaluation",
+    destinationWorkspace: "repository",
+    destination: "evaluation",
+    candidateInput: "candidate",
+    revisionInput: "evaluatorRevision",
+    when: { verification: "PASS" },
+    allocationEvent: "verification-allocated",
+    attemptField: "attempt",
+    transition: "promotion-recorded",
+  };
+  required(f.policy.roles.produce).onAllocate = {
+    transition: "verification-allocated",
+    fromInputs: {
+      commit: "candidate",
+      evaluatorRevision: "evaluatorRevision",
+    },
+    counterField: "attempt",
+  };
+  json(join(f.root, "contracts/produce.json"), f.contract);
+  json(join(f.root, "policy.json"), f.policy);
+  const host = await startHarnessHost(0, {
+    governed: { project: f.project, executors: profiles, rootToken },
+  });
+  t.after(() => host.close());
+  const registration = await api<{ session: Session }>(host.url, "sessions", {
+    profile: "fixture",
+  });
+  const { grant } = await api<{ grant: WorkflowGrant }>(host.url, "grants", {
+    continuation: false,
+    delegation: ["attached"],
+    roles: ["produce"],
+    maxAllocations: 1,
+    inline: true,
+  });
+  const allocation = await api<{ execution: Execution; grant: RoleGrant }>(
+    host.url,
+    "continue",
+    {
+      workflowGrant: grant.id,
+      role: "produce",
+      mode: "attached",
+      session: registration.session.id,
+      inline: true,
+    },
+  );
+  await api(host.url, `executions/${allocation.execution.id}/started`, {});
+  await api(host.url, `executions/${allocation.execution.id}/result`, {
+    disposition: "succeeded",
+    methodology: { verification: "PASS" },
+  });
+  const semantic = f.kernel.execution(
+    f.workflow,
+    allocation.execution.id,
+  ).result;
+  const baseRequest = {
+    candidate,
+    evaluatorRevision,
+    attempt: 1,
+    artifacts: [
+      {
+        source: sourcePath,
+        destination: sourcePath,
+        identity: identity(sourceBytes),
+      },
+    ],
+  };
+  const denied = await api<{ status: string; reason: string }>(
+    host.url,
+    `executions/${allocation.execution.id}/promote`,
+    { ...baseRequest, evaluatorRevision: "003" },
+  );
+  assert.equal(denied.status, "denied");
+  assert.match(denied.reason, /outside role grant/);
+  const failed = await api<{ status: string; reason: string }>(
+    host.url,
+    `executions/${allocation.execution.id}/promote`,
+    {
+      ...baseRequest,
+      artifacts: [
+        {
+          ...baseRequest.artifacts[0],
+          identity: identity("not the source bytes"),
+        },
+      ],
+    },
+  );
+  assert.equal(failed.status, "failed");
+  assert.match(failed.reason, /source identity mismatch/);
+  assert.deepEqual(
+    f.kernel.execution(f.workflow, allocation.execution.id).result,
+    semantic,
+  );
+  assert.equal(
+    f.kernel
+      .events(f.workflow)
+      .some((event) => event.transition === "promotion-recorded"),
+    false,
+  );
+  const promoted = await api<{
+    status: string;
+    promotionIdentity: string;
+    integrityIdentity: string;
+  }>(host.url, `executions/${allocation.execution.id}/promote`, baseRequest);
+  assert.equal(promoted.status, "succeeded");
+  assert.match(promoted.promotionIdentity, /^sha256:[a-f0-9]{64}$/);
+  assert.match(promoted.integrityIdentity, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(
+    readFileSync(
+      join(f.root, "items/work-item/evaluation", sourcePath),
+      "utf8",
+    ),
+    sourceBytes,
+  );
+  assert.equal(
+    existsSync(join(f.root, "items/work-item/evaluation/promotion.json")),
+    true,
+  );
+  const recorded = required(
+    f.kernel
+      .events(f.workflow)
+      .find((event) => event.transition === "promotion-recorded"),
+  );
+  assert.equal(recorded.evidence.candidate, candidate);
+  assert.equal(recorded.evidence.evaluatorRevision, evaluatorRevision);
+  assert.equal(recorded.evidence.attempt, 1);
+  assert.equal(recorded.evidence.promotionIdentity, promoted.promotionIdentity);
+  assert.equal(
+    "remote" in required(allocation.grant.hostActions.promotion),
+    false,
+  );
+});
+
+void test("014a: configured human decisions bind canonical evidence through the root host path", async (t) => {
+  for (const decision of ["accept", "reject"] as const) {
+    await t.test(decision, async (t) => {
+      const f = fixture(t, `human-decision-${decision}`);
+      const candidate = decision === "accept" ? "b".repeat(40) : "c".repeat(40);
+      const verification = identity(`${decision}-verification`);
+      const promotion = identity(`${decision}-promotion`);
+      const asBuilt = identity(`${decision}-as-built`);
+      f.policy.scopeEvent = {
+        transition: "correction-cycle-opened",
+        field: "cycle",
+        initial: "001",
+      };
+      f.policy.humanDecisions = {
+        [decision]: {
+          transition:
+            decision === "accept" ? "human-accepted" : "human-rejected",
+          when: {
+            all: [
+              {
+                event: "verification-finalized",
+                current: true,
+                fields: { result: "PASS" },
+              },
+              { event: "promotion-recorded", current: true },
+              { event: "as-built-recorded", current: true },
+            ],
+          },
+          bindings: {
+            candidate: {
+              event: "implementation-handoff",
+              field: "commit",
+              current: true,
+            },
+            verification: {
+              event: "verification-finalized",
+              field: "semanticResult",
+              current: true,
+            },
+            promotion: {
+              event: "promotion-recorded",
+              field: "promotionIdentity",
+              current: true,
+            },
+            asBuilt: {
+              event: "as-built-recorded",
+              field: "semanticResult",
+              current: true,
+            },
+            cycle: { scope: true },
+          },
+          ...(decision === "reject"
+            ? {
+                requiredStrings: ["classification"],
+                requiredStringArrays: ["findings"],
+              }
+            : {}),
+        },
+      };
+      json(join(f.root, "policy.json"), f.policy);
+      f.event("correction-cycle-opened", { cycle: "002" });
+      f.event("implementation-handoff", { commit: candidate, cycle: "002" });
+      f.event("verification-finalized", {
+        result: "PASS",
+        semanticResult: verification,
+        cycle: "002",
+      });
+      f.event("promotion-recorded", {
+        promotionIdentity: promotion,
+        cycle: "002",
+      });
+      mkdirSync(join(f.root, "items/work-item/.workflow"), { recursive: true });
+      json(join(f.root, "items/work-item/.workflow/acceptance.json"), {
+        accepted: true,
+      });
+      const host = await startHarnessHost(0, {
+        governed: { project: f.project, executors: profiles, rootToken },
+      });
+      t.after(() => host.close());
+      const { grant } = await api<{ grant: WorkflowGrant }>(
+        host.url,
+        "grants",
+        {
+          continuation: false,
+          delegation: ["attached"],
+          roles: ["produce"],
+          maxAllocations: 1,
+        },
+      );
+      const evidence = {
+        candidate,
+        verification,
+        promotion,
+        asBuilt,
+        cycle: "002",
+        ...(decision === "reject"
+          ? {
+              classification: "IMPLEMENTATION_DEFECT",
+              findings: ["bounded public finding"],
+            }
+          : {}),
+      };
+      const request = (value: Data) =>
+        fetch(`${host.url}/governed/work-item/decisions`, {
+          method: "POST",
+          headers: auth,
+          body: JSON.stringify({
+            workflowGrant: grant.id,
+            decision,
+            evidence: value,
+          }),
+        });
+      const beforeReady = await request(evidence);
+      assert.equal(beforeReady.status, 409);
+      assert.match(await beforeReady.text(), /precondition/);
+      f.event("as-built-recorded", { semanticResult: asBuilt, cycle: "002" });
+      const invalidEvidence =
+        decision === "accept"
+          ? { ...evidence, candidate: "d".repeat(40) }
+          : { ...evidence, findings: [] };
+      const invalid = await request(invalidEvidence);
+      assert.equal(invalid.status, 409);
+      const result = await api<{ transition: string; evidence: Data }>(
+        host.url,
+        "decisions",
+        { workflowGrant: grant.id, decision, evidence },
+      );
+      assert.equal(
+        result.transition,
+        decision === "accept" ? "human-accepted" : "human-rejected",
+      );
+      assert.equal(result.evidence.candidate, candidate);
+      assert.equal(result.evidence.cycle, "002");
+      assert.equal(result.evidence.authorityOrigin, "human");
+      assert.equal(
+        f.kernel
+          .events(f.workflow)
+          .filter((event) => event.transition === result.transition).length,
+        1,
+      );
+    });
+  }
 });
 
 void test("TR6/TR7: a real publication transport failure preserves semantic PASS and withholds a policy-required action transition", (t) => {

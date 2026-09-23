@@ -60,6 +60,17 @@ export interface RoleContract {
     commitInput: string;
     baseInput: string;
   };
+  promotion?: {
+    sourceWorkspace: string;
+    destinationWorkspace: string;
+    destination: string;
+    candidateInput: string;
+    revisionInput: string;
+    when: Data;
+    allocationEvent: string;
+    attemptField: string;
+    transition: string;
+  };
 }
 export interface RolePolicy {
   contract: string;
@@ -92,6 +103,19 @@ export interface WorkflowPolicy {
   roles: Record<string, RolePolicy>;
   gates: Array<{ when: Predicate; reason: string }>;
   scopeEvent?: { transition: string; field: string; initial: string };
+  humanDecisions?: Record<
+    string,
+    {
+      transition: string;
+      when: Predicate;
+      bindings: Record<
+        string,
+        { event: string; field: string; current?: boolean } | { scope: true }
+      >;
+      requiredStrings?: string[];
+      requiredStringArrays?: string[];
+    }
+  >;
   maxAllocations: number;
 }
 export interface BoundRole {
@@ -233,6 +257,17 @@ export interface RoleGrant {
       commit: string;
       base: string;
     };
+    promotion?: {
+      sourceWorkspace: string;
+      destinationWorkspace: string;
+      destination: string;
+      candidate: string;
+      evaluatorRevision: string;
+      when: Data;
+      allocationEvent: string;
+      attemptField: string;
+      transition: string;
+    };
   };
   executorConstraints: {
     forbiddenExposure: string[];
@@ -305,7 +340,7 @@ export interface HumanRequest {
     authority: string | null;
   } | null;
 }
-export interface HostActionRequest {
+export interface PublicationActionRequest {
   schemaVersion: 1;
   id: string;
   execution: string;
@@ -315,16 +350,46 @@ export interface HostActionRequest {
   commit: string;
   ref: string;
 }
-export interface HostActionResult {
+export interface PromotionArtifact {
+  source: string;
+  destination: string;
+  identity: string;
+}
+export interface PromotionActionRequest {
   schemaVersion: 1;
   id: string;
-  request: HostActionRequest;
+  execution: string;
+  roleGrant: string;
+  kind: "promotion";
+  candidate: string;
+  evaluatorRevision: string;
+  attempt: number;
+  artifacts: PromotionArtifact[];
+}
+export type HostActionRequest =
+  PublicationActionRequest | PromotionActionRequest;
+export interface PublicationActionResult {
+  schemaVersion: 1;
+  id: string;
+  request: PublicationActionRequest;
   status: "succeeded" | "failed" | "denied";
   before: string | null;
   after: string | null;
   reason: string | null;
   directPublication: false;
 }
+export interface PromotionActionResult {
+  schemaVersion: 1;
+  id: string;
+  request: PromotionActionRequest;
+  status: "succeeded" | "failed" | "denied";
+  artifacts: Record<string, string>;
+  integrityIdentity: string | null;
+  promotionIdentity: string | null;
+  reason: string | null;
+  directPublication: false;
+}
+export type HostActionResult = PublicationActionResult | PromotionActionResult;
 export interface Telemetry {
   schemaVersion: 1;
   source: "host";

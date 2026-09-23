@@ -493,6 +493,90 @@
     "field": "cycle",
     "initial": "001"
   },
+  "humanDecisions": {
+    "accept": {
+      "transition": "human-accepted",
+      "when": {
+        "all": [
+          {
+            "event": "verification-finalized",
+            "current": true,
+            "latest": true,
+            "fields": { "result": "PASS" }
+          },
+          { "event": "promotion-recorded", "current": true },
+          { "event": "as-built-recorded", "current": true },
+          { "not": { "event": "human-accepted", "current": true } },
+          { "not": { "event": "human-rejected", "current": true } }
+        ]
+      },
+      "bindings": {
+        "candidate": {
+          "event": "implementation-handoff",
+          "field": "commit",
+          "current": true
+        },
+        "verification": {
+          "event": "verification-finalized",
+          "field": "semanticResult",
+          "current": true
+        },
+        "promotion": {
+          "event": "promotion-recorded",
+          "field": "promotionIdentity",
+          "current": true
+        },
+        "asBuilt": {
+          "event": "as-built-recorded",
+          "field": "semanticResult",
+          "current": true
+        },
+        "cycle": { "scope": true }
+      }
+    },
+    "reject": {
+      "transition": "human-rejected",
+      "when": {
+        "all": [
+          {
+            "event": "verification-finalized",
+            "current": true,
+            "latest": true,
+            "fields": { "result": "PASS" }
+          },
+          { "event": "promotion-recorded", "current": true },
+          { "event": "as-built-recorded", "current": true },
+          { "not": { "event": "human-accepted", "current": true } },
+          { "not": { "event": "human-rejected", "current": true } }
+        ]
+      },
+      "bindings": {
+        "candidate": {
+          "event": "implementation-handoff",
+          "field": "commit",
+          "current": true
+        },
+        "verification": {
+          "event": "verification-finalized",
+          "field": "semanticResult",
+          "current": true
+        },
+        "promotion": {
+          "event": "promotion-recorded",
+          "field": "promotionIdentity",
+          "current": true
+        },
+        "asBuilt": {
+          "event": "as-built-recorded",
+          "field": "semanticResult",
+          "current": true
+        },
+        "cycle": { "scope": true }
+      },
+      "requiredStrings": ["classification"],
+      "requiredStringArrays": ["findings"]
+    }
+  },
   "gates": [
     {
       "when": {
