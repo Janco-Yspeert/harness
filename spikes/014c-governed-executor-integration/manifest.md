@@ -94,3 +94,37 @@
 - Checks: SHA-256 comparison of the input against the host-bound identity and
   the preliminary snapshots; Prettier check of the feedback files.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 004 — Brief Readiness
+
+- Skill: `brief-readiness` v4,
+  `sha256:fd93e80b353c7cb386aae6d133ce4cc0226a20f5e1d8dea87200084f3ef210a1`
+  (pinned bytes delivered by Role Grant
+  `sha256:b5bc4c8da0d87f71ddc5f3ab0b4493ac9f3fe1215fe47a4b9131c8e26467587d`,
+  assignment `72a50e0e-af22-468f-be95-35996ab21ca6`; human-authorized 014c
+  bootstrap execution).
+- Input: revised draft `spike.md`
+  `sha256:0e86f034efd3b3f4217f5049fdc063c47f4b36147b309b9d6b4fbf1f095d2d18`,
+  reviewed against `feat/spike-014` at
+  `fea79abb0b9085f6ce90b2c94e750b15a38e56c8`.
+- Result: succeeded; verdict **Ready after minor clarification** (`READY`).
+  Earlier blocker B1, clarifications M1 and M2, and editorial notes E1 and E2
+  are resolved. Two non-blocking clarifications remain: C1 (who records the
+  fixture's human trust-root authority, and when) and C2 (generalizing the
+  Harness-specific manifest construction to per-project trust histories and
+  validator sets). One editorial note remains: E1 (record the freeze
+  checkpoint).
+- Outputs: `feedback.md`
+  `sha256:18d02ec6f81aa5e93d7bd975bee74a16d73ee56985172aeb6c44e6775f778c10`.
+  The verdict passes, so no preliminary snapshot was created. `preliminary/001`
+  through `preliminary/003` were left untouched.
+- Repository evidence inspected: the draft brief and its diff since Run 003;
+  the Run 003 feedback and manifest; `bootstrap/authority.md`; commit
+  `d447e385` and its `tools/governed-claude-bootstrap.ts`;
+  `harness.project.json`; `methodologies/harness/trusted.jsonl`;
+  `src/methodology-evolution.ts`; `tools/methodology.ts`; and `src/index.ts`.
+- Restricted evaluator material inspected: none.
+- Checks: SHA-256 comparison of the input against the host-bound identity;
+  `git diff ccca429 HEAD --stat`; ancestry check of `d447e385`; Prettier check
+  of `feedback.md`.
+- Measurement cutoff: immediately before this manifest update.

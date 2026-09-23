@@ -1,161 +1,140 @@
-# Brief Readiness — Spike 014c Governed Executor Integration (Run 003)
+# Brief Readiness — Spike 014c Governed Executor Integration (Run 004)
 
 - Skill: `brief-readiness` contract version 4
 - Reviewed brief: `spikes/014c-governed-executor-integration/spike.md`
-  `sha256:08da03d098ab511e467eea9bbc1d8ff90e5a7a8b97a3982d1b7037e35c245dc0`
+  `sha256:0e86f034efd3b3f4217f5049fdc063c47f4b36147b309b9d6b4fbf1f095d2d18`
 - Repository state reviewed: `feat/spike-014` at
-  `bf8bc140338427904d4305fc1c9273345fbcf8aa`
+  `fea79abb0b9085f6ce90b2c94e750b15a38e56c8`
 
 ## Summary
 
-This is the third readiness pass over the **same brief bytes**. `spike.md` is
-byte-identical to both
-`spikes/014c-governed-executor-integration/preliminary/001/spike.md` and
-`spikes/014c-governed-executor-integration/preliminary/002/spike.md`. Since
-Run 002's reviewed checkpoint `2765500`, the only repository changes are Run
-002's review artifacts (`feedback.md`, `manifest.md`, `preliminary/002/**`).
-Code, configuration, methodology, and brief text are unchanged.
+The brief was revised in `fea79ab` ("clarify synthetic trust authority"). That
+commit changes only `spike.md`. The revision resolves every blocking or
+material finding from Runs 001–003:
 
-I re-checked the repository evidence behind the earlier findings myself, and it
-still holds. One question is still unresolved: what the trust-equivalence gate
-applies to (§2, AC16). As written, the gate conflicts with the synthetic
-real-provider smoke tests, which must run through the production host (§6,
-AC05, AC09). The blocker therefore stands.
+- **B1 (resolved).** §2 now scopes the trust-equivalence gate to "that
+  project's" immutable trusted manifest. The gate applies to Harness,
+  disposable test projects, and external projects, with no synthetic
+  exemption. The smoke tests use one dedicated fixture project with its own
+  synthetic methodology and a human-established trust root, which cannot
+  govern 014c or alter Harness trust history. §6 builds the smoke host in test
+  code from the fixture configuration and trust history, using the production
+  host implementation and adapters. AC16 now covers the fixture explicitly.
+  This combination is consistent: AC05, AC09 and AC16 can all pass without an
+  exemption. It also fits the existing mechanism: `readTrustedHistory`,
+  `bindFutureWorkflow` and `promoteMethodology` in
+  `src/methodology-evolution.ts` already take an explicit trust-history path
+  and accept a `human-bootstrap` evaluation.
+- **Earlier M1 (resolved).** §7 cites `bootstrap/authority.md`, pins the
+  bootstrap executor to `d447e385018fd587809431d2f6e9363ddb304a66`, and states
+  that candidate adapter restrictions bind only the candidate path. I
+  confirmed that commit exists, is an ancestor of `HEAD`, and contains
+  `tools/governed-claude-bootstrap.ts`. The starting checkpoint has been
+  updated.
+- **Earlier M2 (resolved).** §5 states that fixture command profiles can be
+  built only in test code. No production entrypoint variable, configuration
+  file, test-mode flag, alternative trust root, or fixture command may enable
+  them.
+- **Earlier E1 and E2 (resolved).** §3 now refers to the selected Claude
+  adapter together with the Codex adapter. It also states that existing
+  authorized host actions, including publication where granted, go through
+  the shared protocol.
 
-## Blocker
+No blocker remains. Two clarifications would stop implementations from
+diverging, but the likely answers are clear.
 
-### B1 (unchanged) — The trust-equivalence gate does not say whether it covers synthetic smoke-test methodologies or non-Harness projects
+## Material clarifications (non-blocking)
 
-**Brief evidence.** §2 ("Before a new production Workflow Execution Grant…")
-requires the host to deny a grant unless the kernel definition matches the
-trusted methodology manifest component for component. AC16 applies that
-requirement to new governed grants. §6 and AC05 require real Claude and Codex
-runs "launched through the production governed host and registered adapter".
-Those runs use "an exact pinned, trivial synthetic skill/contract". §3 and AC09
-require a "deliberately simple, synthetic protected role" whose promotion is
-validated and recorded by the host.
+### C1 — Who records the fixture's human trust root, and when
 
-**Repository evidence (re-verified at `bf8bc14`).**
+**Brief evidence.** §2: "Human authority may establish only that fixture's
+initial immutable trust root; the tests must pin and record its exact
+definition, revision, and manifest identity before execution." §6 requires
+recording the "fixture trust-root authority".
 
-- `methodologies/` contains only `harness/`. All four records in
-  `methodologies/harness/trusted.jsonl` belong to the Harness methodology.
-- `buildMethodologyManifest` in `src/methodology-evolution.ts` defaults to
-  `methodologies/harness/policy.json`, with a fixed `VALIDATOR_SOURCES` map.
-- `harness.project.json` has a `policy` field but no trust-history field.
-- `src/kernel/` contains no trust logic. The host loads policy through
-  `loadDefinition` (`src/kernel/methodology.ts`) without any trust check.
-- The promotion host action in `src/kernel/host.ts` and
-  `src/kernel/execution.ts` depends on a promotion configuration defined by the
-  role contract. A synthetic promoting role therefore needs its own policy and
-  contract, which would not be part of the trusted Harness methodology.
+**Repository evidence.** `requirePromotionAuthority` in
+`src/methodology-evolution.ts` accepts `{kind: "human", evaluation: {kind:
+"human-bootstrap", evidence}}`. It checks only that the evidence strings are
+non-empty, and `tools/methodology.ts promote` appends the record. As a
+result, whoever writes the authority file controls the human attestation.
 
-**Consequence.** If AC16 is implemented faithfully, the host will deny the AC05
-and AC09 smoke grants. To make the smoke tests pass, a later role would have to
-pick one of three authority models that the brief never states. Each rules out
-the other two:
+**Consequence.** If the brief does not say otherwise, the implementing worker
+could write the fixture's `human-bootstrap` evidence itself. That would be
+the synthesized human authority that §3 (`requestHuman`) prohibits. The
+evaluator would then have no fixed rule for judging whether the root is
+genuine.
 
-1. a test or configuration exemption, which weakens "production governed host"
-   and opens an AC16 bypass;
-2. a trust history written by the fixture, which needs a trust-root authority
-   the brief does not name; or
-3. adding the synthetic role to the Harness methodology, which counts as
-   methodology evolution under §7.
+**Smallest clarification.** State that a human approves the fixture trust
+root explicitly, through the existing human approval mechanism or a committed
+human decision record. The approval must come after the fixture methodology
+is committed and before any smoke execution. The implementing worker prepares
+the fixture but does not author the human evidence.
 
-The evaluator cannot freeze criteria that pass AC05, AC09 and AC16 together
-without choosing one of these models.
+### C2 — Manifest construction is currently specific to Harness
 
-**Smallest clarification requested.** Add one paragraph to §2 or §6 that
-states:
+**Brief evidence.** §2 and AC16 require component equivalence for every
+configured project, including a fixture with its own policy, roles, and
+promotion contract.
 
-- how the host finds a project's trusted history: Harness-only, or a
-  per-project path;
-- whether disposable or non-Harness projects are subject to the gate, and who
-  may establish their trust root; and
-- which configuration the smoke tests use, and why that configuration is still
-  the production host and registered adapter without weakening AC16.
+**Repository evidence.** `buildMethodologyManifest` in
+`src/methodology-evolution.ts` defaults to
+`methodologies/harness/policy.json`. It also always hashes a fixed
+`VALIDATOR_SOURCES` map that points at `src/methodologies/harness-public.ts`.
+`harness.project.json` has a `policy` field but no trust-history field. The
+host (`src/kernel/`) performs no trust check today.
 
-## Material clarifications
+**Consequence.** Implementers must decide two things: how a project declares
+its trust-history location, and how it declares which validator sources make
+up its manifest. That work is expected under §2, but it touches
+`src/methodology-evolution.ts` and project configuration. It sits close to
+the non-goal "no broad kernel redesign".
 
-### M1 (unchanged) — Pinned evaluator launch path and host revision
-
-§7 requires an existing, pinned, independent evaluator launch path before
-implementation.
-`spikes/014c-governed-executor-integration/bootstrap/authority.md` records that
-decision. It relies on a command profile that runs
-`tools/governed-claude-bootstrap.ts` at `d447e38`. That profile is accepted
-through `HARNESS_EXECUTOR_CONFIG` (`src/index.ts`) and `profile.command`
-(`src/kernel/host.ts`). AC04 and AC13 require the candidate host to reject
-exactly this kind of profile.
-
-The brief still names starting checkpoint `2c44416`, which is older than the
-authority record.
-
-**Requested changes:**
-
-- cite `bootstrap/authority.md` as the §7 path;
-- update the starting checkpoint; and
-- state that evaluator preparation and verification run on a host pinned before
-  the candidate, so that the AC04 guard binds the candidate host only.
-
-### M2 (unchanged) — Boundary between production and test configuration
-
-§2 and §5 allow fixture command profiles "only to explicit tests" or through an
-"explicitly isolated test configuration". Today every profile, including the
-fixtures in `test/kernel.test.ts`, arrives through the same
-`HARNESS_EXECUTOR_CONFIG` JSON (`src/index.ts`). A discriminator such as an
-environment flag or a profile field could be enabled in a deployment and would
-reopen the bridge path.
-
-**Requested change:** state that command and fixture profiles can only be
-reached by constructing the host in test code. No configuration or environment
-setting accepted by the production entry point may enable them.
+**Smallest clarification.** State that each project declares its trust
+history, and that the manifest's validator set comes from that project's
+declared policy or configuration. Also state that this generalization is in
+scope, provided the Harness manifest identities recorded in
+`methodologies/harness/trusted.jsonl` still reconstruct unchanged.
 
 ## Editorial
 
-- **E1.** In §3, "if SDK and structured CLI cannot both consume it" should
-  refer to the selected Claude adapter together with the Codex adapter. Only
-  one Claude route becomes production.
-- **E2.** §3 `requestAction` does not say whether the host's existing `publish`
-  action (`src/kernel/host.ts`) is part of the 014c worker protocol.
-- **E3.** Unchanged brief bytes have now received three identical verdicts.
-  Revise the live brief to resolve B1 and the clarifications before requesting
-  another readiness pass. Re-reviewing the same bytes cannot change the
-  outcome.
+- **E1.** The header's starting checkpoint is `ccca429`, but the reviewed
+  brief is at `fea79ab`. The header already says "verify again when
+  freezing", so record the freeze commit at that point.
 
 ## Review limitations
 
 - I reviewed only public repository material. I did not inspect
   evaluator-private paths (`**/eval-spec.md`, `**/.hidden-test/**`,
   `**/.eval/**`).
-- I did not consult the external Anthropic documentation, and I made no provider
-  calls.
+- I did not consult the external Anthropic documentation, and I made no
+  provider calls. The authentication and billing position is left to the §1
+  worksheet, as the brief requires.
 - I did not run `npm run check`, because no code changed since the prior
-  review.
-- I did not read or write the untracked
-  `spikes/014c-governed-executor-integration/workflow.jsonl` beyond its first
-  bytes. It is Harness-owned and not needed for this review.
+  review (`git diff ccca429 HEAD --stat` shows only `spike.md`).
+- I did not read or modify the Harness-owned
+  `spikes/014c-governed-executor-integration/workflow.jsonl`.
 
 ## Files changed
 
 - `spikes/014c-governed-executor-integration/feedback.md` (this review)
-- `spikes/014c-governed-executor-integration/preliminary/003/spike.md` (exact
-  reviewed draft)
-- `spikes/014c-governed-executor-integration/preliminary/003/feedback.md`
-  (matching review)
-- `spikes/014c-governed-executor-integration/manifest.md` (Run 003 entry)
+- `spikes/014c-governed-executor-integration/manifest.md` (Run 004 entry)
+
+The verdict passes, so no `preliminary/` snapshot was created.
 
 ## Checks run
 
-- Checked that the SHA-256 of `spike.md` matches the host-bound input identity.
-- Checked that `spike.md` is byte-identical to `preliminary/002/spike.md`.
-- Ran `git diff 2765500 HEAD --stat`, which showed only Run 002 review
-  artifacts.
-- Ran `git diff fd60b07 HEAD --stat` over `src`, `methodologies`, `tools`,
-  `skills` and `harness.project.json`, which showed no changes.
-- Re-checked the B1, M1 and M2 evidence in `src/kernel/`, `src/index.ts`,
-  `src/methodology-evolution.ts`, `harness.project.json` and
-  `methodologies/harness/trusted.jsonl`.
+- Checked that the SHA-256 of `spike.md` matches the host-bound input
+  identity.
+- Ran `git diff f032ea7 HEAD -- spike.md` (the revision since Run 003) and
+  `git diff ccca429 HEAD --stat`.
+- Checked that `d447e385` exists, is an ancestor of `HEAD`, and contains
+  `tools/governed-claude-bootstrap.ts`.
+- Inspected `bootstrap/authority.md`, `harness.project.json`,
+  `methodologies/harness/trusted.jsonl`, `src/methodology-evolution.ts`
+  (trust events, promotion authority, manifest construction),
+  `tools/methodology.ts`, and the host configuration loading in
+  `src/index.ts`.
 
 ## Verdict
 
-**Not ready to freeze**
+**Ready after minor clarification**
