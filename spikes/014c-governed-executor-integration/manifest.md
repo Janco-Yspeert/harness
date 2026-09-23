@@ -128,3 +128,53 @@
   `git diff ccca429 HEAD --stat`; ancestry check of `d447e385`; Prettier check
   of `feedback.md`.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 005 — Design Map
+
+- Skill: `design-map` v3,
+  `sha256:c4f645a2d383ad15173131c72768eca723d7d6a8528b49cd273981d234d559ea`
+  (pinned bytes delivered by Role Grant
+  `sha256:52fd35c7c5cf2aa4718ab9ca81b060e7dd66aad9617f6797dcf4d86d1d942f69`,
+  assignment `85f8a28d-3141-4035-afbc-fd64b55851cd`; human-authorized 014c
+  bootstrap execution).
+- Input: frozen `spike.md`
+  `sha256:0e86f034efd3b3f4217f5049fdc063c47f4b36147b309b9d6b4fbf1f095d2d18`
+  (`brief-frozen` at `889507128fed99db3e0af9aed7856b4d30b934cd`; working tree
+  and committed bytes verified identical), mapped against `feat/spike-014` at
+  that commit.
+- Result: succeeded. The map settles the shared contracts that implementation
+  and evaluation must agree on:
+  - construction and configuration seams, with `claude`/`codex` as the
+    registered adapter IDs and fixture command profiles limited to direct
+    programmatic construction;
+  - worker protocol v1 operations over the existing governed HTTP API;
+  - a per-project trust-equivalence gate at `POST grants`, using a
+    `trustedHistory` project field;
+  - the synthetic fixture's human trust root (resolves Run 004 C1 and C2);
+  - the diagnostic category vocabulary;
+  - the public evidence artifacts;
+  - the exact real-provider smoke procedure;
+  - the fixed protected-execution threat model.
+
+  No product, scope or behavior decision was returned to the brief.
+- Output: `design-map.md`
+  `sha256:9f98ebfcc201736737cb9e0f5dcebc29cafd1235a8e9465b02c81764013e82e1`
+  (2,767 words).
+- Repository evidence inspected: the frozen brief and Run 004 feedback;
+  `bootstrap/authority.md`; `AGENTS.md`; the 014a Design Map;
+  `harness.project.json`; `methodologies/harness/{policy.json,trusted.jsonl}`
+  and the design-map/implementation contracts;
+  `src/kernel/{host,model,configuration,methodology}.ts` and the relevant
+  parts of `src/kernel/execution.ts`; `src/methodology-evolution.ts` (manifest
+  construction, binding, promotion authority);
+  `src/methodologies/harness-public.ts` validator identities;
+  `src/index.ts` governed wiring; the exports of `src/claude-workflow.ts`,
+  `src/workflow-backend.ts` and `src/codex-backend.ts`;
+  `tools/fixtures/governed-executor.ts`;
+  `tools/governed-claude-bootstrap.ts`; and the host construction in
+  `test/kernel.test.ts`.
+- Restricted evaluator material inspected: none.
+- Checks: SHA-256 of `spike.md` against the host-bound identity and the
+  `brief-frozen` commit; Prettier check of `design-map.md`;
+  `git diff --check`; confirmed the 014a ledger is tracked.
+- Measurement cutoff: immediately before this manifest update.
