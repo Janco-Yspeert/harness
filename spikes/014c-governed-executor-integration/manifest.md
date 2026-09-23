@@ -178,3 +178,36 @@
   `brief-frozen` commit; Prettier check of `design-map.md`;
   `git diff --check`; confirmed the 014a ledger is tracked.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 006 — Evaluator Prepare (blocked)
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`
+  (pinned bytes delivered by Role Grant
+  `sha256:689fdde5cfe8a739fd8df1c6607aac5d0e711b452d52cec8a14dce123b4fa99a`,
+  assignment `c29d2dad-d91c-4987-bfaa-96e5d9bfa5b0`; human-authorized 014c
+  bootstrap execution), mode `prepare`.
+- Inputs: frozen `spike.md`
+  `sha256:0e86f034efd3b3f4217f5049fdc063c47f4b36147b309b9d6b4fbf1f095d2d18`
+  (committed at `8895071`) and frozen `design-map.md`
+  `sha256:9f98ebfcc201736737cb9e0f5dcebc29cafd1235a8e9465b02c81764013e82e1`
+  (committed at `c98e04f`). Working-tree and committed bytes match the
+  host-bound identities.
+- Result: **blocked** (infrastructure). The bound private evaluation workspace
+  `/tmp/harness-014c-private/evaluation` is readable but not writable in this
+  execution. The Bash sandbox write allowlist excludes it, and the file tools
+  are restricted to the repository and the bootstrap scratch directory. The
+  evaluator skill forbids falling back to the public repository, and the
+  bootstrap scratch directory is deleted when the provider exits. So no private
+  specification, case manifest, freeze metadata or attempt ledger could be
+  created, and no evaluator revision was frozen.
+- Outputs: none. No `eval-requirements.md` or `coverage-map.json` was produced,
+  because publishing either without a matching frozen private revision would
+  falsely attest readiness. `evaluation-prepared` must not be recorded.
+- Required recovery: rerun `evaluator prepare` with write access to the bound
+  private evaluation workspace. This is a host or profile configuration change
+  and needs separate authorization; it is not a change to the brief or Design
+  Map.
+- Restricted evaluator material inspected: none. The private workspace was
+  empty.
+- Measurement cutoff: immediately before this manifest update.
