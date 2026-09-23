@@ -3,7 +3,7 @@
 **Status:** Draft for human review and freeze  
 **Depends on:** accepted 014b methodology; 014a's existing governed kernel and authority records  
 **Precedes:** 014d skill/protocol integration; 014e independent-project canary; 015 telemetry  
-**Starting repository checkpoint (verify again when freezing):** `feat/spike-014` at `2c444160ecb51f5005c0f1016c67877b9f571052`
+**Starting repository checkpoint (verify again when freezing):** `feat/spike-014` at `ccca429045790358361d376d2ecaa5697a10599e`
 
 ## Context
 
@@ -93,11 +93,23 @@ Production governed profiles must select a registered repository-owned adapter, 
 
 Before a new production Workflow Execution Grant binds its methodology, the host
 must establish that the current kernel definition is the component-equivalent
-projection of the append-only trusted methodology manifest at its recorded
-revision. A changed active policy, role contract, role skill, or validator
-source must produce an inspectable denial; the host must not silently adopt the
-working tree merely because it is readable. The manifest and kernel-definition
-aggregate identities may differ because they encode different schemas.
+projection of **that project's** approved immutable trusted methodology manifest
+at its recorded revision. This applies equally to Harness, disposable test
+projects, and eventual external projects; a synthetic role is never exempt. A
+changed active policy, role contract, role skill, or validator source must
+produce an inspectable denial; the host must not silently adopt the working tree
+merely because it is readable. The manifest and kernel-definition aggregate
+identities may differ because they encode different schemas.
+
+Harness retains its existing append-only trusted history. The smoke tests use
+one dedicated isolated test project with its own small synthetic methodology,
+trivial roles, and protected promotion contract. Human authority may establish
+only that fixture's initial immutable trust root; the tests must pin and record
+its exact definition, revision, and manifest identity before execution. Its
+trust root authorizes only its own synthetic executions: it cannot govern or
+evaluate 014c, alter Harness's trust history, access 014a private evidence, or
+authorize any production workflow. A post-freeze fixture methodology edit must
+fail the same trust-equivalence check.
 
 ## 3. One versioned worker-to-host protocol
 
@@ -111,9 +123,9 @@ Define and implement a small, provider-neutral, typed interface with the followi
 | `requestHuman` | Preserve the existing bounded human input/approval/root mechanism where the grant permits it; do not synthesize human authority in adapter code. |
 | `diagnostic` / lifecycle | Surface safe structured startup, provider, transport, result-submission and host-action failures. These are observations, not semantic results or canonical transitions. |
 
-Use the kernel's **existing authenticated HTTP API** as the host-facing implementation rather than adding another authoritative event store. The worker-facing surface may be a small repository-owned MCP tool server backed by those endpoints; if SDK and structured CLI cannot both consume it reliably, choose one equally typed first-party interface, explain the compatibility evidence, and keep the same semantics for both providers. No `HARNESS_ROLE_RESULT` terminal-line parser for governed authority.
+Use the kernel's **existing authenticated HTTP API** as the host-facing implementation rather than adding another authoritative event store. The worker-facing surface may be a small repository-owned MCP tool server backed by those endpoints; if the selected Claude adapter together with the Codex adapter cannot both consume it reliably, choose one equally typed first-party interface, explain the compatibility evidence, and keep the same semantics for both providers. No `HARNESS_ROLE_RESULT` terminal-line parser for governed authority.
 
-The adapter holds its narrowly scoped session credentials and sends authenticated host requests. Do not place root credentials, host session bearer tokens, or provider authentication secrets inside model-visible prompts, writable workspaces, worker tools' arguments, public ledgers, or diagnostics. Provider subprocess environments must not receive host session bearer tokens needlessly. All operations must be bound to the exact execution/session; superseded workers must not regain authority through the adapter.
+The adapter holds its narrowly scoped session credentials and sends authenticated host requests. Existing configured and authorized host actions, including publication where the Role Grant grants it, travel through this shared protocol; the protocol must not invent new worker authority. Do not place root credentials, host session bearer tokens, or provider authentication secrets inside model-visible prompts, writable workspaces, worker tools' arguments, public ledgers, or diagnostics. Provider subprocess environments must not receive host session bearer tokens needlessly. All operations must be bound to the exact execution/session; superseded workers must not regain authority through the adapter.
 
 A valid semantic result followed by a missing or failed required host action must remain explicitly **incomplete or blocked** under the configured policy, with the semantic result preserved. The host must not infer the missing action from the result, copy private files on its own initiative, or treat process exit as an action request. For tests, a deliberately simple, synthetic protected role may produce a predeclared promotion plan and synthetic bytes; **do not** interpret the real evaluator's private eligibility in 014c.
 
@@ -139,7 +151,7 @@ Update `skills/orchestrator/SKILL.md` with the explicit rule:
 
 > Once a Harness workflow is chosen, the supervisor must execute governed roles solely through the configured Harness host and its registered repository-owned adapters. It must not generate executable bridges, wrapper scripts, replacement dispatchers or direct provider invocations to bypass a missing adapter. If the host has no eligible adapter, the correct result is an inspectable infrastructure blocker and a proposed **separately authorized** fix.
 
-Do not depend on this prose alone. Add host/configuration validation and an integration test demonstrating that a governed production allocation targeting an unregistered executable, generated `/tmp` bridge, or unavailable provider **cannot** start. Fixture programs remain possible only through an explicitly isolated test configuration. Validate that legacy `/workflow-runs` cannot be reactivated as an execution workaround.
+Do not depend on this prose alone. Add host/configuration validation and an integration test demonstrating that a governed production allocation targeting an unregistered executable, generated `/tmp` bridge, or unavailable provider **cannot** start. Fixture command profiles are constructible only directly in test code; no production entrypoint environment variable, configuration file, test-mode flag, alternative trust root, or fixture command may enable them. The isolated smoke host uses the actual production governed host implementation and registered Claude/Codex adapters, not a mock provider or alternate execution pipeline. Validate that legacy `/workflow-runs` cannot be reactivated as an execution workaround.
 
 Preserve the existing supervisor/worker distinction, explicit inline adoption and human-request boundaries. If the orchestrator skill is changed while 014c runs, that candidate text is **not** retroactively authoritative for the current invocation.
 
@@ -149,7 +161,7 @@ Two layers of tests, with no substitution between them:
 
 **Deterministic automated tests (no provider usage):** mock the SDK/CLI event streams and HTTP transport. Cover exact assignment bytes, registered-adapter selection, contract-to-tool permission mapping, unknown capability rejection, unsupported model/effort constraint refusal, malformed/missing result, unauthorized or superseded actions, sanitized diagnostics, cancellation, duplicate completion and idempotent host reconciliation. Exercise `submitResult(PASS)` followed by successful/failed/omitted **synthetic** promotion requests to prove that the host retains PASS and records promotion only after actual successful action.
 
-**Real-provider governed smoke tests (bounded):** one real Claude execution and one real Codex execution, each **launched through the production governed host and registered adapter** against disposable isolated workspaces. Each receives an exact pinned, trivial synthetic skill/contract and returns a typed result. The Claude run also exercises one narrow synthetic host-action request, preferably promotion of harmless precreated fixture bytes inside a controlled private workspace, with actual host validation. Record CLI/SDK versions, the confirmed or unavailable model/effort attestation, provider/process lifecycle, actual result/action events and the absence of generated bridge code. Capture only public-safe output. An unauthorized action must be rejected by the host in a negative test.
+**Real-provider governed smoke tests (bounded):** one real Claude execution and one real Codex execution, each **launched through the production governed host and registered adapter** against disposable isolated workspaces in the dedicated trusted synthetic fixture project. Each receives an exact pinned, trivial synthetic skill/contract and returns a typed result. The Claude run also exercises one narrow synthetic host-action request, preferably promotion of harmless precreated fixture bytes inside a controlled private workspace, with actual host validation. Construct this smoke host directly in test code with the fixture project configuration and fixture trust history; the actual production governed host implementation and adapters must be used. Record fixture trust-root authority, CLI/SDK versions, the confirmed or unavailable model/effort attestation, provider/process lifecycle, actual result/action events and the absence of generated bridge code. Capture only public-safe output. An unauthorized action must be rejected by the host in a negative test.
 
 An SDK/CLI exploratory probe run directly from a terminal is **not** the real-provider governed smoke test. A mocked executor, a fabricated ledger row or an API-level kernel unit test is **not** evidence that the selected adapter works with a real provider. Use low-turn, small tasks and no unbounded retries. If live provider credentials or quota are unavailable, report the exact acceptance criterion as unproven; do not change the criterion or claim overall PASS.
 
@@ -157,7 +169,7 @@ An SDK/CLI exploratory probe run directly from a terminal is **not** the real-pr
 
 Freeze the brief and Design Map under the currently trusted methodology and record their exact identities. The Design Map must include the SDK-versus-CLI decision worksheet, a fixed protected-execution threat model, the chosen host/adapter/tool boundary, and the exact real-provider smoke-test procedure. Evaluator `prepare` freezes implementation-independent success/failure criteria; it **must not** encode an SDK-specific expected winner or implementation file layout.
 
-014c must not evaluate its own new adapter under newly edited methodology authority. Use the independent evaluator's pre-014c trusted skill/contract snapshot throughout preparation and verification. Because this spike repairs the executor used to run that evaluator, establish and document a separate **existing, pinned, independent evaluator launch path before implementation**. If the current trusted mechanism cannot provide one, stop for **one explicit human bootstrap decision**; do not silently generate another bridge, make the candidate adapter the evaluator's authority, or relax isolation to keep the run moving.
+014c must not evaluate its own new adapter under newly edited methodology authority. Use the independent evaluator's pre-014c trusted skill/contract snapshot throughout preparation and verification. The explicitly authorized bootstrap path is recorded in `bootstrap/authority.md`: its governed-host executable and `tools/governed-claude-bootstrap.ts` are pinned to pre-candidate commit `d447e385018fd587809431d2f6e9363ddb304a66`, and the executor runs from that detached repository checkout. Candidate production adapter restrictions apply only to the candidate path; they do not retroactively invalidate this bounded bootstrap evaluator. Because this spike repairs the executor used to run that evaluator, establish and document this separate **existing, pinned, independent evaluator launch path before implementation**. If the current trusted mechanism cannot provide one, stop for **one explicit human bootstrap decision**; do not silently generate another bridge, make the candidate adapter the evaluator's authority, or relax isolation to keep the run moving.
 
 Experimental provider findings may select SDK or CLI using the fixed decision rule above; they may not change the frozen acceptance semantics. If discovery reveals an unavoidable changed security/billing contract, stop with the evidence and request explicit human scope rather than redefining the target during implementation.
 
@@ -194,7 +206,7 @@ Before independent verification, commit the implementation, selected interface d
 | AC13 | Orchestrator explicitly uses Harness and may not generate substitute bridges, with mechanical rejection in configured production execution. | Versioned skill edit, production profile validation and no-bridge regression test. |
 | AC14 | Legacy `/workflow-runs` cannot mutate/dispatch active governed workflows, and 014a's canonical history remains unchanged. | Existing legacy rejection regression and exact ledger-history comparison. |
 | AC15 | Full repository checks and independent frozen-authority verification pass, with real-provider tests separately evidenced rather than inferred from unit tests. | `npm run check`, deterministic integration results, independent evaluation and a concise as-built file change/evidence map. |
-| AC16 | New governed workflow grants reject an untrusted active methodology edit rather than silently binding the working tree. | Trust-equivalence validation and regression coverage for changed policy, role contract/skill, or validator source; the normal trusted manifest/kernel projection remains accepted. |
+| AC16 | New governed workflow grants reject an untrusted active methodology edit rather than silently binding the working tree, for every configured project including the synthetic fixture. | Trust-equivalence validation and regression coverage for changed policy, role contract/skill, or validator source; the normal trusted manifest/kernel projection remains accepted, while a post-freeze synthetic-fixture change is rejected. |
 
 A failure of AC02's permitted-authentication gate, AC05's real provider launch or AC09's real host action is a **genuine blocker**, not permission to declare an infrastructure exception PASS. Preserve successful partial evidence without inflating it into completion.
 
