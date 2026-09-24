@@ -93,3 +93,54 @@
 - Limitations: a sandbox approval restriction blocked a scripted summary of
   `workflow.jsonl`, so freeze evidence was read directly from its lines.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 003 — Evaluator Prepare
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`
+  (pinned bytes delivered by Role Grant
+  `sha256:0ad0c85435e6088f8b5954bbd708c6396957cffca09f10143d9dd80d8f71567c`,
+  execution `ea181833-1294-446a-9509-c97af2e78cc8`, workflow
+  `014d-real-methodology-integration-extensible-skill-evolution`), mode
+  `prepare`, under trusted N (kernel definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Inputs: frozen `spike.md`
+  `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`
+  (committed at `047daac`) and frozen `design-map.md`
+  `sha256:f5193434bb20a2500466938305c38e835db7cd19575432af271bce47f3e2ef6f`
+  (committed at `eeae1f5`). The working-tree and committed bytes match the
+  host-bound identities. The pre-implementation baseline is `eeae1f5`.
+- Result: **succeeded**.
+  - Private evaluator revision `001` is frozen with identity
+    `sha256:d03975365d8e1a624854a305d494c7018125849ea560070be4c03fff56cc80f5`.
+  - The pre-freeze integrity validation passed with 0 diagnostics.
+  - Every executable case passed under controlled compliant conditions and
+    failed, for its intended reason, under controlled non-compliant
+    conditions. No candidate implementation existed or was executed.
+- Outputs:
+  - `eval-requirements.md`
+    `sha256:1ecb9187bc13f88249b25235daa6102833b080f7cdf446c52fdf3bfd739b06e4`.
+    It has 6 testability requirements, 6 evaluator assumptions and no
+    blocking questions.
+  - `coverage-map.json`
+    `sha256:b0af4e7de325c23ae198d7b0fe476f196b2cb5f5fee9a241d5f6fb2d222f3c8c`.
+    It has 13 criterion records (AC01–AC13) and a readiness attestation
+    `integrityValidation: PASS`, with private inventory
+    `sha256:c747eac6b74e3d6e4308ddbd840bf0f9b08f7443a7916fc6e4236d18af7d98ea`
+    and validator result binding
+    `sha256:4d78f33e112a46532b6e3840ce06b7ea4cf6544a60bf2d12cd31376fa5cdce12`.
+- Safe aggregates:
+  - 11 evidence procedures: 5 executable, plus public regression, fidelity
+    matrix, live evidence, orchestrator review, code review and
+    methodology-evolution evidence.
+  - 48 mandatory cases, 8 of them executable.
+- Checks:
+  - The repository's `prepared-coverage` validator (`validatePreparedMap`)
+    accepts `coverage-map.json`.
+  - Prettier checks pass for both public artifacts.
+  - The public map was scanned for private paths or case names; none found.
+- Restricted evaluator material disclosed: none.
+- Limitations: sandbox approval restrictions blocked a few compound shell
+  forms. Equivalent direct commands were used, and the evaluation substance
+  was unaffected.
+- Measurement cutoff: immediately before this manifest update.

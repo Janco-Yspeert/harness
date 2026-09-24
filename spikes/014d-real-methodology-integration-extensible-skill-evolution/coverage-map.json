@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "spike": "014d-real-methodology-integration-extensible-skill-evolution",
+  "evaluationRequirements": "sha256:1ecb9187bc13f88249b25235daa6102833b080f7cdf446c52fdf3bfd739b06e4",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 13,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:d03975365d8e1a624854a305d494c7018125849ea560070be4c03fff56cc80f5",
+    "privateInventoryIdentity": "sha256:c747eac6b74e3d6e4308ddbd840bf0f9b08f7443a7916fc6e4236d18af7d98ea",
+    "validatorResultBinding": "sha256:4d78f33e112a46532b6e3840ce06b7ea4cf6544a60bf2d12cd31376fa5cdce12",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 13
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; §1 fidelity matrix and deterministic real-skill exercise; design-map.md C7 and C8",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-REG", "M-MATRIX"],
+      "sufficiency": "The matrix form and the scripted-worker harness are Design Map freedom, so a hidden duplicate would have to invent them. M-MATRIX requires evidence/fidelity-matrix.md to have one row for each of the eight actual roles, and cross-checks every row against the candidate's real skill, contract and policy bytes. R-REG runs the full checks and confirms that each role has genuine C7 layer (a) pinned-bytes, (b) scripted-worker and (c) static skill tests, with scripted compliance labelled as such."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; §1 real-provider proof; §2 orchestrator default routing; design-map.md C6 and C8",
+      "mode": "PUBLIC_EVIDENCE",
+      "required": true,
+      "procedures": ["M-LIVE", "M-ORCH"],
+      "sufficiency": "Real adapter runs and an observed orchestrator run cannot be reproduced without provider credentials, and synthetic substitutes are forbidden. M-LIVE requires committed evidence of real public and protected role runs from gated Role Grants through the production registered adapters, and recomputes the identities. M-ORCH requires the observed run to show an ordinary actionable request selecting the governed workflow with no incantation, direct provider runner or bridge, together with the reviewed orchestrator instructions and their C6 provenance."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03; §2 unattended continuation, genuine gates, read-only boundary and stop",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-REG", "M-ORCH"],
+      "sufficiency": "Continuation is existing host machinery, and the orchestrator's behavior is instruction-level. R-REG requires visible host tests showing that one grant carries several eligible machine phases with no human requests, that gates stop with the pending decision preserved, and that a stop halts. M-ORCH requires the committed observed run to show no redundant permission prompts, a correct human-gate stop, read-only requests staying read-only, an explicit stop stopping, and a missing adapter or authority reported as a blocker."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; §3 typed private decision and actual artifact; design-map.md C2 and Invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E3", "R-REG", "M-LIVE", "M-CODE"],
+      "sufficiency": "Plan-schema additions are C2 freedom, so executable coverage asserts only schema-independent facts. E3 shows that the exported utility refuses an absent plan at the one default path, and unsupported, ineligible or unsafe plans. R-REG requires visible tests that a real persisted plan expands to identity-checked mappings, with decisionIdentity equal to the plan bytes. M-CODE confirms one path and one schema shared by the skill, the contract and the utility, and the public promotionPlan reference. M-LIVE recomputes that the fixture's promotionPlan identity is the real plan's."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; §3 required real action and acknowledgment; design-map.md C3",
+      "mode": "PUBLIC_EVIDENCE",
+      "required": true,
+      "procedures": ["M-LIVE"],
+      "sufficiency": "Only a real governed run of the actual candidate evaluator skill can establish this, and the evaluator cannot reproduce it. M-LIVE requires committed fixture evidence of the C3 order: persisted plan, validated manifest, sanitized checkpoint, submitResult PASS, then one requestAction(promotion). It also requires a returned status of succeeded, a host-created promotion.json and promotion-recorded. The fixture's own trust root must be unable to certify the candidate, and the identified skill bytes must recompute. A synthetic-only proof leaves the criterion unsatisfied."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; §3 negative proofs; design-map.md C3, C4 and Invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E3", "R-REG", "M-CODE"],
+      "sufficiency": "The negative matrix spans the utility and the host. E3 independently shows that missing, unreadable, unsupported, ineligible, unsafe, duplicate, partial-history, missing-source and symlinked plans never yield a manifest. R-REG requires genuine host tests showing that wrong identity or candidate, a partial bundle, an oversized (>64) manifest, an omitted, denied or failed action, premature exit and duplicate delivery record no promotion while the semantic PASS survives. M-CODE confirms the 64-item bound and the truthful incomplete-phase handling."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07; §1 Evaluator Prepare/Verify/Repair, As-Built and Outcome rows; policy canonical gates",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-REG", "M-MATRIX", "M-CODE"],
+      "sufficiency": "Lineage and exposure are properties of the contracts, the policy and the role behavior. M-MATRIX checks that the evaluator rows preserve frozen revision and attempt lineage, that only evaluator roles hold the evaluation workspace, and that As-Built requires promotion-recorded while Outcome separates STANDARD from an authorized, evidenced PROCESS_EXCEPTION. M-CODE confirms that non-evaluator contracts forbid evaluator-private. R-REG requires genuine scripted-role tests of these gates and failure states."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08; §7 retire legacy bridges; design-map.md Implementation freedom (delete or retire)",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E4", "R-REG", "M-CODE"],
+      "sufficiency": "Retirement is partly observable and partly a classification. E4 shows that a production-constructed governed host refuses every legacy workflow-run or fixture mutation, even when the legacy flag is requested, and creates no state. M-CODE requires the committed §7 classification of each named component, and no production caller of a bridge, command profile or prose-result authority. R-REG requires a visible test that production configuration cannot select a generated or command-bearing profile."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09; §4 immutable trusted N; design-map.md C1, Design decisions and Invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E4", "E5", "R-REG", "M-CODE", "M-EVOL"],
+      "sufficiency": "E4 shows black-box that new grants from a clean candidate checkout, and from one with uncommitted skill edits, both bind the latest trusted record's exact role set and skill bytes with an identical definition. So working-tree bytes can neither satisfy nor defeat N. E5 shows that no methodology, configuration or code encodes the spike identity and that 014c is not rewritten. M-EVOL requires every evaluator execution of this workflow to bind the N definition. M-CODE and R-REG cover exception-free code and the gate tests."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10; §4 step 5 and promoteMethodology strengthening; design-map.md C5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E1", "E5", "M-EVOL"],
+      "sufficiency": "C5 fixes the signature and the binding fields, so E1 drives promoteMethodology directly. It shows that a PASS applied to another commit or manifest, a stale or self evaluator, and missing binding fields are all rejected without changing history, while a correct binding after a legacy record appends exactly one event. E5 shows that trusted history is byte-unchanged at the candidate, so no trust event precedes approval. M-EVOL confirms that no promotion is claimed before the human decision and that the adoption evidence names the orchestrator."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11; §5 additional roles; §6 regression recommendations; design-map.md Invariants and Implementation freedom",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-REG", "M-CODE", "M-EVOL"],
+      "sufficiency": "The ninth-role contents and the declarative attributes are implementation freedom, so the candidate's own disposable fixture is the evidence. R-REG requires genuine tests that candidate, check and diff succeed and describe the ninth role, that trusted authority is unchanged, and that an eight-role workflow still runs. M-CODE confirms that no generic role-name allowlist remains, and that the recommendation seam is documented, carries no hidden bytes and is unused by 014d roles. M-EVOL confirms the fixture never becomes authoritative."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12; §8 context efficiency and future shared-public-context seam; design-map.md C9",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E2", "R-REG", "M-CODE"],
+      "sufficiency": "C9 fixes an observable property of workerInstructions, so E2 compares two assignments that differ only in execution-scoped values. It requires deterministic output and a byte-identical prefix holding the full skill, the contract and the protocol operations, with every scoped value after it and still present. R-REG requires that exact assignment verification stays tested. M-CODE confirms the documented shared-public-context seam with evaluator-private taint and per-role grants."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; §9 acceptance evidence; design-map.md C8",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E1", "E2", "E3", "E4", "E5", "R-REG", "M-LIVE"],
+      "sufficiency": "AC13 is the conjunction of full checks, frozen independent evaluation and truthful live evidence. R-REG runs npm run check on a clean offline checkout of the exact candidate. E1–E5 are the frozen executable cases and must all pass unmodified. M-LIVE requires the real-provider records to identify what ran, the installed versions, the confirmed-or-unavailable model and effort, the host results and safe diagnostics, with no fabricated PASS, action, promotion or human event."
+    }
+  ]
+}
