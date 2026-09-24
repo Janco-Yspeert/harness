@@ -53,7 +53,7 @@ An old evaluator's genuine independent PASS may be retained while its *separate*
 
 A genuine inability of N to **fairly evaluate the substantive acceptance criteria** is different from an old transport or archival limitation. That case must stop for an explicit **generic** human bootstrap decision. It cannot silently substitute N+1 as its own evaluator.
 
-Acceptance must demonstrate one actual N → N+1 upgrade involving a changed *evaluator skill*, including preparation and independent verification under N, and human-gated methodology promotion. It must not rely on any identifier, condition or bypass specific to 014d.
+Acceptance must demonstrate a changed *evaluator skill* passing through N-authored preparation and independent verification, followed by the ordinary explicit human methodology-promotion gate. The independent evaluator can verify that the upgrade mechanism and its bounded fixture work; it must not claim that the real human promotion happened before the human actually approves it. The production trust event and new-workflow binding are acceptance evidence recorded after that decision. No identifier, condition or bypass may be specific to 014d.
 
 ## 2. Integrate all eight actual role skills with the production worker interface
 
@@ -87,6 +87,8 @@ For eligible PASS, the actual evaluator must persist the plan, validate/expand i
 For ineligible PASS, record the decision and require the existing explicit human review or an appropriately configured generic no-archive path; never silently claim archival success. Keep any required archival gate conditional on the actual recorded eligibility decision, not simply every PASS.
 
 Cover valid/ineligible/missing/tampered decisions; denied, failed and omitted actions; mismatched candidate/revision/attempt; incomplete frozen bundles; an artifact list exceeding the current protocol's bounded size; repeated or interrupted action requests. Do not silently truncate bundles. Do not introduce speculative general restart orchestration: correct only failures actually required for a reliable normal promotion path.
+
+Before N+1 is trusted, prove its actual MCP behavior as a **test subject** in an isolated disposable governed fixture with its own bounded, explicitly initialized test trust root. The fixture executes the candidate skill bytes through the real production adapter and host, but its authority cannot escape into Harness or establish trust in N+1. Trusted N checks the resulting independently observable evidence. Once N+1 is actually human-promoted, future ordinary workflows can use it without any fixture or exception.
 
 The independent evaluator **N** remains responsible for evaluating these changes to candidate N+1; the candidate evaluator is not permitted to validate itself.
 
@@ -173,9 +175,9 @@ Defer actual shared-session execution, prompt-cache/quota comparisons and schedu
 | AC01 | Trusted N is resolved by exact recorded revision and remains executable/authoritative while a separate candidate N+1 checkout changes the evaluator skill, its contract and policy. No spike-specific pin or runtime exception. |
 | AC02 | A normal N-authored frozen evaluation independently verifies exact N+1; N+1 never evaluates itself or silently alters N's active grant. |
 | AC03 | Methodology trust promotion binds exact N PASS, evaluator/evidence identities, candidate Git revision and reconstructed candidate manifest, plus explicit human approval. Wrong-candidate, stale or self-evaluated proofs are rejected. |
-| AC04 | One complete real N → N+1 upgrade of a changed evaluator skill succeeds using the ordinary version-evolution path. Any legacy-N evidence-archival limitation is resolved or handled by an explicit, generic, forward-only human path without forging promotion history. |
+| AC04 | A changed evaluator skill passes through ordinary N-governed preparation, independent verification and the human promotion gate; actual N+1 trusted-state transition and future-grant binding are evidenced only after human approval. Any legacy-N archival limitation is resolved or handled by an explicit, generic, forward-only human path without forging history. |
 | AC05 | The actual eight skills' pinned assignments, inputs, workspace isolation, outputs, checkpoint behavior, typed results, host actions and policy transitions are covered by a documented fidelity matrix and executable tests. |
-| AC06 | A real governed evaluator using the production MCP adapter writes its exact private eligibility decision, emits PASS and obtains a real host-validated promotion result. No synthetic substitute for this criterion. |
+| AC06 | A real governed invocation of the *candidate evaluator skill itself* in an isolated bounded test fixture uses the production MCP adapter, writes its exact private eligibility decision, emits PASS and obtains a real host-validated promotion result. Trusted N evaluates this evidence; synthetic adapter smoke cannot substitute. |
 | AC07 | Invalid/ineligible/missing/oversized plans and denied/failed/omitted actions preserve authentic semantic results and do not fabricate archival or progress. |
 | AC08 | The eight-role assumption is no longer imposed on all candidate methodologies; an optional ninth public role can be coherently checked, diffed and kept non-authoritative until promoted. |
 | AC09 | A public-safe regression recommendation and separately authorized future test-curation path can be represented without exposing evaluator-private checks to the current implementation. |
