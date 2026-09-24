@@ -34,6 +34,16 @@ export interface ProviderFailureMetadata {
   readonly source: "structured-stdout" | "stderr" | "none";
   readonly category: ProviderFailureCategory;
   readonly code?: string;
+  readonly structure?: UnknownStructuredFailureMetadata;
+}
+
+export interface UnknownStructuredFailureMetadata {
+  readonly fields: readonly string[];
+  readonly identifiers: Readonly<Record<string, string>>;
+  readonly stdoutBytes: number;
+  readonly stderrBytes: number;
+  readonly stdoutDigest: string;
+  readonly stderrDigest: string;
 }
 
 const PROVIDER_ERROR_CODES = new Map<string, ProviderFailureCategory>([
@@ -47,6 +57,24 @@ const PROVIDER_ERROR_CODES = new Map<string, ProviderFailureCategory>([
   ["rate_limit_error", "provider"],
   ["overloaded_error", "provider"],
 ]);
+
+const CONFIGURATION_DISCOVERY_VARIABLES = [
+  "PATH",
+  "HOME",
+  "USER",
+  "LOGNAME",
+  "LANG",
+  "LC_ALL",
+  "CLAUDE_CONFIG_DIR",
+  "XDG_CONFIG_HOME",
+] as const;
+
+type ConfigurationDiscoveryVariable =
+  (typeof CONFIGURATION_DISCOVERY_VARIABLES)[number];
+
+const STRUCTURED_FAILURE_FIELDS = ["type", "subtype", "code", "error"];
+const STRUCTURED_ERROR_FIELDS = ["type", "code"];
+const IDENTIFIER = /^[A-Za-z0-9_.:-]{1,128}$/;
 
 export function bootstrapPermissionProfile(
   role: string,
@@ -91,10 +119,76 @@ function bounded(value: string): string {
     .replaceAll(/(?:Bearer\s+|HARNESS_SESSION_TOKEN=)[^\s"']+/g, "[redacted]");
 }
 
+export function bootstrapProviderEnvironment(
+  environment: NodeJS.ProcessEnv,
+  scratch: string,
+): Record<string, string> {
+  const forwarded: Record<string, string> = {};
+  for (const name of CONFIGURATION_DISCOVERY_VARIABLES) {
+    const value = environment[name];
+    if (value !== undefined) forwarded[name] = value;
+  }
+  return { ...forwarded, ...workflowScratchEnvironment(scratch) };
+}
+
+export function bootstrapConfigurationPresence(
+  environment: NodeJS.ProcessEnv,
+): Record<ConfigurationDiscoveryVariable, boolean> {
+  return Object.fromEntries(
+    CONFIGURATION_DISCOVERY_VARIABLES.map((name) => [
+      name,
+      environment[name] !== undefined,
+    ]),
+  ) as Record<ConfigurationDiscoveryVariable, boolean>;
+}
+
 function providerErrorCode(value: unknown): string | undefined {
   return typeof value === "string" && PROVIDER_ERROR_CODES.has(value)
     ? value
     : undefined;
+}
+
+function boundedIdentifier(value: unknown): string | undefined {
+  return typeof value === "string" && IDENTIFIER.test(value)
+    ? value
+    : undefined;
+}
+
+function unknownStructuredFailureMetadata(
+  envelope: Json,
+  error: Json | undefined,
+  stdout: string,
+  stderr: string,
+): UnknownStructuredFailureMetadata {
+  const fields = STRUCTURED_FAILURE_FIELDS.filter(
+    (field) => envelope[field] !== undefined,
+  );
+  if (error !== undefined) {
+    fields.push(
+      ...STRUCTURED_ERROR_FIELDS.filter(
+        (field) => error[field] !== undefined,
+      ).map((field) => `error.${field}`),
+    );
+  }
+  const identifiers: Record<string, string> = {};
+  for (const [field, value] of [
+    ["type", envelope.type],
+    ["subtype", envelope.subtype],
+    ["code", envelope.code],
+    ["error.type", error?.type],
+    ["error.code", error?.code],
+  ] as const) {
+    const identifier = boundedIdentifier(value);
+    if (identifier !== undefined) identifiers[field] = identifier;
+  }
+  return {
+    fields,
+    identifiers,
+    stdoutBytes: Buffer.byteLength(stdout),
+    stderrBytes: Buffer.byteLength(stderr),
+    stdoutDigest: digest(stdout),
+    stderrDigest: digest(stderr),
+  };
 }
 
 // A nonzero Claude process can still emit a structured error on stdout. Keep
@@ -108,6 +202,7 @@ export function providerFailureMetadata(
 ): ProviderFailureMetadata {
   let code: string | undefined;
   let structured = false;
+  let structure: UnknownStructuredFailureMetadata | undefined;
   try {
     const envelope = object(JSON.parse(stdout), "Claude failure output");
     structured = true;
@@ -120,6 +215,13 @@ export function providerFailureMetadata(
     code = [envelope.subtype, error?.type, error?.code, envelope.type]
       .map(providerErrorCode)
       .find((candidate) => candidate !== undefined);
+    if (code === undefined)
+      structure = unknownStructuredFailureMetadata(
+        envelope,
+        error,
+        stdout,
+        stderr,
+      );
   } catch {
     // Unstructured stdout is intentionally not retained or interpreted.
   }
@@ -138,6 +240,7 @@ export function providerFailureMetadata(
         : "none",
     category,
     ...(code === undefined ? {} : { code }),
+    ...(structure === undefined ? {} : { structure }),
   };
 }
 
@@ -161,6 +264,7 @@ function recordBootstrapDiagnostic(
           error instanceof Error ? error.message : String(error),
         ),
         ...(provider === undefined ? {} : { provider }),
+        configuration: bootstrapConfigurationPresence(process.env),
       })}\n`,
       { encoding: "utf8", mode: 0o600 },
     );
@@ -382,10 +486,7 @@ async function main(): Promise<void> {
     const child = spawn(text(program, "provider program"), args, {
       cwd: launchWorkspace,
       stdio: ["ignore", "pipe", "pipe"],
-      env: {
-        PATH: process.env.PATH ?? "",
-        ...workflowScratchEnvironment(scratch),
-      },
+      env: bootstrapProviderEnvironment(process.env, scratch),
     });
     providerStarted = true;
     let stdout = "";
