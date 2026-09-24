@@ -260,3 +260,38 @@ The active independent host and runner pin is
 the one continuation-disabled evaluator-only allocation. Any further failure
 must preserve its host ledger and expanded private diagnostic, then stop with
 no retry or speculative follow-up correction.
+
+## Addendum 7 — local login discovery and structured-success recovery
+
+Human authorization of 2026-09-24 permits the minimum bootstrap-only changes
+needed for the independent evaluator launcher to discover the operator's
+existing local Claude Code login, one harmless `claude auth status` check, one
+harmless structured-output preflight, and one fresh continuation-disabled
+evaluator allocation only if that preflight succeeds. This is not authority to
+read or copy credentials, use new API access, change the candidate, frozen
+evaluator, methodology, or 014a history.
+
+The active pin is `ab97603d10023868e56fbb4ed192c3bf6781b020`, a detached child
+of `a9adefcb6e39e79cb0d6f809fddda6ef018d25df`, published as
+`feat/spike-014-bootstrap-diagnostic`. It changes only the pre-candidate
+bootstrap host, runner, and focused tests. The host forwards to its bootstrap
+runner, and the runner forwards to Claude, only present values from `PATH`,
+`HOME`, `USER`, `LOGNAME`, `LANG`, `LC_ALL`, `CLAUDE_CONFIG_DIR`, and
+`XDG_CONFIG_HOME`; scratch temporary/cache settings remain overriding. Neither
+hop inherits the complete parent environment or forwards API keys, Harness
+credentials, session/root tokens, proxy settings, or unrelated variables.
+
+The same pin recognizes a provider JSON envelope only when
+`type: "result"`, `subtype: "success"`, and `is_error: false`, then parses and
+schema-validates its structured role result even if Claude returns exit code
+1. Other nonzero exits remain failures. Deterministic tests cover both the
+host→runner and runner→Claude allowlists and exclusions, scratch precedence,
+private evaluator workspace selection, known and unknown diagnostics, and the
+contradictory structured-success condition. Focused tests, typecheck, lint,
+and targeted formatting checks pass without a provider call.
+
+The host and runner must start from this exact pin with only the operator's
+existing non-secret account discovery variables provisioned. If the harmless
+preflight cannot discover the existing login, or the subsequent one-shot
+evaluator allocation fails, preserve its bounded private diagnostic and public
+ledger evidence, then stop without retry.
