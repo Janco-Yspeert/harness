@@ -123,10 +123,23 @@ result. The public records show two separate defects:
   A failed Harness `mcp_tool_call` item is now reported as a
   `permission-denied` diagnostic.
 
-Neither correction has been exercised against a real provider yet. The
-implementation worker has no Claude binary and no provider credentials. The
-deterministic fake provider now reproduces both observed behaviours, and the
+The deterministic fake provider reproduces both observed behaviours, and the
 regressions fail without the corrections.
+
+The operator then ran the governed smoke once against the corrected adapters,
+on the provider host. The run is `live-smoke-correction/`, committed at
+`e579d07`, with Claude Code `2.1.280` and `codex-cli 0.155.1`. Both
+corrections held:
+
+- Claude connected the `harness` server. It submitted a typed result and one
+  promotion request, which the host recorded as succeeded. The provider
+  reported model `claude-opus-5-5`.
+- Codex called the pre-approved Harness tools and submitted its typed result.
+
+Neither provider produced a diagnostic. See `smoke-evidence.md` for the full
+record. This was the Design Map §7 governed smoke, not an additional §6 route
+probe. It exercised only the selected structured-CLI route and did not change
+the decision above.
 
 ## Residual risks (threat-model notes)
 

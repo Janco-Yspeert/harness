@@ -521,3 +521,53 @@
   again.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 014 — Implementation (real-provider smoke evidence recorded)
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`
+  (pinned bytes delivered by Role Grant
+  `sha256:b8d317d25bdeff774b51647dc6926ba642b74021de2ea5ea5a4ebdb980019168`,
+  assignment `31af5c6b-1e29-422b-bb04-cc4d8c635e12`; human-authorized 014c
+  bootstrap execution).
+- Inputs: the same frozen `spike.md`, `design-map.md`, `coverage-map.json` and
+  `eval-requirements.md` as Runs 009–013. Working-tree bytes match the
+  host-bound identities. There is no implementation feedback: no
+  `verification-finalized` event was bound. Work started on `feat/spike-014` at
+  `e579d07bd05d58f77ca9a79b9d5500c1613e6d78`. That commit holds the
+  operator-run passing smoke record, `live-smoke-correction/`, from run
+  `2026-09-24T10-42-03-678Z`.
+- Result: **succeeded**. Run 012's required recovery is complete. The passing
+  real-provider governed smoke is now recorded in the public evidence
+  artifacts:
+  - `smoke-evidence.md`
+    `sha256:0eee38b335fe1713885fa330065a15795685f887ceae25acf2f0a198fd994c89`
+    records each Design Map §7 item for the run. Codex and Claude each
+    submitted a typed `succeeded` result with `{smoke: PASS}`. Claude's one
+    promotion succeeded, with promoted bytes `sha256:3a802f27…feffd`, which
+    equal the fixture bytes. The configured transitions were recorded, there
+    were no diagnostics, and no generated executables were found. Confirmed
+    model: Claude `claude-opus-5-5`; Codex unavailable. The ledger copy's
+    identity, `sha256:f62a4db8…7de281`, was recomputed from the committed
+    bytes. The three earlier failed runs stay recorded as diagnostic history.
+  - `executor-decision.md`
+    `sha256:d84b6f96fabef41caa6c6b0df84242ac4015832319273885d25d4d0fb74e7b7d`
+    records that both live-smoke corrections held against the real providers.
+    The route decision is unchanged.
+- Candidate code: `ef23780`. `git diff ef23780 e579d07` touches only spike
+  evidence files, and the smoke started after `e16f3d3` (a manifest-only
+  commit) was committed. The record does not embed a source revision.
+- Changed before this entry: 2 files, 107 insertions and 19 deletions. No
+  source, test or fixture changes.
+- Checks at `e579d07` plus these documentation edits:
+  - `tsc --noEmit`: pass.
+  - `eslint .`: pass.
+  - `npm test`: **145 passed, 0 failed**.
+  - Prettier check of the changed files: pass.
+  - `git diff --check`: clean.
+  - `npm run format:check` was skipped because of the known sandbox-dotfile
+    `EACCES` failure recorded in Run 009.
+- No provider call was made by this worker. Independent evaluation has not
+  been run.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.

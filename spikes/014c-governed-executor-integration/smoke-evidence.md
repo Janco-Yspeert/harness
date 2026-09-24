@@ -1,9 +1,84 @@
 # Real-Provider Smoke Evidence — Spike 014c
 
-Status: **UNPROVEN. Three real-provider governed smoke runs failed, and the
-corrected adapters have not been run live yet.**
+Status: **One real-provider governed smoke run passed with the corrected
+adapters (`live-smoke-correction/`). Three earlier runs failed before the
+corrections (`live-smoke/`).** This file records the evidence only. It does
+not claim that independent evaluation has passed.
 
-## Observed live runs (failed)
+## Passing live run (corrected adapters)
+
+Run `2026-09-24T10-42-03-678Z`. The public-safe record and ledger copy were
+committed at `e579d07`:
+
+- `live-smoke-correction/smoke-2026-09-24T10-42-03-678Z.json`
+  (`sha256:b394615adf35a00090b6fdb16aaf2504c6aff5dcab182243c108035dbf808ab2`)
+- `live-smoke-correction/smoke-2026-09-24T10-42-03-678Z-workflow.jsonl`
+  (`sha256:f62a4db822ed9582b796c018f8b403ba653978b77ca7341eb4da97b728de7281`).
+  The same identity is recorded inside the JSON record as `ledger.identity`
+  and was recomputed from the committed bytes.
+
+Candidate code: the ledger's first event is at `10:41:28Z`, after `e16f3d3`
+was committed (`10:41:21Z`). `e16f3d3` changed only `manifest.md` on top of
+the corrected-adapter checkpoint `ef23780`. `git diff ef23780 e579d07` touches
+only spike evidence files, not `src/`, `tools/`, `test/` or `fixtures/`. The
+record does not itself embed a source revision, so this attribution rests on
+commit timing and on the unchanged source tree.
+
+Design Map §7, step by step:
+
+1. **Trust root.** The fixture is `fixtures/governed-smoke`, at revision
+   `098b89934a3fbdf3ee18b02b9ac84e39365a4270`. Its manifest is
+   `sha256:726fbff1504b533104c1230a55bfea71885c5e6c8534f0dc79c5cb1716006161`.
+   The trust root is `sequence: 1` with `previous: null` and
+   `authority.kind: "human"` / `evaluation.kind: "human-bootstrap"`. Its
+   evidence is
+   `fac5c1cf98b4d27b685abebe41e5f91f26c61947:spikes/014c-governed-executor-integration/fixture-trust-root.md`.
+2. **Host construction.** `test/live/governed-smoke.live.ts` built the host
+   programmatically from production profiles `{provider: "claude"}` and
+   `{provider: "codex"}`, using the real `locateProvider`.
+3. **Gate.** Both workflow grants were authorized through `POST grants`
+   (`kernel.definition`, `kernel.workflow-grant` and `kernel.allocation`
+   appear in the ledger).
+4. **Codex, `smoke-codex`.**
+   - Provider: `/home/velveteen/.local/bin/codex`, `codex-cli 0.155.1`.
+   - Model and effort: nothing requested. Confirmed model and effort are both
+     `null`, meaning unavailable: `--json` does not report them.
+   - Lifecycle: the process went `running` → `exited`. There was no failure,
+     no category and no diagnostics.
+   - Result `ec6ed780-…`: `succeeded`, `{smoke: PASS}`. The transition
+     `codex-smoked` recorded the pinned input `marker` at
+     `sha256:f512a790d4c1409522c14ff65f48f2245dea0e1902991f93ed8238e6309f5679`.
+     No action was requested.
+5. **Claude, `smoke-claude-promotion`** (with the private workspace exposure
+   `smoke-private`).
+   - Provider: `/home/velveteen/.local/bin/claude`, `2.1.280 (Claude Code)`.
+   - Model and effort: nothing requested. The confirmed model is
+     `claude-opus-5-5`, from `kernel.executor-confirmed` with
+     `source: "provider"`. Effort is `null`, meaning unavailable.
+   - Lifecycle: the process went `running` → `exited`. There was no failure,
+     no category and no diagnostics.
+   - Result `dbc11b7d-…`: `succeeded`, `{smoke: PASS}`.
+   - Action: one `requestAction(promotion)` for `promotion-bytes.txt`, which
+     the host recorded as `kernel.action-result` `succeeded`. The promoted
+     bytes are
+     `sha256:3a802f27f93ad203c3913d832c213dac574157966201fe2816caba4337bfeffd`,
+     which equals the precreated fixture bytes.
+   - Transitions: `smoke-promotion-recorded` (integrity
+     `sha256:c19f24ff…`, promotion `sha256:13252dca…`), then the configured
+     `claude-smoked` and `kernel.transition`.
+6. **Negative case.** The deterministic host test covers it (see "Negative
+   case" below). The live run requested no unauthorized action.
+7. **Generated code.** `generatedExecutables: []`. The smoke scanned the
+   disposable workspaces for executable files and found none, so no bridge
+   or wrapper code was generated or executed.
+8. **Bounds.** `maxTurns: 8`, no retries, and the run is excluded from
+   `npm test`.
+
+Scope of this evidence: the run is intended to support AC05, AC09 and the
+real-provider parts of AC06, AC07 and AC11. The evaluator decides whether it
+does.
+
+## Observed live runs (failed, before the corrections)
 
 Once the fixture trust root existed (`fixture-trust-root.md`, `55d9e1e`), the
 smoke ran three times against the production governed host with Claude Code
@@ -23,18 +98,17 @@ recorded, and none was inferred. No generated executable was found.
 
 These runs are genuine real-provider diagnostic evidence for AC11. They are
 **not** evidence for AC05 or AC09. The causes and the adapter corrections are
-recorded under "Live smoke corrections" in `executor-decision.md`. The smoke
-must be rerun with the corrected candidate, and its records committed,
-before AC05, AC09 and the real-provider parts of AC06 and AC07 can be
-evaluated.
+recorded under "Live smoke corrections" in `executor-decision.md`. The
+corrected candidate was then rerun (see "Passing live run" above).
 
 ## Original preparation notes
 
-These notes were written before the trust root existed. Blocker 1 below was
-resolved by `fac5c1c` and `55d9e1e`. Blocker 2 still applies to the
-implementation worker's own sandbox.
+These notes are historical. They were written before the trust root existed.
+Blocker 1 below was resolved by `fac5c1c` and `55d9e1e`. Blocker 2 still
+applies to the implementation worker's own sandbox, so the operator ran the
+smoke on the provider host instead (see "Passing live run").
 
-These criteria remain unproven and must not be reported as passing:
+At the time, these criteria were unproven:
 
 - AC05 (real Codex and real Claude through governed Role Grants);
 - AC09 (a real Claude synthetic promotion through the host);
@@ -61,7 +135,7 @@ Two things block them:
 | `smoke-codex`          | contract `sha256:1d9ac4a45a6fde55ff9c34b15a9eb76c82ff1d36f9ccf9449b716979cd7c8118`, skill `sha256:654e7a4bd2bcd3e889747776577da1bfba01dc3b5693e76f7439b8e28d3c70d4` |
 | `smoke-claude-promotion` | contract `sha256:70a7b4f0dbfb6c43dcc9daf397153cc0553fc1e575d4c13cb946f960137b1918`, skill `sha256:dc9767845d24950aee0f4142b3e0085fa852262d47ca7560edff81084d1b57e8` |
 | Validators             | none (`validatorSources: {}`)                                                              |
-| Trusted history        | `fixtures/governed-smoke/methodology/trusted.jsonl`: **absent**                            |
+| Trusted history        | `fixtures/governed-smoke/methodology/trusted.jsonl`: absent at preparation; root added in `55d9e1e` |
 | Promotion bytes        | `fixtures/governed-smoke/private/promotion-bytes.txt`, `sha256:3a802f27f93ad203c3913d832c213dac574157966201fe2816caba4337bfeffd` |
 
 The manifest was reconstructed with the production `buildMethodologyManifest`
@@ -83,7 +157,7 @@ approves, they:
 
 That root authorizes only the fixture's own synthetic executions.
 
-## Smoke procedure (implemented, not yet run)
+## Smoke procedure
 
 Run `npm run smoke:governed`. `HARNESS_SMOKE_OUTPUT=<dir>` optionally chooses
 where public-safe evidence is written. Requirements: a host where `claude` and
@@ -112,8 +186,9 @@ with the operator's existing subscriptions.
   - a scan asserting that no executable file was created in the disposable
     workspaces.
 
-After a run, commit the public-safe record and ledger copy beside this file,
-and replace this section with the observed results.
+The public-safe records and ledger copies from each run are committed beside
+this file (`live-smoke/` and `live-smoke-correction/`). The observed results
+are summarized above.
 
 ## Negative case (Design Map §7 step 6)
 
