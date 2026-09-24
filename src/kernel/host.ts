@@ -10,6 +10,32 @@ import type {
   PromotionArtifact,
 } from "./model.ts";
 
+const BOOTSTRAP_CONFIGURATION_DISCOVERY_VARIABLES = [
+  "PATH",
+  "HOME",
+  "USER",
+  "LOGNAME",
+  "LANG",
+  "LC_ALL",
+  "CLAUDE_CONFIG_DIR",
+  "XDG_CONFIG_HOME",
+] as const;
+
+// Command profiles are test-only in production, but 014c's independently
+// pinned evaluator bootstrap intentionally uses one. It gets only the login
+// discovery paths that Claude Code supports, never the host's full environment
+// or any workflow credential.
+export function bootstrapCommandEnvironment(
+  environment: NodeJS.ProcessEnv,
+): Record<string, string> {
+  const forwarded: Record<string, string> = {};
+  for (const name of BOOTSTRAP_CONFIGURATION_DISCOVERY_VARIABLES) {
+    const value = environment[name];
+    if (value !== undefined) forwarded[name] = value;
+  }
+  return forwarded;
+}
+
 export interface GovernedHostOptions extends KernelOptions {
   rootToken: string;
 }
@@ -305,7 +331,7 @@ export class GovernedHost {
               allocation.grant.workspaces[0]?.path ?? this.kernel.project.root,
             stdio: "ignore",
             env: {
-              PATH: process.env.PATH ?? "",
+              ...bootstrapCommandEnvironment(process.env),
               HARNESS_URL: `http://127.0.0.1:${String(address)}`,
               HARNESS_WORKFLOW: workflow,
               HARNESS_SESSION: registration.session.id,

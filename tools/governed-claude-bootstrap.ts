@@ -343,6 +343,19 @@ function parseStructuredResult(output: string): Json {
   return object(candidate, "Claude result");
 }
 
+export function isStructuredSuccessEnvelope(output: string): boolean {
+  try {
+    const envelope = object(JSON.parse(output), "Claude result envelope");
+    return (
+      envelope.type === "result" &&
+      envelope.subtype === "success" &&
+      envelope.is_error === false
+    );
+  } catch {
+    return false;
+  }
+}
+
 function bootstrapSpec(
   role: string,
   grant: Json,
@@ -499,7 +512,8 @@ async function main(): Promise<void> {
       child.once("error", reject);
       child.once("exit", resolveExit);
     });
-    if (exit !== 0) {
+    const structuredSuccess = isStructuredSuccessEnvelope(stdout);
+    if (exit !== 0 && !structuredSuccess) {
       failureMetadata = providerFailureMetadata(exit, stdout, stderr);
       throw new Error(
         `Claude exited with ${String(exit)} (${failureMetadata.category}; ${failureMetadata.source})`,

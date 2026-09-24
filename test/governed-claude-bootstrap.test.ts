@@ -3,12 +3,14 @@ import { createHash } from "node:crypto";
 import test from "node:test";
 
 import { claudeWorkflowDirectory } from "../src/claude-workflow.ts";
+import { bootstrapCommandEnvironment } from "../src/kernel/host.ts";
 import type { ResolvedWorkflowRunSpec } from "../src/workflow-run.ts";
 import {
   bootstrapPermissionProfile,
   bootstrapConfigurationPresence,
   bootstrapProviderEnvironment,
   bootstrapWorkspaceSelection,
+  isStructuredSuccessEnvelope,
   providerFailureMetadata,
 } from "../tools/governed-claude-bootstrap.ts";
 
@@ -127,6 +129,56 @@ void test("bootstrap forwards only configuration discovery and overrides scratch
     CLAUDE_CONFIG_DIR: true,
     XDG_CONFIG_HOME: true,
   });
+});
+
+void test("bootstrap host forwards only configuration discovery to its runner", () => {
+  assert.deepEqual(
+    bootstrapCommandEnvironment({
+      PATH: "/provider/bin",
+      HOME: "/home/provider",
+      USER: "provider",
+      LOGNAME: "provider-login",
+      LANG: "C.UTF-8",
+      LC_ALL: "C.UTF-8",
+      CLAUDE_CONFIG_DIR: "/private/claude-config",
+      XDG_CONFIG_HOME: "/private/config",
+      ANTHROPIC_API_KEY: "must-not-forward",
+      HARNESS_ROOT_TOKEN: "must-not-forward",
+      HARNESS_SESSION_TOKEN: "must-not-forward",
+      HTTPS_PROXY: "must-not-forward",
+      UNRELATED: "must-not-forward",
+    }),
+    {
+      PATH: "/provider/bin",
+      HOME: "/home/provider",
+      USER: "provider",
+      LOGNAME: "provider-login",
+      LANG: "C.UTF-8",
+      LC_ALL: "C.UTF-8",
+      CLAUDE_CONFIG_DIR: "/private/claude-config",
+      XDG_CONFIG_HOME: "/private/config",
+    },
+  );
+});
+
+void test("a schema result may be parsed after Claude's contradictory success exit", () => {
+  assert.equal(
+    isStructuredSuccessEnvelope(
+      JSON.stringify({
+        type: "result",
+        subtype: "success",
+        is_error: false,
+        structured_output: { disposition: "succeeded", methodology: {} },
+      }),
+    ),
+    true,
+  );
+  assert.equal(
+    isStructuredSuccessEnvelope(
+      JSON.stringify({ type: "result", subtype: "success", is_error: true }),
+    ),
+    false,
+  );
 });
 
 void test("unknown structured errors retain only safe shape, identifiers and digests", () => {
