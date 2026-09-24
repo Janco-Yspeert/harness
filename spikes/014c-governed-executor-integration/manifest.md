@@ -401,3 +401,34 @@
   block again.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 011 — Implementation (blocked, repeat)
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`
+  (pinned bytes delivered by Role Grant
+  `sha256:77928c041f44040ea89d0215821241e967ef12a8fecb7eb6cacbbf035e80587e`,
+  assignment `db2e3cf2-7d6c-46b1-b003-477ee014162f`, predecessor
+  `56a18d54-6f3f-453e-9ba3-4a13aa8a7895`; human-authorized 014c bootstrap
+  execution).
+- Inputs: the same frozen `spike.md`, `design-map.md`, `coverage-map.json` and
+  `eval-requirements.md` as Runs 009 and 010. Working-tree bytes match the
+  host-bound identities. There is no implementation feedback because no
+  `verification-finalized` event exists. Work started on `feat/spike-014` at
+  `35c08f422fd1d7211441ac806624cd348d4dd593`.
+- Result: **blocked**, for the same reasons as Runs 009 and 010. This worker
+  was allocated right after Run 010 was recorded as blocked, and nothing it
+  depends on has changed:
+  - No human decision record exists, and no commit has been made since
+    `35c08f4`.
+  - `fixtures/governed-smoke/methodology/trusted.jsonl` is still absent.
+  - `claude` is still not on this worker's `PATH`. `codex` is visible at
+    `/usr/lib/chatgpt/resources/codex`.
+- Outputs: none besides this entry. Implementation checkpoint `098b899` is
+  unchanged. No provider call was made.
+- Required recovery: unchanged from Run 010. A human must first approve the
+  fixture trust root as `smoke-evidence.md` describes. Then the smoke must run
+  on a host where both providers are available. Allocating implementation again
+  before both happen will block again.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.
