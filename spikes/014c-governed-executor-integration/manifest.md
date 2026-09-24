@@ -486,3 +486,38 @@
   update `smoke-evidence.md`.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 013 — Implementation (blocked, real-provider rerun unavailable)
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`
+  (pinned bytes delivered by Role Grant
+  `sha256:e3b9fc714615c8a35d185b37baca15c8379b896bf17f8bebe433d3df67e97b5e`,
+  assignment `03db7416-7d04-4058-b480-18d32656f229`; human-authorized 014c
+  bootstrap execution).
+- Inputs: the same frozen `spike.md`, `design-map.md`, `coverage-map.json` and
+  `eval-requirements.md` as Runs 009–012. Working-tree bytes match the
+  host-bound identities. There is no implementation feedback: no
+  `verification-finalized` event was bound. Work started on `feat/spike-014` at
+  `ef23780f4c2718132223cafcddb47a71c4a5071d`.
+- Result: **blocked**. The only remaining deliverable is Run 012's required
+  recovery: rerunning `npm run smoke:governed` against the corrected adapters
+  and committing the resulting `live-smoke/` records. This worker cannot do
+  that. `claude` is not on its `PATH` (`which claude` finds nothing, and neither
+  `/usr/bin` nor `/usr/local/bin` has it). `codex` is visible at
+  `/usr/lib/chatgpt/resources/codex`, but a Codex-only run cannot satisfy AC05
+  or AC09, and the brief forbids spending quota on partial retries. No provider
+  call was made.
+- Outputs: none besides this entry. Implementation checkpoint `ef23780` is
+  unchanged. AC05, AC09 and the real-provider parts of AC06, AC07 and AC11 stay
+  unproven, as `smoke-evidence.md` records.
+- Checks at `ef23780`:
+  - `tsc --noEmit`: pass.
+  - `eslint .`: pass.
+  - `npm test`: **145 passed, 0 failed**.
+- Required recovery: run `npm run smoke:governed` on a host where both `claude`
+  and `codex` are installed and logged in, then commit the records and update
+  `smoke-evidence.md`. Reallocating implementation in this sandbox will block
+  again.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.
