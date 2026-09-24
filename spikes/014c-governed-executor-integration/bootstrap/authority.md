@@ -120,3 +120,35 @@ commit, with the host itself launched from the same pinned revision. The
 bootstrap exception remains limited to that path and expires when the
 repository-owned governed adapters and pinned independent evaluator path have
 been established.
+
+## Addendum 3 — non-evaluator workspace mapping and private diagnostics
+
+The three immutable implementation allocations `debd9069-1afa-4805-b694-e3ebc2f30a0e`,
+`94cbb5ca-5ddf-4c27-80f7-35239f06152b`, and
+`e29d059c-e8e6-432a-a7cb-d3cc8f40abd8` each granted only the public
+repository workspace. The previous pinned bootstrap runner assigned every role
+the `evaluator` permission-profile ID. Its evaluator-only directory selection
+therefore resolved `workspaces[1]` for an implementation grant and failed
+before Claude launched.
+
+The human-authorized correction is
+`tools/governed-claude-bootstrap.ts` at commit
+`9d513624e2d4c10b5891222455dbcf81848574c0`. It maps only
+`evaluator-*` roles to the existing `evaluator` profile and private workspace;
+all other permitted bootstrap roles use the existing `repo-local-worker`
+profile and their granted `workspaces[0]`. It neither creates a second
+workspace nor changes evaluator revision 001, the frozen brief, Design Map,
+methodology, host architecture, capabilities, or the historical failures.
+
+`test/governed-claude-bootstrap.test.ts` deterministically reproduces the old
+single-workspace evaluator-profile failure, then proves evaluator and
+implementation workspace selection. The runner also writes bounded, sanitized
+pre-launch or provider-phase failure diagnostics only to its provisioned
+private bootstrap data directory. Diagnostics are not ledger events and never
+enter public repository evidence; they distinguish launch configuration errors
+from a provider failure without granting the worker new authority.
+
+This pin supersedes Addendum 2's runner pin for future bootstrap allocations.
+The detached host and runner must both be pinned to this exact revision before
+another provider call. Earlier pins and all previous execution records remain
+unchanged.
