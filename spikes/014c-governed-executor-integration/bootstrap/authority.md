@@ -199,3 +199,25 @@ the single authorized evaluator attempt. The host must use that exact
 repository-owned executable; there is no generated bridge or candidate adapter
 fallback. If the attempt fails, retain its private diagnostic and public-safe
 failure classification, with no automatic retry.
+
+## Addendum 5 — independent detached recovery pin
+
+The Addendum 4 `de195fee…` checkout was never activated. Its candidate-era
+`src/index.ts` correctly rejects command profiles, including the explicitly
+authorized bootstrap profile. That production guard is not changed or bypassed.
+
+The active recovery pin is instead
+`c91b1e040be35827d8738da12c7c4f7158336c10`: a detached child of
+`9d513624e2d4c10b5891222455dbcf81848574c0` containing only the Addendum 4
+runner and test patch. Its host and executor live at
+`/tmp/harness-014c-evaluator-bootstrap-diagnostic`, use the existing
+repository dependency tree without installation or modification, and retain
+the pre-candidate host, workflow backend, Claude command construction, trusted
+skill and evaluator contract. The successful candidate production adapters are
+not imported or used by this path.
+
+This supersedes the Addendum 4 operational pin before any evaluator provider
+call. `de195fee…` remains the reviewed feature-branch record of the same patch;
+the unactivated detached checkout and all previous failed attempts remain
+historical evidence. The single evaluator allocation must use this exact
+independent pin with continuation disabled.
