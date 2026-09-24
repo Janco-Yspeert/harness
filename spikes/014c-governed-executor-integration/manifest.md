@@ -571,3 +571,47 @@
   been run.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 015 — Evaluator Verify (PASS)
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`
+  (pinned bytes delivered by Role Grant
+  `sha256:c9cc538f4fc17fb7f80524516f02cdbc8bf5bb250abd7af97663511c203b3e8c`,
+  assignment `65f8dbab-42e5-4f04-b2da-257310197142`; human-authorized 014c
+  bootstrap execution), mode `verify`, Harness verification attempt 6.
+- Inputs:
+  - candidate `e61c965e56637b8b44e14fd72947f7b7459bca80`;
+  - evaluator revision `001`
+    `sha256:0f5e6846ac07c260f135e05d844a6487f29d35b64a3ba0d5a1738928c2687db8`;
+  - `spike.md`
+    `sha256:0e86f034efd3b3f4217f5049fdc063c47f4b36147b309b9d6b4fbf1f095d2d18`;
+  - `design-map.md`
+    `sha256:9f98ebfcc201736737cb9e0f5dcebc29cafd1235a8e9465b02c81764013e82e1`;
+  - `eval-requirements.md`
+    `sha256:4208a00410787a09eb4fafdaacd1756fd4f5f00a9bb1bf26e077a52f1ef4338c`;
+  - `coverage-map.json`
+    `sha256:d9a843edfc9557e4e9e80af0b69b7855fc33447ba56dab471173baabdc7aecdf`.
+
+  The public inputs and the private frozen bundle all matched their frozen
+  identities. There was no drift.
+- Result: **succeeded**, methodology **PASS**.
+  - All 16 criteria are `SATISFIED`.
+  - All 58 of 58 mandatory cases passed, including 15 of 15 executable cases.
+  - `npm run check` passed in a clean candidate checkout, offline, with no
+    provider CLIs or credentials: 145 of 145 tests.
+  - Four non-failing notes for human acceptance are recorded in
+    `verification-result.json`.
+- Outputs: `verification-result.json`, accepted by the repository's
+  `verification-accounting` validator.
+- Requested host actions:
+  - record `verification-finalized` for attempt 6;
+  - promotion of the eligible private evidence to `evaluation/`: the attempt
+    ledger, the attempt result and the complete evaluator revision `001`
+    (private request
+    `sha256:23f665990ac79d941c6231dd0a4bdaf9c61179bb22abc4b9daba14754b1ed239`).
+- Runtime: Node v22.23.2 (`engines` asks for ≥24.12). No provider calls were
+  made and no network was used.
+- Restricted evaluator material inspected: only this spike's own private
+  bundle.
+- Measurement cutoff: immediately before this manifest update.
