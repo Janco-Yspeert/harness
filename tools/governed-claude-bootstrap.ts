@@ -19,6 +19,35 @@ const DIAGNOSTIC_ROOT = "/tmp/harness-014c-private/bootstrap-diagnostics";
 
 type Json = Record<string, unknown>;
 
+type ProviderFailureCategory =
+  | "authentication"
+  | "permission"
+  | "configuration"
+  | "sandbox"
+  | "provider"
+  | "unknown";
+
+export interface ProviderFailureMetadata {
+  readonly exitCode: number | null;
+  readonly stdout: "empty" | "present";
+  readonly stderr: "empty" | "present";
+  readonly source: "structured-stdout" | "stderr" | "none";
+  readonly category: ProviderFailureCategory;
+  readonly code?: string;
+}
+
+const PROVIDER_ERROR_CODES = new Map<string, ProviderFailureCategory>([
+  ["authentication_error", "authentication"],
+  ["invalid_api_key", "authentication"],
+  ["permission_error", "permission"],
+  ["configuration_error", "configuration"],
+  ["invalid_request_error", "configuration"],
+  ["sandbox_error", "sandbox"],
+  ["error_during_execution", "provider"],
+  ["rate_limit_error", "provider"],
+  ["overloaded_error", "provider"],
+]);
+
 export function bootstrapPermissionProfile(
   role: string,
 ): "evaluator" | "repo-local-worker" {
@@ -62,11 +91,62 @@ function bounded(value: string): string {
     .replaceAll(/(?:Bearer\s+|HARNESS_SESSION_TOKEN=)[^\s"']+/g, "[redacted]");
 }
 
+function providerErrorCode(value: unknown): string | undefined {
+  return typeof value === "string" && PROVIDER_ERROR_CODES.has(value)
+    ? value
+    : undefined;
+}
+
+// A nonzero Claude process can still emit a structured error on stdout. Keep
+// only a deliberately small provider vocabulary: stdout may otherwise contain
+// evaluator instructions, model prose, or other material that must never
+// escape the private evaluator boundary.
+export function providerFailureMetadata(
+  exitCode: number | null,
+  stdout: string,
+  stderr: string,
+): ProviderFailureMetadata {
+  let code: string | undefined;
+  let structured = false;
+  try {
+    const envelope = object(JSON.parse(stdout), "Claude failure output");
+    structured = true;
+    const error =
+      envelope.error !== null &&
+      typeof envelope.error === "object" &&
+      !Array.isArray(envelope.error)
+        ? (envelope.error as Json)
+        : undefined;
+    code = [envelope.subtype, error?.type, error?.code, envelope.type]
+      .map(providerErrorCode)
+      .find((candidate) => candidate !== undefined);
+  } catch {
+    // Unstructured stdout is intentionally not retained or interpreted.
+  }
+  const category =
+    code === undefined
+      ? "unknown"
+      : (PROVIDER_ERROR_CODES.get(code) ?? "unknown");
+  return {
+    exitCode,
+    stdout: stdout.length === 0 ? "empty" : "present",
+    stderr: stderr.length === 0 ? "empty" : "present",
+    source: structured
+      ? "structured-stdout"
+      : stderr.length > 0
+        ? "stderr"
+        : "none",
+    category,
+    ...(code === undefined ? {} : { code }),
+  };
+}
+
 function recordBootstrapDiagnostic(
   execution: Json,
   role: string,
   phase: "pre-launch" | "provider",
   error: unknown,
+  provider?: ProviderFailureMetadata,
 ): void {
   try {
     mkdirSync(DIAGNOSTIC_ROOT, { recursive: true, mode: 0o700 });
@@ -80,6 +160,7 @@ function recordBootstrapDiagnostic(
         message: bounded(
           error instanceof Error ? error.message : String(error),
         ),
+        ...(provider === undefined ? {} : { provider }),
       })}\n`,
       { encoding: "utf8", mode: 0o600 },
     );
@@ -281,6 +362,7 @@ async function main(): Promise<void> {
   mkdirSync(join(scratch, "cache"));
   mkdirSync(join(scratch, "npm-cache"));
   let providerStarted = false;
+  let failureMetadata: ProviderFailureMetadata | undefined;
   try {
     const command = [...buildClaudeWorkflowCommand(spec, "", scratch)];
     const systemIndex = command.indexOf("--system-prompt");
@@ -316,8 +398,12 @@ async function main(): Promise<void> {
       child.once("error", reject);
       child.once("exit", resolveExit);
     });
-    if (exit !== 0)
-      throw new Error(`Claude exited with ${String(exit)}: ${bounded(stderr)}`);
+    if (exit !== 0) {
+      failureMetadata = providerFailureMetadata(exit, stdout, stderr);
+      throw new Error(
+        `Claude exited with ${String(exit)} (${failureMetadata.category}; ${failureMetadata.source})`,
+      );
+    }
     const result = parseStructuredResult(stdout);
     const methodology = object(result.methodology, "semantic methodology");
     await request(
@@ -336,6 +422,7 @@ async function main(): Promise<void> {
       role,
       providerStarted ? "provider" : "pre-launch",
       error,
+      failureMetadata,
     );
     throw error;
   } finally {
