@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-09-24T10:42:03.678Z",
+  "fixture": "fixtures/governed-smoke",
+  "trustRoot": {
+    "schemaVersion": 1,
+    "sequence": 1,
+    "methodology": "sha256:726fbff1504b533104c1230a55bfea71885c5e6c8534f0dc79c5cb1716006161",
+    "revision": "098b89934a3fbdf3ee18b02b9ac84e39365a4270",
+    "previous": null,
+    "authority": {
+      "kind": "human",
+      "evidence": "fac5c1cf98b4d27b685abebe41e5f91f26c61947:spikes/014c-governed-executor-integration/fixture-trust-root.md",
+      "evaluation": {
+        "kind": "human-bootstrap",
+        "evidence": "fac5c1cf98b4d27b685abebe41e5f91f26c61947:spikes/014c-governed-executor-integration/fixture-trust-root.md"
+      }
+    }
+  },
+  "providers": {
+    "claude": {
+      "located": "/home/velveteen/.local/bin/claude",
+      "version": "2.1.280 (Claude Code)"
+    },
+    "codex": {
+      "located": "/home/velveteen/.local/bin/codex",
+      "version": "codex-cli 0.155.1"
+    }
+  },
+  "executions": {
+    "smoke-codex": {
+      "process": "exited",
+      "category": null,
+      "failure": null,
+      "diagnostics": [],
+      "executor": {
+        "requested": {},
+        "confirmed": {
+          "model": null,
+          "reasoning": null
+        }
+      },
+      "result": {
+        "schemaVersion": 1,
+        "id": "ec6ed780-0e97-42d3-94e2-9a37fdce4a6c",
+        "execution": "11897a84-2b4a-4af8-b2c3-4e3510055ae8",
+        "roleGrant": "sha256:2fbab320de4b1345268a2ac2b139b81ceffcfda2d9828d80eae216c8ee6fbeae",
+        "disposition": "succeeded",
+        "methodology": {
+          "smoke": "PASS"
+        }
+      },
+      "actions": [],
+      "transition": {
+        "status": "recorded",
+        "reason": null
+      }
+    },
+    "smoke-claude-promotion": {
+      "process": "exited",
+      "category": null,
+      "failure": null,
+      "diagnostics": [],
+      "executor": {
+        "requested": {},
+        "confirmed": {
+          "model": "claude-opus-5-5",
+          "reasoning": null
+        }
+      },
+      "result": {
+        "schemaVersion": 1,
+        "id": "dbc11b7d-37a6-421f-bd02-ec77857cb265",
+        "execution": "c3aa1e41-5c66-4d8b-a24a-0ef83217c2b9",
+        "roleGrant": "sha256:a6f98fb972b3da8da4b9dccbe1aeb3abecf52acec03e2ee6c5f22efd7533e1eb",
+        "disposition": "succeeded",
+        "methodology": {
+          "smoke": "PASS"
+        }
+      },
+      "actions": [
+        {
+          "kind": "promotion",
+          "status": "succeeded",
+          "reason": null
+        }
+      ],
+      "transition": {
+        "status": "recorded",
+        "reason": null
+      }
+    }
+  },
+  "events": [
+    "kernel.definition",
+    "kernel.workflow-grant",
+    "kernel.session",
+    "kernel.session",
+    "kernel.allocation",
+    "kernel.automatic-work",
+    "kernel.process",
+    "kernel.result",
+    "codex-smoked",
+    "kernel.transition",
+    "kernel.process",
+    "kernel.workflow-grant",
+    "kernel.session",
+    "kernel.exposure",
+    "kernel.session",
+    "kernel.allocation",
+    "kernel.automatic-work",
+    "smoke-allocated",
+    "kernel.process",
+    "kernel.executor-confirmed",
+    "kernel.result",
+    "kernel.action-request",
+    "kernel.action-result",
+    "smoke-promotion-recorded",
+    "claude-smoked",
+    "kernel.transition",
+    "kernel.process"
+  ],
+  "promotedBytes": "sha256:3a802f27f93ad203c3913d832c213dac574157966201fe2816caba4337bfeffd",
+  "ledger": {
+    "file": "/home/velveteen/vk-code/harness/spikes/014c-governed-executor-integration/live-smoke-correction/smoke-2026-09-24T10-42-03-678Z-workflow.jsonl",
+    "identity": "sha256:f62a4db822ed9582b796c018f8b403ba653978b77ca7341eb4da97b728de7281"
+  },
+  "generatedExecutables": []
+}
