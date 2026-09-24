@@ -221,3 +221,42 @@ call. `de195fee…` remains the reviewed feature-branch record of the same patch
 the unactivated detached checkout and all previous failed attempts remain
 historical evidence. The single evaluator allocation must use this exact
 independent pin with continuation disabled.
+
+## Addendum 6 — configuration-discovery environment recovery
+
+Human authorization of 2026-09-24 permits one operational bootstrap correction
+and one controlled evaluator-verification allocation after deterministic
+checks. It changes neither the candidate implementation nor the frozen brief,
+Design Map, evaluator revision 001, trusted methodology, production adapters,
+or 014a history. The earlier independent execution
+`86d51929-10a4-493a-b524-0500cd2f229c` remains a failed, non-semantic provider
+attempt: its private diagnostic established structured stdout with an
+unrecognized safe classification, not a conclusion about its contents.
+
+The authorized correction is
+`a9adefcb6e39e79cb0d6f809fddda6ef018d25df`, a detached child of
+`c91b1e040be35827d8738da12c7c4f7158336c10` containing only
+`tools/governed-claude-bootstrap.ts` and its focused tests. It forwards only
+the present configuration-discovery variables `PATH`, `HOME`, `USER`,
+`LOGNAME`, `LANG`, `LC_ALL`, `CLAUDE_CONFIG_DIR`, and `XDG_CONFIG_HOME`.
+Scratch temporary/cache overrides remain authoritative. It does not inherit
+the parent environment and does not forward API keys, Harness credentials,
+session/root tokens, proxy settings, or unrelated variables.
+
+For an unrecognized structured provider error, private diagnostic metadata now
+records only recognized field names, bounded type/code identifiers, exit
+status, byte counts, output digests, and boolean presence indicators for the
+eight configuration-discovery variables. It never records their values, raw
+provider output, arbitrary error text, evaluator-private artifacts, or
+credentials. Tests prove the allowlist and exclusions, scratch precedence,
+private evaluator workspace selection, known error classification, and unknown
+error structural metadata. Focused tests, typecheck, lint, and targeted
+formatting checks pass without a provider invocation.
+
+The active independent host and runner pin is
+`/tmp/harness-014c-evaluator-bootstrap-diagnostic` at exactly
+`a9adefcb6e39e79cb0d6f809fddda6ef018d25df`, published as
+`feat/spike-014-bootstrap-diagnostic`. Both must start from that revision for
+the one continuation-disabled evaluator-only allocation. Any further failure
+must preserve its host ledger and expanded private diagnostic, then stop with
+no retry or speculative follow-up correction.
