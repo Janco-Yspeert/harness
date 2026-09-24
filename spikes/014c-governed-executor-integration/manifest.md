@@ -286,3 +286,85 @@
   checkpoint. Implementation may then begin against revision `001`.
 - Restricted evaluator material inspected: only this run's own private bundle.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 009 — Implementation (blocked on human trust root and provider access)
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`
+  (pinned bytes delivered by Role Grant
+  `sha256:c590c226467c06721989936398c39875d90e013f118ccf1aad2a8919d207a62f`,
+  assignment `234e3308-013d-4ed0-badf-054149edf2c1`; human-authorized 014c
+  bootstrap execution).
+- Inputs: frozen `spike.md`
+  `sha256:0e86f034efd3b3f4217f5049fdc063c47f4b36147b309b9d6b4fbf1f095d2d18`,
+  frozen `design-map.md`
+  `sha256:9f98ebfcc201736737cb9e0f5dcebc29cafd1235a8e9465b02c81764013e82e1`,
+  `coverage-map.json`
+  `sha256:d9a843edfc9557e4e9e80af0b69b7855fc33447ba56dab471173baabdc7aecdf`
+  and `eval-requirements.md`
+  `sha256:4208a00410787a09eb4fafdaacd1756fd4f5f00a9bb1bf26e077a52f1ef4338c`.
+  Working-tree bytes matched the host-bound identities. There was no
+  implementation feedback: no prior `verification-finalized` event exists.
+  Work started on `feat/spike-014` at
+  `da1c8cb1c8a8e2196a7f6abcd2594c7b06d063bf`.
+- Result: **blocked**. The implementation is committed. The deliverable
+  still missing is real-provider smoke evidence, which needs:
+  - a human decision approving the synthetic fixture's trust root (Design
+    Map §4 orders this after the fixture commit and forbids the worker from
+    authoring it); and
+  - an execution environment with Claude and Codex access. This worker could
+    see neither the Claude binary nor provider network egress.
+
+  AC05, AC09 and the real-provider parts of AC06, AC07 and AC11 are therefore
+  unproven (see `smoke-evidence.md`). No provider call was made.
+- Implementation checkpoint: `098b89934a3fbdf3ee18b02b9ac84e39365a4270`.
+  It contains:
+  - the registered `claude` and `codex` adapters (`src/executors/`);
+  - worker protocol v1 and its MCP tool server;
+  - host integration with categorized diagnostics and cancellation;
+  - the per-project trust-equivalence gate (`src/kernel/trust.ts`);
+  - production executor validation;
+  - the governed-smoke fixture (manifest
+    `sha256:726fbff1504b533104c1230a55bfea71885c5e6c8534f0dc79c5cb1716006161`);
+  - orchestrator skill v2, with v1 preserved;
+  - deterministic tests and the opt-in live smoke test.
+
+  Across 35 files it adds 4,430 lines and removes 116.
+- Evidence outputs: `executor-decision.md` (structured Claude CLI selected;
+  SDK not executable under approved credentials; no live probes possible here)
+  and `smoke-evidence.md` (status UNPROVEN; fixture identities and the required
+  human step).
+- Decisions:
+  - Registered adapter IDs are `claude` and `codex`. Production profiles with a
+    `command`, an unknown provider or an unknown key are refused at startup.
+  - Governed provider discovery searches only absolute host `PATH` entries. It
+    never executes the program, and it never selects one in a temporary or
+    workspace directory. `HARNESS_CLAUDE_EXECUTABLE` is not honoured for
+    governed execution.
+  - The worker relay is loopback TCP with a per-execution relay key. The
+    sandbox refused Unix-socket `bind`, and loopback TCP is the only transport
+    the evaluator's documented environment guarantees.
+  - The trust gate runs inside grant authorization for every host-constructed
+    project, and it cannot be configured away.
+  - New `kernel.diagnostic` and `kernel.executor-confirmed` events are
+    mechanics, so they do not move the authority basis.
+  - The confirmed model/effort is now `null` until the provider reports it.
+    Profile configuration never confirms it.
+- Checks:
+  - `tsc --noEmit`: pass.
+  - `eslint .`: pass.
+  - `prettier --check` over the changed files: pass.
+  - `npm test`: **143 passed, 0 failed**. The pre-change baseline was 125
+    passed. The new tests are 18 in `test/governed-executors.test.ts`; existing
+    kernel HTTP tests now record disposable test trust roots.
+  - `npm run format:check` fails in this sandbox only on unreadable, untracked
+    sandbox dotfiles (`.bashrc`, `.idea` and similar, `EACCES`). The same
+    failure is in the pre-change baseline. `npm run check` stops there, so its
+    remaining steps were run individually.
+- Invariants checked by tests:
+  - The 014a ledger is byte-identical to the brief-freeze commit.
+  - Harness `trusted.jsonl` extends its brief-freeze bytes.
+  - The Harness policy, contracts, skills and `harness-public.ts` are unchanged.
+  - The current Harness definition passes the gate.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.
