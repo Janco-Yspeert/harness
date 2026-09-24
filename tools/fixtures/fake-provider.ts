@@ -81,15 +81,23 @@ function server(): {
   };
 }
 
+// Provider behaviour observed in the 014c live smoke: Claude safe mode loads
+// no MCP server at all, and Codex under approval_policy="never" declines MCP
+// tool calls that are not pre-approved.
+const toolsLoaded = !(claude && args.includes("--safe-mode"));
+const toolsApproved =
+  claude ||
+  args.includes('mcp_servers.harness.default_tools_approval_mode="approve"');
+
 if (claude)
   emit({
     type: "system",
     subtype: "init",
     model: scenario.model ?? "fake-model",
     claude_code_version: "0.0.0-fake",
-    mcp_servers: [
-      { name: "harness", status: scenario.mcpStatus ?? "connected" },
-    ],
+    mcp_servers: toolsLoaded
+      ? [{ name: "harness", status: scenario.mcpStatus ?? "connected" }]
+      : [],
   });
 else emit({ type: "thread.started", thread_id: "fake" });
 await new Promise((wait) => setTimeout(wait, 150));
@@ -97,6 +105,27 @@ await new Promise((wait) => setTimeout(wait, 150));
 if (scenario.hang) {
   save();
   setInterval(() => undefined, 1000);
+} else if (!toolsLoaded || !toolsApproved) {
+  for (const step of scenario.steps ?? [])
+    if (!claude)
+      emit({
+        type: "item.completed",
+        item: {
+          type: "mcp_tool_call",
+          server: "harness",
+          tool: step.tool,
+          status: "failed",
+        },
+      });
+  if (claude)
+    emit({
+      type: "result",
+      subtype: "success",
+      is_error: false,
+      permission_denials: [],
+    });
+  else emit({ type: "turn.completed" });
+  save();
 } else {
   const tools = server();
   const child = spawn(tools.command, tools.args, {

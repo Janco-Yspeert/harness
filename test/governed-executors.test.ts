@@ -328,8 +328,19 @@ void test("AC08/AC09/AC07: Claude adapter delivers the exact assignment, relays 
   const systemPrompt =
     evidence.argv[evidence.argv.indexOf("--system-prompt") + 1];
   assert.ok(systemPrompt?.includes(skillBytes));
-  for (const flag of ["--safe-mode", "--strict-mcp-config", "--restricted"])
+  // Safe mode would disable the Harness MCP server; each ambient exclusion is
+  // kept explicitly instead.
+  assert.ok(!evidence.argv.includes("--safe-mode"));
+  for (const flag of [
+    "--strict-mcp-config",
+    "--restricted",
+    "--disable-slash-commands",
+  ])
     assert.ok(evidence.argv.includes(flag), flag);
+  assert.equal(
+    evidence.argv[evidence.argv.indexOf("--setting-sources") + 1],
+    "",
+  );
   assert.doesNotThrow(() => {
     assertBoundedExecutorCommand(evidence.argv);
   });
@@ -1027,6 +1038,124 @@ void test("AC08: the versioned worker protocol is typed, provider-neutral and ca
   assert.doesNotThrow(() => {
     assertBoundedExecutorCommand(codexArgs);
   });
+});
+
+void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is loadable and callable by both providers", () => {
+  const input = {
+    grant: {
+      capabilities: ALL,
+      executorConstraints: { protected: false, forbiddenExposure: [] },
+    } as unknown as RoleGrant,
+    workspaces: [
+      { id: "w", path: "/work", mode: "write" as const, exposure: "public" },
+    ],
+    scratch: "/scratch",
+    relay: { port: 40000, key: "relay-key" },
+    nodePath: "/usr/bin/node",
+    workerToolsPath: "/repo/src/executors/worker-tools.ts",
+    system: "system",
+    prompt: "prompt",
+  };
+  // Claude safe mode disables every MCP server, including --mcp-config.
+  const claudeArgs = ADAPTERS.claude.command(input);
+  assert.ok(!claudeArgs.includes("--safe-mode"));
+  assert.ok(claudeArgs.includes("--strict-mcp-config"));
+  // Codex declines unapproved MCP calls under approval_policy="never"; only
+  // the Harness server is pre-approved, and no sandbox setting widens.
+  const codexArgs = ADAPTERS.codex.command(input);
+  const approvals = codexArgs.filter((arg) =>
+    arg.includes("default_tools_approval_mode"),
+  );
+  assert.deepEqual(approvals, [
+    'mcp_servers.harness.default_tools_approval_mode="approve"',
+  ]);
+  assert.ok(codexArgs.includes('approval_policy="never"'));
+  assert.ok(!codexArgs.includes("danger-full-access"));
+  // The observable reasons are classified with public-safe detail.
+  assert.deepEqual(
+    ADAPTERS.claude.parse(
+      JSON.stringify({ type: "system", subtype: "init", mcp_servers: [] }),
+    ),
+    [
+      { kind: "confirmed", model: null, reasoning: null, version: null },
+      {
+        kind: "tools-unavailable",
+        detail: "Harness worker tool server is not connected (absent)",
+      },
+    ],
+  );
+  // A non-enum status is never echoed into public diagnostics.
+  assert.deepEqual(
+    ADAPTERS.claude
+      .parse(
+        JSON.stringify({
+          type: "system",
+          subtype: "init",
+          mcp_servers: [{ name: "harness", status: "secret sk-ant-leak" }],
+        }),
+      )
+      .at(-1),
+    {
+      kind: "tools-unavailable",
+      detail: "Harness worker tool server is not connected (unknown)",
+    },
+  );
+  assert.deepEqual(
+    ADAPTERS.codex.parse(
+      JSON.stringify({
+        type: "item.completed",
+        item: {
+          type: "mcp_tool_call",
+          server: "harness",
+          tool: "submitResult",
+          status: "failed",
+        },
+      }),
+    ),
+    [
+      {
+        kind: "permission-denied",
+        detail: "provider did not complete Harness tool submitResult",
+      },
+    ],
+  );
+});
+
+void test("AC05/AC11: a provider that cannot reach the Harness tools yields no result and a classified diagnostic", async (t) => {
+  // The pre-fix live-smoke shapes, replayed through the real host: Codex
+  // without pre-approved Harness tools, and Claude with no loaded server.
+  const { host, started } = await run(t, CODEX, {
+    events: [
+      {
+        type: "item.completed",
+        item: {
+          type: "mcp_tool_call",
+          server: "harness",
+          tool: "submitResult",
+          status: "failed",
+        },
+      },
+    ],
+  });
+  const execution = await settled(host.url, started.value.execution?.id ?? "");
+  assert.equal(execution.process, "failed");
+  assert.ok(!execution.result);
+  assert.deepEqual(
+    execution.diagnostics?.map((d) => d.category),
+    ["permission-denied", "missing-result"],
+  );
+  const claude = await run(t, CODEX, { mcpStatus: "pending" }, {}, [
+    { ...claudeProfile, id: "claude-for-codex-role" },
+  ]);
+  const unavailable = await settled(
+    claude.host.url,
+    claude.started.value.execution?.id ?? "",
+  );
+  assert.equal(unavailable.category, "assignment-not-delivered");
+  assert.equal(
+    unavailable.diagnostics?.[0]?.detail,
+    "Harness worker tool server is not connected (pending)",
+  );
 });
 
 void test("AC16: Harness binds only its trusted manifest projection; policy, contract, skill and validator edits are denied", (t) => {

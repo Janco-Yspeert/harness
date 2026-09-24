@@ -164,11 +164,20 @@ const claude: ProviderAdapter = {
           typeof server === "object" &&
           (server as Json).name === GOVERNED_WORKER_TOOL_SERVER,
       );
-      if (harness?.status !== "connected")
+      if (harness?.status !== "connected") {
+        // The status is a short provider enum; anything else is not echoed.
+        const status =
+          typeof harness?.status === "string" &&
+          /^[a-z-]{1,32}$/.test(harness.status)
+            ? harness.status
+            : harness
+              ? "unknown"
+              : "absent";
         events.push({
           kind: "tools-unavailable",
-          detail: "Harness worker tool server is not connected",
+          detail: `Harness worker tool server is not connected (${status})`,
         });
+      }
     }
     if (event.error === "rate_limit")
       events.push({ kind: "rate-limited", detail: "provider rate limit" });
@@ -273,6 +282,13 @@ const codex: ProviderAdapter = {
         `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.args=[${tomlString(input.workerToolsPath)}]`,
         "-c",
         `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.env={HARNESS_WORKER_RELAY=${tomlString(String(input.relay.port))},HARNESS_WORKER_RELAY_KEY=${tomlString(input.relay.key)}}`,
+        // Under approval_policy="never" Codex declines MCP tool calls that
+        // would need approval, so the worker could never submit its result
+        // (observed in the 014c live smoke). Pre-approve only the Harness
+        // worker tools: every call is still authenticated, execution-bound and
+        // validated by the host, and no sandbox or command permission widens.
+        "-c",
+        `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.default_tools_approval_mode="approve"`,
         ...(input.model === undefined ? [] : ["-m", input.model]),
         ...(input.reasoning === undefined
           ? []
@@ -299,6 +315,28 @@ const codex: ProviderAdapter = {
       return [
         { kind: "permission-denied", detail: "provider declined a command" },
       ];
+    // A Harness worker tool call the provider itself did not complete (for
+    // example, declined for approval). Host rejections return a tool result
+    // and are diagnosed by the relay instead.
+    if (
+      event.type === "item.completed" &&
+      item?.type === "mcp_tool_call" &&
+      item.server === GOVERNED_WORKER_TOOL_SERVER &&
+      item.status === "failed"
+    ) {
+      const tool = stringValue(item.tool);
+      return [
+        {
+          kind: "permission-denied",
+          detail: `provider did not complete Harness tool ${
+            tool !== null &&
+            (WORKER_OPERATIONS as readonly string[]).includes(tool)
+              ? tool
+              : "unknown"
+          }`,
+        },
+      ];
+    }
     return [];
   },
 };

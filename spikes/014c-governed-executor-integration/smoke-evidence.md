@@ -1,6 +1,38 @@
 # Real-Provider Smoke Evidence — Spike 014c
 
-Status: **UNPROVEN. No real-provider governed smoke run has been executed.**
+Status: **UNPROVEN. Three real-provider governed smoke runs failed, and the
+corrected adapters have not been run live yet.**
+
+## Observed live runs (failed)
+
+Once the fixture trust root existed (`fixture-trust-root.md`, `55d9e1e`), the
+smoke ran three times against the production governed host with Claude Code
+`2.1.280` and `codex-cli 0.155.1`. The public-safe records and ledger copies
+are in `live-smoke/` (`bfd14a5`).
+
+| Run (UTC)                  | `smoke-codex`                               | `smoke-claude-promotion`                                                                                |
+| -------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `2026-09-24T09-41-42-874Z` | `failed` / `missing-result`; no tool call   | `failed` / `assignment-not-delivered`; the `harness` tool server was not connected; `Glob` denied        |
+| `2026-09-24T10-23-31-951Z` | `failed` / `missing-result`                 | `failed` / `assignment-not-delivered`                                                                   |
+| `2026-09-24T10-23-46-812Z` | `failed` / `missing-result`                 | `failed` / `assignment-not-delivered`; `Glob` denied                                                    |
+
+In every run the host allocated through the trust gate, and each provider was
+launched by its registered adapter. Claude confirmed model `claude-opus-5-5`,
+with effort unavailable. No result, action, promotion or transition was
+recorded, and none was inferred. No generated executable was found.
+
+These runs are genuine real-provider diagnostic evidence for AC11. They are
+**not** evidence for AC05 or AC09. The causes and the adapter corrections are
+recorded under "Live smoke corrections" in `executor-decision.md`. The smoke
+must be rerun with the corrected candidate, and its records committed,
+before AC05, AC09 and the real-provider parts of AC06 and AC07 can be
+evaluated.
+
+## Original preparation notes
+
+These notes were written before the trust root existed. Blocker 1 below was
+resolved by `fac5c1c` and `55d9e1e`. Blocker 2 still applies to the
+implementation worker's own sandbox.
 
 These criteria remain unproven and must not be reported as passing:
 

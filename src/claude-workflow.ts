@@ -83,6 +83,18 @@ export const CLAUDE_PROTECTED_FLAGS = [
   "",
 ] as const;
 
+// Governed execution needs exactly one MCP server: the repository-owned Harness
+// worker tool server passed with --mcp-config. Safe mode disables every MCP
+// server, including an explicitly passed one (observed in the 014c live smoke:
+// init reported no connected "harness" server). Governed launches therefore
+// keep each ambient exclusion without safe mode: --strict-mcp-config admits only
+// the passed config, --setting-sources "" loads no user/project/local settings
+// (and so no CLAUDE.md, hooks or enabled plugins), --disable-slash-commands
+// removes skills and commands, and --restricted keeps file tools inside the
+// declared directories.
+export const GOVERNED_CLAUDE_FLAGS: readonly string[] =
+  CLAUDE_PROTECTED_FLAGS.filter((flag) => flag !== "--safe-mode");
+
 // OS sandbox for command execution: block siblings of every granted workspace
 // (notably arbitrary /tmp entries), then re-open only the exact allocation.
 export function claudeSandboxSettings(workspaces: readonly string[]): string {
@@ -305,7 +317,7 @@ export function buildGovernedClaudeCommand(
   return [
     "claude",
     "-p",
-    ...CLAUDE_PROTECTED_FLAGS,
+    ...GOVERNED_CLAUDE_FLAGS,
     "--mcp-config",
     launch.mcpConfig,
     ...(permissions.commands

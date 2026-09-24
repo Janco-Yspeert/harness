@@ -432,3 +432,57 @@
   before both happen will block again.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 012 — Implementation (live-smoke corrections; real-provider rerun pending)
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`
+  (pinned bytes delivered by Role Grant
+  `sha256:04fd084126ed03696e9e9962e15fc29cb9d167c31f95626da4486cdb11b982cb`,
+  assignment `bd709dbb-9530-478a-9b37-5dfb504c90b6`; human-authorized 014c
+  bootstrap execution).
+- Inputs: the same frozen `spike.md`, `design-map.md`, `coverage-map.json` and
+  `eval-requirements.md` as Runs 009–011. They match the host-bound
+  identities. There is no implementation feedback because no
+  `verification-finalized` event exists. Work started on `feat/spike-014` at
+  `bfd14a5141a1bb9627312c32542ab74c60900f17`. The fixture trust root
+  (`fac5c1c`, `55d9e1e`) and three failed live smoke records (`bfd14a5`) now
+  exist.
+- Result: **blocked**. The live-smoke defects are fixed in the adapters. A
+  real-provider rerun is still required, and this worker cannot perform it
+  (no `claude` binary and no provider credentials in its sandbox).
+  - Claude: `--safe-mode` disables the explicitly passed Harness MCP server.
+    Governed launches now use `GOVERNED_CLAUDE_FLAGS`, which keeps the other
+    ambient exclusions (`--strict-mcp-config`, `--setting-sources ""`,
+    `--disable-slash-commands`, `--restricted`). The legacy protected mode is
+    unchanged. The tools-unavailable diagnostic now names the reported server
+    status.
+  - Codex: the Harness MCP tools are pre-approved with
+    `mcp_servers.harness.default_tools_approval_mode="approve"`, because
+    `approval_policy="never"` declines unapproved MCP calls. No sandbox,
+    network or command permission changes. Failed Harness `mcp_tool_call`
+    items are reported as `permission-denied`.
+  - The fake provider now reproduces both observed behaviours. Two new tests
+    and the existing Claude/Codex flow tests fail without the corrections (8
+    failures when the source changes are reverted).
+  - `executor-decision.md` and `smoke-evidence.md` record the failed live
+    runs as AC11 diagnostic evidence, but not as AC05 or AC09 evidence.
+- Changed before this entry: 6 files, 279 insertions and 10 deletions
+  (`src/claude-workflow.ts`, `src/executors/adapters.ts`,
+  `tools/fixtures/fake-provider.ts`, `test/governed-executors.test.ts`,
+  `executor-decision.md` and `smoke-evidence.md`).
+- Checks:
+  - `tsc --noEmit`: pass.
+  - `eslint .`: pass.
+  - Prettier check of the changed files: pass.
+  - `git diff --check`: clean.
+  - `npm test`: **145 passed, 0 failed** (143 at start).
+  - `npm run format:check` was not run repo-wide because of the known
+    sandbox-dotfile `EACCES` failure recorded in Run 009.
+- Not verified: whether the corrected flags succeed against real Claude Code
+  `2.1.280` and Codex `0.155.1`. No provider call was made.
+- Required recovery: rerun `npm run smoke:governed` on the provider host
+  against this checkpoint, then commit the resulting `live-smoke/` records and
+  update `smoke-evidence.md`.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.
