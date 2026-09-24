@@ -28,6 +28,11 @@ import {
   resolveAuthority,
   type Resolution,
 } from "./resolver.ts";
+import {
+  DIAGNOSTIC_CATEGORIES,
+  type Diagnostic,
+  type DiagnosticCategory,
+} from "./model.ts";
 import type {
   Data,
   Execution,
@@ -61,6 +66,22 @@ export interface KernelOptions {
   selectExecutor?: ExecutorSelector;
   privateDataRoot?: string;
   validators?: ArtifactValidators;
+  // Called with the freshly loaded definition before any new Workflow
+  // Execution Grant is recorded. The governed host always installs the
+  // trust-equivalence gate here; it is not caller configuration.
+  methodologyGate?: (definition: MethodologyDefinition) => void;
+}
+const DETAIL_LIMIT = 240;
+// Public diagnostic details are short host-authored phrases. Redaction is a
+// second line of defence against a credential-shaped value slipping in.
+export function redact(value: string): string {
+  return value
+    .replaceAll(/(?:Bearer\s+|token[=:]\s*)[^\s"']+/gi, "[redacted]")
+    .replaceAll(/\b[a-f0-9]{48,}\b/gi, "[redacted]")
+    .replaceAll(/\bsk-[A-Za-z0-9_-]{8,}/g, "[redacted]");
+}
+export function safeDetail(value: string): string {
+  return (redact(value).split("\n")[0] ?? "").slice(0, DETAIL_LIMIT);
 }
 function boundedPath(root: string, path: string): string {
   if (!path || isAbsolute(path))
@@ -141,6 +162,7 @@ export class ExecutionKernel {
   ): WorkflowGrant {
     return this.#transaction(workflow, () => {
       const definition = loadDefinition(this.project, this.options.validators);
+      this.options.methodologyGate?.(definition);
       const roles = request.roles ?? Object.keys(definition.roles);
       if (
         !roles.length ||
@@ -602,6 +624,19 @@ export class ExecutionKernel {
         run.attention = "WAITING_FOR_HUMAN";
       }
       if (event.transition === "kernel.supersession") run.superseded = true;
+      if (event.transition === "kernel.diagnostic")
+        (run.diagnostics ??= []).push(event.evidence as unknown as Diagnostic);
+      if (event.transition === "kernel.executor-confirmed" && run.executor)
+        run.executor.confirmed = {
+          model:
+            typeof event.evidence.model === "string"
+              ? event.evidence.model
+              : null,
+          reasoning:
+            typeof event.evidence.reasoning === "string"
+              ? event.evidence.reasoning
+              : null,
+        };
       if (event.transition === "kernel.human-response") {
         const request = run.requests.find(
           (r) => r.id === event.evidence.request,
@@ -802,10 +837,9 @@ export class ExecutionKernel {
               ? { reasoning: grant.executorConstraints.reasoning }
               : {}),
           },
-          confirmed: {
-            model: session.profile.model ?? null,
-            reasoning: session.profile.reasoning ?? null,
-          },
+          // Only provider-reported evidence confirms a model or effort; profile
+          // configuration and supervisor identity never do.
+          confirmed: { model: null, reasoning: null },
         },
       };
       // Record exposure before delivering any workspace or contract to an executor.
@@ -876,6 +910,7 @@ export class ExecutionKernel {
     state: Execution["process"],
     pid: number | null = null,
     failure: string | null = null,
+    category: DiagnosticCategory | null = null,
   ): Execution {
     return this.#transaction(workflow, () => {
       const execution = this.execution(workflow, id);
@@ -887,11 +922,16 @@ export class ExecutionKernel {
           process: state,
           pid: pid ?? execution.pid,
           failure,
+          ...(category ? { category } : {}),
           attention: ["allocated", "running"].includes(state)
             ? execution.attention
             : "terminal",
         },
       });
+      if (category)
+        this.#diagnostic(workflow, id, category, failure ?? category);
+      if (!["allocated", "running"].includes(state))
+        this.#omittedActions(workflow, id);
       const next = this.execution(workflow, id);
       this.#telemetry(state, next);
       return next;
@@ -929,12 +969,99 @@ export class ExecutionKernel {
     workflow: string,
     workflowGrant: string,
     reason: string,
+    category?: DiagnosticCategory,
   ): void {
     this.#transaction(workflow, () => {
       this.#append(workflow, "kernel.continuation-stopped", {
         workflowGrant,
         reason,
+        ...(category ? { category } : {}),
       });
+    });
+  }
+  // Execution-bound observation from the host or its registered adapter.
+  diagnostic(
+    workflow: string,
+    id: string,
+    category: DiagnosticCategory,
+    detail: string,
+  ): Diagnostic {
+    return this.#transaction(workflow, () => {
+      this.execution(workflow, id);
+      return this.#diagnostic(workflow, id, category, detail);
+    });
+  }
+  #diagnostic(
+    workflow: string,
+    id: string,
+    category: DiagnosticCategory,
+    detail: string,
+  ): Diagnostic {
+    if (!DIAGNOSTIC_CATEGORIES.includes(category))
+      throw new Error("unknown diagnostic category");
+    const value: Diagnostic = {
+      schemaVersion: 1,
+      execution: id,
+      category,
+      detail: safeDetail(detail),
+    };
+    this.#append(workflow, "kernel.diagnostic", value);
+    return value;
+  }
+  // A valid result whose configured outcome requires a host action that was
+  // never requested stays inspectably incomplete. Nothing is inferred from
+  // process exit and the semantic result is preserved.
+  #omittedActions(workflow: string, id: string): void {
+    const execution = this.execution(workflow, id);
+    const result = execution.result;
+    if (!result || execution.transition?.status === "recorded") return;
+    const grant = this.roleGrant(workflow, execution.roleGrant);
+    const policy = required(
+      this.definition(workflow, grant.methodology).roles[grant.role],
+    ).policy;
+    const missing = new Set(
+      policy.outcomes
+        .filter(
+          (rule) =>
+            rule.disposition === result.disposition &&
+            matches(result.methodology, rule.methodology ?? {}),
+        )
+        .flatMap((rule) => rule.requiredActions ?? [])
+        .filter(
+          (kind) =>
+            !execution.actions.some((action) => action.request.kind === kind),
+        ),
+    );
+    for (const kind of missing)
+      this.#diagnostic(
+        workflow,
+        id,
+        "action-omitted",
+        `required host action was not requested: ${kind}`,
+      );
+  }
+  // Records provider-reported model/effort only. Absent values stay null.
+  confirmExecutor(
+    workflow: string,
+    id: string,
+    confirmed: {
+      model: string | null;
+      reasoning: string | null;
+      version?: string | null;
+    },
+  ): Execution {
+    return this.#transaction(workflow, () => {
+      const execution = this.execution(workflow, id);
+      if (!["allocated", "running"].includes(execution.process))
+        throw new Error("executor confirmation requires an active process");
+      this.#append(workflow, "kernel.executor-confirmed", {
+        execution: id,
+        model: confirmed.model,
+        reasoning: confirmed.reasoning,
+        providerVersion: confirmed.version ?? null,
+        source: "provider",
+      });
+      return this.execution(workflow, id);
     });
   }
   result(
@@ -1493,10 +1620,24 @@ export class ExecutionKernel {
         ...action,
         execution: id,
       });
+      this.#actionDiagnostic(workflow, id, action);
       this.#transition(workflow, id);
       this.#telemetry("host-action", execution, action.id);
       return action;
     });
+  }
+  #actionDiagnostic(
+    workflow: string,
+    id: string,
+    action: HostActionResult,
+  ): void {
+    if (action.status === "succeeded") return;
+    this.#diagnostic(
+      workflow,
+      id,
+      action.status === "denied" ? "action-denied" : "action-failed",
+      `host ${action.request.kind} action ${action.status}: ${action.id}`,
+    );
   }
   promote(
     workflow: string,
@@ -1662,6 +1803,7 @@ export class ExecutionKernel {
         ...action,
         execution: id,
       });
+      this.#actionDiagnostic(workflow, id, action);
       const allowed = grant.hostActions.promotion;
       if (action.status === "succeeded" && allowed)
         this.#append(workflow, allowed.transition, {

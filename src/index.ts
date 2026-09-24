@@ -14,7 +14,7 @@ import { PtyBackend } from "./pty-backend.ts";
 import { GovernedHost, type GovernedHostOptions } from "./kernel/host.ts";
 import { loadProject } from "./kernel/configuration.ts";
 import { harnessValidators } from "./methodologies/harness-public.ts";
-import type { ExecutorProfile } from "./kernel/model.ts";
+import { validateProductionExecutors } from "./executors/adapters.ts";
 import type {
   HarnessErrorMessage,
   SessionBackend,
@@ -753,26 +753,31 @@ if (import.meta.main) {
           return createCodexBackend(cwd === undefined ? {} : { cwd });
         }
       : undefined;
-  const host = await startHarnessHost(port, {
-    ...(process.env.HARNESS_ROOT_TOKEN
+  let governed: GovernedHostOptions | undefined;
+  try {
+    governed = process.env.HARNESS_ROOT_TOKEN
       ? {
-          governed: {
-            rootToken: process.env.HARNESS_ROOT_TOKEN,
-            project: loadProject(
-              process.env.HARNESS_PROJECT_CONFIG ?? "harness.project.json",
-            ),
-            validators: harnessValidators,
-            ...(process.env.HARNESS_PRIVATE_DATA_ROOT
-              ? { privateDataRoot: process.env.HARNESS_PRIVATE_DATA_ROOT }
-              : {}),
-            executors: process.env.HARNESS_EXECUTOR_CONFIG
+          rootToken: process.env.HARNESS_ROOT_TOKEN,
+          project: loadProject(
+            process.env.HARNESS_PROJECT_CONFIG ?? "harness.project.json",
+          ),
+          validators: harnessValidators,
+          ...(process.env.HARNESS_PRIVATE_DATA_ROOT
+            ? { privateDataRoot: process.env.HARNESS_PRIVATE_DATA_ROOT }
+            : {}),
+          // Production profiles may name only registered adapters. Fixture
+          // command profiles are constructible solely in test code.
+          executors: validateProductionExecutors(
+            process.env.HARNESS_EXECUTOR_CONFIG
               ? (JSON.parse(
                   readFileSync(process.env.HARNESS_EXECUTOR_CONFIG, "utf8"),
-                ) as ExecutorProfile[])
+                ) as unknown)
               : [
+                  // An attached supervisor session (Codex App) launches
+                  // nothing; it may only adopt inline work when granted.
                   {
                     id: "external",
-                    provider: "external",
+                    provider: "codex",
                     modes: ["attached"],
                     capabilities: [
                       "repository-read",
@@ -783,9 +788,19 @@ if (import.meta.main) {
                     available: true,
                   },
                 ],
-          },
+          ),
         }
-      : {}),
+      : undefined;
+  } catch (error) {
+    console.error(
+      `Harness host refused to start: invalid governed executor or project configuration: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+    process.exit(2);
+  }
+  const host = await startHarnessHost(port, {
+    ...(governed ? { governed } : {}),
     ...(createBackend === undefined ? {} : { createBackend }),
     ...(process.env.HARNESS_EVALUATOR_WORKSPACE === undefined
       ? {}

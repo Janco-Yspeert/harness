@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "workspaces": ["repository", "private"],
+  "capabilities": ["repository-read"],
+  "forbiddenExposure": [],
+  "protected": true,
+  "inputs": [
+    { "name": "candidate", "path": "candidate.txt" },
+    { "name": "revision", "path": "smoke-plan.json", "jsonValue": "revision" }
+  ],
+  "results": ["succeeded", "blocked", "refused", "failed"],
+  "methodology": { "smoke": ["PASS", "FAIL"] },
+  "human": [],
+  "postconditions": [],
+  "promotion": {
+    "sourceWorkspace": "private",
+    "destinationWorkspace": "repository",
+    "destination": "promoted",
+    "candidateInput": "candidate",
+    "revisionInput": "revision",
+    "when": { "smoke": "PASS" },
+    "allocationEvent": "smoke-allocated",
+    "attemptField": "attempt",
+    "transition": "smoke-promotion-recorded"
+  }
+}

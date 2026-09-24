@@ -1,22 +1,53 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn } from "node:child_process";
 import { timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import {
+  AdapterRefusal,
+  locateProvider,
+  planLaunch,
+  registeredAdapter,
+  type ProviderAdapter,
+} from "../executors/adapters.ts";
+import { GovernedProviderRun } from "../executors/governed.ts";
 import { ExecutionKernel, type KernelOptions } from "./execution.ts";
 import { object, required, text } from "./ledger.ts";
 import type {
   Data,
+  DiagnosticCategory,
   Execution,
   HumanRequest,
   PromotionArtifact,
 } from "./model.ts";
+import { assertTrustedMethodology } from "./trust.ts";
 
-export interface GovernedHostOptions extends KernelOptions {
+// Programmatic-only seams for deterministic adapter tests (mocked provider
+// discovery and event streams). The production entrypoint never sets them.
+export interface ProviderRuntime {
+  locate?: (
+    program: string,
+  ) => { ok: true; path: string } | { ok: false; reason: string };
+  spawnProvider?: typeof spawn;
+  humanWaitMs?: number;
+}
+export interface GovernedHostOptions extends Omit<
+  KernelOptions,
+  "methodologyGate"
+> {
   rootToken: string;
+  providerRuntime?: ProviderRuntime;
+}
+class HostRefusal extends Error {
+  readonly category: DiagnosticCategory;
+  constructor(category: DiagnosticCategory, message: string) {
+    super(message);
+    this.category = category;
+  }
 }
 export class GovernedHost {
   readonly kernel: ExecutionKernel;
   readonly #rootToken: string;
-  readonly #children = new Map<string, ChildProcess>();
+  readonly #runtime: ProviderRuntime;
+  readonly #children = new Map<string, () => void>();
   #closed = false;
   constructor(options: GovernedHostOptions) {
     if (options.rootToken.length < 32)
@@ -24,8 +55,30 @@ export class GovernedHost {
         "governed host requires a root credential of at least 32 characters",
       );
     this.#rootToken = options.rootToken;
-    this.kernel = new ExecutionKernel(options);
+    this.#runtime = options.providerRuntime ?? {};
+    const project = options.project;
+    // The trust-equivalence gate is not configurable: every new grant, for
+    // every project, binds only a trusted methodology projection.
+    this.kernel = new ExecutionKernel({
+      ...options,
+      methodologyGate: (definition) => {
+        assertTrustedMethodology(project, definition);
+      },
+    });
     this.kernel.recover();
+  }
+  #excludedProviderRoots(): string[] {
+    const project = this.kernel.project;
+    return [
+      project.root,
+      ...Object.values(project.workspaces).map((w) => w.path),
+      ...Object.values(project.workflows).flatMap((w) => [
+        ...Object.values(w.workspaces ?? {}).map((item) => item.path),
+      ]),
+    ];
+  }
+  #stop(id: string): void {
+    this.#children.get(id)?.();
   }
   #root(token: string): boolean {
     const actual = Buffer.from(token);
@@ -135,8 +188,7 @@ export class GovernedHost {
           ...(body.inline ? { inline: true } : {}),
           ...(body.executor ? { executor: object(body.executor) } : {}),
         });
-        if (grant.supersedes)
-          this.#children.get(grant.supersedes)?.kill("SIGTERM");
+        if (grant.supersedes) this.#stop(grant.supersedes);
         send(201, { grant });
         return;
       }
@@ -288,8 +340,45 @@ export class GovernedHost {
           return;
         }
         const profile = this.kernel.select(resolution.grant, "spawned");
-        if (!profile?.command?.length)
-          throw new Error("no eligible spawned executor");
+        if (!profile)
+          throw new HostRefusal("no-adapter", "no eligible spawned executor");
+        // Production profiles launch only a registered adapter's installed
+        // provider. A command profile exists only when passed programmatically.
+        let provider:
+          | {
+              adapter: ProviderAdapter;
+              program: string;
+              plan: { model?: string; reasoning?: string };
+            }
+          | undefined;
+        if (!profile.command?.length) {
+          const adapter = registeredAdapter(profile.provider);
+          if (!adapter)
+            throw new HostRefusal(
+              "no-adapter",
+              `executor profile ${profile.id} names no registered provider adapter`,
+            );
+          const located = this.#runtime.locate
+            ? this.#runtime.locate(adapter.program)
+            : locateProvider(
+                adapter.program,
+                process.env.PATH,
+                this.#excludedProviderRoots(),
+              );
+          if (!located.ok)
+            throw new HostRefusal("provider-not-installed", located.reason);
+          try {
+            provider = {
+              adapter,
+              program: located.path,
+              plan: planLaunch(adapter, resolution.grant, profile),
+            };
+          } catch (error) {
+            if (error instanceof AdapterRefusal)
+              throw new HostRefusal(error.category, error.message);
+            throw error;
+          }
+        }
         const registration = this.kernel.register(workflow, profile.id);
         const allocation = this.kernel.allocate(workflow, grantId, {
           session: registration.session.id,
@@ -297,9 +386,42 @@ export class GovernedHost {
           ...(role ? { role } : {}),
           ...(predecessor ? { predecessor } : {}),
         });
-        if (!allocation.duplicate) {
+        const address = request.socket.localPort;
+        if (!allocation.duplicate && provider) {
+          const run = new GovernedProviderRun({
+            kernel: this.kernel,
+            workflow,
+            hostUrl: `http://127.0.0.1:${String(address)}`,
+            session: {
+              id: registration.session.id,
+              token: registration.token,
+            },
+            execution: allocation.execution,
+            profile,
+            adapter: provider.adapter,
+            program: provider.program,
+            plan: provider.plan,
+            ...(this.kernel.options.privateDataRoot
+              ? { privateDataRoot: this.kernel.options.privateDataRoot }
+              : {}),
+            ...(this.#runtime.humanWaitMs === undefined
+              ? {}
+              : { humanWaitMs: this.#runtime.humanWaitMs }),
+            ...(this.#runtime.spawnProvider
+              ? { spawnProvider: this.#runtime.spawnProvider }
+              : {}),
+            onExit: () => {
+              this.#children.delete(allocation.execution.id);
+              if (!this.#closed)
+                this.#continue(workflow, grantId, required(address));
+            },
+          });
+          this.#children.set(allocation.execution.id, () => {
+            void run.cancel();
+          });
+        } else if (!allocation.duplicate && profile.command?.length) {
+          // Test-only fixture executor (programmatic construction only).
           const [program, ...args] = profile.command;
-          const address = request.socket.localPort;
           const child = spawn(required(program), args, {
             cwd:
               allocation.grant.workspaces[0]?.path ?? this.kernel.project.root,
@@ -312,7 +434,9 @@ export class GovernedHost {
               HARNESS_SESSION_TOKEN: registration.token,
             },
           });
-          this.#children.set(allocation.execution.id, child);
+          this.#children.set(allocation.execution.id, () =>
+            child.kill("SIGTERM"),
+          );
           child.once("spawn", () =>
             this.kernel.process(
               workflow,
@@ -331,6 +455,7 @@ export class GovernedHost {
                 "failed",
                 null,
                 "executor launch failed",
+                "provider-crashed",
               );
           });
           child.once("exit", (code) => {
@@ -351,6 +476,11 @@ export class GovernedHost {
                   : code === 0
                     ? "missing semantic result handshake"
                     : "provider process failed",
+                code === 0 && execution.result
+                  ? null
+                  : code === 0
+                    ? "missing-result"
+                    : "provider-crashed",
               );
             this.#continue(workflow, grantId, required(address));
           });
@@ -491,17 +621,17 @@ export class GovernedHost {
         }
         if (sub === "cancel") {
           needRoot();
-          this.#children.get(execution.id)?.kill("SIGTERM");
-          send(
-            200,
-            this.kernel.process(
-              workflow,
-              execution.id,
-              "cancelled",
-              null,
-              "explicit human cancellation",
-            ),
+          // Record the terminal status first, then terminate the actual child.
+          const cancelled = this.kernel.process(
+            workflow,
+            execution.id,
+            "cancelled",
+            null,
+            "explicit human cancellation",
+            "cancelled",
           );
+          this.#stop(execution.id);
+          send(200, cancelled);
           return;
         }
       }
@@ -510,6 +640,7 @@ export class GovernedHost {
       send(409, {
         error:
           error instanceof Error ? error.message : "governed request failed",
+        ...(error instanceof HostRefusal ? { category: error.category } : {}),
       });
     }
   }
@@ -556,12 +687,21 @@ export class GovernedHost {
       },
     )
       .then(async (response) => {
-        if (!response.ok)
-          this.kernel.continuationStopped(
-            workflow,
-            grantId,
-            `automatic continuation rejected: ${await response.text()}`,
-          );
+        if (response.ok) return;
+        const body = await response.text();
+        let category: DiagnosticCategory | undefined;
+        try {
+          const parsed = JSON.parse(body) as { category?: DiagnosticCategory };
+          category = parsed.category;
+        } catch {
+          category = undefined;
+        }
+        this.kernel.continuationStopped(
+          workflow,
+          grantId,
+          `automatic continuation rejected: ${body}`,
+          category,
+        );
       })
       .catch((error: unknown) => {
         this.kernel.continuationStopped(
@@ -575,7 +715,7 @@ export class GovernedHost {
   }
   close(): void {
     this.#closed = true;
-    for (const child of this.#children.values()) child.kill("SIGTERM");
+    for (const stop of this.#children.values()) stop();
     this.kernel.recover();
   }
 }

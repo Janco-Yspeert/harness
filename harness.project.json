@@ -3,6 +3,11 @@
   "id": "harness",
   "root": ".",
   "policy": "methodologies/harness/policy.json",
+  "trustedHistory": "methodologies/harness/trusted.jsonl",
+  "validatorSources": {
+    "prepared-coverage": "src/methodologies/harness-public.ts",
+    "verification-accounting": "src/methodologies/harness-public.ts"
+  },
   "workflowDirectory": "spikes",
   "ledgerName": "workflow.jsonl",
   "workspaces": {

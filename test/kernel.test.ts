@@ -16,6 +16,7 @@ import { join, resolve } from "node:path";
 import test, { type TestContext } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { startHarnessHost } from "../src/index.ts";
+import { trustFixtureMethodology } from "./support/trusted-fixture.ts";
 import { harnessValidators } from "../src/methodologies/harness-public.ts";
 import { ExecutionKernel } from "../src/kernel/execution.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
@@ -138,7 +139,15 @@ function fixture(t: TestContext, name = "unit") {
       },
     },
     remotes: { publication: join(dir, "remote.git") },
+    trustedHistory: "trusted.jsonl",
   };
+  // New host grants pass the production trust gate only for this fixture's
+  // own disposable, test-recorded trust root over its current methodology.
+  const trust = () =>
+    trustFixtureMethodology(root, {
+      policy: "policy.json",
+      methodologyPaths: ["contracts", "skills"],
+    });
   const kernel = new ExecutionKernel({ project, executors: profiles });
   const authorize = () =>
     kernel.authorize(workflow, {
@@ -159,6 +168,7 @@ function fixture(t: TestContext, name = "unit") {
     policy,
     authorize,
     event,
+    trust,
   };
 }
 function allocate(
@@ -860,6 +870,7 @@ void test("TR3: bounded workflow authority, immutable Role Grants and non-consum
     }),
   });
   assert.equal(unauthorized.status, 403);
+  f.trust();
   const { grant } = await api<{ grant: WorkflowGrant }>(host.url, "grants", {
     continuation: false,
     delegation: ["attached"],
@@ -1055,6 +1066,7 @@ void test("TR10: concurrent continuation deduplicates; changed input and explici
     governed: { project: f.project, executors: profiles, rootToken },
   });
   t.after(() => host.close());
+  f.trust();
   const { grant } = await api<{ grant: WorkflowGrant }>(host.url, "grants", {
     continuation: true,
     delegation: ["attached"],
@@ -1165,6 +1177,7 @@ void test("TR4/TR7/TR9: real attached process waits/resumes the same execution a
   const preGrantPid = child.pid;
   assert.ok(preGrantPid);
   assert.equal(f.kernel.executions(f.workflow).length, 0);
+  f.trust();
   const { grant } = await api<{ grant: WorkflowGrant }>(host.url, "grants", {
     continuation: false,
     delegation: ["attached"],
@@ -1316,6 +1329,7 @@ void test("TR4/TR10/TR11: real spawned execution survives caller disconnect and 
     },
   });
   t.after(() => host.close());
+  f.trust();
   const { grant } = await api<{ grant: WorkflowGrant }>(host.url, "grants", {
     continuation: true,
     delegation: ["spawned"],
@@ -1557,6 +1571,7 @@ void test("TR5/TR9: private human payloads are host-owned; another executor cann
     },
   });
   t.after(() => host.close());
+  f.trust();
   const { grant } = await api<{ grant: WorkflowGrant }>(host.url, "grants", {
     continuation: false,
     delegation: ["attached"],
@@ -1777,6 +1792,7 @@ void test("014a: host promotion validates exact evidence and keeps failure disti
   const registration = await api<{ session: Session }>(host.url, "sessions", {
     profile: "fixture",
   });
+  f.trust();
   const { grant } = await api<{ grant: WorkflowGrant }>(host.url, "grants", {
     continuation: false,
     delegation: ["attached"],
@@ -1961,6 +1977,7 @@ void test("014a: configured human decisions bind canonical evidence through the 
         governed: { project: f.project, executors: profiles, rootToken },
       });
       t.after(() => host.close());
+      f.trust();
       const { grant } = await api<{ grant: WorkflowGrant }>(
         host.url,
         "grants",

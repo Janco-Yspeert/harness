@@ -209,13 +209,27 @@ function skillFile(path: string, content: string): ManifestFile<string> {
   return { path, identity: identity(content), content };
 }
 
+// A project may live below its Git repository root. Manifest paths stay
+// project-relative; `projectPrefix` only locates them inside the repository.
+// The defaults reproduce the Harness manifest exactly.
 export function buildMethodologyManifest(
   repositoryRoot: string,
   revision: string,
   policyPath = "methodologies/harness/policy.json",
+  options: {
+    readonly projectPrefix?: string;
+    readonly validatorSources?: Readonly<Record<string, string>>;
+  } = {},
 ): { revision: string; manifest: MethodologyManifest } {
   const commit = exactRevision(repositoryRoot, revision);
-  const policy = jsonAt(repositoryRoot, commit, policyPath) as WorkflowPolicy;
+  const prefix = options.projectPrefix ?? "";
+  const located = (path: string): string =>
+    prefix ? `${repositoryPath(prefix)}/${repositoryPath(path)}` : path;
+  const policy = jsonAt(
+    repositoryRoot,
+    commit,
+    located(policyPath),
+  ) as WorkflowPolicy;
   const roles: MethodologyManifestCore["roles"] = {};
   for (const [role, rawEntry] of Object.entries(object(policy.roles))) {
     const entry = object(rawEntry);
@@ -224,22 +238,26 @@ export function buildMethodologyManifest(
     roles[role] = {
       contract: manifestFile(
         contractPath,
-        jsonAt(repositoryRoot, commit, contractPath) as RoleContract,
+        jsonAt(repositoryRoot, commit, located(contractPath)) as RoleContract,
       ),
       skill: skillFile(
         skillPath,
-        readRevisionFile(repositoryRoot, commit, skillPath),
+        readRevisionFile(repositoryRoot, commit, located(skillPath)),
       ),
     };
   }
   const validators = Object.fromEntries(
-    Object.entries(VALIDATOR_SOURCES).map(([name, path]) => [
-      name,
-      {
-        path,
-        identity: identity(readRevisionFile(repositoryRoot, commit, path)),
-      },
-    ]),
+    Object.entries(options.validatorSources ?? VALIDATOR_SOURCES).map(
+      ([name, path]) => [
+        name,
+        {
+          path,
+          identity: identity(
+            readRevisionFile(repositoryRoot, commit, located(path)),
+          ),
+        },
+      ],
+    ),
   );
   const core: MethodologyManifestCore = {
     schemaVersion: 1,

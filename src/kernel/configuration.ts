@@ -11,6 +11,17 @@ export function loadProject(path: string): Project {
   };
   if (object(raw).schemaVersion !== 1 || !raw.id || !raw.root || !raw.policy)
     throw new Error("invalid project configuration");
+  if (
+    (raw.trustedHistory !== undefined &&
+      (typeof raw.trustedHistory !== "string" || !raw.trustedHistory)) ||
+    (raw.validatorSources !== undefined &&
+      !Object.values(object(raw.validatorSources)).every(
+        (source) => typeof source === "string" && source.length > 0,
+      ))
+  )
+    throw new Error(
+      "invalid project trusted-history or validator-source declaration",
+    );
   const root = resolve(dirname(path), raw.root);
   const workflows = { ...raw.workflows };
   if (raw.workflowDirectory)
@@ -59,5 +70,9 @@ export function loadProject(path: string): Project {
         resolve(root, remote),
       ]),
     ),
+    ...(raw.trustedHistory ? { trustedHistory: raw.trustedHistory } : {}),
+    ...(raw.validatorSources
+      ? { validatorSources: { ...raw.validatorSources } }
+      : {}),
   };
 }

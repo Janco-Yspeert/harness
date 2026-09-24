@@ -31,7 +31,7 @@ export function claudeWorkflowDirectory(
 // network-isolated profile can hold git-publish without this ever granting
 // Bash push access, and instead rely solely on the host-mediated
 // WorkflowRunRegistry#publishCommit endpoint.
-function resolveClaudeCapabilityTools(
+export function resolveClaudeCapabilityTools(
   capabilities: ReadonlySet<string>,
   options: { allowDirectPush: boolean },
 ): { tools: string[]; allowedTools: string[] } {
@@ -68,6 +68,40 @@ function resolveClaudeCapabilityTools(
   if (capabilities.has("local-computation"))
     allowedTools.push("Bash(node *)", "Bash(python3 *)");
   return { tools, allowedTools };
+}
+
+// Safe mode excludes CLAUDE.md, memory, plugins, hooks, skills and other
+// customizations. Restricted mode confines file tools to declared dirs.
+// Managed host policy still applies; candidate settings cannot grant access.
+// Shared by the legacy protected contract mode and governed execution.
+export const CLAUDE_PROTECTED_FLAGS = [
+  "--safe-mode",
+  "--restricted",
+  "--disable-slash-commands",
+  "--strict-mcp-config",
+  "--setting-sources",
+  "",
+] as const;
+
+// OS sandbox for command execution: block siblings of every granted workspace
+// (notably arbitrary /tmp entries), then re-open only the exact allocation.
+export function claudeSandboxSettings(workspaces: readonly string[]): string {
+  return JSON.stringify({
+    permissions: { blockReadsOutsideWorkingDirectories: true },
+    sandbox: {
+      enabled: true,
+      failIfUnavailable: true,
+      autoAllowBashIfSandboxed: true,
+      allowUnsandboxedCommands: false,
+      excludedCommands: [],
+      filesystem: {
+        denyRead: [
+          ...new Set(workspaces.map((workspace) => dirname(workspace))),
+        ],
+        allowRead: [...workspaces],
+      },
+    },
+  });
 }
 
 export function buildClaudeWorkflowCommand(
@@ -138,26 +172,7 @@ export function buildClaudeWorkflowCommand(
     ...(scratchWorkspace === undefined ? [] : [scratchWorkspace]),
   ];
   const sandboxSettings = permitsCommands
-    ? JSON.stringify({
-        permissions: { blockReadsOutsideWorkingDirectories: true },
-        sandbox: {
-          enabled: true,
-          failIfUnavailable: true,
-          autoAllowBashIfSandboxed: true,
-          allowUnsandboxedCommands: false,
-          excludedCommands: [],
-          filesystem: {
-            // Block siblings of every granted workspace (notably arbitrary
-            // /tmp entries), then re-open only the exact run allocation.
-            denyRead: [
-              ...new Set(
-                commandWorkspaces.map((workspace) => dirname(workspace)),
-              ),
-            ],
-            allowRead: commandWorkspaces,
-          },
-        },
-      })
+    ? claudeSandboxSettings(commandWorkspaces)
     : undefined;
   const parameters = {
     mode: spec.role.slice("evaluator-".length),
@@ -176,15 +191,7 @@ Use "blocked", "refused", or "failed" when appropriate, with an optional JSON st
   return [
     "claude",
     "-p",
-    // Safe mode excludes CLAUDE.md, memory, plugins, hooks, skills and other
-    // customizations. Restricted mode confines file tools to declared dirs.
-    // Managed host policy still applies; candidate settings cannot grant access.
-    "--safe-mode",
-    "--restricted",
-    "--disable-slash-commands",
-    "--strict-mcp-config",
-    "--setting-sources",
-    "",
+    ...CLAUDE_PROTECTED_FLAGS,
     ...(sandboxSettings === undefined ? [] : ["--settings", sandboxSettings]),
     "--tools",
     tools.join(","),
@@ -205,5 +212,127 @@ Use "blocked", "refused", or "failed" when appropriate, with an optional JSON st
     system,
     "--",
     `Work target: ${spec.slot.workflow}; phase: ${spec.slot.phase}; attempt: ${spec.slot.methodologyAttempt ?? "none"}.\n${spec.prompt ?? "Perform the allocated work."}`,
+  ];
+}
+
+// Governed execution: one reviewed mapping from Harness contract capabilities
+// to the Claude tool families above. A capability without an entry fails
+// closed; nothing here can widen into unrestricted permission mode or push.
+const GOVERNED_CLAUDE_CAPABILITIES: Readonly<
+  Record<string, readonly string[]>
+> = {
+  "repository-read": ["repository-read"],
+  "repository-write": ["workspace-write"],
+  "local-computation": [
+    "local-computation",
+    "child-process",
+    "test-build-lint-format",
+  ],
+  "git-inspect": ["git-inspect"],
+  "git-commit": ["git-commit"],
+};
+export const GOVERNED_WORKER_TOOL_SERVER = "harness";
+
+export function governedClaudeCapabilities(): readonly string[] {
+  return Object.keys(GOVERNED_CLAUDE_CAPABILITIES);
+}
+
+export function governedClaudePermissions(
+  capabilities: readonly string[],
+  workerOperations: readonly string[],
+): {
+  tools: string[];
+  allowedTools: string[];
+  disallowedTools: string[];
+  permissionMode: "acceptEdits" | "dontAsk";
+  commands: boolean;
+} {
+  const families = new Set<string>();
+  for (const capability of capabilities) {
+    const mapped = GOVERNED_CLAUDE_CAPABILITIES[capability];
+    if (mapped === undefined)
+      throw new Error(
+        `capability ${capability} has no reviewed Claude permission mapping`,
+      );
+    for (const family of mapped) families.add(family);
+  }
+  const { tools, allowedTools } = resolveClaudeCapabilityTools(families, {
+    allowDirectPush: false,
+  });
+  return {
+    tools,
+    allowedTools: [
+      ...allowedTools,
+      ...workerOperations.map(
+        (operation) => `mcp__${GOVERNED_WORKER_TOOL_SERVER}__${operation}`,
+      ),
+    ],
+    // Publication is only ever the host-configured requestAction.
+    disallowedTools: ["Bash(git push)", "Bash(git push *)"],
+    permissionMode: families.has("workspace-write") ? "acceptEdits" : "dontAsk",
+    commands: tools.includes("Bash"),
+  };
+}
+
+export interface GovernedClaudeLaunch {
+  // The first workspace is the provider working directory.
+  readonly workspaces: ReadonlyArray<{ path: string; mode: "read" | "write" }>;
+  readonly capabilities: readonly string[];
+  readonly workerOperations: readonly string[];
+  readonly scratch: string;
+  readonly mcpConfig: string;
+  readonly system: string;
+  readonly prompt: string;
+  readonly model?: string;
+  readonly maxTurns?: number;
+}
+
+export function buildGovernedClaudeCommand(
+  launch: GovernedClaudeLaunch,
+): string[] {
+  const permissions = governedClaudePermissions(
+    launch.capabilities,
+    launch.workerOperations,
+  );
+  const paths = launch.workspaces.map((workspace) => workspace.path);
+  const commandWorkspaces = [...paths, launch.scratch];
+  const readOnly = launch.workspaces
+    .filter((workspace) => workspace.mode === "read")
+    .flatMap((workspace) => [
+      `Edit(/${workspace.path}/**)`,
+      `Write(/${workspace.path}/**)`,
+    ]);
+  return [
+    "claude",
+    "-p",
+    ...CLAUDE_PROTECTED_FLAGS,
+    "--mcp-config",
+    launch.mcpConfig,
+    ...(permissions.commands
+      ? ["--settings", claudeSandboxSettings(commandWorkspaces)]
+      : []),
+    "--tools",
+    permissions.tools.join(","),
+    "--allowedTools",
+    permissions.allowedTools.join(","),
+    "--disallowedTools",
+    [...permissions.disallowedTools, ...readOnly].join(","),
+    "--permission-mode",
+    permissions.permissionMode,
+    "--permission-prompts",
+    "none",
+    "--no-session-persistence",
+    ...commandWorkspaces.slice(1).flatMap((path) => ["--add-dir", path]),
+    ...(launch.model === undefined ? [] : ["--model", launch.model]),
+    ...(launch.maxTurns === undefined
+      ? []
+      : ["--max-turns", String(launch.maxTurns)]),
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--system-prompt",
+    launch.system,
+    "--",
+    launch.prompt,
   ];
 }

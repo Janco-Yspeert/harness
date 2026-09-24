@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "roles": {
+    "smoke-codex": {
+      "contract": "methodology/contracts/smoke-codex.json",
+      "skill": "methodology/skills/smoke-codex.md",
+      "when": { "not": { "event": "codex-smoked" } },
+      "retry": { "dispositions": [], "limit": 0 },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "methodology": { "smoke": "PASS" },
+          "transition": "codex-smoked"
+        }
+      ]
+    },
+    "smoke-claude-promotion": {
+      "contract": "methodology/contracts/smoke-claude-promotion.json",
+      "skill": "methodology/skills/smoke-claude-promotion.md",
+      "when": { "not": { "event": "claude-smoked" } },
+      "retry": { "dispositions": [], "limit": 0 },
+      "onAllocate": {
+        "transition": "smoke-allocated",
+        "fromInputs": { "candidate": "candidate" },
+        "counterField": "attempt"
+      },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "methodology": { "smoke": "PASS" },
+          "transition": "claude-smoked",
+          "requiredActions": ["promotion"]
+        }
+      ]
+    }
+  },
+  "gates": [],
+  "maxAllocations": 4
+}

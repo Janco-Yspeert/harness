@@ -153,6 +153,37 @@ export interface Project {
   >;
   workspaces: Record<string, Workspace>;
   remotes: Record<string, string>;
+  // Root-relative path to this project's append-only trusted methodology
+  // history. New Workflow Execution Grants are denied without it.
+  trustedHistory?: string;
+  // Validator name -> root-relative source path. It defines the validator set
+  // of this project's trusted methodology manifest.
+  validatorSources?: Record<string, string>;
+}
+// Public-safe execution diagnostics. Categories are observations, never
+// semantic results, host actions or canonical transitions.
+export const DIAGNOSTIC_CATEGORIES = [
+  "no-adapter",
+  "provider-not-installed",
+  "provider-config-invalid",
+  "assignment-not-delivered",
+  "permission-denied",
+  "provider-crashed",
+  "missing-result",
+  "result-rejected",
+  "action-omitted",
+  "action-denied",
+  "action-failed",
+  "rate-limited",
+  "provider-error",
+  "cancelled",
+] as const;
+export type DiagnosticCategory = (typeof DIAGNOSTIC_CATEGORIES)[number];
+export interface Diagnostic {
+  schemaVersion: 1;
+  execution: string;
+  category: DiagnosticCategory;
+  detail: string;
 }
 export interface WorkflowGrant {
   schemaVersion: 1;
@@ -225,6 +256,10 @@ export interface ExecutorProfile {
   reasoning?: string;
   usage?: "unavailable" | number;
   cost?: number;
+  // Operational bound on provider turns for registered adapters.
+  maxTurns?: number;
+  // Fixture-only: honoured solely when a profile is passed programmatically
+  // to the host. Production configuration rejects it.
   command?: string[];
 }
 export interface Session {
@@ -297,6 +332,8 @@ export interface Execution {
     "allocated" | "running" | "exited" | "failed" | "cancelled" | "interrupted";
   attention: "working" | "WAITING_FOR_HUMAN" | "terminal";
   failure: string | null;
+  category?: DiagnosticCategory;
+  diagnostics?: Diagnostic[];
   pid: number | null;
   predecessor: string | null;
   result: RoleResult | null;
