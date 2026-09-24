@@ -42,3 +42,54 @@
   counted archived evidence files. That estimate therefore comes from a glob
   listing.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 002 — Design Map
+
+- Skill: `design-map` v3,
+  `sha256:c4f645a2d383ad15173131c72768eca723d7d6a8528b49cd273981d234d559ea`
+  (pinned bytes delivered by Role Grant
+  `sha256:bdc61277a44148d060e28e5e41482981b29983344fb967c3a66b5c236d1cc7e3`,
+  execution `440f5e20-424c-4f6a-bd48-335161ed755c`, workflow
+  `014d-real-methodology-integration-extensible-skill-evolution`).
+- Input: frozen `spike.md`
+  `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`
+  (`brief-frozen` at `047daacb683203bbd3ebb2bd808cff3404e60042`). The
+  identity and committed provenance were verified.
+- Result: succeeded. The map makes shared contracts C1–C9:
+  - C1: trusted authority N;
+  - C2: the promotion plan's path and format;
+  - C3: the promotion action sequence;
+  - C4: the 64-artifact bound stays unchanged;
+  - C5: trust-promotion candidate binding;
+  - C6: orchestrator provenance;
+  - C7: what the deterministic real-skill exercise asserts;
+  - C8: the public evidence location;
+  - C9: the stable context prefix.
+
+  It resolves readiness clarifications M1–M3 within the Design Map's bounded
+  authority. No return to the brief was required.
+- Outputs: `design-map.md`
+  `sha256:f5193434bb20a2500466938305c38e835db7cd19575432af271bce47f3e2ef6f`
+  (1584 words).
+- Repository evidence inspected:
+  - `spike.md`, `feedback.md` and `workflow.jsonl` (the freeze event only);
+  - `methodologies/harness/{policy.json,trusted.jsonl}` and
+    `contracts/evaluator-verify.json`;
+  - `harness.project.json`;
+  - `tools/archive-manifest.ts`;
+  - `src/kernel/trust.ts`;
+  - `ExecutionKernel.promote` in `src/kernel/execution.ts`;
+  - `src/executors/{protocol,governed}.ts`;
+  - `src/methodology-evolution.ts` (`promoteMethodology`, trusted-history
+    types);
+  - `src/methodologies/harness-public.ts`;
+  - the inventory identity in `tools/evaluator-integrity.ts`;
+  - `skills/{evaluator,orchestrator}/SKILL.md`.
+- Restricted evaluator material inspected: none.
+- Checks:
+  - SHA-256 of the input compared against the host-bound identity and the
+    committed `HEAD` blob;
+  - Prettier check of `design-map.md`.
+- Limitations: a sandbox approval restriction blocked a scripted summary of
+  `workflow.jsonl`, so freeze evidence was read directly from its lines.
+- Measurement cutoff: immediately before this manifest update.
