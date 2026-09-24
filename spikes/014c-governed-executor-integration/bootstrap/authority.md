@@ -152,3 +152,50 @@ This pin supersedes Addendum 2's runner pin for future bootstrap allocations.
 The detached host and runner must both be pinned to this exact revision before
 another provider call. Earlier pins and all previous execution records remain
 unchanged.
+
+## Addendum 4 — evaluator-launch diagnostic recovery
+
+Human authorization of 2026-09-24 permits one narrowly bounded operational
+recovery of the independently pinned evaluator launcher. It is not evaluator
+methodology correction, candidate implementation work, a new implementation
+cycle, or authority to modify the frozen brief, Design Map, evaluation revision
+001, trusted methodology, or 014a history. It permits one fresh,
+evaluator-only, non-continuing Workflow Execution Grant with at most one
+allocation after the correction's tests pass.
+
+The three preserved evaluator verification executions
+`ecf45129-8349-4b55-a52a-f8a907629db7`,
+`743a6097-2e47-49bc-980f-7ea8397e5e7d`, and
+`69d4513b-86c8-44af-a0ff-2438eb7a4f4d` all exited 1. The pinned `9d513624…`
+runner retained only the empty stderr field, so its private diagnostic records
+contain `Claude exited with 1:` for each. Although the runner had collected
+stdout in memory, it neither retained it on nonzero exit nor retained its
+deleted scratch workspace. Historical stdout therefore cannot establish an
+authentication, permission, sandbox, configuration, or provider cause.
+
+Comparison against the older working `src/workflow-backend.ts` establishes one
+diagnostic-relevant difference, but not a cause: the backend overlays scratch
+variables on its inherited process environment, while the bootstrap runner
+passes only `PATH` and scratch variables. The evaluator runner's private
+working-directory selection, capability-derived command, restricted settings,
+and sandbox construction come from the same pinned pre-candidate helpers.
+`claude --version` succeeds under the runner's narrow environment, so no
+environment, authentication, or sandbox conclusion is inferred from the
+difference and this recovery does not copy the parent environment.
+
+The authorized correction is `tools/governed-claude-bootstrap.ts` at commit
+`de195fee7ef1b7c68397835f997bc3960bb76d35`. For a nonzero provider exit it
+records only private, bounded, allowlisted metadata: exit code, whether stdout
+and stderr were present, whether stdout was structured JSON, and a recognized
+provider error category/code. It never records raw stdout, stderr, evaluator
+content, credentials, or host/session credentials. Deterministic tests cover a
+structured authentication error and unstructured private-looking output;
+focused tests, typecheck, lint, and targeted formatting checks pass.
+
+The replacement runner is the detached worktree
+`/tmp/harness-014c-bootstrap-executor-de195fe`, pinned to exactly
+`de195fee7ef1b7c68397835f997bc3960bb76d35`. It supersedes Addendum 3 only for
+the single authorized evaluator attempt. The host must use that exact
+repository-owned executable; there is no generated bridge or candidate adapter
+fallback. If the attempt fails, retain its private diagnostic and public-safe
+failure classification, with no automatic retry.
