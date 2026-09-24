@@ -368,3 +368,36 @@
   - The current Harness definition passes the gate.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 010 — Implementation (blocked, repeat)
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`
+  (pinned bytes delivered by Role Grant
+  `sha256:be99b728e0004e200f7ce94600ce3529f5a58be11fa819b3e13980fc964c0195`,
+  assignment `56a18d54-6f3f-453e-9ba3-4a13aa8a7895`, predecessor
+  `234e3308-013d-4ed0-badf-054149edf2c1`; human-authorized 014c bootstrap
+  execution).
+- Inputs: the same frozen `spike.md`, `design-map.md`, `coverage-map.json` and
+  `eval-requirements.md` as Run 009. Working-tree bytes match the host-bound
+  identities. There is no implementation feedback because no
+  `verification-finalized` event exists. Work started on `feat/spike-014` at
+  `33cc2ec2ed9275fcb6fc0c5d9e9cdcc2dd522a44`.
+- Result: **blocked**, for the same reasons as Run 009. This worker was
+  allocated immediately after Run 009 was recorded as blocked, and nothing it
+  depends on has changed:
+  - No human decision record exists. The fixture trust root
+    `fixtures/governed-smoke/methodology/trusted.jsonl` is still absent, and
+    no commit has been made since `33cc2ec`. Design Map §4 forbids the worker
+    from authoring the root, and §7 step 1 requires it before any smoke run.
+  - `claude` is still not on this worker's `PATH`. `codex` is now visible at
+    `/usr/lib/chatgpt/resources/codex`, but the missing trust root blocks the
+    smoke regardless.
+- Outputs: none besides this entry. Implementation checkpoint `098b899` is
+  unchanged. No provider call was made.
+- Required recovery: a human approves the fixture trust root as
+  `smoke-evidence.md` describes. The smoke then runs on a host with both
+  providers available. Reallocating implementation before that happens will
+  block again.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.
