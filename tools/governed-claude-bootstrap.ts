@@ -1,13 +1,10 @@
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { appendFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import {
-  buildClaudeWorkflowCommand,
-  claudeWorkflowDirectory,
-} from "../src/claude-workflow.ts";
+import { buildClaudeWorkflowCommand } from "../src/claude-workflow.ts";
 import { workflowScratchEnvironment } from "../src/workflow-backend.ts";
 import type { ResolvedWorkflowRunSpec } from "../src/workflow-run.ts";
 
@@ -18,8 +15,24 @@ import type { ResolvedWorkflowRunSpec } from "../src/workflow-run.ts";
 // and is selected only by an explicitly named bootstrap profile.
 const WORKFLOW = "014c-governed-executor-integration";
 const MAX_DIAGNOSTIC_BYTES = 8_192;
+const DIAGNOSTIC_ROOT = "/tmp/harness-014c-private/bootstrap-diagnostics";
 
 type Json = Record<string, unknown>;
+
+export function bootstrapPermissionProfile(
+  role: string,
+): "evaluator" | "repo-local-worker" {
+  return role.startsWith("evaluator-") ? "evaluator" : "repo-local-worker";
+}
+
+export function bootstrapWorkspaceSelection(
+  role: string,
+  workspaces: readonly string[],
+): string | undefined {
+  return bootstrapPermissionProfile(role) === "evaluator"
+    ? workspaces[1]
+    : workspaces[0];
+}
 
 function requiredEnvironment(name: string): string {
   const value = process.env[name];
@@ -47,6 +60,33 @@ function bounded(value: string): string {
   return value
     .slice(-MAX_DIAGNOSTIC_BYTES)
     .replaceAll(/(?:Bearer\s+|HARNESS_SESSION_TOKEN=)[^\s"']+/g, "[redacted]");
+}
+
+function recordBootstrapDiagnostic(
+  execution: Json,
+  role: string,
+  phase: "pre-launch" | "provider",
+  error: unknown,
+): void {
+  try {
+    mkdirSync(DIAGNOSTIC_ROOT, { recursive: true, mode: 0o700 });
+    appendFileSync(
+      join(DIAGNOSTIC_ROOT, `${WORKFLOW}.jsonl`),
+      `${JSON.stringify({
+        at: new Date().toISOString(),
+        execution: text(execution.id, "execution id"),
+        role,
+        phase,
+        message: bounded(
+          error instanceof Error ? error.message : String(error),
+        ),
+      })}\n`,
+      { encoding: "utf8", mode: 0o600 },
+    );
+  } catch {
+    // Diagnostic retention must never weaken or replace the governed result
+    // protocol. The host will still record a failed process when launch fails.
+  }
 }
 
 async function request(
@@ -122,7 +162,6 @@ function bootstrapSpec(
   role: string,
   grant: Json,
   skill: Json,
-  contract: Json,
 ): ResolvedWorkflowRunSpec {
   const workspaces = grant.workspaces;
   if (!Array.isArray(workspaces) || workspaces.length === 0)
@@ -153,7 +192,7 @@ function bootstrapSpec(
     invocationMode: "delegated",
     workspaces: paths,
     permissionProfile: {
-      id: "evaluator",
+      id: bootstrapPermissionProfile(role),
       workspaces: paths,
       capabilities: [...translated],
     },
@@ -231,29 +270,33 @@ async function main(): Promise<void> {
     text(skill.identity, "skill identity")
   )
     throw new Error("pinned skill identity mismatch");
-  const spec = bootstrapSpec(role, grant, skill, contract);
-  const launchWorkspace = claudeWorkflowDirectory(spec);
-  if (launchWorkspace === undefined)
-    throw new Error("assignment has no launch workspace");
+  const spec = bootstrapSpec(role, grant, skill);
+  const launchWorkspace = bootstrapWorkspaceSelection(role, spec.workspaces);
+  if (launchWorkspace === undefined) {
+    const error = new Error("assignment has no launch workspace");
+    recordBootstrapDiagnostic(execution, role, "pre-launch", error);
+    throw error;
+  }
   const scratch = mkdtempSync(join(tmpdir(), "harness-014c-bootstrap-"));
   mkdirSync(join(scratch, "cache"));
   mkdirSync(join(scratch, "npm-cache"));
-  const command = [...buildClaudeWorkflowCommand(spec, "", scratch)];
-  const systemIndex = command.indexOf("--system-prompt");
-  const markerIndex = command.indexOf("--");
-  if (systemIndex < 0 || markerIndex < 0)
-    throw new Error("Claude bootstrap command is malformed");
-  command[systemIndex + 1] = systemPrompt(execution, grant, skill, contract);
-  command.splice(
-    markerIndex,
-    0,
-    "--output-format",
-    "json",
-    "--json-schema",
-    JSON.stringify(resultSchema(contract)),
-  );
-  const [program, ...args] = command;
+  let providerStarted = false;
   try {
+    const command = [...buildClaudeWorkflowCommand(spec, "", scratch)];
+    const systemIndex = command.indexOf("--system-prompt");
+    const markerIndex = command.indexOf("--");
+    if (systemIndex < 0 || markerIndex < 0)
+      throw new Error("Claude bootstrap command is malformed");
+    command[systemIndex + 1] = systemPrompt(execution, grant, skill, contract);
+    command.splice(
+      markerIndex,
+      0,
+      "--output-format",
+      "json",
+      "--json-schema",
+      JSON.stringify(resultSchema(contract)),
+    );
+    const [program, ...args] = command;
     const child = spawn(text(program, "provider program"), args, {
       cwd: launchWorkspace,
       stdio: ["ignore", "pipe", "pipe"],
@@ -262,6 +305,7 @@ async function main(): Promise<void> {
         ...workflowScratchEnvironment(scratch),
       },
     });
+    providerStarted = true;
     let stdout = "";
     let stderr = "";
     child.stdout.setEncoding("utf8");
@@ -286,14 +330,24 @@ async function main(): Promise<void> {
         methodology,
       },
     );
+  } catch (error) {
+    recordBootstrapDiagnostic(
+      execution,
+      role,
+      providerStarted ? "provider" : "pre-launch",
+      error,
+    );
+    throw error;
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
 }
 
-void main().catch((error: unknown) => {
-  process.stderr.write(
-    `${bounded(error instanceof Error ? error.message : String(error))}\n`,
-  );
-  process.exitCode = 1;
-});
+if (import.meta.main) {
+  void main().catch((error: unknown) => {
+    process.stderr.write(
+      `${bounded(error instanceof Error ? error.message : String(error))}\n`,
+    );
+    process.exitCode = 1;
+  });
+}
