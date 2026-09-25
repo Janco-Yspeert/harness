@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "attempt": "004",
+  "allocationKey": "sha256:3d6432a225d92b3c3978c28bb1bb0fb7439a76a0b0825d5d2c5af529c96ab181",
+  "execution": "37ea25ba-f832-4215-8815-eed9372efcdd",
+  "roleGrant": "sha256:c48afa1bf3908c5cce4facc8563e0066368cb4443af32c13c09c41b685ad7747",
+  "commit": "0e2789c4e2040a3bafb6d173506f65be66d44956",
+  "evaluatorRevision": "002",
+  "evaluatorRevisionIdentity": "sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319",
+  "inputs": {
+    "brief": "sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d",
+    "design": "sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e",
+    "evaluationRequirements": "sha256:c47e49c8c478ff4c77fdf908eb8105d9c2d7ce6c728f9d594af845054d88691a",
+    "coverage": "sha256:a7abb9d197d50154c113fc9a6f85b639fdbce1c1cd912d15ff6990e05e8c349b"
+  },
+  "result": "FAIL",
+  "classification": "IMPLEMENTATION_FAILURE",
+  "coverageResults": {
+    "AC01": "NOT_ADJUDICATED",
+    "AC02": "NOT_SATISFIED",
+    "AC03": "NOT_SATISFIED",
+    "AC04": "NOT_SATISFIED",
+    "AC05": "NOT_SATISFIED",
+    "AC06": "NOT_SATISFIED",
+    "AC07": "NOT_ADJUDICATED",
+    "AC08": "NOT_ADJUDICATED",
+    "AC09": "NOT_ADJUDICATED",
+    "AC10": "NOT_ADJUDICATED",
+    "AC11": "NOT_ADJUDICATED",
+    "AC12": "NOT_ADJUDICATED",
+    "AC13": "NOT_SATISFIED"
+  },
+  "accounting": {
+    "criteria": 13,
+    "satisfied": 0,
+    "notSatisfied": 6,
+    "notAdjudicated": 7,
+    "procedures": 12,
+    "executableCases": 11,
+    "executablePassed": 11,
+    "failedProcedures": ["M-LIVE", "M-ORCH"],
+    "reasonNotAdjudicated": "This attempt re-verified the unchanged candidate that attempt 001 failed. It was already a terminal FAIL on required committed evidence. The remaining manual-review items were spot-checked without finding a violation, but they were not adjudicated to decision depth and are not reported as passes."
+  },
+  "regression": {
+    "command": "npm run check",
+    "environment": "clean clone of the candidate; provider credentials absent; offline",
+    "exit": 0,
+    "tests": 173,
+    "passed": 173
+  },
+  "priorAttempts": {
+    "001": "FAIL IMPLEMENTATION_FAILURE on the same candidate; its execution ended at the provider rate limit before its public checkpoint",
+    "002": "host allocation ended at the provider rate limit before evaluation began; no result",
+    "003": "host allocation ended at the provider rate limit before evaluation began; no result"
+  },
+  "requirement": "EA1 with AC02, AC03, AC05, AC13 and the C4 bound record (AC06). Claims about real providers, the AC05 candidate-evaluator fixture and the observed orchestrator must come from committed evidence of real governed runs. Missing or unproven runs never become PASS.",
+  "expected": "The candidate commit carries committed evidence of: (1) at least one real public role run through a production registered adapter from a gated Role Grant; (2) the candidate evaluator run as an isolated AC05 fixture subject with its own trust root, where the host promotion action returned succeeded, created promotion.json and recorded promotion-recorded, and the promotionPlan identity recomputes; (3) the AC05 fixture's archive mapping count recorded against B; (4) an observed, bounded orchestrator test-subject run showing default governed-workflow selection, multi-phase continuation under one grant, a preserved human gate, read-only behaviour, stop behaviour and blocker reporting, and recording its instruction identity, runtime version and model.",
+  "observed": "The candidate is unchanged since attempt 001. evidence/real-provider-runs.md is still marked OUTSTANDING and records all three required runs as 'not run'. evidence/promotion-bound.md still records the AC05 fixture manifest count as 'not yet run'. The candidate commit contains no other evidence of a real run, a fixture promotion or an observed orchestrator.",
+  "diagnostics": "All executable evaluation passed, and so did the offline regression. The handoff is truthful and fabricates nothing. Re-verifying this same commit cannot change the result. A new implementation handoff must commit the governed real-run evidence and fill in the outstanding records, running them only through the governed host as directed by canonical human response b90a79da-738b-4df5-ac8b-e1e65c589a1a. Where the retry presents candidate/check/diff evidence for its exact candidate commit against trusted N, it should point to that evidence explicitly."
+}

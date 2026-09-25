@@ -364,3 +364,34 @@
   - Sandbox approval restrictions blocked several compound shell forms and a
     scratch-worktree commit. Equivalent direct commands were used.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 007 — Evaluator Verify (attempt 004)
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`
+  (pinned bytes delivered by Role Grant
+  `sha256:c48afa1bf3908c5cce4facc8563e0066368cb4443af32c13c09c41b685ad7747`,
+  execution `37ea25ba-f832-4215-8815-eed9372efcdd`), mode `verify`, under
+  trusted N (kernel definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Allocation: host attempt 4, cycle `001`. Earlier attempts:
+  - attempt 1 reached a private FAIL, but its public checkpoint was lost to a
+    provider rate limit;
+  - attempts 2 and 3 ended at the rate limit before evaluation.
+- Candidate: `0e2789c4e2040a3bafb6d173506f65be66d44956`, evaluated from a clean
+  clone. This is the same candidate as attempt 1.
+- Evaluator revision `002`,
+  `sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319`.
+  All frozen public and private identities were recomputed and match. There
+  is no drift.
+- Result: **FAIL**, classification `IMPLEMENTATION_FAILURE`.
+  - Executable cases passed 11 of 11.
+  - `npm run check` on a clean offline clone exited 0, with 173 of 173 tests
+    passing.
+  - The required committed evidence (EA1) is absent: the real-provider role
+    run, the AC05 candidate-evaluator fixture promotion and the observed
+    orchestrator run. The C4 fixture count is also absent.
+  - Criteria: 6 not satisfied and 7 not adjudicated.
+- Public artifacts: `verification-result.json` and `verification-feedback.md`.
+- Host actions requested: none. There is no promotion after FAIL.
+- Measurement cutoff: immediately before this manifest update.
