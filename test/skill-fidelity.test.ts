@@ -424,7 +424,10 @@ function scripts(
       submit(),
     ],
     "evaluator-verify": verifySteps([["001", "PASS"]]),
+    // The host writes evaluation/promotion.json but leaves it untracked;
+    // As-Built commits exactly that file before its own checkpoint.
     "as-built": [
+      commit("promotion", "evaluation/promotion.json"),
       pub("as-built.md", "# As-Built\n\nNo discrepancies.\n"),
       pub("manifest.md", "# Manifest\n\nas-built\n"),
       commit("as-built", "as-built.md", "manifest.md"),
@@ -886,6 +889,46 @@ void test("014d AC01/AC03/AC05-scripted: one bounded grant carries all eight rea
     identity: identity(planBytes),
     decision: "ELIGIBLE",
   });
+  // As-Built committed the host's promotion record alone, byte-identical to
+  // the bound promotion identity, before its own checkpoint. The other
+  // promoted files stay as the host left them.
+  const promotionPath = `${DIR}/evaluation/promotion.json`;
+  const promotionCommits = git(h.root, [
+    "log",
+    "--format=%H",
+    "--",
+    promotionPath,
+  ]).split("\n");
+  assert.equal(promotionCommits.length, 1);
+  const [promotionCommit = ""] = promotionCommits;
+  assert.equal(
+    git(h.root, ["show", "--name-only", "--format=", promotionCommit]),
+    promotionPath,
+  );
+  assert.equal(
+    identity(
+      execFileSync("git", ["show", `${promotionCommit}:${promotionPath}`], {
+        cwd: h.root,
+      }),
+    ),
+    promotion.evidence.promotionIdentity,
+  );
+  assert.deepEqual(git(h.root, ["ls-files", `${DIR}/evaluation`]).split("\n"), [
+    promotionPath,
+  ]);
+  const asBuiltEvent = last(events, "as-built-recorded");
+  const asBuiltCommit = (asBuiltEvent.evidence.artifactCommit ??
+    asBuiltEvent.evidence.commit) as string;
+  assert.equal(
+    git(h.root, ["rev-parse", `${asBuiltCommit}~1`]),
+    promotionCommit,
+  );
+  assert.deepEqual(
+    git(h.root, ["show", "--name-only", "--format=", asBuiltCommit])
+      .split("\n")
+      .sort(),
+    [`${DIR}/as-built.md`, `${DIR}/manifest.md`],
+  );
 
   // The human decision is separate; Outcome follows it under the same grant.
   const accepted = await h.api<object>("decisions", {
@@ -1110,6 +1153,65 @@ void test("014d AC06: a mutated source fails, and duplicate delivery never creat
     String(record?.results?.find((result) => result.refused)?.refused),
     /changed after planning/,
   );
+});
+
+void test("014d AC07: As-Built commits only the validated host promotion record, and a missing or mismatched record stays blocked", async (t) => {
+  // The candidate As-Built instructions carry the repaired rule.
+  const skill = readFileSync("skills/as-built/SKILL.md", "utf8").replaceAll(
+    /\s+/g,
+    " ",
+  );
+  for (const rule of [
+    "does not commit that file",
+    "must equal the `sha256` of the bytes in `<spike>/evaluation/promotion.json`",
+    "If the file is missing, or its identity differs from the bound promotion identity, stop and submit `blocked`",
+    "If the identities match and the file is untracked, commit it yourself",
+    "Stage only `<spike>/evaluation/promotion.json` with plain `git add -- <path>`",
+    "`git diff --cached --name-only`",
+    "Run each Git command on its own",
+    "That promotion commit is a separate checkpoint",
+  ])
+    assert.ok(skill.includes(rule), rule);
+
+  // Scripted blocked path: the worker finds no matching record and submits
+  // `blocked` without committing anything.
+  const h = await harness(t, scripts({ "as-built": [submit({}, "blocked")] }));
+  const grant = await h.grant();
+  await h.start(grant.id);
+  const events = h.ledger();
+  const promotion = last(events, "promotion-recorded");
+  assert.ok(!events.some((event) => event.transition === "as-built-recorded"));
+  assert.equal(
+    events.filter((event) => event.transition === "kernel.result").at(-1)
+      ?.evidence.disposition,
+    "blocked",
+  );
+  // The host's record is untouched and still untracked; nothing was staged.
+  const promotionPath = join(h.root, DIR, "evaluation", "promotion.json");
+  assert.equal(
+    identity(readFileSync(promotionPath)),
+    promotion.evidence.promotionIdentity,
+  );
+  assert.equal(git(h.root, ["ls-files", `${DIR}/evaluation`]), "");
+  assert.equal(git(h.root, ["diff", "--cached", "--name-only"]), "");
+  // Without As-Built there is no ordinary acceptance and no Outcome.
+  const handoff = last(events, "implementation-handoff");
+  const refused = await h.api<object>("decisions", {
+    workflowGrant: grant.id,
+    decision: "accept",
+    evidence: {
+      candidate: handoff.evidence.commit,
+      verification: last(events, "verification-finalized").evidence
+        .semanticResult,
+      promotion: promotion.evidence.promotionIdentity,
+      cycle: "001",
+    },
+  });
+  assert.notEqual(refused.status, 201);
+  const outcome = await h.api<{ kind: string }>(
+    `resolve/${grant.id}?role=outcome`,
+  );
+  assert.notEqual(outcome.value.kind, "grant");
 });
 
 void test("014d AC07: evaluator repair needs its exact trigger, preserves revision and attempt lineage, and archives the full history", async (t) => {

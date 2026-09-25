@@ -395,3 +395,86 @@
 - Public artifacts: `verification-result.json` and `verification-feedback.md`.
 - Host actions requested: none. There is no promotion after FAIL.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 008 — Implementation (retry: promotion-to-As-Built repair)
+
+- Skill: `implementation` contract version 4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`
+  (pinned bytes from Role Grant
+  `sha256:e2a7f7907dab3eab502eb96729b0e10b4462eb689092e0ba220ecd9a5a270db4`,
+  execution `803512fd-879a-467a-9020-0bfb67186d6c`), under trusted N
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`.
+- Authority: human root `e3cf32b7-3940-4d77-855e-c4813aa84e5d`, which allows
+  one bounded promotion-to-As-Built repair and excludes R3. The scope was set
+  by canonical human response `f8d9bf62-0612-4189-98aa-dfbb16584a23` to
+  request `3639624d-15aa-4603-8067-8bb6fe0e7cf7`.
+- Inputs, all recomputed and matching:
+  - `spike.md`
+    `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`;
+  - `design-map.md`
+    `sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e`;
+  - `coverage-map.json`
+    `sha256:a7abb9d197d50154c113fc9a6f85b639fdbce1c1cd912d15ff6990e05e8c349b`;
+  - `eval-requirements.md`
+    `sha256:c47e49c8c478ff4c77fdf908eb8105d9c2d7ce6c728f9d594af845054d88691a`;
+  - implementation feedback `verification-result.json`
+    `sha256:5da738d9f473958f5eea72d7df4e9692a9604030e8a01bd7b27750ae62de3820`
+    (`IMPLEMENTATION_FAILURE`, committed in `0c6500a`).
+
+  The base is `HEAD` `0c6500a`.
+- Diagnosis, from the human response: the host's promotion action writes
+  `evaluation/promotion.json` and records `promotion-recorded`, but it does
+  not commit the file. Candidate As-Built v4 required an already-committed
+  file, so it blocked.
+- Changes:
+  - `skills/as-built/SKILL.md` (candidate v4, not yet trusted; identity now
+    `sha256:dc3c422691fb36a292b49db411ff9aefd5199f8602b73ef87428fd0a09ea534b`):
+    - As-Built checks that the host file's identity equals the bound
+      promotion identity.
+    - If the file is missing or does not match, the result stays `blocked`.
+    - If it matches and is already committed, it is used as is.
+    - If it matches and is untracked, As-Built stages only that path with
+      simple individual Git commands and commits it as a separate checkpoint.
+      The ordinary `as-built.md` and `manifest.md` checkpoint follows.
+  - `test/skill-fidelity.test.ts`:
+    - The scripted As-Built path now commits the promotion record first.
+    - The end-to-end test checks four things. The promotion commit contains
+      only `evaluation/promotion.json`. The committed bytes match
+      `promotionIdentity`. The other promoted files stay untracked. The
+      As-Built checkpoint directly follows the promotion commit. The existing
+      human-gate acceptance then leads to `outcome-recorded`.
+    - A new test covers the repaired skill wording and the blocked path. In
+      that path there is no `as-built-recorded`, the host file is unchanged
+      and untracked, nothing is staged, acceptance is refused and no Outcome
+      grant is issued.
+  - Evidence: the As-Built row and a repair note in
+    `evidence/real-provider-runs.md`, and the As-Built row in
+    `evidence/fidelity-matrix.md`.
+  - Unchanged: the host, provider profiles, evaluator authority, fixture
+    evidence and R3.
+- Result: **succeeded** for this bounded repair. The real-provider proofs R1,
+  R2 and R3 (AC02, AC03, AC05 and AC13, plus the C4 fixture count) remain
+  **outstanding**. None is imported, claimed or fabricated here.
+- Candidate content: 4 paths plus this manifest; 134 insertions and 8
+  deletions before this entry.
+- Checks, on the working tree:
+  - `tsc --noEmit` passes.
+  - ESLint passes.
+  - Prettier passes for this repair's files.
+  - `node --test test/skill-fidelity.test.ts`: 12 of 12 pass.
+  - `npm test`: 174 of 174 pass.
+- Checks not run cleanly:
+  - `prettier --check .` cannot read root sandbox placeholder files.
+  - The working tree also holds the uncommitted, separately authorized
+    host-maintenance-003 change (`src/kernel/{execution,resolver}.ts`,
+    `test/kernel.test.ts`, `host-maintenance-003.md`). It is left unstaged and
+    untouched. It causes the only working-tree Prettier warning
+    (`test/kernel.test.ts`).
+  - A clean detached worktree of the first checkpoint of this content, before
+    this correction to the entry, passed on its own: `tsc --noEmit`,
+    `eslint .`, `prettier --check .` and `node --test test/*.test.ts` with 174
+    of 174 tests. The new As-Built test accounts for the change from the
+    previous 173 tests.
+  - No start baseline was captured.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.

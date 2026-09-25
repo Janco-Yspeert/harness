@@ -47,9 +47,26 @@ different semantic result.
 Under Harness, read the pinned Role Grant with the `assignment` tool. It binds
 the exact candidate commit, the verification result and the host's
 `promotion-recorded` identity; As-Built is allocated only after those canonical
-prerequisites exist. If the bound promotion identity does not resolve to the
-committed `evaluation/promotion.json`, stop and submit `blocked` rather than
-describing an unverified archive. After the local checkpoint containing
-`as-built.md` and `manifest.md` exists, submit exactly one typed result with
-`submitResult`: disposition `succeeded` with empty methodology `{}`. This role
-requests no host action.
+prerequisites exist.
+
+The host's promotion action writes `<spike>/evaluation/promotion.json` and
+records `promotion-recorded`, but it does not commit that file. Before
+reconstructing anything, validate the host record. The bound promotion identity
+must equal the `sha256` of the bytes in `<spike>/evaluation/promotion.json`.
+
+- If the file is missing, or its identity differs from the bound promotion
+  identity, stop and submit `blocked`. Do not describe an unverified archive.
+- If the identities match and the file is already committed with exactly those
+  bytes, use it as is.
+- If the identities match and the file is untracked, commit it yourself. Stage
+  only `<spike>/evaluation/promotion.json` with plain `git add -- <path>`, check
+  with `git diff --cached --name-only` that nothing else is staged, and commit
+  it with `git commit`. Run each Git command on its own. Do not stage other
+  promoted files, rewrite the file, or use a command that stages paths
+  implicitly.
+
+That promotion commit is a separate checkpoint. After it, make the ordinary
+`as-built.md` and `manifest.md` checkpoint described above. After that local
+checkpoint exists, submit exactly one typed result with `submitResult`:
+disposition `succeeded` with empty methodology `{}`. This role requests no host
+action.

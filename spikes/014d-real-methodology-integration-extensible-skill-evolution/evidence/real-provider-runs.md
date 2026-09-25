@@ -28,13 +28,20 @@ that contains this file:
 | Brief Readiness | `skills/brief-readiness/SKILL.md` | 5 | `439432d11abaf318ccddb7219c69baaf8052446dccad0887f50ce3b0e18fdc2c` |
 | Design Map | `skills/design-map/SKILL.md` | 4 | `238af12bbee012a784f234f2aaab9d4e783a58ec1b7c0257937bc54a16010136` |
 | Implementation | `skills/implementation/SKILL.md` | 5 | `8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8` |
-| As-Built | `skills/as-built/SKILL.md` | 4 | `9b26849ad3dd83655f92cc1000af8eb7928ec654fccabf0fc76aa346a2a305d8` |
+| As-Built | `skills/as-built/SKILL.md` | 4 | `dc3c422691fb36a292b49db411ff9aefd5199f8602b73ef87428fd0a09ea534b` |
 | Outcome | `skills/outcome/SKILL.md` | 5 | `2ab64cee141d06a88ff04dc540ddfa7a15c364e07bb717b7fab70c15460b7e82` |
 
 Identify each one as `git:<handoff-commit>:<path>`. The orchestrator
 identity observed in `host-maintenance-001.md` (`sha256:88995416…`) was an
 earlier working-tree state. This implementation superseded it by adding the
 C6 acceptance and run-evidence wording.
+
+The As-Built identity changed in the promotion-to-As-Built repair. The
+earlier candidate bytes were `sha256:9b26849a…`. They required an
+already-committed `evaluation/promotion.json`, but the host's promotion action
+leaves that file untracked. The repaired contract, still version 4 and not yet
+trusted, has As-Built validate the file and commit it alone. No run evidence
+from the earlier bytes is imported or claimed here.
 
 ## Required runs and the fields each record must contain
 
