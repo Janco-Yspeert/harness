@@ -209,3 +209,72 @@
     nor used as authority, including `tools/archive-manifest.ts`, `src/**` and
     `skills/**`. They are excluded from this checkpoint.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 005 — Evaluator Prepare (after pre-implementation recovery)
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`
+  (pinned bytes delivered by Role Grant
+  `sha256:2c588152332ec5091d6b07e211d7ca3c56a8fd5db8567b331756ba63245527bd`,
+  execution `1f5d8020-262c-499e-a651-cace0b9af4c9`, workflow
+  `014d-real-methodology-integration-extensible-skill-evolution`), mode
+  `prepare`, under trusted N (kernel definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Context: recovery `d86c645e-d06c-4717-906e-439c0dfb7d83` invalidated the Run
+  003 evaluator revision `001` together with its Design Map. Revision `001` is
+  preserved privately, unchanged. It was never used by a verification attempt.
+- Inputs:
+  - frozen `spike.md`
+    `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`
+    (committed at `047daac`);
+  - frozen `design-map.md`
+    `sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e`
+    (committed at `a429ecd`).
+
+  Both working-tree and committed bytes match the host-bound identities. The
+  pre-implementation baseline is `a429ecd`.
+- Result: **succeeded**.
+  - Private evaluator revision `002` is frozen with identity
+    `sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319`.
+  - The pre-freeze integrity validation passed with 0 diagnostics.
+  - Every executable case passed under controlled compliant conditions and
+    failed, for its intended reason, under controlled non-compliant
+    conditions. All controls ran in disposable clones of the committed
+    baseline. No candidate implementation existed or was executed.
+- Changes from revision `001` follow only the replacement Design Map:
+  - C4: one artifact bound B, the B + 1 oversized case, and the
+    representative-archive record;
+  - C6: orchestrator identity and history, test-subject-only use, and no place
+    in trusted methodology;
+  - C7: deterministic evidence never replaces the real proofs.
+- Outputs:
+  - `eval-requirements.md`
+    `sha256:c47e49c8c478ff4c77fdf908eb8105d9c2d7ce6c728f9d594af845054d88691a`.
+    It has 8 testability requirements (TR7 and TR8 are new), 6 evaluator
+    assumptions and no blocking questions.
+  - `coverage-map.json`
+    `sha256:a7abb9d197d50154c113fc9a6f85b639fdbce1c1cd912d15ff6990e05e8c349b`.
+    It has 13 criterion records (AC01–AC13) and a readiness attestation
+    `integrityValidation: PASS`, with private inventory
+    `sha256:3b53050650f05741cb3ef745a7e23be54d8d5e8126c8439a7bba4d85ddb3d484`
+    and validator result binding
+    `sha256:24b66965dd4e286abcef876bc411e08311e1e0cb605e311060ce75b1e58f8de0`.
+- Safe aggregates:
+  - 12 evidence procedures: 6 executable, plus public regression, fidelity
+    matrix, live evidence, orchestrator review, code review and
+    methodology-evolution evidence.
+  - 52 mandatory cases, 11 of them executable.
+- Checks:
+  - The repository's `prepared-coverage` validator (`validatePreparedMap`, at
+    the committed baseline) accepts `coverage-map.json`.
+  - Prettier checks pass for both public artifacts.
+  - Both public artifacts were scanned for private paths, file names or case
+    names; none found.
+- Restricted evaluator material disclosed: none.
+- Limitations:
+  - Sandbox approval restrictions blocked some compound shell forms.
+    Equivalent direct commands were used, and the evaluation substance was
+    unaffected.
+  - The working tree contains uncommitted changes that this role neither made
+    nor evaluated. They are excluded from this checkpoint.
+- Measurement cutoff: immediately before this manifest update.
