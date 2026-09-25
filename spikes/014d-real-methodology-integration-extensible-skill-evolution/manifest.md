@@ -144,3 +144,68 @@
   forms. Equivalent direct commands were used, and the evaluation substance
   was unaffected.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 004 — Design Map (after pre-implementation recovery)
+
+- Skill: `design-map` v3,
+  `sha256:c4f645a2d383ad15173131c72768eca723d7d6a8528b49cd273981d234d559ea`
+  (pinned bytes delivered by Role Grant
+  `sha256:ce97ba44520aadcd518a90f46a41be68afbd75c5a8d5446f412b811a71cc04f1`,
+  execution `d0231f1e-3464-45cf-be8c-448e9ed069d2`, Workflow Grant
+  `f5807562-c7e1-4aed-8ba6-6f5cf6d3ef0b`, workflow
+  `014d-real-methodology-integration-extensible-skill-evolution`), under
+  trusted N (kernel definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Context: recovery `d86c645e-d06c-4717-906e-439c0dfb7d83` invalidated the Run
+  002 Design Map and the dependent Run 003 Evaluator Prepare. Both entries above
+  are preserved as history and are no longer current authority.
+- Input: frozen `spike.md`
+  `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`
+  (`brief-frozen` at `047daacb683203bbd3ebb2bd808cff3404e60042`). The identity
+  and committed provenance were verified at that freeze commit and at `HEAD`
+  `d6f48374be1361c0d01e377147e9a1ffc7abce4c`.
+- Result: **succeeded**. The map makes shared contracts C1–C9, the same set as
+  the invalidated map. Changes:
+  - C4, C6 and C7 now apply the canonical human response
+    `8545a0d6-a5ba-4943-bb20-e334ec356a56` to request
+    `680fdfec-ce7f-4069-9753-309b11a25d86`:
+    - C4: the promotion artifact bound is now a single exported definition B.
+      It stays 64 only if representative complete evaluator archives fit
+      without truncation; otherwise that one definition is raised. There is
+      still no split, bundling or truncation.
+    - C6: the orchestrator stays outside trusted methodology and is a test
+      subject only. It is adopted with N+1 only after final human acceptance.
+      Its exact runtime and instruction identity are recorded; the runtime
+      list was removed.
+    - C7: deterministic checks support AC01 but do not replace real-role or
+      real-provider integration evidence.
+  - C1 and C8 have small clarifications.
+
+  No return to the brief was required.
+- Outputs: `design-map.md`
+  `sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e`
+  (1791 words).
+- Repository evidence inspected:
+  - `spike.md`, the invalidated `design-map.md`, `manifest.md`, and
+    `host-maintenance-00{1,2}.md`;
+  - the `workflow.jsonl` freeze, human-request, human-response, recovery and
+    grant events;
+  - `methodologies/harness/trusted.jsonl`;
+  - `src/executors/protocol.ts` and `tools/archive-manifest.ts` at `HEAD`;
+  - `git ls-files` counts of every committed `spikes/*/evaluation/` archive.
+    The largest are 38 files (005) and 34 files (013a).
+- Restricted evaluator material inspected: none.
+- Checks:
+  - SHA-256 of the input compared against the host-bound identity and the
+    committed blobs;
+  - Prettier check of `design-map.md`.
+- Limitations:
+  - The size of this spike's own private evaluator archive cannot be seen from
+    the public role, so C4 turns the human's retention condition into required
+    evidence rather than asserting it.
+  - A sandbox approval restriction blocked one shell loop that counted archive
+    files. An equivalent `git ls-files | uniq -c` was used instead.
+  - The working tree contains uncommitted changes that this role neither made
+    nor used as authority, including `tools/archive-manifest.ts`, `src/**` and
+    `skills/**`. They are excluded from this checkpoint.
+- Measurement cutoff: immediately before this manifest update.
