@@ -1556,6 +1556,176 @@ void test("TR8/TR10: duplicate retry survives its bound, one-shot root grants ca
   assert.equal(f.kernel.inspect(f.workflow, parent.id, "produce").kind, "stop");
 });
 
+void test("pre-implementation recovery revokes a prematurely advanced grant and reopens Design Map after restart", async (t) => {
+  const f = fixture(t, "preimplementation-recovery");
+  const item = join(f.root, "items", f.workflow);
+  const role = (inputs: RoleContract["inputs"]): RoleContract => ({
+    ...f.contract,
+    inputs,
+  });
+  const brief = role([
+    { name: "brief", event: "brief-frozen", committed: true },
+  ]);
+  const design = role([
+    { name: "brief", event: "brief-frozen", committed: true },
+    { name: "design", event: "design-map-frozen", committed: true },
+  ]);
+  const coverage = role([
+    { name: "coverage", event: "evaluation-prepared", committed: true },
+  ]);
+  json(join(f.root, "contracts/design-map.json"), brief);
+  json(join(f.root, "contracts/evaluator-prepare.json"), design);
+  json(join(f.root, "contracts/implementation.json"), coverage);
+  f.policy.roles = {
+    "design-map": {
+      contract: "contracts/design-map.json",
+      skill: "skills/produce.md",
+      when: { not: { event: "design-map-frozen" } },
+      retry: { dispositions: ["failed", "interrupted"], limit: 1 },
+      outcomes: [{ disposition: "succeeded", transition: "design-map-frozen" }],
+    },
+    "evaluator-prepare": {
+      contract: "contracts/evaluator-prepare.json",
+      skill: "skills/produce.md",
+      when: {
+        all: [
+          { event: "design-map-frozen" },
+          { not: { event: "evaluation-prepared" } },
+        ],
+      },
+      retry: { dispositions: ["failed", "interrupted"], limit: 1 },
+      outcomes: [
+        { disposition: "succeeded", transition: "evaluation-prepared" },
+      ],
+    },
+    implementation: {
+      contract: "contracts/implementation.json",
+      skill: "skills/produce.md",
+      when: { event: "evaluation-prepared" },
+      retry: { dispositions: ["failed", "interrupted"], limit: 1 },
+      outcomes: [{ disposition: "succeeded", transition: "implemented" }],
+    },
+  };
+  json(join(f.root, "policy.json"), f.policy);
+  f.trust();
+  writeFileSync(join(item, "spike.md"), "frozen brief\n");
+  writeFileSync(join(item, "design-map.md"), "premature map\n");
+  writeFileSync(join(item, "coverage-map.json"), '{"prepared":true}\n');
+  git(f.root, [
+    "add",
+    "--",
+    `items/${f.workflow}/spike.md`,
+    `items/${f.workflow}/design-map.md`,
+    `items/${f.workflow}/coverage-map.json`,
+  ]);
+  git(f.root, ["commit", "-qm", "recovery fixture artifacts"]);
+  const commit = git(f.root, ["rev-parse", "HEAD"]);
+  const artifact = (path: string) => ({
+    commit,
+    path,
+    identity: identity(readFileSync(join(item, path))),
+  });
+  f.event("brief-frozen", artifact("spike.md"));
+  const frozenDesign = f.event("design-map-frozen", {
+    ...artifact("design-map.md"),
+    execution: "premature-design-map",
+    roleGrant: "premature-design-grant",
+    semanticResult: "premature-design-result",
+  });
+  const prepared = f.event("evaluation-prepared", {
+    ...artifact("coverage-map.json"),
+    execution: "premature-evaluator-prepare",
+    roleGrant: "premature-evaluator-grant",
+    semanticResult: "premature-evaluator-result",
+    inputs: { design: artifact("design-map.md").identity },
+  });
+  // This is the late answer that the old host formerly routed around.
+  f.event("kernel.human-request", {
+    id: "late-human-request",
+    execution: "failed-design-map-retry",
+  });
+  f.event("kernel.process", {
+    execution: "failed-design-map-retry",
+    update: { process: "failed", attention: "terminal" },
+  });
+  f.event("kernel.human-response", {
+    request: "late-human-request",
+    response: { id: "late-human-response", value: "qualified answer" },
+  });
+  const old = f.authorize();
+  const before = f.kernel.inspect(f.workflow, old.id);
+  if (before.kind !== "grant") assert.fail(JSON.stringify(before));
+  assert.equal(before.grant.role, "implementation");
+
+  const recoveryHost = await startHarnessHost(0, {
+    governed: { project: f.project, executors: profiles, rootToken },
+  });
+  const recovered = await api<{
+    authority: {
+      invalidated: Array<{ event: string }>;
+      dependencies: Array<{
+        from: string;
+        to: string;
+        kind: string;
+        identity: string;
+      }>;
+    };
+    grant: WorkflowGrant;
+  }>(recoveryHost.url, "preimplementation-recovery", {
+    workflowGrant: old.id,
+    designMapEvent: required(frozenDesign.id),
+    evaluationPreparedEvent: required(prepared.id),
+    reason: "late human answer invalidated the prematurely advanced map",
+  });
+  await recoveryHost.close();
+  assert.deepEqual(
+    recovered.authority.invalidated.map((entry) => entry.event),
+    [frozenDesign.id, prepared.id],
+  );
+  assert.deepEqual(recovered.authority.dependencies, [
+    {
+      from: prepared.id,
+      to: frozenDesign.id,
+      kind: "prepared-from-design",
+      identity: artifact("design-map.md").identity,
+    },
+  ]);
+  const stale = f.kernel.inspect(f.workflow, old.id);
+  assert.equal(stale.kind, "denied");
+  const session = f.kernel.register(f.workflow, "fixture").session;
+  assert.throws(
+    () =>
+      f.kernel.allocate(f.workflow, old.id, {
+        mode: "attached",
+        session: session.id,
+        role: "implementation",
+      }),
+    /permanently revoked/,
+  );
+  const reopened = f.kernel.inspect(f.workflow, recovered.grant.id);
+  if (reopened.kind !== "grant") assert.fail(JSON.stringify(reopened));
+  assert.equal(reopened.grant.role, "design-map");
+  assert.deepEqual(Object.keys(reopened.grant.inputs), ["brief"]);
+
+  const restarted = await startHarnessHost(0, {
+    governed: { project: f.project, executors: profiles, rootToken },
+  });
+  t.after(() => restarted.close());
+  const staleAfterRestart = await api<{ kind: string; reason: string }>(
+    restarted.url,
+    `resolve/${old.id}`,
+  );
+  assert.equal(staleAfterRestart.kind, "denied");
+  assert.match(staleAfterRestart.reason, /permanently revoked/);
+  const reopenedAfterRestart = await api<{
+    kind: string;
+    grant: { role: string; inputs: Record<string, string> };
+  }>(restarted.url, `resolve/${recovered.grant.id}`);
+  assert.equal(reopenedAfterRestart.kind, "grant");
+  assert.equal(reopenedAfterRestart.grant.role, "design-map");
+  assert.deepEqual(Object.keys(reopenedAfterRestart.grant.inputs), ["brief"]);
+});
+
 void test("TR5/TR9: private human payloads are host-owned; another executor cannot inspect or answer them", async (t) => {
   const f = fixture(t, "private-human");
   f.contract.protected = true;

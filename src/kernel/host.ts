@@ -18,7 +18,7 @@ import type {
   HumanRequest,
   PromotionArtifact,
 } from "./model.ts";
-import { assertTrustedMethodology } from "./trust.ts";
+import { assertTrustedMethodology, trustedDefinition } from "./trust.ts";
 
 // Programmatic-only seams for deterministic adapter tests (mocked provider
 // discovery and event streams). The production entrypoint never sets them.
@@ -31,7 +31,7 @@ export interface ProviderRuntime {
 }
 export interface GovernedHostOptions extends Omit<
   KernelOptions,
-  "methodologyGate"
+  "methodologyGate" | "methodologySource"
 > {
   rootToken: string;
   providerRuntime?: ProviderRuntime;
@@ -57,10 +57,14 @@ export class GovernedHost {
     this.#rootToken = options.rootToken;
     this.#runtime = options.providerRuntime ?? {};
     const project = options.project;
-    // The trust-equivalence gate is not configurable: every new grant, for
-    // every project, binds only a trusted methodology projection.
+    // Trust resolution is not configurable: every new grant, for every
+    // project, binds the latest trusted record's exact committed methodology,
+    // independent of candidate working-tree bytes, and passes the
+    // trust-equivalence gate.
     this.kernel = new ExecutionKernel({
       ...options,
+      methodologySource: () =>
+        trustedDefinition(project, options.validators ?? {}),
       methodologyGate: (definition) => {
         assertTrustedMethodology(project, definition);
       },
@@ -488,6 +492,23 @@ export class GovernedHost {
         send(201, allocation);
         return;
       }
+      if (operation === "preimplementation-recovery") {
+        needRoot();
+        if (get)
+          throw new Error(
+            "pre-implementation recovery authority requires POST",
+          );
+        send(
+          201,
+          this.kernel.recoverPreimplementation(workflow, {
+            workflowGrant: text(body.workflowGrant),
+            designMapEvent: text(body.designMapEvent),
+            evaluationPreparedEvent: text(body.evaluationPreparedEvent),
+            reason: text(body.reason),
+          }),
+        );
+        return;
+      }
       if (operation === "root") {
         needRoot();
         if (get) throw new Error("root decision requires POST");
@@ -656,6 +677,21 @@ export class GovernedHost {
       .executions(workflow)
       .find((e) => e.roleGrant === resolution.grant.id);
     if (existing) {
+      if (existing.result?.disposition === "blocked") {
+        const reason = `automatic continuation stopped after semantic BLOCKED result from execution ${existing.id}`;
+        if (
+          !this.kernel
+            .events(workflow)
+            .some(
+              (event) =>
+                event.transition === "kernel.continuation-stopped" &&
+                event.evidence.workflowGrant === grantId &&
+                event.evidence.reason === reason,
+            )
+        )
+          this.kernel.continuationStopped(workflow, grantId, reason);
+        return;
+      }
       const retry = required(
         this.kernel.definition(workflow, grant.methodology).roles[
           resolution.grant.role

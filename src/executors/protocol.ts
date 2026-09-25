@@ -22,6 +22,11 @@ export const RESULT_DISPOSITIONS = [
 ] as const;
 export const ACTION_KINDS = ["promotion", "publication"] as const;
 export const HUMAN_KINDS = ["input", "approval", "root"] as const;
+// B: the one bound on artifact mappings in a single requestAction. The
+// published schema, request parsing, the host's promotion check and the
+// archive utility all use this definition. An eligible archive above B is
+// refused whole; it is never split, bundled or truncated.
+export const MAX_ACTION_ARTIFACTS = 64;
 
 type Json = Record<string, unknown>;
 export type WorkerRequest =
@@ -136,7 +141,7 @@ export const WORKER_PROTOCOL_SCHEMAS = {
           artifacts: {
             type: "array",
             minItems: 1,
-            maxItems: 64,
+            maxItems: MAX_ACTION_ARTIFACTS,
             items: {
               type: "object",
               additionalProperties: false,
@@ -286,9 +291,11 @@ export function parseWorkerRequest(
   if (
     !Array.isArray(artifacts) ||
     artifacts.length < 1 ||
-    artifacts.length > 64
+    artifacts.length > MAX_ACTION_ARTIFACTS
   )
-    fail(`${op}: artifacts must be a nonempty array`);
+    fail(
+      `${op}: artifacts must be a nonempty array of at most ${String(MAX_ACTION_ARTIFACTS)} mappings`,
+    );
   return {
     operation: op,
     kind,

@@ -47,7 +47,10 @@ import type {
   RoleGrant,
   WorkflowGrant,
 } from "../src/kernel/model.ts";
-import { assertTrustedMethodology } from "../src/kernel/trust.ts";
+import {
+  assertTrustedMethodology,
+  trustedDefinition,
+} from "../src/kernel/trust.ts";
 import { harnessValidators } from "../src/methodologies/harness-public.ts";
 import { assertBoundedExecutorCommand } from "../src/workflow-backend.ts";
 import { trustFixtureMethodology } from "./support/trusted-fixture.ts";
@@ -400,6 +403,240 @@ void test("AC10: denied and failed promotions keep the PASS and never record pro
     assert.ok(!transitions.includes("smoke-promotion-recorded"));
     assert.ok(!existsSync(join(f.workflowDir, "promoted")));
   }
+});
+
+void test("semantic BLOCKED Design Map stops automatic retry even when its pinned policy permits it", async (t) => {
+  const f = smoke(t, {
+    scenario: {
+      steps: [
+        {
+          tool: "submitResult",
+          args: { disposition: "blocked", methodology: {} },
+        },
+      ],
+      denials: [{ tool_name: "Bash" }],
+    },
+  });
+  const policyPath = join(f.root, "methodology", "policy.json");
+  const policy = JSON.parse(readFileSync(policyPath, "utf8")) as {
+    roles: Record<string, Record<string, unknown>>;
+  };
+  const promotion = policy.roles[PROMOTION];
+  assert.ok(promotion);
+  policy.roles = Object.fromEntries(
+    Object.entries(policy.roles).filter(([role]) => role !== PROMOTION),
+  );
+  policy.roles["design-map"] = {
+    ...promotion,
+    retry: { dispositions: ["blocked", "failed", "interrupted"], limit: 2 },
+  };
+  writeFileSync(policyPath, `${JSON.stringify(policy, null, 2)}\n`);
+  trustFixtureMethodology(f.root, {
+    policy: "methodology/policy.json",
+    methodologyPaths: ["methodology/contracts", "methodology/skills"],
+    history: "methodology/trusted.jsonl",
+  });
+
+  const host = await startHarnessHost(0, { governed: f.options });
+  t.after(() => host.close());
+  const grant = await call<{ grant: WorkflowGrant }>(host.url, "grants", {
+    continuation: true,
+    delegation: ["spawned"],
+    maxAllocations: 3,
+    roles: ["design-map"],
+  });
+  assert.equal(grant.status, 201, JSON.stringify(grant.value));
+  const started = await call<{ execution: Execution }>(host.url, "continue", {
+    workflowGrant: grant.value.grant.id,
+    mode: "spawned",
+    role: "design-map",
+  });
+  assert.equal(started.status, 201, JSON.stringify(started.value));
+  const blocked = await settled(host.url, started.value.execution.id);
+  await delay(300);
+
+  assert.equal(blocked.result?.disposition, "blocked");
+  assert.ok(
+    blocked.diagnostics?.some(
+      (diagnostic) => diagnostic.category === "permission-denied",
+    ),
+    "the original provider diagnostic remains attached to the blocked execution",
+  );
+  const executions = await call<{ executions: Execution[] }>(
+    host.url,
+    "executions",
+  );
+  assert.equal(executions.value.executions.length, 1);
+  assert.deepEqual(executions.value.executions[0]?.result, blocked.result);
+  const stopped = readLedger(f.ledger).filter(
+    (event) => event.transition === "kernel.continuation-stopped",
+  );
+  assert.equal(stopped.length, 1);
+  assert.match(String(stopped[0]?.evidence.reason), /semantic BLOCKED result/);
+});
+
+void test("candidate Harness policy never makes semantic BLOCKED retryable", () => {
+  const policy = JSON.parse(
+    readFileSync(join(repository, "methodologies/harness/policy.json"), "utf8"),
+  ) as {
+    roles: Record<string, { retry: { dispositions: string[] } }>;
+  };
+  for (const [role, definition] of Object.entries(policy.roles))
+    assert.ok(
+      !definition.retry.dispositions.includes("blocked"),
+      `${role} must leave semantic BLOCKED to an explicit recovery`,
+    );
+});
+
+void test("a canonical unanswered human request blocks retries and successors after worker exit and host restart", async (t) => {
+  const f = smoke(t, {
+    scenario: {
+      steps: [
+        {
+          tool: "requestHuman",
+          args: { kind: "input", question: "Choose the archival policy." },
+        },
+      ],
+    },
+  });
+  f.options.providerRuntime.humanWaitMs = 30;
+  const contractPath = join(
+    f.root,
+    "methodology",
+    "contracts",
+    "smoke-claude-promotion.json",
+  );
+  const contract = JSON.parse(readFileSync(contractPath, "utf8")) as {
+    human: string[];
+  };
+  contract.human = ["input"];
+  writeFileSync(contractPath, `${JSON.stringify(contract, null, 2)}\n`);
+  const policyPath = join(f.root, "methodology", "policy.json");
+  const policy = JSON.parse(readFileSync(policyPath, "utf8")) as {
+    roles: Record<string, { retry: { dispositions: string[]; limit: number } }>;
+  };
+  const promotion = policy.roles[PROMOTION];
+  assert.ok(promotion);
+  promotion.retry = {
+    dispositions: ["failed", "interrupted"],
+    limit: 2,
+  };
+  writeFileSync(policyPath, `${JSON.stringify(policy, null, 2)}\n`);
+  trustFixtureMethodology(f.root, {
+    policy: "methodology/policy.json",
+    methodologyPaths: ["methodology/contracts", "methodology/skills"],
+    history: "methodology/trusted.jsonl",
+  });
+
+  const host = await startHarnessHost(0, { governed: f.options });
+  const grant = await call<{ grant: WorkflowGrant }>(host.url, "grants", {
+    continuation: true,
+    delegation: ["spawned"],
+    maxAllocations: 3,
+    roles: [PROMOTION],
+  });
+  assert.equal(grant.status, 201, JSON.stringify(grant.value));
+  const started = await call<{ execution: Execution }>(host.url, "continue", {
+    workflowGrant: grant.value.grant.id,
+    mode: "spawned",
+    role: PROMOTION,
+  });
+  assert.equal(started.status, 201, JSON.stringify(started.value));
+  const terminal = await settled(host.url, started.value.execution.id);
+  await delay(100);
+
+  const request = terminal.requests[0];
+  assert.ok(request, "the worker recorded a canonical request");
+  assert.equal(request.response, null);
+  assert.equal(terminal.process, "failed");
+  assert.ok(
+    terminal.diagnostics?.some((d) => d.category === "missing-result"),
+    "the original exit diagnostic remains attached to the request's worker",
+  );
+  assert.equal(f.launched.length, 1, "automatic retry did not launch");
+  const beforeRestart = readLedger(f.ledger);
+  assert.equal(
+    beforeRestart.filter((event) => event.transition === "kernel.human-request")
+      .length,
+    1,
+  );
+
+  await host.close();
+  const restarted = await startHarnessHost(0, { governed: f.options });
+  t.after(() => restarted.close());
+  const retry = await call<{ kind: string; reason: string }>(
+    restarted.url,
+    "continue",
+    {
+      workflowGrant: grant.value.grant.id,
+      mode: "spawned",
+      role: PROMOTION,
+      predecessor: terminal.id,
+    },
+  );
+  assert.equal(retry.status, 409);
+  assert.equal(retry.value.kind, "gate");
+  assert.equal(
+    retry.value.reason,
+    `canonical human request outstanding: ${request.id}`,
+  );
+  assert.equal(f.launched.length, 1, "restart did not revive or replace it");
+  const answered = await call<Execution>(
+    restarted.url,
+    `executions/${terminal.id}/respond`,
+    { request: request.id, value: "retain the existing bound" },
+  );
+  assert.equal(answered.status, 200, JSON.stringify(answered.value));
+  assert.equal(answered.value.process, "failed");
+  assert.equal(answered.value.attention, "terminal");
+  assert.equal(
+    answered.value.requests[0]?.response?.value,
+    "[private human response]",
+  );
+  const resolved = await call<{ kind: string }>(
+    restarted.url,
+    `resolve/${grant.value.grant.id}`,
+  );
+  assert.equal(resolved.status, 200);
+  assert.equal(resolved.value.kind, "grant");
+  assert.equal(f.launched.length, 1, "answering a gate remains read-only");
+  const afterRestart = readLedger(f.ledger);
+  assert.equal(
+    afterRestart.filter((event) => event.transition === "kernel.human-request")
+      .length,
+    1,
+  );
+  assert.equal(
+    afterRestart.filter((event) => event.transition === "kernel.human-response")
+      .length,
+    1,
+  );
+});
+
+void test("worker prose does not create a human gate", async (t) => {
+  const { host, started, f } = await run(t, PROMOTION, {
+    steps: [
+      {
+        tool: "submitResult",
+        args: { disposition: "succeeded", methodology: { smoke: "PASS" } },
+      },
+    ],
+    events: [
+      {
+        type: "assistant",
+        content: "Should I continue? This prose is not a canonical request.",
+      },
+    ],
+  });
+  const execution = await settled(host.url, started.value.execution?.id ?? "");
+  assert.equal(execution.result?.disposition, "succeeded");
+  assert.equal(execution.requests.length, 0);
+  assert.equal(
+    readLedger(f.ledger).filter(
+      (event) => event.transition === "kernel.human-request",
+    ).length,
+    0,
+  );
 });
 
 void test("AC08/AC12: unconfigured actions are denied by the host; tool arguments cannot select another execution", async (t) => {
@@ -1158,12 +1395,10 @@ void test("AC05/AC11: a provider that cannot reach the Harness tools yields no r
   );
 });
 
-void test("AC16: Harness binds only its trusted manifest projection; policy, contract, skill and validator edits are denied", (t) => {
+void test("AC16/014d EA5: Harness binds trusted N's committed bytes; working-tree policy, contract and skill edits neither satisfy nor defeat it", (t) => {
   const project = loadProject("harness.project.json");
-  const trusted = assertTrustedMethodology(
-    project,
-    loadDefinition(project, harnessValidators),
-  );
+  const bound = trustedDefinition(project, harnessValidators);
+  const trusted = assertTrustedMethodology(project, bound);
   const lines = readFileSync("methodologies/harness/trusted.jsonl", "utf8")
     .trim()
     .split("\n");
@@ -1171,6 +1406,10 @@ void test("AC16: Harness binds only its trusted manifest projection; policy, con
     trusted.record.methodology,
     (JSON.parse(lines.at(-1) ?? "{}") as { methodology: string }).methodology,
   );
+  for (const [name, role] of Object.entries(trusted.manifest.roles)) {
+    assert.equal(bound.roles[name]?.skill.identity, role.skill.identity);
+    assert.equal(bound.roles[name].contractIdentity, role.contract.identity);
+  }
   const dir = mkdtempSync(join(tmpdir(), "harness-trust-"));
   t.after(() => {
     rmSync(dir, { recursive: true, force: true });
@@ -1189,7 +1428,7 @@ void test("AC16: Harness binds only its trusted manifest projection; policy, con
     [
       "checkout",
       "-q",
-      "HEAD",
+      trusted.record.revision,
       "--",
       "methodologies",
       "skills",
@@ -1203,15 +1442,19 @@ void test("AC16: Harness binds only its trusted manifest projection; policy, con
     "methodologies/harness/trusted.jsonl",
     join(clone, "methodologies/harness/trusted.jsonl"),
   );
-  const check = () => {
-    const cloned = loadProject(join(clone, "harness.project.json"));
-    cloned.workflows = {};
-    return assertTrustedMethodology(
-      cloned,
-      loadDefinition(cloned, harnessValidators),
-    );
+  const cloned = (): ReturnType<typeof loadProject> => {
+    const value = loadProject(join(clone, "harness.project.json"));
+    value.workflows = {};
+    return value;
   };
-  assert.equal(check().record.methodology, trusted.record.methodology);
+  const resolved = () => trustedDefinition(cloned(), harnessValidators);
+  // The component gate still denies any definition that is not N.
+  const workingTree = () =>
+    assertTrustedMethodology(
+      cloned(),
+      loadDefinition(cloned(), harnessValidators),
+    );
+  assert.equal(resolved().id, bound.id);
   for (const [path, pattern] of [
     ["methodologies/harness/policy.json", /active policy differs/],
     [
@@ -1219,7 +1462,6 @@ void test("AC16: Harness binds only its trusted manifest projection; policy, con
       /role contract implementation differs/,
     ],
     ["skills/implementation/SKILL.md", /role skill implementation differs/],
-    ["src/methodologies/harness-public.ts", /validator source .* differs/],
   ] as const) {
     const file = join(clone, path);
     const original = readFileSync(file, "utf8");
@@ -1229,18 +1471,26 @@ void test("AC16: Harness binds only its trusted manifest projection; policy, con
         ? JSON.stringify({ ...(JSON.parse(original) as object), edited: true })
         : `${original}\n// untrusted edit\n`,
     );
-    assert.throws(check, pattern, path);
+    assert.throws(workingTree, pattern, path);
+    // New grants still resolve N's exact committed definition.
+    assert.equal(resolved().id, bound.id, path);
     writeFileSync(file, original);
   }
-  assert.equal(check().record.methodology, trusted.record.methodology);
+  // The running validator implementation must still be N's.
+  const validator = join(clone, "src/methodologies/harness-public.ts");
+  const source = readFileSync(validator, "utf8");
+  writeFileSync(validator, `${source}\n// untrusted edit\n`);
+  assert.throws(resolved, /validator source .* differs/);
+  writeFileSync(validator, source);
+  assert.equal(resolved().id, bound.id);
   rmSync(join(clone, "methodologies/harness/trusted.jsonl"));
   assert.throws(
-    check,
+    resolved,
     /trust equivalence denied: project harness has no trusted/,
   );
 });
 
-void test("AC16: the synthetic fixture passes its own trust root through POST grants and a post-root edit is denied", async (t) => {
+void test("AC16/014d EA5: the synthetic fixture grants through its own trust root; uncommitted and committed candidate edits still bind trusted bytes", async (t) => {
   const f = smoke(t);
   const host = await startHarnessHost(0, { governed: f.options });
   t.after(() => host.close());
@@ -1252,16 +1502,40 @@ void test("AC16: the synthetic fixture passes its own trust root through POST gr
   };
   assert.equal((await call(host.url, "grants", body)).status, 201);
   const skill = join(f.root, "methodology/skills/smoke-codex.md");
-  writeFileSync(skill, `${readFileSync(skill, "utf8")}\nUntrusted edit.\n`);
-  const denied = await call<{ error: string }>(host.url, "grants", body);
-  assert.equal(denied.status, 409);
-  assert.match(
-    denied.value.error,
-    /trust equivalence denied: role skill smoke-codex/,
-  );
+  const trustedBytes = readFileSync(skill, "utf8");
+  const boundSkills = (): string[] =>
+    readLedger(f.ledger)
+      .filter((event) => event.transition === "kernel.definition")
+      .map(
+        (event) =>
+          (
+            event.evidence as {
+              roles: Record<string, { skill: { identity: string } }>;
+            }
+          ).roles[CODEX]?.skill.identity ?? "",
+      );
+  writeFileSync(skill, `${trustedBytes}\nUntrusted edit.\n`);
+  assert.equal((await call(host.url, "grants", body)).status, 201);
+  execFileSync("git", ["commit", "-qam", "candidate edit"], {
+    cwd: f.root,
+    env: {
+      ...process.env,
+      GIT_AUTHOR_NAME: "t",
+      GIT_AUTHOR_EMAIL: "t@example.invalid",
+      GIT_COMMITTER_NAME: "t",
+      GIT_COMMITTER_EMAIL: "t@example.invalid",
+    },
+  });
+  assert.equal((await call(host.url, "grants", body)).status, 201);
   const grants = readLedger(f.ledger).filter(
     (event) => event.transition === "kernel.workflow-grant",
   );
-  assert.equal(grants.length, 1);
+  assert.equal(grants.length, 3);
+  // One definition, recorded once, carrying the trusted skill bytes only.
+  assert.deepEqual(boundSkills(), [identity(trustedBytes)]);
+  assert.equal(
+    new Set(grants.map((event) => event.evidence.methodology)).size,
+    1,
+  );
   assert.match(f.trusted.methodology, /^sha256:[a-f0-9]{64}$/);
 });

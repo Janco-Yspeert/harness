@@ -70,6 +70,9 @@ export interface RoleContract {
     allocationEvent: string;
     attemptField: string;
     transition: string;
+    // Optional recorded eligibility plan, relative to the source workspace.
+    // When declared, the request must archive that exact plan file.
+    plan?: string;
   };
 }
 export interface RolePolicy {
@@ -199,9 +202,36 @@ export interface WorkflowGrant {
   stopAfter: string[];
   maxAllocations: number;
   maxAutomaticWork?: number;
+  // A forward-only human recovery replaces a defective pre-implementation
+  // scope. The source grant remains durable but is permanently revoked.
+  recovery?: string;
   supersedes?: string;
   inline?: boolean;
   executor?: { model?: string; reasoning?: string };
+}
+export interface PreimplementationRecoveryAuthority {
+  schemaVersion: 1;
+  id: string;
+  project: string;
+  workflow: string;
+  origin: "human";
+  reason: string;
+  invalidated: Array<{
+    event: string;
+    transition: "design-map-frozen" | "evaluation-prepared";
+    execution: string;
+    roleGrant: string;
+    semanticResult: string;
+    commit: string;
+    path: string;
+    identity: string;
+  }>;
+  dependencies: Array<{
+    from: string;
+    to: string;
+    kind: "prepared-from-design";
+    identity: string;
+  }>;
 }
 export interface HumanEvaluatorCorrectionAuthority {
   schemaVersion: 1;
@@ -302,6 +332,7 @@ export interface RoleGrant {
       allocationEvent: string;
       attemptField: string;
       transition: string;
+      plan?: string;
     };
   };
   executorConstraints: {

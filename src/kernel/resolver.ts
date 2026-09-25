@@ -16,6 +16,7 @@ import type {
   LedgerEvent,
   MethodologyDefinition,
   Project,
+  PreimplementationRecoveryAuthority,
   RoleGrant,
   RootAuthority,
   Session,
@@ -26,10 +27,30 @@ import type {
 export type Resolution =
   | { kind: "grant"; grant: RoleGrant }
   | { kind: "denied" | "gate" | "stop"; reason: string };
+// A recovery does not erase history. It creates a later authority scope in
+// which exactly the defective frozen transitions cannot satisfy predicates or
+// supply role inputs. Everything else, including the frozen brief and a
+// recorded human answer, remains available.
+export function recoveryScopedEvents(events: LedgerEvent[]): LedgerEvent[] {
+  const recoveries = events
+    .filter((event) => event.transition === "kernel.preimplementation-recovery")
+    .map(
+      (event) =>
+        event.evidence as unknown as PreimplementationRecoveryAuthority,
+    );
+  if (!recoveries.length) return events;
+  const invalidated = new Set(
+    recoveries.flatMap((recovery) =>
+      recovery.invalidated.map((entry) => entry.event),
+    ),
+  );
+  return events.filter((event) => !event.id || !invalidated.has(event.id));
+}
 // These are mechanics, not methodology facts. None may move the authority basis.
 const MECHANICS = new Set([
   "kernel.definition",
   "kernel.workflow-grant",
+  "kernel.workflow-grant-revoked",
   "kernel.allocation",
   "kernel.session",
   "kernel.exposure",
@@ -132,7 +153,10 @@ export function roleInputs(
       if (event && event.evidence.identity !== inputs[rule.name])
         throw new Error(`frozen input changed: ${rule.name}`);
       if (rule.committed) {
-        const commit = event?.evidence.commit;
+        // A transition whose evidence already carries a `commit` (for
+        // example verification's candidate) records its artifact's own
+        // checkpoint as `artifactCommit`; provenance is that checkpoint.
+        const commit = event?.evidence.artifactCommit ?? event?.evidence.commit;
         if (typeof commit !== "string" || !/^[a-f0-9]{40,64}$/.test(commit))
           throw new Error("input lacks committed provenance");
         const committed = execFileSync(
@@ -175,8 +199,27 @@ export function resolveAuthority(
   predecessor: string | null = null,
   validators: ArtifactValidators = {},
 ): Resolution {
+  const effectiveEvents = recoveryScopedEvents(events);
   if (workflow.project !== project.id || workflow.methodology !== definition.id)
     return { kind: "denied", reason: "grant scope or definition mismatch" };
+  // A worker's prose has no authority. A canonical request, however, is a
+  // durable human gate even if its worker exits before it can receive the
+  // answer. Do this before selecting either a normal successor or a root
+  // override: neither may silently route around an unanswered question.
+  const outstandingRequest = effectiveEvents.findLast(
+    (event) =>
+      event.transition === "kernel.human-request" &&
+      !effectiveEvents.some(
+        (response) =>
+          response.transition === "kernel.human-response" &&
+          response.evidence.request === event.evidence.id,
+      ),
+  );
+  if (outstandingRequest)
+    return {
+      kind: "gate",
+      reason: `canonical human request outstanding: ${String(outstandingRequest.evidence.id)}`,
+    };
   if (
     Object.entries(definition.validators).some(
       ([name, id]) => validators[name]?.identity !== id,
@@ -186,11 +229,11 @@ export function resolveAuthority(
       kind: "denied",
       reason: "pinned validator implementation unavailable",
     };
-  const roots = events
+  const roots = effectiveEvents
     .filter((e) => e.transition === "kernel.root")
     .map((e) => e.evidence as unknown as RootAuthority);
-  const basis = authorityBasis(events);
-  const allocations = events.filter(
+  const basis = authorityBasis(effectiveEvents);
+  const allocations = effectiveEvents.filter(
     (e) =>
       e.transition === "kernel.allocation" &&
       e.evidence.workflowGrant === workflow.id,
@@ -199,10 +242,10 @@ export function resolveAuthority(
     ([name, role]) =>
       (!requestedRole || name === requestedRole) &&
       workflow.roles.includes(name) &&
-      predicate(role.policy.when, events, definition.policy),
+      predicate(role.policy.when, effectiveEvents, definition.policy),
   );
   const override = roots.findLast((r) => {
-    const index = events.findIndex((e) => e.evidence.id === r.id);
+    const index = effectiveEvents.findIndex((e) => e.evidence.id === r.id);
     const uses = allocations.filter(
       (a) => (a.evidence.grant as RoleGrant).rootAuthority === r.id,
     );
@@ -212,8 +255,8 @@ export function resolveAuthority(
       (!requestedRole || r.role === requestedRole) &&
       r.project === project.id &&
       r.workflow === workflow.workflow &&
-      r.basis === authorityBasis(events.slice(0, index)) &&
-      basis === authorityBasis(events.slice(0, index + 1)) &&
+      r.basis === authorityBasis(effectiveEvents.slice(0, index)) &&
+      basis === authorityBasis(effectiveEvents.slice(0, index + 1)) &&
       (r.uses > uses.length ||
         uses.some(
           (a) =>
@@ -232,10 +275,10 @@ export function resolveAuthority(
     candidates.push([override.role, required(definition.roles[override.role])]);
   if (!override) {
     const gate = definition.policy.gates.find((g) =>
-      predicate(g.when, events, definition.policy),
+      predicate(g.when, effectiveEvents, definition.policy),
     );
     if (gate) return { kind: "gate", reason: gate.reason };
-    if (events.some((e) => workflow.stopAfter.includes(e.transition)))
+    if (effectiveEvents.some((e) => workflow.stopAfter.includes(e.transition)))
       return { kind: "stop", reason: "workflow stopping condition reached" };
   }
   if (candidates.length !== 1)
@@ -260,7 +303,7 @@ export function resolveAuthority(
       project,
       workflow.workflow,
       role,
-      events,
+      effectiveEvents,
       definition,
       validators,
     );
@@ -313,6 +356,7 @@ export function resolveAuthority(
         allocationEvent: promotion.allocationEvent,
         attemptField: promotion.attemptField,
         transition: promotion.transition,
+        ...(promotion.plan ? { plan: promotion.plan } : {}),
       }
     : undefined;
   if (

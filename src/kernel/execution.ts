@@ -22,6 +22,7 @@ import {
   required,
   scopedEvents,
 } from "./ledger.ts";
+import { MAX_ACTION_ARTIFACTS } from "../executors/protocol.ts";
 import { inside, loadDefinition } from "./methodology.ts";
 import {
   authorityBasis,
@@ -50,6 +51,7 @@ import type {
   LedgerEvent,
   MethodologyDefinition,
   Project,
+  PreimplementationRecoveryAuthority,
   RoleGrant,
   RoleResult,
   RootAuthority,
@@ -70,6 +72,10 @@ export interface KernelOptions {
   // Execution Grant is recorded. The governed host always installs the
   // trust-equivalence gate here; it is not caller configuration.
   methodologyGate?: (definition: MethodologyDefinition) => void;
+  // Where a new Workflow Execution Grant's definition comes from. The
+  // governed host resolves the latest trusted record's committed bytes; a
+  // kernel without it (historical/test use) reads the working tree.
+  methodologySource?: () => MethodologyDefinition;
 }
 const DETAIL_LIMIT = 240;
 // Public diagnostic details are short host-authored phrases. Redaction is a
@@ -146,6 +152,16 @@ export class ExecutionKernel {
     if (!value) throw new Error("unknown workflow grant");
     return value as unknown as WorkflowGrant;
   }
+  #revocation(
+    events: LedgerEvent[],
+    workflowGrant: string,
+  ): LedgerEvent | undefined {
+    return events.findLast(
+      (event) =>
+        event.transition === "kernel.workflow-grant-revoked" &&
+        event.evidence.workflowGrant === workflowGrant,
+    );
+  }
   authorize(
     workflow: string,
     request: {
@@ -161,7 +177,9 @@ export class ExecutionKernel {
     },
   ): WorkflowGrant {
     return this.#transaction(workflow, () => {
-      const definition = loadDefinition(this.project, this.options.validators);
+      const definition =
+        this.options.methodologySource?.() ??
+        loadDefinition(this.project, this.options.validators);
       this.options.methodologyGate?.(definition);
       const roles = request.roles ?? Object.keys(definition.roles);
       if (
@@ -238,6 +256,149 @@ export class ExecutionKernel {
       }
       this.#append(workflow, "kernel.workflow-grant", value);
       return value;
+    });
+  }
+  recoverPreimplementation(
+    workflow: string,
+    request: {
+      workflowGrant: string;
+      designMapEvent: string;
+      evaluationPreparedEvent: string;
+      reason: string;
+    },
+  ): { authority: PreimplementationRecoveryAuthority; grant: WorkflowGrant } {
+    return this.#transaction(workflow, () => {
+      if (
+        !request.workflowGrant ||
+        !request.designMapEvent ||
+        !request.evaluationPreparedEvent ||
+        !request.reason
+      )
+        throw new Error("invalid pre-implementation recovery authority");
+      const events = this.events(workflow);
+      const old = this.grant(workflow, request.workflowGrant);
+      if (this.#revocation(events, old.id))
+        throw new Error("workflow grant is already permanently revoked");
+      if (
+        this.executions(workflow).some(
+          (execution) =>
+            execution.workflowGrant === old.id &&
+            ["allocated", "running"].includes(execution.process),
+        )
+      )
+        throw new Error(
+          "pre-implementation recovery requires no active execution",
+        );
+      if (
+        events.some((event) =>
+          ["implementation-handoff", "verification-finalized"].includes(
+            event.transition,
+          ),
+        )
+      )
+        throw new Error(
+          "pre-implementation recovery is unavailable after implementation handoff",
+        );
+      const source = (
+        event: string,
+        transition: "design-map-frozen" | "evaluation-prepared",
+      ) => {
+        const found = events.find(
+          (entry) => entry.id === event && entry.transition === transition,
+        );
+        const evidence = found?.evidence;
+        if (
+          !found ||
+          !evidence ||
+          typeof evidence.execution !== "string" ||
+          typeof evidence.roleGrant !== "string" ||
+          typeof evidence.semanticResult !== "string" ||
+          typeof evidence.commit !== "string" ||
+          typeof evidence.path !== "string" ||
+          typeof evidence.identity !== "string"
+        )
+          throw new Error(`invalidated ${transition} event is unavailable`);
+        return {
+          event,
+          transition,
+          execution: evidence.execution,
+          roleGrant: evidence.roleGrant,
+          semanticResult: evidence.semanticResult,
+          commit: evidence.commit,
+          path: evidence.path,
+          identity: evidence.identity,
+        };
+      };
+      const design = source(request.designMapEvent, "design-map-frozen");
+      const prepared = source(
+        request.evaluationPreparedEvent,
+        "evaluation-prepared",
+      );
+      const preparedInputs = events.find(
+        (event) => event.id === request.evaluationPreparedEvent,
+      )?.evidence.inputs;
+      if (
+        !preparedInputs ||
+        typeof preparedInputs !== "object" ||
+        Array.isArray(preparedInputs) ||
+        (preparedInputs as Data).design !== design.identity
+      )
+        throw new Error(
+          "evaluation-prepared event does not depend on the invalidated design map",
+        );
+      const definition =
+        this.options.methodologySource?.() ??
+        loadDefinition(this.project, this.options.validators);
+      this.options.methodologyGate?.(definition);
+      if (definition.id !== old.methodology)
+        throw new Error(
+          "recovery must retain the old grant's trusted methodology",
+        );
+      const authority: PreimplementationRecoveryAuthority = {
+        schemaVersion: 1,
+        id: randomUUID(),
+        project: this.project.id,
+        workflow,
+        origin: "human",
+        reason: request.reason,
+        invalidated: [design, prepared],
+        dependencies: [
+          {
+            from: prepared.event,
+            to: design.event,
+            kind: "prepared-from-design",
+            identity: design.identity,
+          },
+        ],
+      };
+      this.#append(workflow, "kernel.preimplementation-recovery", authority);
+      this.#append(workflow, "kernel.workflow-grant-revoked", {
+        workflowGrant: old.id,
+        recovery: authority.id,
+        reason: request.reason,
+      });
+      const grant: WorkflowGrant = {
+        schemaVersion: 1,
+        id: randomUUID(),
+        project: this.project.id,
+        workflow,
+        methodology: definition.id,
+        authorityBasis: authorityBasis(this.events(workflow)),
+        origin: "human",
+        continuation: old.continuation,
+        delegation: old.delegation,
+        roles: old.roles,
+        stopAfter: old.stopAfter,
+        maxAllocations: old.maxAllocations,
+        ...(old.maxAutomaticWork === undefined
+          ? {}
+          : { maxAutomaticWork: old.maxAutomaticWork }),
+        recovery: authority.id,
+        ...(old.inline ? { inline: true } : {}),
+        ...(old.executor ? { executor: old.executor } : {}),
+      };
+      this.#append(workflow, "kernel.workflow-grant", grant);
+      return { authority, grant };
     });
   }
   authorizeEvaluatorCorrection(
@@ -487,6 +648,12 @@ export class ExecutionKernel {
     sessionId?: string,
   ): Resolution {
     const grant = this.grant(workflow, grantId);
+    if (this.#revocation(this.events(workflow), grant.id))
+      return {
+        kind: "denied",
+        reason:
+          "workflow grant permanently revoked by pre-implementation recovery",
+      };
     return resolveAuthority(
       this.project,
       this.events(workflow),
@@ -644,7 +811,9 @@ export class ExecutionKernel {
         if (request)
           request.response = event.evidence
             .response as HumanRequest["response"];
-        run.attention = "working";
+        // A response recorded after a worker exited closes its durable human
+        // gate, but does not resurrect that terminal worker.
+        if (run.process === "running") run.attention = "working";
       }
     }
     return [...runs.values()];
@@ -697,6 +866,10 @@ export class ExecutionKernel {
   ): { execution: Execution; grant: RoleGrant; duplicate: boolean } {
     return this.#transaction(workflow, () => {
       const parent = this.grant(workflow, workflowGrant);
+      if (this.#revocation(this.events(workflow), parent.id))
+        throw new Error(
+          "workflow grant permanently revoked by pre-implementation recovery",
+        );
       if (!parent.delegation.includes(request.mode))
         throw new Error("delegation mode denied");
       if (
@@ -1444,12 +1617,13 @@ export class ExecutionKernel {
     return this.#transaction(workflow, () => {
       const execution = this.execution(workflow, id);
       const request = execution.requests.find((r) => r.id === requestId);
-      if (
-        !request ||
-        request.response ||
-        execution.attention !== "WAITING_FOR_HUMAN" ||
-        execution.process !== "running"
-      )
+      const activeRequest =
+        execution.process === "running" &&
+        execution.attention === "WAITING_FOR_HUMAN";
+      const terminalRequest =
+        !execution.result &&
+        ["failed", "interrupted", "exited"].includes(execution.process);
+      if (!request || request.response || (!activeRequest && !terminalRequest))
         throw new Error("human response does not bind an outstanding request");
       const responseId = randomUUID();
       const protectedRequest = this.roleGrant(workflow, execution.roleGrant)
@@ -1698,6 +1872,10 @@ export class ExecutionKernel {
           artifacts.length === 0
         )
           throw new Error("promotion outside role grant");
+        if (artifacts.length > MAX_ACTION_ARTIFACTS)
+          throw new Error(
+            `promotion exceeds the ${String(MAX_ACTION_ARTIFACTS)}-artifact action bound`,
+          );
         const workspace = (name: string) =>
           this.project.workflows[workflow]?.workspaces?.[name] ??
           this.project.workspaces[name];
@@ -1716,6 +1894,14 @@ export class ExecutionKernel {
           )
         )
           throw new Error("promotion workspace outside role grant");
+        // A declared eligibility plan must itself be archived, exactly once,
+        // so the promoted evidence carries the decision it was built from.
+        if (
+          allowed.plan !== undefined &&
+          artifacts.filter((artifact) => artifact.source === allowed.plan)
+            .length !== 1
+        )
+          throw new Error("promotion omits its recorded eligibility plan");
         action.status = "failed";
         const workflowRoot = realpathSync(
           resolve(
@@ -1814,6 +2000,14 @@ export class ExecutionKernel {
           artifacts: action.artifacts,
           integrityIdentity: required(action.integrityIdentity),
           promotionIdentity: required(action.promotionIdentity),
+          ...(allowed.plan !== undefined
+            ? {
+                planIdentity: required(
+                  artifacts.find((artifact) => artifact.source === allowed.plan)
+                    ?.identity,
+                ),
+              }
+            : {}),
           execution: id,
           roleGrant: grant.id,
           semanticResult: required(execution.result).id,

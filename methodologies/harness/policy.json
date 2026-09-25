@@ -10,7 +10,7 @@
         }
       },
       "retry": {
-        "dispositions": ["blocked", "failed", "interrupted"],
+        "dispositions": ["failed", "interrupted"],
         "limit": 2
       },
       "outcomes": [
@@ -52,7 +52,7 @@
         ]
       },
       "retry": {
-        "dispositions": ["blocked", "failed", "interrupted"],
+        "dispositions": ["failed", "interrupted"],
         "limit": 2
       },
       "outcomes": [
@@ -84,7 +84,7 @@
         ]
       },
       "retry": {
-        "dispositions": ["blocked", "failed", "interrupted"],
+        "dispositions": ["failed", "interrupted"],
         "limit": 2
       },
       "outcomes": [
@@ -173,7 +173,7 @@
         ]
       },
       "retry": {
-        "dispositions": ["blocked", "failed", "interrupted"],
+        "dispositions": ["failed", "interrupted"],
         "limit": 2
       },
       "outcomes": [
@@ -256,7 +256,7 @@
         ]
       },
       "retry": {
-        "dispositions": ["blocked", "failed", "interrupted"],
+        "dispositions": ["failed", "interrupted"],
         "limit": 2
       },
       "outcomes": [
@@ -312,7 +312,7 @@
         ]
       },
       "retry": {
-        "dispositions": ["blocked", "failed", "interrupted"],
+        "dispositions": ["failed", "interrupted"],
         "limit": 2
       },
       "outcomes": [
@@ -388,7 +388,7 @@
         ]
       },
       "retry": {
-        "dispositions": ["blocked", "failed", "interrupted"],
+        "dispositions": ["failed", "interrupted"],
         "limit": 2
       },
       "outcomes": [
@@ -455,7 +455,7 @@
         ]
       },
       "retry": {
-        "dispositions": ["blocked", "failed", "interrupted"],
+        "dispositions": ["failed", "interrupted"],
         "limit": 2
       },
       "outcomes": [
@@ -580,12 +580,38 @@
   "gates": [
     {
       "when": {
+        "all": [
+          { "event": "readiness-blocked" },
+          { "not": { "event": "brief-frozen" } }
+        ]
+      },
+      "reason": "brief readiness is NOT_READY; revise the brief and re-review it only on explicit human authority"
+    },
+    {
+      "when": {
         "event": "verification-finalized",
         "current": true,
         "fields": { "classification": "EVALUATOR_DEFECT" },
         "atLeast": 3
       },
       "reason": "two evaluator corrections exhausted; classify the remaining issue and use successor authority"
+    },
+    {
+      "when": {
+        "all": [
+          {
+            "event": "verification-finalized",
+            "current": true,
+            "latest": true,
+            "fields": { "result": "PASS" }
+          },
+          { "not": { "event": "promotion-recorded", "current": true } },
+          {
+            "not": { "event": "process-exception-authorized", "current": true }
+          }
+        ]
+      },
+      "reason": "verified PASS has no host-confirmed evaluator evidence promotion; archival is incomplete and needs recovery or an explicit process exception"
     },
     {
       "when": {

@@ -53,5 +53,5 @@
   "results": ["succeeded", "blocked", "refused", "failed"],
   "methodology": {},
   "human": ["input", "approval", "root"],
-  "postconditions": []
+  "postconditions": ["manifest.md"]
 }

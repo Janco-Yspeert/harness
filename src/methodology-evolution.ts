@@ -21,17 +21,10 @@ import {
 } from "./kernel/ledger.ts";
 import type { RoleContract, WorkflowPolicy } from "./kernel/model.ts";
 
-const ACTIVE_ROLES = [
-  "as-built",
-  "brief-readiness",
-  "design-map",
-  "evaluator-prepare",
-  "evaluator-repair",
-  "evaluator-verify",
-  "implementation",
-  "outcome",
-] as const;
-
+// The configured role set is always derived from the candidate policy and
+// manifest; there is no generic role-name allowlist. The names below only
+// scope invariants that apply to the default Harness core roles when a
+// methodology configures them.
 const COMMON_CAPABILITIES = [
   "repository-read",
   "repository-write",
@@ -41,7 +34,7 @@ const COMMON_CAPABILITIES = [
 ] as const;
 
 const CAPABILITY_VOCABULARY = [...COMMON_CAPABILITIES] as const;
-const EVALUATOR_ROLES = new Set([
+const CORE_EVALUATOR_ROLES = new Set([
   "evaluator-prepare",
   "evaluator-repair",
   "evaluator-verify",
@@ -111,6 +104,10 @@ export interface MethodologyDiff {
   readonly equal: boolean;
   readonly changes: {
     readonly policy: boolean;
+    readonly roles: {
+      readonly added: readonly string[];
+      readonly removed: readonly string[];
+    };
     readonly skills: readonly string[];
     readonly contracts: readonly string[];
     readonly validators: readonly string[];
@@ -135,6 +132,10 @@ export interface TrustedMethodologyEvent {
           readonly methodology: string;
           readonly result: "PASS";
           readonly evidence: string;
+          // The exact candidate commit and manifest the trusted methodology
+          // verified. Required for new promotions; absent in older records.
+          readonly candidate?: string;
+          readonly candidateMethodology?: string;
         }
       | {
           readonly kind: "human-bootstrap";
@@ -290,7 +291,13 @@ export function readTrustedHistory(path: string): TrustedMethodologyEvent[] {
             typeof evaluation.methodology === "string" &&
             evaluation.methodology.startsWith("sha256:") &&
             typeof evaluation.evidence === "string" &&
-            evaluation.evidence.length > 0;
+            evaluation.evidence.length > 0 &&
+            (evaluation.candidate === undefined ||
+              (typeof evaluation.candidate === "string" &&
+                /^[a-f0-9]{40,64}$/.test(evaluation.candidate))) &&
+            (evaluation.candidateMethodology === undefined ||
+              (typeof evaluation.candidateMethodology === "string" &&
+                evaluation.candidateMethodology.startsWith("sha256:")));
       if (
         raw.schemaVersion !== 1 ||
         raw.sequence !== index + 1 ||
@@ -443,26 +450,26 @@ function inspectMethodology(manifest: MethodologyManifest): CheckResult {
       "capability vocabulary differs from the governed-role vocabulary",
     );
   const roleNames = Object.keys(manifest.roles).sort();
-  if (!sameValues(roleNames, ACTIVE_ROLES))
-    addDiagnostic(
-      diagnostics,
-      "ACTIVE_ROLES",
-      "roles",
-      "manifest must contain exactly the eight active methodology roles",
-    );
   const policyRoles = object(manifest.policy.content.roles);
-  if (!sameValues(Object.keys(policyRoles), ACTIVE_ROLES))
+  if (roleNames.length === 0)
     addDiagnostic(
       diagnostics,
       "POLICY_ROLES",
       manifest.policy.path,
-      "policy must configure exactly the eight active methodology roles",
+      "policy must configure at least one role",
     );
-  const implementationFeedback = manifest.roles[
-    "implementation"
-  ]?.contract.content.inputs.find(
-    (input) => input.name === "implementationFeedback",
-  );
+  if (!sameValues(Object.keys(policyRoles), roleNames))
+    addDiagnostic(
+      diagnostics,
+      "POLICY_ROLES",
+      manifest.policy.path,
+      "policy roles and manifest roles must be the same configured set",
+    );
+  const implementationRole = manifest.roles.implementation;
+  const implementationFeedback =
+    implementationRole?.contract.content.inputs.find(
+      (input) => input.name === "implementationFeedback",
+    );
   const configuredTransitions = new Set(
     Object.values(policyRoles).flatMap((entry) => {
       const policyEntry = object(entry);
@@ -482,12 +489,13 @@ function inspectMethodology(manifest: MethodologyManifest): CheckResult {
       ? [implementationFeedback.event]
       : [];
   if (
-    !implementationFeedback ||
-    !implementationFeedback.current ||
-    implementationFeedback.after !== "implementation-handoff" ||
-    implementationFeedback.eventFields?.classification !==
-      "IMPLEMENTATION_FAILURE" ||
-    !feedbackEvents.some((event) => configuredTransitions.has(event))
+    implementationRole &&
+    (!implementationFeedback ||
+      !implementationFeedback.current ||
+      implementationFeedback.after !== "implementation-handoff" ||
+      implementationFeedback.eventFields?.classification !==
+        "IMPLEMENTATION_FAILURE" ||
+      !feedbackEvents.some((event) => configuredTransitions.has(event)))
   )
     addDiagnostic(
       diagnostics,
@@ -559,7 +567,10 @@ function inspectMethodology(manifest: MethodologyManifest): CheckResult {
         component.contract.path,
         "worker contracts cannot carry publication or network authority",
       );
-    if (EVALUATOR_ROLES.has(role)) {
+    // Isolation is declarative: a protected contract is an evaluator-private
+    // role and must hold the evaluation workspace; every other role, whatever
+    // its name, must forbid evaluator-private exposure.
+    if (contract.protected || CORE_EVALUATOR_ROLES.has(role)) {
       if (!contract.workspaces.includes("evaluation") || !contract.protected)
         addDiagnostic(
           diagnostics,
@@ -605,6 +616,38 @@ function inspectMethodology(manifest: MethodologyManifest): CheckResult {
     const outcomes = Array.isArray(policyEntry.outcomes)
       ? policyEntry.outcomes.map(object)
       : [];
+    // Generic coherence for every configured role, core or optional.
+    if (
+      contract.workspaces.length === 0 ||
+      contract.results.length === 0 ||
+      policyEntry.when === undefined ||
+      outcomes.length === 0 ||
+      outcomes.some(
+        (outcome) =>
+          typeof outcome.transition !== "string" || !outcome.transition,
+      )
+    )
+      addDiagnostic(
+        diagnostics,
+        "ROLE_COHERENCE",
+        `roles.${role}`,
+        "role requires workspaces, results, an eligibility condition and routed outcome transitions",
+      );
+    for (const outcome of outcomes)
+      for (const action of Array.isArray(outcome.requiredActions)
+        ? (outcome.requiredActions as unknown[])
+        : [])
+        if (
+          (action !== "promotion" && action !== "publication") ||
+          (action === "promotion" && !contract.promotion) ||
+          (action === "publication" && !contract.publication)
+        )
+          addDiagnostic(
+            diagnostics,
+            "HOST_ACTION",
+            manifest.policy.path,
+            `${role} requires ${String(action)} without a host-mediated contract action`,
+          );
     const outcomeKeys = new Set<string>();
     for (const outcome of outcomes) {
       const disposition = String(outcome.disposition);
@@ -814,9 +857,10 @@ function privilegedRequirements(
 ): unknown {
   const contract = manifest.roles[role]?.contract.content;
   const policy = object(manifest.policy.content.roles)[role];
+  if (!contract || policy === undefined) return null;
   const outcomes = object(policy).outcomes;
   return {
-    publication: contract?.publication ?? null,
+    publication: contract.publication ?? null,
     requiredActions: Array.isArray(outcomes)
       ? outcomes.map((value: unknown) => object(value).requiredActions ?? [])
       : [],
@@ -846,6 +890,14 @@ export function diffMethodologies(
     equal: from.id === to.id,
     changes: {
       policy: from.policy.identity !== to.policy.identity,
+      roles: {
+        added: Object.keys(to.roles)
+          .filter((role) => !Object.hasOwn(from.roles, role))
+          .sort(),
+        removed: Object.keys(from.roles)
+          .filter((role) => !Object.hasOwn(to.roles, role))
+          .sort(),
+      },
       skills: changedRoles(
         from,
         to,
@@ -970,6 +1022,22 @@ export function promoteMethodology(
     )
       throw new Error(
         "candidate must be evaluated by the current trusted methodology",
+      );
+    // The PASS must name exactly what is being promoted: the verified commit
+    // and the manifest reconstructed at it. A PASS for candidate A cannot
+    // promote B, and drifted bytes produce a different manifest.
+    if (
+      typeof authority.evaluation.candidate !== "string" ||
+      typeof authority.evaluation.candidateMethodology !== "string"
+    )
+      throw new Error(
+        "trusted evaluation must bind the exact candidate commit and methodology",
+      );
+    if (authority.evaluation.candidate !== reconstructed.revision)
+      throw new Error("trusted evaluation verified a different candidate");
+    if (authority.evaluation.candidateMethodology !== reconstructed.manifest.id)
+      throw new Error(
+        "trusted evaluation verified a different candidate methodology",
       );
   } else if (authority.evaluation.evidence.length === 0) {
     throw new Error("bootstrap promotion requires explicit human evidence");

@@ -65,6 +65,7 @@
     "when": { "result": "PASS" },
     "allocationEvent": "verification-allocated",
     "attemptField": "attempt",
-    "transition": "promotion-recorded"
+    "transition": "promotion-recorded",
+    "plan": ".eval/promotion-plan.json"
   }
 }

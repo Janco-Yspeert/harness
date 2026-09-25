@@ -278,3 +278,89 @@
   - The working tree contains uncommitted changes that this role neither made
     nor evaluated. They are excluded from this checkpoint.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 006 — Implementation (attempt 1)
+
+- Skill: `implementation` v4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`
+  (pinned bytes delivered by Role Grant
+  `sha256:8827bede35784e6eebe7311d5316c7546930b2f00f5d0dca7929f1ca1584050c`,
+  execution `cd96aa6f-1fdc-4521-9238-4b45ff1c9e22`, Workflow Grant
+  `3223abe5-dd9e-4e58-8fcc-9df8f80c20b9`, workflow
+  `014d-real-methodology-integration-extensible-skill-evolution`), under
+  trusted N (kernel definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Context:
+  - The predecessor implementation execution
+    `bdfa50ec-a7f9-467d-925e-d43551d5dc68` changed no files. It asked the
+    human request `4fef0137-e8f7-4bfd-9ba9-ed7951a0273a` and then ended with
+    no semantic result.
+  - This run followed the canonical response
+    `b90a79da-738b-4df5-ac8b-e1e65c589a1a`: preserve the current work and the
+    authorized maintenance, inventory first, finish the deterministic work,
+    record the real-provider proofs as outstanding, and invoke no provider.
+- Inputs. The working-tree and committed bytes match the host-bound
+  identities:
+  - frozen `spike.md`
+    `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`;
+  - frozen `design-map.md`
+    `sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e`;
+  - `coverage-map.json`
+    `sha256:a7abb9d197d50154c113fc9a6f85b639fdbce1c1cd912d15ff6990e05e8c349b`;
+  - `eval-requirements.md`
+    `sha256:c47e49c8c478ff4c77fdf908eb8105d9c2d7ce6c728f9d594af845054d88691a`.
+
+  No implementation feedback was bound. The base is `HEAD`
+  `0b550644544f98571fbbade9af2234bdd70cd98d`.
+- Result: **succeeded** for the deterministic implementation. The real-provider
+  proofs for AC02, AC03, AC05 and AC13 are **outstanding** and were not run
+  (`evidence/real-provider-runs.md`).
+- Starting point:
+  - `evidence/working-tree-inventory.md` inventories the preserved tree: the
+    unattributed pre-recovery draft (probably execution `49e9dfe9`),
+    authorized maintenance 001 and 002, and the unrelated paths that were left
+    out.
+  - The draft was reviewed against the replacement Design Map, then completed
+    and reconciled.
+- Changes made in this run:
+  - **C4.** One exported bound B, `MAX_ACTION_ARTIFACTS` = 64 in
+    `src/executors/protocol.ts`. It is used by the schema, request parsing,
+    the host promotion check and the archive utility. The oversized cases use
+    B + 1. There is a representative-archive retention test (38 mappings, at
+    least the largest committed archive), and `evidence/promotion-bound.md`
+    records it.
+  - **Policy.** A NOT_READY readiness verdict is now a human gate. Before, an
+    unchanged brief was re-reviewed automatically.
+  - **C6.** The orchestrator provenance wording now covers acceptance naming
+    the exact identity and the fields recorded for observed runs.
+  - **Evaluator skill.** It refers to bound B instead of a literal.
+  - **Legacy tests.** They expect implementation skill version 5.
+  - **§7.** `test/legacy-bridges.test.ts` statically guards the retired
+    bridges.
+  - **TR6.** A test checks that the evidence skill identities recompute.
+  - **C8 evidence.** `fidelity-matrix.md`, `legacy-classification.md`,
+    `promotion-bound.md`, `real-provider-runs.md`, `extension-seams.md` and
+    `working-tree-inventory.md` under `evidence/`.
+- Candidate content: 45 paths plus this manifest; 5594 insertions and 360
+  deletions before this entry. `methodologies/harness/trusted.jsonl` and the
+  014c files are unchanged.
+- Checks:
+  - `npm run typecheck` passes.
+  - `eslint .` passes.
+  - Prettier passes for every readable file. Root sandbox device placeholders
+    are unreadable and are not repository content.
+  - `node --test test/*.test.ts` on the working tree: 173 tests, 170 pass and
+    3 fail. The 3 are legacy `workflow-run.integration` bootstrap-provenance
+    tests: "canonical evaluator delegation …", "repository fixtures resolve
+    from candidate bytes …" and "a fixture whose declared permissionProfile
+    disagrees …". They pin the evaluator skill at `git rev-parse HEAD` but read
+    the working-tree bytes, so they can pass only once the candidate is
+    committed.
+  - Baseline: a clean worktree at `HEAD` passed 147 of 147.
+- Restricted evaluator material inspected: none.
+- Limitations:
+  - No provider CLI or credentials were available, so no real-provider or
+    orchestrator run happened.
+  - Sandbox approval restrictions blocked several compound shell forms and a
+    scratch-worktree commit. Equivalent direct commands were used.
+- Measurement cutoff: immediately before this manifest update.

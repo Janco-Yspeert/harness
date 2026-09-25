@@ -312,6 +312,8 @@ void test("promotion requires human and prior-trusted authority and affects only
       methodology: f.baselineIdentity,
       result: "PASS",
       evidence: "evaluation:test",
+      candidate: candidate.revision,
+      candidateMethodology: candidate.manifest.id,
     },
   });
   const future = bindFutureWorkflow(f.history, "future");
@@ -319,4 +321,242 @@ void test("promotion requires human and prior-trusted authority and affects only
   assert.equal(existing.methodology, f.baselineIdentity);
   assert.equal(future.methodology, candidate.manifest.id);
   assert.equal(readTrustedHistory(f.history).length, 2);
+});
+
+function trustedAuthority(
+  f: ReturnType<typeof fixture>,
+  evaluation: Record<string, unknown>,
+): unknown {
+  return {
+    kind: "human",
+    decision: "promote",
+    evidence: "human:test",
+    evaluation: {
+      kind: "trusted-methodology",
+      methodology: f.baselineIdentity,
+      result: "PASS",
+      evidence: "evaluation:test",
+      ...evaluation,
+    },
+  };
+}
+
+void test("014d C5: promotion binds the exact N-verified candidate commit and manifest", (t) => {
+  const f = fixture(t);
+  const candidateA = validCandidate(f);
+  appendFileSync(
+    join(f.root, "skills", "outcome", "SKILL.md"),
+    "\nA different candidate with no authority semantics.\n",
+  );
+  const candidateB = candidateMethodology(
+    f.root,
+    commit(f.root, "candidate B"),
+    f.history,
+  );
+  const history = readFileSync(f.history);
+  const rejected: Array<[unknown, RegExp]> = [
+    // Missing binding fields.
+    [trustedAuthority(f, {}), /must bind the exact candidate/],
+    [
+      trustedAuthority(f, { candidate: candidateB.revision }),
+      /must bind the exact candidate/,
+    ],
+    // A PASS for A applied to B.
+    [
+      trustedAuthority(f, {
+        candidate: candidateA.revision,
+        candidateMethodology: candidateA.manifest.id,
+      }),
+      /verified a different candidate/,
+    ],
+    [
+      trustedAuthority(f, {
+        candidate: candidateB.revision,
+        candidateMethodology: candidateA.manifest.id,
+      }),
+      /verified a different candidate methodology/,
+    ],
+    // Self-evaluation and stale authority.
+    [
+      trustedAuthority(f, {
+        methodology: candidateB.manifest.id,
+        candidate: candidateB.revision,
+        candidateMethodology: candidateB.manifest.id,
+      }),
+      /current trusted methodology/,
+    ],
+    [
+      trustedAuthority(f, {
+        methodology: `sha256:${"0".repeat(64)}`,
+        candidate: candidateB.revision,
+        candidateMethodology: candidateB.manifest.id,
+      }),
+      /current trusted methodology/,
+    ],
+  ];
+  for (const [authority, pattern] of rejected) {
+    assert.throws(
+      () => promoteMethodology(candidateB, f.history, authority),
+      pattern,
+    );
+    assert.deepEqual(readFileSync(f.history), history);
+  }
+  // Silently drifted bytes: the claimed manifest is not what the commit holds.
+  const drifted = {
+    ...candidateB,
+    manifest: { ...candidateB.manifest, id: candidateA.manifest.id },
+  };
+  assert.throws(
+    () =>
+      promoteMethodology(
+        drifted,
+        f.history,
+        trustedAuthority(f, {
+          candidate: candidateB.revision,
+          candidateMethodology: candidateA.manifest.id,
+        }),
+      ),
+    /does not match its exact repository revision/,
+  );
+  assert.deepEqual(readFileSync(f.history), history);
+
+  const event = promoteMethodology(
+    candidateB,
+    f.history,
+    trustedAuthority(f, {
+      candidate: candidateB.revision,
+      candidateMethodology: candidateB.manifest.id,
+    }),
+  );
+  assert.equal(event.sequence, 2);
+  assert.equal(event.methodology, candidateB.manifest.id);
+  assert.equal(event.revision, candidateB.revision);
+  const recorded = readTrustedHistory(f.history);
+  assert.equal(recorded.length, 2);
+  assert.deepEqual(recorded[1]?.authority.evaluation, {
+    kind: "trusted-methodology",
+    methodology: f.baselineIdentity,
+    result: "PASS",
+    evidence: "evaluation:test",
+    candidate: candidateB.revision,
+    candidateMethodology: candidateB.manifest.id,
+  });
+});
+
+void test("014d AC11: a ninth optional public role is derived from policy, checked and diffed without becoming trusted", (t) => {
+  const f = fixture(t);
+  const before = candidateMethodology(f.root, f.baseline, f.history);
+  const policyPath = join(f.root, "methodologies", "harness", "policy.json");
+  const policy = JSON.parse(readFileSync(policyPath, "utf8")) as {
+    roles: Record<string, unknown>;
+  };
+  policy.roles["regression-curator"] = {
+    contract: "methodologies/harness/contracts/regression-curator.json",
+    skill: "skills/regression-curator/SKILL.md",
+    when: { event: "outcome-recorded" },
+    retry: { dispositions: ["blocked", "failed"], limit: 1 },
+    outcomes: [
+      {
+        disposition: "succeeded",
+        transition: "regression-curated",
+        evidence: { artifact: "regression-tests.md" },
+      },
+    ],
+  };
+  writeFileSync(policyPath, `${JSON.stringify(policy, null, 2)}\n`);
+  const contractPath = join(
+    f.root,
+    "methodologies",
+    "harness",
+    "contracts",
+    "regression-curator.json",
+  );
+  writeFileSync(
+    contractPath,
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        workspaces: ["repository"],
+        capabilities: [
+          "repository-read",
+          "repository-write",
+          "local-computation",
+          "git-inspect",
+          "git-commit",
+        ],
+        forbiddenExposure: ["evaluator-private"],
+        protected: false,
+        inputs: [],
+        results: ["succeeded", "blocked", "failed"],
+        methodology: {},
+        human: ["input"],
+        postconditions: ["regression-tests.md", "manifest.md"],
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  mkdirSync(join(f.root, "skills", "regression-curator"));
+  writeFileSync(
+    join(f.root, "skills", "regression-curator", "SKILL.md"),
+    "# Regression Curator (fixture)\n\nTurn public-safe regression recommendations into ordinary public tests.\nReport the exact produced local commit.\n",
+  );
+  const ninth = candidateMethodology(
+    f.root,
+    commit(f.root, "ninth optional role fixture"),
+    f.history,
+  );
+  assert.equal(Object.keys(ninth.manifest.roles).length, 9);
+  assert.ok(ninth.manifest.roles["regression-curator"]);
+  assert.equal(ninth.relationToTrusted, "different");
+  assert.deepEqual(checkMethodology(ninth.manifest).diagnostics, []);
+  const diff = diffMethodologies(before.manifest, ninth.manifest);
+  assert.deepEqual(diff.changes.roles, {
+    added: ["regression-curator"],
+    removed: [],
+  });
+  assert.deepEqual(diff.changes.skills, ["regression-curator"]);
+  assert.deepEqual(diff.changes.contracts, ["regression-curator"]);
+  // N stays authoritative for new bindings until an explicit human promotion.
+  assert.equal(
+    bindFutureWorkflow(f.history, "future").methodology,
+    f.baselineIdentity,
+  );
+  assert.equal(readTrustedHistory(f.history).length, 1);
+  // The eight-role trusted methodology remains coherent.
+  assert.equal(checkMethodology(before.manifest).valid, true);
+  assert.equal(Object.keys(before.manifest.roles).length, 8);
+
+  // An optional role cannot quietly hold evaluator-private material.
+  const leaky = JSON.parse(readFileSync(contractPath, "utf8")) as {
+    workspaces: string[];
+    forbiddenExposure: string[];
+  };
+  leaky.workspaces.push("evaluation");
+  leaky.forbiddenExposure = [];
+  writeFileSync(contractPath, `${JSON.stringify(leaky, null, 2)}\n`);
+  const leakyCandidate = candidateMethodology(
+    f.root,
+    commit(f.root, "leaky optional role"),
+    f.history,
+  );
+  assert.ok(
+    checkMethodology(leakyCandidate.manifest).diagnostics.some(
+      (diagnostic) => diagnostic.code === "PRIVATE_EXPOSURE",
+    ),
+  );
+});
+
+void test("014d EA4: a comment-only skill change is a coherent candidate without bookkeeping", (t) => {
+  const f = fixture(t);
+  appendFileSync(
+    join(f.root, "skills", "as-built", "SKILL.md"),
+    "<!-- comment -->\n",
+  );
+  const candidate = candidateMethodology(
+    f.root,
+    commit(f.root, "comment only"),
+    f.history,
+  );
+  assert.equal(checkMethodology(candidate.manifest).valid, true);
 });

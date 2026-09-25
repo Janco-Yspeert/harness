@@ -3,22 +3,46 @@
 // seam, never by production configuration. It reads the adapter's real
 // provider arguments, starts the real repository-owned worker tool server
 // they name, speaks MCP to it, and emits scripted provider events.
-import { spawn } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+//
+// Role-keyed scripts (`roles`) are scripted compliance with a role's fidelity
+// matrix row: they write the row's artifacts inside granted workspaces, make
+// its local commit, submit its typed result and request its host action. They
+// are never evidence of real provider behavior.
+import { execFileSync, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { createInterface } from "node:readline";
 
+import { buildArchiveManifest } from "../archive-manifest.ts";
+
 interface Step {
-  tool: string;
+  tool?: string;
   args?: Record<string, unknown>;
   promotion?: {
     candidate?: string;
     attempt?: number;
     identity?: string;
+    // Derive the request from the real persisted plan via the archive utility.
+    fromPlan?: boolean;
+    // Test-only mutations of the derived request.
+    omitPlan?: boolean;
+    // Pad the derived mappings up to exactly this many (e.g. B + 1).
+    padTo?: number;
   };
+  // Write a file inside a granted workspace; `{{input:NAME}}` and
+  // `{{identity:WORKSPACE:PATH}}` are substituted from the assignment.
+  write?: {
+    workspace: "repository" | "private";
+    path: string;
+    content: string;
+  };
+  // Commit paths in the repository workspace as a local checkpoint.
+  commit?: { message: string; paths: string[] };
 }
 interface Scenario {
   evidence: string;
+  roles?: Record<string, Step[]>;
   steps?: Step[];
   exit?: number;
   model?: string;
@@ -153,7 +177,122 @@ if (scenario.hang) {
   evidence.tools = await rpc("tools/list", {});
   const results: unknown[] = [];
   let assignment: Record<string, unknown> | undefined;
-  for (const step of scenario.steps ?? []) {
+  let steps = scenario.steps ?? [];
+  if (scenario.roles) {
+    const read = (await rpc("tools/call", {
+      name: "assignment",
+      arguments: {},
+    })) as { structuredContent?: unknown };
+    assignment = read.structuredContent as Record<string, unknown>;
+    results.push(read);
+    const role = (assignment.roleGrant as { role: string }).role;
+    // The nth execution of a role may follow its own script (`role#n`).
+    const counter = `${scenario.evidence}.${role}.count`;
+    let occurrence = 1;
+    try {
+      occurrence = Number(readFileSync(counter, "utf8")) + 1;
+    } catch {
+      /* first execution of this role */
+    }
+    writeFileSync(counter, String(occurrence));
+    steps =
+      scenario.roles[`${role}#${String(occurrence)}`] ??
+      scenario.roles[role] ??
+      [];
+    scenario.evidence = `${scenario.evidence}.${role}.${String(occurrence)}.json`;
+  }
+  const workspaceRoot = (name: "repository" | "private"): string => {
+    const grant = assignment?.roleGrant as {
+      workspaces: Array<{ path: string; exposure: string }>;
+    };
+    const found = grant.workspaces.find((workspace) =>
+      name === "repository"
+        ? workspace.exposure === "public"
+        : workspace.exposure !== "public",
+    );
+    if (!found) throw new Error(`no granted ${name} workspace`);
+    return found.path;
+  };
+  const substitute = (content: string): string =>
+    content
+      .replaceAll(/\{\{input:([\w-]+)\}\}/g, (_, name: string) => {
+        const inputs = assignment?.inputs as Record<string, string>;
+        return inputs[name] ?? "";
+      })
+      .replaceAll(
+        /\{\{identity:(repository|private):([^}]+)\}\}/g,
+        (_, workspace: "repository" | "private", path: string) =>
+          `sha256:${createHash("sha256")
+            .update(readFileSync(join(workspaceRoot(workspace), path)))
+            .digest("hex")}`,
+      );
+  for (const step of steps) {
+    if (step.write) {
+      const target = join(workspaceRoot(step.write.workspace), step.write.path);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, substitute(step.write.content));
+      continue;
+    }
+    if (step.commit) {
+      const env = {
+        ...process.env,
+        GIT_AUTHOR_NAME: "Scripted worker",
+        GIT_AUTHOR_EMAIL: "scripted-worker@example.invalid",
+        GIT_COMMITTER_NAME: "Scripted worker",
+        GIT_COMMITTER_EMAIL: "scripted-worker@example.invalid",
+      };
+      const cwd = workspaceRoot("repository");
+      execFileSync("git", ["add", "--", ...step.commit.paths], { cwd, env });
+      execFileSync("git", ["commit", "-q", "-m", step.commit.message], {
+        cwd,
+        env,
+      });
+      results.push({
+        commit: execFileSync("git", ["rev-parse", "HEAD"], {
+          cwd,
+          encoding: "utf8",
+        }).trim(),
+      });
+      continue;
+    }
+    if (step.promotion?.fromPlan) {
+      let manifest: ReturnType<typeof buildArchiveManifest>;
+      try {
+        manifest = buildArchiveManifest(workspaceRoot("private"));
+      } catch (error) {
+        // A refused plan is never requested: the PASS stays genuine and
+        // archival stays truthfully incomplete.
+        results.push({ refused: (error as Error).message });
+        continue;
+      }
+      let artifacts = manifest.artifacts;
+      if (step.promotion.omitPlan)
+        artifacts = artifacts.filter(
+          (artifact) => artifact.destination !== "promotion-plan.json",
+        );
+      if (step.promotion.padTo !== undefined) {
+        const paddingArtifact = manifest.artifacts[1];
+        if (!paddingArtifact)
+          throw new Error("fixture promotion archive lacks a padding artifact");
+        for (let index = 0; artifacts.length < step.promotion.padTo; index += 1)
+          artifacts = [
+            ...artifacts,
+            { ...paddingArtifact, destination: `pad/${String(index)}` },
+          ];
+      }
+      const response = (await rpc("tools/call", {
+        name: "requestAction",
+        arguments: {
+          kind: "promotion",
+          candidate: step.promotion.candidate ?? manifest.candidate,
+          evaluatorRevision: manifest.evaluatorRevision,
+          attempt: step.promotion.attempt ?? manifest.attempt,
+          artifacts,
+        },
+      })) as { structuredContent?: unknown; isError?: boolean };
+      results.push({ manifest, response });
+      continue;
+    }
     let input = step.args ?? {};
     if (step.promotion && !assignment) {
       const read = (await rpc("tools/call", {
@@ -191,6 +330,12 @@ if (scenario.hang) {
         })),
       };
     }
+    if (!step.tool) throw new Error("scripted step names no tool");
+    if (step.args)
+      input = JSON.parse(substitute(JSON.stringify(step.args))) as Record<
+        string,
+        unknown
+      >;
     const result = (await rpc("tools/call", {
       name: step.tool,
       arguments: input,

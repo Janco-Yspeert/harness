@@ -20,9 +20,22 @@ export function loadDefinition(
   project: Project,
   validators: ArtifactValidators = {},
 ): MethodologyDefinition {
-  const parsed: unknown = JSON.parse(
-    readFileSync(inside(project.root, project.policy), "utf8"),
+  return definitionFrom(
+    project.policy,
+    (path) => readFileSync(inside(project.root, path), "utf8"),
+    validators,
   );
+}
+
+// Builds a kernel definition from a policy path and a project-relative reader.
+// The reader decides where methodology bytes come from: the working tree for
+// historical/test kernels, or exact Git objects for trusted resolution.
+export function definitionFrom(
+  policyPath: string,
+  read: (path: string) => string,
+  validators: ArtifactValidators = {},
+): MethodologyDefinition {
+  const parsed: unknown = JSON.parse(read(policyPath));
   const rawPolicy = object(parsed);
   const policy = parsed as WorkflowPolicy;
   if (
@@ -39,9 +52,7 @@ export function loadDefinition(
   const roles: MethodologyDefinition["roles"] = {};
   const validatorIdentities: Record<string, string> = {};
   for (const [name, entry] of Object.entries(policy.roles)) {
-    const contract = JSON.parse(
-      readFileSync(inside(project.root, text(entry.contract)), "utf8"),
-    ) as RoleContract;
+    const contract = JSON.parse(read(text(entry.contract))) as RoleContract;
     if (
       object(contract).schemaVersion !== 1 ||
       !Array.isArray(contract.inputs) ||
@@ -63,7 +74,10 @@ export function loadDefinition(
           !contract.promotion.revisionInput ||
           !contract.promotion.allocationEvent ||
           !contract.promotion.attemptField ||
-          !contract.promotion.transition))
+          !contract.promotion.transition ||
+          (contract.promotion.plan !== undefined &&
+            (typeof contract.promotion.plan !== "string" ||
+              !contract.promotion.plan))))
     )
       throw new Error(`invalid contract for ${name}`);
     if (
@@ -91,10 +105,7 @@ export function loadDefinition(
           throw new Error(`required artifact validator unavailable: ${name}`);
         validatorIdentities[name] = validator.identity;
       }
-    const skillContent = readFileSync(
-      inside(project.root, text(entry.skill)),
-      "utf8",
-    );
+    const skillContent = read(text(entry.skill));
     roles[name] = {
       policy: entry,
       contract,

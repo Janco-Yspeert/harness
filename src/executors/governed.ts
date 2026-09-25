@@ -90,27 +90,52 @@ export interface Assignment {
   inputs: Record<string, string>;
 }
 
+const WORKER_RULES =
+  `Harness worker protocol v${String(WORKER_PROTOCOL_VERSION)} is available as the "harness" tools ${WORKER_OPERATIONS.join(", ")}.\n` +
+  "- Your final prose is never a result. Submit exactly one typed result with submitResult {disposition, methodology}, using only the contract's result and methodology vocabulary.\n" +
+  "- Use requestAction only when your skill or contract requires a host action; the host validates it and may deny it. Inspect the returned action status; only status succeeded means the action happened.\n" +
+  "- Use requestHuman only for input, approval or root requests the contract permits.\n" +
+  "- Use only the granted workspaces and capabilities. Never push, publish directly, or reveal credentials.\n" +
+  "- Read detailed inputs just in time from their bound paths inside granted workspaces; the identities below say which exact bytes are authoritative.";
+
+// Worker context is assembled in two deterministic parts. The stable part
+// depends only on the protocol, the role and its pinned skill and contract
+// bytes, so distinct executions of the same pinned role share it byte for
+// byte. Every execution-scoped value (execution, Role Grant, workflow,
+// methodology binding, input identities, candidate/attempt values) is placed
+// after it. Nothing evaluator-private is ever part of either part: the host
+// delivers only pinned public methodology bytes and identities.
+export function workerContext(assignment: Assignment): {
+  stable: string;
+  volatile: string;
+} {
+  const grant = assignment.roleGrant;
+  return {
+    stable:
+      `You are the governed Harness worker for role ${grant.role}.\n\n` +
+      `${WORKER_RULES}\n\n` +
+      `Pinned skill ${assignment.skill.path} (${assignment.skill.identity}); its exact bytes follow. Never reload the skill from the working tree.\n\n` +
+      `${assignment.skill.content}\n\n` +
+      `Pinned role contract (${assignment.contractIdentity}): ${JSON.stringify(assignment.contract)}\n`,
+    volatile:
+      `\nExecution-scoped assignment (changes per execution; it never changes the rules above):\n` +
+      `Execution: ${assignment.execution}\n` +
+      `Workflow: ${assignment.workflow}\n` +
+      `Role Grant: ${grant.id}\n` +
+      `Methodology: ${assignment.methodology}\n` +
+      `Host-bound input identities: ${JSON.stringify(assignment.inputs)}\n` +
+      "Call the assignment tool for the full Role Grant, including granted workspaces and host actions.",
+  };
+}
+
 export function workerInstructions(assignment: Assignment): {
   system: string;
   prompt: string;
 } {
-  const grant = assignment.roleGrant;
+  const context = workerContext(assignment);
   return {
-    system:
-      `You are the governed Harness worker for role ${grant.role}.\n` +
-      `Execution: ${assignment.execution}\n` +
-      `Role Grant: ${grant.id}\n` +
-      `Methodology: ${assignment.methodology}\n` +
-      `Pinned skill ${assignment.skill.path} (${assignment.skill.identity}); its exact bytes follow. Never reload the skill from the working tree.\n\n` +
-      `${assignment.skill.content}\n\n` +
-      `Pinned role contract (${assignment.contractIdentity}): ${JSON.stringify(assignment.contract)}\n` +
-      `Host-bound input identities: ${JSON.stringify(assignment.inputs)}\n\n` +
-      `Harness worker protocol v${String(WORKER_PROTOCOL_VERSION)} is available as the "harness" tools ${WORKER_OPERATIONS.join(", ")}.\n` +
-      "- Your final prose is never a result. Submit exactly one typed result with submitResult {disposition, methodology}, using only the contract's result and methodology vocabulary.\n" +
-      "- Use requestAction only when your skill or contract requires a host action; the host validates it and may deny it.\n" +
-      "- Use requestHuman only for input, approval or root requests the contract permits.\n" +
-      "- Use only the granted workspaces and capabilities. Never push, publish directly, or reveal credentials.",
-    prompt: `Perform the allocated ${grant.role} work for workflow ${assignment.workflow}, then submit your typed result with the Harness submitResult tool.`,
+    system: `${context.stable}${context.volatile}`,
+    prompt: `Perform the allocated ${assignment.roleGrant.role} work for workflow ${assignment.workflow}, then submit your typed result with the Harness submitResult tool.`,
   };
 }
 
