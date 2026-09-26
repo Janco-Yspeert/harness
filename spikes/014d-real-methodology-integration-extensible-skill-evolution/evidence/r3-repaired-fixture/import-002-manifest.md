@@ -34,6 +34,14 @@ host configuration, or the retained fixture.
 It excludes private-workspace exposure entries and therefore is not represented
 as a byte-for-byte ledger copy.
 
+`source/ledger-public-events.jsonl` contains the exact original bytes of the
+17 public ledger events named by that index. Its identity is
+`sha256:8fcb14ed68977ed5e9714e37d18cfc6b4e2da05f8f26c62d8fd543b359fc6316`.
+The selected event records expose only public fixture workspace information and
+the role grants' explicit `forbiddenExposure: ["evaluator-private"]` boundary;
+they do not include private-workspace exposure events, credentials, tokens, or
+host-private diagnostics.
+
 ## Verified bindings
 
 1. `source/project.json` names `fixture-trusted.jsonl` as `trustedHistory`.
