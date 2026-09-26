@@ -478,3 +478,67 @@
   - No start baseline was captured.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 009 — Implementation (completion of the promotion-to-As-Built repair)
+
+- Skill: `implementation` contract version 4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`
+  (pinned bytes from Role Grant
+  `sha256:0f843a37ccc1286b455f84fc3bfadfc0ccbca43c5640c1bff8b47ba5b1a82a78`,
+  execution `a31d8ea3-e21b-46fc-993c-6c7932c1b723`), under trusted N
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`.
+- Authority: human root `a1960899-88d4-4ea4-9c20-6df6161f4a8d` (one use). It
+  allows only adding the missing deterministic mismatched-promotion-identity
+  regression to the committed repair, running the relevant checks and
+  committing it. It excludes R3 fixture execution, provider-profile changes,
+  evaluator actions and workflow advancement.
+- Inputs, all recomputed and matching:
+  - `spike.md`
+    `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`;
+  - `design-map.md`
+    `sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e`;
+  - `coverage-map.json`
+    `sha256:a7abb9d197d50154c113fc9a6f85b639fdbce1c1cd912d15ff6990e05e8c349b`;
+  - `eval-requirements.md`
+    `sha256:c47e49c8c478ff4c77fdf908eb8105d9c2d7ce6c728f9d594af845054d88691a`.
+
+  The host bound no implementation feedback to this execution. The base is
+  `HEAD` `a396cabec8e5153cc4c5607a4937a637bce31971`.
+- Changes: `test/skill-fidelity.test.ts` gains one test, "014d AC07: As-Built
+  bound to a promotion identity that the host record no longer matches stays
+  blocked and commits nothing". It works like this:
+  - The first bounded grant (`maxAllocations: 5`) stops after
+    `promotion-recorded`, before any As-Built allocation.
+  - The test then changes the untracked host `evaluation/promotion.json` so
+    that its `sha256` differs from the recorded `promotionIdentity`.
+  - A second grant allocates As-Built. Its Role Grant binds the recorded
+    identity, not the changed bytes.
+  - The scripted As-Built submits `blocked`. The test asserts: no
+    `as-built-recorded`; exactly one `promotion-recorded`; the changed bytes
+    left as found; nothing tracked, staged or committed under `evaluation/`;
+    acceptance refused; and no Outcome grant.
+- Unchanged: `skills/as-built/SKILL.md`, the host, provider profiles,
+  evaluator authority, fixture evidence and R1–R3.
+- Result: **succeeded** for this bounded completion. The real-provider proofs
+  R1, R2 and R3 (AC02, AC03, AC05 and AC13, plus the C4 fixture count) remain
+  **outstanding**. None is claimed or fabricated here.
+- Candidate content: 1 path plus this manifest; 85 insertions before this
+  entry.
+- Checks, on the working tree:
+  - `tsc --noEmit` passes.
+  - `eslint .` passes.
+  - Prettier passes for `test/skill-fidelity.test.ts`.
+  - `node --test test/skill-fidelity.test.ts`: 13 of 13 pass.
+  - `npm test`: 175 of 175 pass.
+- Checks not run cleanly:
+  - `npm run check` stops at `prettier --check .`. The sandbox cannot read the
+    root placeholder files. Prettier also warns on `test/kernel.test.ts`,
+    which is part of the uncommitted host-maintenance-003 change
+    (`src/kernel/{execution,resolver}.ts`, `test/kernel.test.ts`,
+    `host-maintenance-003.md`). That change is not part of this implementation
+    work, so it is left unstaged and untouched. The 175-test count includes
+    its kernel test.
+  - No clean-worktree run of this checkpoint was made.
+  - No start baseline was captured.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.

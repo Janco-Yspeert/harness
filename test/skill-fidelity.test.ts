@@ -1214,6 +1214,91 @@ void test("014d AC07: As-Built commits only the validated host promotion record,
   assert.notEqual(outcome.value.kind, "grant");
 });
 
+void test("014d AC07: As-Built bound to a promotion identity that the host record no longer matches stays blocked and commits nothing", async (t) => {
+  const h = await harness(t, scripts({ "as-built": [submit({}, "blocked")] }));
+  // The first grant stops once verification and host promotion are recorded,
+  // before As-Built is allocated.
+  const first = await h.grant({ maxAllocations: 5 });
+  await h.start(first.id);
+  const recorded = last(h.ledger(), "promotion-recorded");
+  const boundIdentity = recorded.evidence.promotionIdentity as string;
+  assert.ok(!h.transitions().includes("as-built-recorded"));
+  assert.ok(
+    !h
+      .ledger()
+      .some(
+        (event) =>
+          event.transition === "kernel.allocation" &&
+          (event.evidence.grant as { role: string }).role === "as-built",
+      ),
+  );
+
+  // The untracked host record is changed after promotion was recorded.
+  const promotionPath = join(h.root, DIR, "evaluation", "promotion.json");
+  assert.equal(identity(readFileSync(promotionPath)), boundIdentity);
+  const mismatched = `${readFileSync(promotionPath, "utf8")}\n`;
+  writeFileSync(promotionPath, mismatched);
+  const mismatchedIdentity = identity(Buffer.from(mismatched));
+  assert.notEqual(mismatchedIdentity, boundIdentity);
+
+  const second = await h.grant();
+  await h.start(second.id);
+  const events = h.ledger();
+  // As-Built was allocated with the host-recorded identity, not the changed
+  // bytes, so the mismatch is observable from its own Role Grant.
+  const allocation = events.findLast(
+    (event) =>
+      event.transition === "kernel.allocation" &&
+      (event.evidence.grant as { role: string }).role === "as-built",
+  );
+  assert.ok(allocation);
+  const asBuiltGrant = allocation.evidence.grant as {
+    inputs: Record<string, string>;
+  };
+  assert.equal(asBuiltGrant.inputs.promotion, boundIdentity);
+  assert.notEqual(asBuiltGrant.inputs.promotion, mismatchedIdentity);
+  // Exactly one promotion record exists and it is unchanged.
+  assert.equal(
+    events.filter((event) => event.transition === "promotion-recorded").length,
+    1,
+  );
+
+  // As-Built stayed blocked: no as-built record and nothing committed or
+  // staged. The mismatched bytes are left exactly as found.
+  assert.ok(!events.some((event) => event.transition === "as-built-recorded"));
+  assert.equal(
+    events.filter((event) => event.transition === "kernel.result").at(-1)
+      ?.evidence.disposition,
+    "blocked",
+  );
+  assert.equal(identity(readFileSync(promotionPath)), mismatchedIdentity);
+  assert.equal(git(h.root, ["ls-files", `${DIR}/evaluation`]), "");
+  assert.equal(git(h.root, ["diff", "--cached", "--name-only"]), "");
+  assert.equal(
+    git(h.root, ["log", "--format=%H", "--", `${DIR}/evaluation`]),
+    "",
+  );
+
+  // Neither acceptance nor Outcome can proceed on the mismatched record.
+  const handoff = last(events, "implementation-handoff");
+  const refused = await h.api<object>("decisions", {
+    workflowGrant: second.id,
+    decision: "accept",
+    evidence: {
+      candidate: handoff.evidence.commit,
+      verification: last(events, "verification-finalized").evidence
+        .semanticResult,
+      promotion: boundIdentity,
+      cycle: "001",
+    },
+  });
+  assert.notEqual(refused.status, 201);
+  const outcome = await h.api<{ kind: string }>(
+    `resolve/${second.id}?role=outcome`,
+  );
+  assert.notEqual(outcome.value.kind, "grant");
+});
+
 void test("014d AC07: evaluator repair needs its exact trigger, preserves revision and attempt lineage, and archives the full history", async (t) => {
   const h = await harness(
     t,
