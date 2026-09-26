@@ -617,3 +617,38 @@
   - No start baseline was captured.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 011 — Evaluator Verify (attempt 005)
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`
+  (pinned bytes delivered by Role Grant
+  `sha256:56db2e9d3351d6de8493b3debb1517a761eee936f12d4df941f5f5ffc9649de0`,
+  execution `89207741-2ec2-435f-8223-26fb904072a0`), mode `verify`, under
+  trusted N (kernel definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Allocation: host attempt 5, cycle `001` (`verification-allocated`
+  `c7d722a7-a6d4-4760-a4ac-9417aabe60e7`).
+- Candidate: `9169ccf7d4543c214e7b7890ee29e428a5f8c01a`, evaluated from a clean
+  clone. The shared working tree, which holds the uncommitted host maintenance
+  003, was not evaluated.
+- Evaluator revision `002`,
+  `sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319`.
+  All frozen public and private identities were recomputed and match. There
+  is no drift.
+- Result: **FAIL**, classification `IMPLEMENTATION_FAILURE`.
+  - Executable cases passed 11 of 11.
+  - `npm run check` on a clean offline clone exited 0, with 175 of 175 tests
+    passing.
+  - The new committed real-run evidence closes most of attempt 004's gaps. The
+    handoff itself declares four frozen proof items as gaps, and the evaluator
+    confirmed each from committed bytes:
+    - blocker reporting in the observed orchestrator run (AC03);
+    - default selection by an ordinary request (AC02);
+    - the fixture's explicitly initialized trust root (AC05);
+    - the fixture result's `promotionPlan` binding to the plan bytes (AC04,
+      AC05).
+  - Criteria: 5 not satisfied and 8 not adjudicated.
+- Public artifacts: `verification-result.json` and `verification-feedback.md`.
+- Host actions requested: none. There is no promotion after FAIL.
+- Measurement cutoff: immediately before this manifest update.
