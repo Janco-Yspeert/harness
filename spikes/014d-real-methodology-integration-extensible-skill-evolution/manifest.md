@@ -542,3 +542,78 @@
   - No start baseline was captured.
 - Restricted evaluator material inspected: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 010 — Implementation (consume committed repaired-R3 fixture evidence)
+
+- Skill: `implementation` contract version 4,
+  `sha256:74ed5401e6972a13bb411fdd0e3157653cd68926e431bdc4060835a2c3e77a70`
+  (pinned bytes from Role Grant
+  `sha256:7cc5f939b43380fe953ddab0f0c47102221995f8d5ca9469c2d7474fd16b2a02`,
+  execution `e65e8e83-1530-4f13-b0f0-88dfca7856c8`, predecessor
+  `444a6def-d91b-4ba9-aa9b-e6fc6ec7f62b`), under trusted N
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`.
+- Authority: human root `7d18576c-0b7c-4113-9a8b-56b78cfa959d` (one use),
+  issued after the administrative import commit `01875f3`. It allows
+  consuming the committed repaired-R3 fixture evidence, checking R1/R2/R3
+  completion without re-running providers, updating the public evidence and
+  manifest, running the checks and creating one checkpoint. It excludes
+  fixture mutation, direct provider invocation, evaluator-private access,
+  methodology promotion and profile changes.
+- Inputs, all recomputed and matching:
+  - `spike.md`
+    `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`;
+  - `design-map.md`
+    `sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e`;
+  - `coverage-map.json`
+    `sha256:a7abb9d197d50154c113fc9a6f85b639fdbce1c1cd912d15ff6990e05e8c349b`;
+  - `eval-requirements.md`
+    `sha256:c47e49c8c478ff4c77fdf908eb8105d9c2d7ce6c728f9d594af845054d88691a`;
+  - `evidence/r3-repaired-fixture/canonical-observations.md`
+    `sha256:6e2d29403221605209f177b3bc1f3a57403c859b478a2715e18b194266c82127`,
+    matching the destination identity in `import-manifest.md`;
+  - `evidence/r3-repaired-fixture/import-manifest.md`
+    `sha256:970ab701457d7190aae55edddd4ae77f01d816afcf3c758959098f845f4f0a5b`.
+
+  The host bound no implementation feedback to this execution. The base is
+  `HEAD` `01875f337b355f5cc08f98c1cc3e6f245f4f94f3`. The fixture commit
+  `82ce3c4…` and fixture candidate `2ff9921…` are not in this repository's
+  object store and were not accessed.
+- Cross-checks against committed bytes: the orchestrator, evaluator and
+  As-Built identities named in the extract equal the committed candidate
+  bytes. The orchestrator also equals
+  `git:b68ad3c5d35ba3415849073ae8206953cb807e97:skills/orchestrator/SKILL.md`.
+- Changes:
+  - `evidence/real-provider-runs.md`: the status changes from OUTSTANDING to
+    recorded. The Results table maps R1, R2 and R3 to the extract's event ids,
+    identities, runtime, model and host results. A new section lists what the
+    extract does not show: the R1 role skill identities and brief artifact
+    identity, R2 byte recomputation and a separate trust-root proof, R3
+    blocker reporting, and the R3 initiating request text. The candidate
+    identity table is unchanged.
+  - `evidence/promotion-bound.md`: records 3 mappings for the AC05 fixture
+    archive, within B = 64. B is unchanged.
+  - Unchanged: source, skills, tests, the host, provider profiles, evaluator
+    authority, the imported fixture evidence, execution `444a6def` and
+    host-maintenance records 001–003.
+- Result: **succeeded** for this bounded evidence consumption. R1 and R2 are
+  recorded, and R3 is recorded with the gaps above. Whether this satisfies
+  AC02, AC03, AC05, AC13 and C4 is for independent verification to decide.
+  It is not claimed here.
+- Candidate content: 2 paths plus this manifest; 64 insertions and 21
+  deletions before this entry.
+- Checks, on the working tree:
+  - `tsc --noEmit` passes.
+  - `eslint .` passes.
+  - `npm test`: 175 of 175 pass, including "014d TR6: evidence skill
+    identities and contract versions recompute from committed bytes".
+- Checks not run cleanly:
+  - `prettier --check .` cannot read the root sandbox placeholder files.
+    `prettier --check src test tools skills docs methodologies` warns only on
+    `test/kernel.test.ts`, which belongs to the uncommitted
+    host-maintenance-003 change. That change is left unstaged and untouched,
+    and the 175-test count includes its kernel test. `spikes/` is
+    Prettier-ignored.
+  - No clean-worktree run of this checkpoint was made.
+  - No start baseline was captured.
+- Restricted evaluator material inspected: none.
+- Measurement cutoff: immediately before this manifest update.
