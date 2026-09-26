@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "attempt": "001",
+  "allocationKey": "sha256:9a455665d5ca0fbc36ef3648e878e8bb8fa756faf8ca8d9c6934fbae9e6446ff",
+  "execution": "ff2ce043-eb4c-40af-aa9f-91c86c30388c",
+  "roleGrant": "sha256:6e71ff613319d8e9f3fa61d374a34a13f9baa807e453952eeb4185f0fabab0b6",
+  "commit": "2ff9921c764ab7d959f462052d4857b739e4b1b4",
+  "evaluatorRevision": "001",
+  "evaluatorRevisionIdentity": "sha256:18f482faa591b46702fb3fb7b0b520ebd070f731d05bf8843dc1af1b1ce9fbcc",
+  "inputs": {
+    "brief": "sha256:ebf5064fb00b6dd577015c1866e4e70b50945bfd089b49f65fee7f46f6c651a6",
+    "design": "sha256:68ab6967efc0faaff6ac0b60a438f3b4448374c9a3096e33926654084c2e43f9",
+    "evaluationRequirements": "sha256:ad8ac6de1e2c084e393e0521666d0f66a846f57cdaf0b9b228296ac27db51d5a",
+    "coverage": "sha256:d47e1db7c4dd39536ec0d37986d57a0fb6d0bd826ff08778377e0535f6825872"
+  },
+  "result": "PASS",
+  "coverageResults": {
+    "AC1": "SATISFIED",
+    "AC2": "SATISFIED",
+    "AC3": "SATISFIED"
+  },
+  "accounting": {
+    "criteria": 3,
+    "satisfied": 3,
+    "notSatisfied": 0,
+    "notAdjudicated": 0,
+    "procedures": 4,
+    "executableCases": 2,
+    "executablePassed": 2,
+    "failedProcedures": []
+  },
+  "regression": {
+    "command": "npm run typecheck, npm run lint, npm run format:check and npm test, each run separately at the evaluation-prepared baseline and at the candidate",
+    "environment": "clean exported trees of the baseline and the candidate, using the project dependency link; the dependency directory is outside the evaluation sandbox",
+    "baselineCommit": "2ba83785fe969a3046356faf15b96bbef21ac9f7",
+    "typecheck": "not attributable: the tool could not start at the baseline in this environment",
+    "lint": "not attributable: the tool could not start at the baseline in this environment",
+    "formatCheck": "not attributable: the tool could not start at the baseline in this environment",
+    "test": {
+      "tests": 60,
+      "baselinePassed": 27,
+      "candidatePassed": 27,
+      "newFailures": 0,
+      "note": "The 33 failing tests are the same set at the baseline and the candidate. They are pre-existing, caused mainly by dependencies that cannot be resolved in this environment."
+    },
+    "attributableFailures": 0
+  },
+  "limitations": [
+    "TypeScript, ESLint and Prettier were unavailable in the evaluation environment. The frozen procedure records those checks as not attributable, not as candidate failures."
+  ],
+  "promotionPlan": {
+    "identity": "sha256:bbe3cbc59a59da8f1378c37e91c7ba023496893362416dfd54509c4e83ac4fb5",
+    "decision": "ELIGIBLE"
+  }
+}

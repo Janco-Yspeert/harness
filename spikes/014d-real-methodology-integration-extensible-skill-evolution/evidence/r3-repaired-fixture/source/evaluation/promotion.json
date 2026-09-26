@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "request": {
+    "id": "e9147132-ac93-41ae-af44-f1ab3c96a883",
+    "execution": "ff2ce043-eb4c-40af-aa9f-91c86c30388c",
+    "roleGrant": "sha256:6e71ff613319d8e9f3fa61d374a34a13f9baa807e453952eeb4185f0fabab0b6",
+    "candidate": "2ff9921c764ab7d959f462052d4857b739e4b1b4",
+    "evaluatorRevision": "001",
+    "attempt": 1,
+    "destination": "evaluation",
+    "artifacts": [
+      {
+        "source": ".eval/promotion-plan.json",
+        "destination": "promotion-plan.json",
+        "identity": "sha256:bbe3cbc59a59da8f1378c37e91c7ba023496893362416dfd54509c4e83ac4fb5"
+      },
+      {
+        "source": ".eval/attempt-ledger.json",
+        "destination": "attempt-ledger.json",
+        "identity": "sha256:29babfc57760e2df6bfe4c8dd52698bd154fd93cf13a35d6a4b2651695002442"
+      },
+      {
+        "source": ".eval/attempts/001/eval-result.md",
+        "destination": "attempts/001/eval-result.md",
+        "identity": "sha256:012f9218aa385a2787c2660834b6cf9cfd5cd0cce82d9827809c3cb4d433def6"
+      }
+    ]
+  },
+  "result": {
+    "artifacts": {
+      "promotion-plan.json": "sha256:bbe3cbc59a59da8f1378c37e91c7ba023496893362416dfd54509c4e83ac4fb5",
+      "attempt-ledger.json": "sha256:29babfc57760e2df6bfe4c8dd52698bd154fd93cf13a35d6a4b2651695002442",
+      "attempts/001/eval-result.md": "sha256:012f9218aa385a2787c2660834b6cf9cfd5cd0cce82d9827809c3cb4d433def6"
+    },
+    "integrityIdentity": "sha256:def5c415c1c505897f4498de8ebba5a0af7b876cabcb5e726c0e6086a8108492"
+  }
+}
