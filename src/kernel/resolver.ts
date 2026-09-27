@@ -76,6 +76,12 @@ export function authorityBasis(events: LedgerEvent[]): string {
     ),
   );
 }
+
+// Recovery invalidates only named historical facts. Authority created after a
+// recovery must bind the same filtered history that later resolution uses.
+export function recoveryScopedAuthorityBasis(events: LedgerEvent[]): string {
+  return authorityBasis(recoveryScopedEvents(events));
+}
 export function roleInputs(
   project: Project,
   workflow: string,
@@ -232,7 +238,7 @@ export function resolveAuthority(
   const roots = effectiveEvents
     .filter((e) => e.transition === "kernel.root")
     .map((e) => e.evidence as unknown as RootAuthority);
-  const basis = authorityBasis(effectiveEvents);
+  const basis = recoveryScopedAuthorityBasis(events);
   const allocations = effectiveEvents.filter(
     (e) =>
       e.transition === "kernel.allocation" &&
@@ -245,7 +251,7 @@ export function resolveAuthority(
       predicate(role.policy.when, effectiveEvents, definition.policy),
   );
   const override = roots.findLast((r) => {
-    const index = effectiveEvents.findIndex((e) => e.evidence.id === r.id);
+    const index = events.findIndex((e) => e.evidence.id === r.id);
     const uses = allocations.filter(
       (a) => (a.evidence.grant as RoleGrant).rootAuthority === r.id,
     );
@@ -255,8 +261,8 @@ export function resolveAuthority(
       (!requestedRole || r.role === requestedRole) &&
       r.project === project.id &&
       r.workflow === workflow.workflow &&
-      r.basis === authorityBasis(effectiveEvents.slice(0, index)) &&
-      basis === authorityBasis(effectiveEvents.slice(0, index + 1)) &&
+      r.basis === recoveryScopedAuthorityBasis(events.slice(0, index)) &&
+      basis === recoveryScopedAuthorityBasis(events.slice(0, index + 1)) &&
       (r.uses > uses.length ||
         uses.some(
           (a) =>

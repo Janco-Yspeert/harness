@@ -20,6 +20,7 @@ import { trustFixtureMethodology } from "./support/trusted-fixture.ts";
 import { harnessValidators } from "../src/methodologies/harness-public.ts";
 import { ExecutionKernel } from "../src/kernel/execution.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
+import { authorityBasis } from "../src/kernel/resolver.ts";
 import {
   appendLedger,
   contentId,
@@ -1707,6 +1708,64 @@ void test("pre-implementation recovery revokes a prematurely advanced grant and 
   assert.equal(reopened.grant.role, "design-map");
   assert.deepEqual(Object.keys(reopened.grant.inputs), ["brief"]);
 
+  // A root recorded with the old, unscoped basis remains historical evidence,
+  // but cannot become valid merely because the host learned the correct rule.
+  const wrongScope = f.event("kernel.root", {
+    schemaVersion: 1,
+    id: "unscoped-recovery-root",
+    workflowGrant: recovered.grant.id,
+    project: f.project.id,
+    workflow: f.workflow,
+    basis: authorityBasis(f.kernel.events(f.workflow)),
+    role: "design-map",
+    reason: "historical root recorded against the unscoped ledger",
+    origin: "human",
+    uses: 1,
+    change: "permit-role",
+  });
+  const withoutUsableRoot = f.kernel.inspect(
+    f.workflow,
+    recovered.grant.id,
+    "design-map",
+  );
+  if (withoutUsableRoot.kind !== "grant")
+    assert.fail(JSON.stringify(withoutUsableRoot));
+  assert.equal(withoutUsableRoot.grant.rootAuthority, null);
+  assert.ok(
+    f.kernel
+      .events(f.workflow)
+      .some((event) => event.id === wrongScope.id),
+  );
+
+  // A root issued after recovery uses the same scoped basis as resolution.
+  const scopedRoot = f.kernel.root(
+    f.workflow,
+    recovered.grant.id,
+    "design-map",
+    "one post-recovery Design Map recovery",
+  );
+  const rooted = f.kernel.inspect(
+    f.workflow,
+    recovered.grant.id,
+    "design-map",
+  );
+  if (rooted.kind !== "grant") assert.fail(JSON.stringify(rooted));
+  assert.equal(rooted.grant.rootAuthority, scopedRoot.id);
+  const rootedAllocation = f.kernel.allocate(f.workflow, recovered.grant.id, {
+    mode: "attached",
+    session: session.id,
+    role: "design-map",
+  });
+  assert.equal(rootedAllocation.grant.rootAuthority, scopedRoot.id);
+  assert.equal(
+    f.kernel.allocate(f.workflow, recovered.grant.id, {
+      mode: "attached",
+      session: session.id,
+      role: "design-map",
+    }).execution.id,
+    rootedAllocation.execution.id,
+  );
+
   const restarted = await startHarnessHost(0, {
     governed: { project: f.project, executors: profiles, rootToken },
   });
@@ -1719,11 +1778,16 @@ void test("pre-implementation recovery revokes a prematurely advanced grant and 
   assert.match(staleAfterRestart.reason, /permanently revoked/);
   const reopenedAfterRestart = await api<{
     kind: string;
-    grant: { role: string; inputs: Record<string, string> };
+    grant: {
+      role: string;
+      inputs: Record<string, string>;
+      rootAuthority: string | null;
+    };
   }>(restarted.url, `resolve/${recovered.grant.id}`);
   assert.equal(reopenedAfterRestart.kind, "grant");
   assert.equal(reopenedAfterRestart.grant.role, "design-map");
   assert.deepEqual(Object.keys(reopenedAfterRestart.grant.inputs), ["brief"]);
+  assert.equal(reopenedAfterRestart.grant.rootAuthority, scopedRoot.id);
 });
 
 void test("TR5/TR9: private human payloads are host-owned; another executor cannot inspect or answer them", async (t) => {

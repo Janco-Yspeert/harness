@@ -26,6 +26,7 @@ import { MAX_ACTION_ARTIFACTS } from "../executors/protocol.ts";
 import { inside, loadDefinition } from "./methodology.ts";
 import {
   authorityBasis,
+  recoveryScopedAuthorityBasis,
   resolveAuthority,
   type Resolution,
 } from "./resolver.ts";
@@ -1548,7 +1549,7 @@ export class ExecutionKernel {
         workflowGrant,
         project: this.project.id,
         workflow,
-        basis: authorityBasis(this.events(workflow)),
+        basis: recoveryScopedAuthorityBasis(this.events(workflow)),
         role,
         reason,
         origin: "human",
