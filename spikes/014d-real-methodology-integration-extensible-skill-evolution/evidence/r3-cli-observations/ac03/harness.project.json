@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "harness-014d-r3-ac03-blocker",
+  "root": ".",
+  "policy": "methodologies/harness/policy.json",
+  "trustedHistory": "fixture-trusted.jsonl",
+  "validatorSources": {
+    "prepared-coverage": "src/methodologies/harness-public.ts",
+    "verification-accounting": "src/methodologies/harness-public.ts"
+  },
+  "workflowDirectory": "fixture-spikes",
+  "ledgerName": "workflow.jsonl",
+  "workspaces": {
+    "repository": {
+      "id": "harness-repository",
+      "path": ".",
+      "mode": "write",
+      "exposure": "public"
+    }
+  },
+  "remotes": {}
+}

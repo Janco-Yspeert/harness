@@ -1,0 +1,17 @@
+[
+  {
+    "id": "claude-governed-r3-ac02",
+    "provider": "claude",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": ["private-workspace"],
+    "available": true,
+    "maxTurns": 24
+  }
+]
