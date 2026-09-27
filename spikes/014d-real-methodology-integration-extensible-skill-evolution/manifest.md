@@ -689,3 +689,42 @@
 - Public artifacts: `verification-result.json` and `verification-feedback.md`.
 - Host actions requested: none. There is no promotion after FAIL.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 013 — Evaluator Verify (attempt 007)
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`
+  (pinned bytes delivered by Role Grant
+  `sha256:4142f54d5a6ce7c4c143168608b8889019b3f0c98cfe1a37fd39b359f77b38da`,
+  execution `7b3daed7-6a33-4602-abde-1935c0757056`), mode `verify`, under
+  trusted N (kernel definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Allocation: host attempt 7, cycle `001` (`verification-allocated`
+  `11996290-1d95-4fee-8f12-ce8c59e5a53a`). Root authority `348cdfff`
+  authorized verification of the unchanged candidate after `41726f7` recorded
+  the methodology candidate/check/diff evidence.
+- Candidate: `9169ccf7d4543c214e7b7890ee29e428a5f8c01a`, unchanged since
+  attempt 005 and evaluated from a clean clone.
+  - The public-evidence review also read the docs-only commits made after
+    the candidate, up to `41726f7`.
+  - The shared working tree, which holds the uncommitted host maintenance
+    003, was not evaluated.
+- Evaluator revision `002`,
+  `sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319`.
+  All frozen public and private identities were recomputed and match. There
+  is no drift.
+- Result: **PASS**.
+  - Executable cases passed 11 of 11.
+  - `npm run check` on a clean clone exited 0, with 175 of 175 tests
+    passing.
+  - Every procedure was adjudicated to decision depth.
+  - The committed methodology candidate, check and diff outputs reproduce
+    byte-for-byte at the candidate. This closes the attempt-006 AC09 gap.
+  - Criteria: 13 of 13 satisfied.
+  - Human acceptance is a separate, later gate.
+- Public artifacts: `verification-result.json`. The attempt-006
+  `verification-feedback.md` is historical and closed.
+- Host actions requested: a promotion of the attempt ledger, the terminal
+  attempt results and evaluator revision `002`, requested after this
+  checkpoint.
+- Measurement cutoff: immediately before this manifest update.

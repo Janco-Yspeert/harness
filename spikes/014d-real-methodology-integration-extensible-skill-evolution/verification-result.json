@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "attempt": "006",
-  "allocationKey": "sha256:a54498c25e2af4310c262edd651c1a152e9339a2dec815a3bd177d2c02dd703a",
-  "execution": "2e924108-802f-4c7a-a91d-64754a50af10",
-  "roleGrant": "sha256:8a8517ba781b84da52a69f65fe24e72bd5707da2e17596472d7b1ac7b0e58c3d",
+  "attempt": "007",
+  "allocationKey": "sha256:f8d10008f231d692ceda6a4ea608f669433bfcc9449b63df44a42176f005fdad",
+  "execution": "7b3daed7-6a33-4602-abde-1935c0757056",
+  "roleGrant": "sha256:4142f54d5a6ce7c4c143168608b8889019b3f0c98cfe1a37fd39b359f77b38da",
   "commit": "9169ccf7d4543c214e7b7890ee29e428a5f8c01a",
   "evaluatorRevision": "002",
   "evaluatorRevisionIdentity": "sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319",
@@ -15,11 +15,10 @@
   },
   "evidenceBasis": {
     "candidate": "9169ccf7d4543c214e7b7890ee29e428a5f8c01a",
-    "committedEvidenceHead": "f62e4ed61e2c001ed6a6704f8de94e72a7025bc4",
-    "note": "Executable cases and the regression ran on a clean clone of the candidate. The public-evidence procedures also read the human-authorized, docs-only evidence imports committed under the spike directory after the candidate (up to f62e4ed); root authority 9e7060e6 authorized this retry on that basis. No code, skill, contract, policy or test differs from the candidate."
+    "committedEvidenceHead": "41726f75b9a0260dd606613aadcf78fd21d1e937",
+    "note": "The executable cases and the regression ran on a clean clone of the candidate. The public-evidence procedures also read the documentation-only evidence committed under the spike directory after the candidate, up to 41726f7. That includes the methodology candidate/check/diff evidence, which root authority 348cdfff named as the basis for this attempt. No code, skill, contract, policy, trusted history or test differs from the candidate."
   },
-  "result": "FAIL",
-  "classification": "IMPLEMENTATION_FAILURE",
+  "result": "PASS",
   "coverageResults": {
     "AC01": "SATISFIED",
     "AC02": "SATISFIED",
@@ -29,26 +28,26 @@
     "AC06": "SATISFIED",
     "AC07": "SATISFIED",
     "AC08": "SATISFIED",
-    "AC09": "NOT_SATISFIED",
+    "AC09": "SATISFIED",
     "AC10": "SATISFIED",
     "AC11": "SATISFIED",
     "AC12": "SATISFIED",
-    "AC13": "NOT_SATISFIED"
+    "AC13": "SATISFIED"
   },
   "accounting": {
     "criteria": 13,
-    "satisfied": 11,
-    "notSatisfied": 2,
+    "satisfied": 13,
+    "notSatisfied": 0,
     "notAdjudicated": 0,
     "procedures": 12,
     "executableCases": 11,
     "executablePassed": 11,
-    "failedProcedures": ["M-EVOL"],
-    "note": "Every procedure was adjudicated to decision depth. AC13 is not satisfied because the frozen independent evaluation does not pass as a whole; its own real-provider, regression and executable evidence passed."
+    "failedProcedures": [],
+    "note": "Every procedure was adjudicated to decision depth. The committed methodology candidate/check/diff outputs reproduce byte-for-byte from the candidate, which closes the attempt-006 AC09 gap."
   },
   "regression": {
     "command": "npm run check",
-    "environment": "clean clone of the candidate; provider credentials absent; offline",
+    "environment": "clean clone of the candidate; provider credentials absent",
     "exit": 0,
     "tests": 175,
     "passed": 175
@@ -58,10 +57,9 @@
     "002": "host allocation ended at the provider rate limit before evaluation began; no result",
     "003": "host allocation ended at the provider rate limit before evaluation began; no result",
     "004": "FAIL IMPLEMENTATION_FAILURE on candidate 0e2789c (unchanged since 001)",
-    "005": "FAIL IMPLEMENTATION_FAILURE on candidate 9169ccf; its four evidence gaps are closed in this attempt"
+    "005": "FAIL IMPLEMENTATION_FAILURE on candidate 9169ccf",
+    "006": "FAIL IMPLEMENTATION_FAILURE on candidate 9169ccf (AC09 candidate/check/diff evidence missing); closed in this attempt"
   },
-  "requirement": "Brief §4, ordinary N to N+1 path step 1 ('Resolve immutable trusted N and create an exact candidate N+1; present the existing candidate/check/diff evidence'), for AC09 and hence AC13.",
-  "expected": "Committed public evidence presents the output of the existing methodology tooling for the exact candidate revision against trusted N (trusted record 4, revision 0a3dafe8e103cc7376bdd7fae32493710613d0c0): the candidate methodology identity from 'candidate', its 'check' result, and its 'diff' against trusted N. The identities must recompute from the candidate's committed bytes.",
-  "observed": "No committed file under the spike directory, at the candidate or at the latest evidence commit, presents candidate, check or diff output for the candidate methodology against trusted N. The only candidate/check/diff evidence is the disposable ninth-role extensibility test (AC11), which is a different candidate. The implementation manifest entries report repository checks and skill identities, but not the methodology candidate identity, check result or diff.",
-  "diagnostics": "All 11 executable cases pass, and so does the offline regression (175/175). The imported R3 and CLI-observation evidence closes all four gaps from attempt 005: blocker reporting, ordinary-request default selection, the fixture trust root, and the fixture promotionPlan binding. Every committed identity recomputes. Every other review item is evidenced: the fidelity matrix, visible regressions, real-provider and fixture promotion, orchestrator provenance, the single bound B, the code review items, and every evaluator execution bound to N. The existing tool (npm run methodology) can produce the missing evidence at the candidate. The retry must commit that evidence: run candidate, check and diff for the exact candidate against trusted N and record the resulting identities. It must not change the trusted history."
+  "supersedes": "The attempt-006 retry feedback in verification-feedback.md is historical and is closed by this attempt. No implementation feedback is outstanding.",
+  "humanAcceptance": "Required separately. This PASS does not accept the product or promote trusted methodology."
 }
