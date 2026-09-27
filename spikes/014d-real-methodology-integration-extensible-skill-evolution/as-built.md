@@ -301,3 +301,21 @@ repair.
 
 Everything else in brief §§1–8 and Design Map C1–C9 matches what was
 built, as described above.
+
+## Retry record (execution `700e3b1a-63dc-4649-993e-18757c305ae0`)
+
+This is a forward-only As-Built retry under one-use human root authority
+`36343082-b3f8-4142-96c3-f0155e5af501`. The reconstruction above was
+recorded by execution `3652f997-2153-4c39-a1e1-bdd86926fc49`
+(`as-built-recorded` `207ecefa-29da-4c80-b972-07676776b956`, commit
+`45f3ce4`). It is preserved unchanged.
+
+- The bound inputs are identical to the prior execution's, and all were
+  recomputed. The candidate is unchanged, so the built shape, the Missing,
+  Contradictory and Extra findings, and their counts (3/2/7) are unchanged.
+- `evaluation/promotion.json` was validated against the bound promotion
+  identity and against `promotionIdentity` on `promotion-recorded`
+  `4115a86a-7208-4d7a-b6aa-9f1411775dee`. Both match. That file alone
+  was committed as its own checkpoint `d221862c820f1de52a8018b453246d996c6fc37d`,
+  separate from this As-Built checkpoint. No other `evaluation/` content
+  was committed or read.

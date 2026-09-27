@@ -767,3 +767,37 @@
 - Host actions requested: none. `evaluation/` was left uncommitted, as
   pinned As-Built v3 requires.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 015 — As-Built (forward-only retry)
+
+- Skill: `as-built` v3,
+  `sha256:69c6d4964bbdb9dd6163a094d798c58727d84976dc641bf371edc246c4c7f9a8`
+  (pinned bytes delivered by Role Grant
+  `sha256:5f1b3a273e38db7aaa089cd0cdee79b3e2fe08f2269d8dc91546d5d4d5f65b07`,
+  execution `700e3b1a-63dc-4649-993e-18757c305ae0`), under trusted N (kernel
+  definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Authority: one-use human root `36343082-b3f8-4142-96c3-f0155e5af501`.
+  It permits this retry to preserve the Run 014 record, commit only the
+  host-promoted `evaluation/promotion.json`, and create a new As-Built
+  checkpoint.
+- Inspected revision: candidate `9169ccf7d4543c214e7b7890ee29e428a5f8c01a`.
+  This is the same candidate as Run 014, so the reconstruction was not
+  redone. No evaluator-private material was read.
+- Input identities (all recomputed; all match):
+  - brief `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`;
+  - design `sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e`;
+  - verification `sha256:7c30dd1f9d0ce8f135601aadeae4087688748faa789cf11f9da17a4e4c2e55bc`;
+  - promotion `sha256:9af265620b31924d1a5cb2be13e235c40c4b49e90eb814a165d6841899862d8c`,
+    which also equals `promotionIdentity` on `promotion-recorded`
+    `4115a86a-7208-4d7a-b6aa-9f1411775dee`.
+- Promotion checkpoint: `evaluation/promotion.json` alone, commit
+  `d221862c820f1de52a8018b453246d996c6fc37d`.
+- Artifact: `as-built.md`,
+  `sha256:215056106fa4773824b26b45d4632e96e81d877d668d02e552b4745fff834216`
+  (321 lines, 16233 bytes). The Run 014 content is preserved, and a retry
+  record section was appended.
+- Result: `succeeded`. The discrepancies are unchanged: 3 Missing,
+  2 Contradictory and 7 Extra.
+- Host actions requested: none.
+- Measurement cutoff: immediately before this manifest update.
