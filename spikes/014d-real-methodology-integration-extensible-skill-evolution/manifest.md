@@ -801,3 +801,48 @@
   2 Contradictory and 7 Extra.
 - Host actions requested: none.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 016 — Outcome
+
+- Skill: `outcome` v4,
+  `sha256:d56dd4652a41d4edb450dabc4ce8a5473e02de2c69aa6d8578c07c441d8ef607`
+  (pinned bytes delivered by Role Grant
+  `sha256:0c0e69baadad9bd57c5c562294749b11e902dce64dd0abe061a2135e92d96bbf`,
+  execution `083e1a7d-4f55-4788-848e-ec64e0144979`, Workflow Grant
+  `3223abe5-dd9e-4e58-8fcc-9df8f80c20b9`), under trusted N (kernel definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Input identities (all recomputed; all match):
+  - candidate and acceptance `9169ccf7d4543c214e7b7890ee29e428a5f8c01a`;
+  - brief `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`;
+  - design `sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e`;
+  - history `manifest.md`
+    `sha256:91ebc8ef2d62001276edbb00c82639af1b78173e0c8ef81f5762021b7bb69175`;
+  - As-Built `sha256:215056106fa4773824b26b45d4632e96e81d877d668d02e552b4745fff834216`;
+  - promotion `sha256:9af265620b31924d1a5cb2be13e235c40c4b49e90eb814a165d6841899862d8c`.
+- Preconditions confirmed from evaluation, ledger and Git evidence, not
+  `HEAD`:
+  - committed candidate;
+  - N-authored PASS on attempt 007 for that exact candidate;
+  - host promotion committed (`d221862`, `06a01cd`);
+  - As-Built recorded;
+  - `human-accepted` bound to the candidate.
+
+  Trusted-history record 5 (`426a561`) was observed.
+- Artifact: `outcome.md`,
+  `sha256:0e6269b5ef40c1b293cf955f3b1e11b2d4f6c4588b72d37d1e7beb922ee30316`
+  (246 lines, 13622 bytes).
+- Result: `succeeded`, completion mode `STANDARD`.
+- Evidence read:
+  - `spike.md`, `design-map.md`, this manifest, `as-built.md`,
+    `human-acceptance.md` and `verification-result.json`;
+  - `evaluation/promotion.json` and promoted attempt 007;
+  - selected `evidence/**`, `host-maintenance-003.md` and the
+    `workflow.jsonl` event summary;
+  - `methodologies/harness/trusted.jsonl`;
+  - Git history;
+  - the 013a Outcome, for format only.
+
+  Active evaluator-private workspaces: none.
+- Checks: Prettier check of `outcome.md`. No start baseline was captured.
+- Host actions requested: none.
+- Measurement cutoff: immediately before this manifest update.
