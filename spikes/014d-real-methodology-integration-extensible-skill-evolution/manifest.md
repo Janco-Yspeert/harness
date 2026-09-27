@@ -652,3 +652,40 @@
 - Public artifacts: `verification-result.json` and `verification-feedback.md`.
 - Host actions requested: none. There is no promotion after FAIL.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 012 — Evaluator Verify (attempt 006)
+
+- Skill: `evaluator` v13,
+  `sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80`
+  (pinned bytes delivered by Role Grant
+  `sha256:8a8517ba781b84da52a69f65fe24e72bd5707da2e17596472d7b1ac7b0e58c3d`,
+  execution `2e924108-802f-4c7a-a91d-64754a50af10`), mode `verify`, under
+  trusted N (kernel definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Allocation: host attempt 6, cycle `001` (`verification-allocated`
+  `736eeaf7-27a2-4f96-92bf-9ce71fa7d5cc`). Root authority `9e7060e6`
+  authorized this single fresh retry after the public R3 evidence imports.
+- Candidate: `9169ccf7d4543c214e7b7890ee29e428a5f8c01a`, unchanged since
+  attempt 005 and evaluated from a clean clone.
+  - The public-evidence review also read the docs-only evidence imports
+    committed after the candidate, up to `f62e4ed`.
+  - The shared working tree, which holds the uncommitted host maintenance
+    003, was not evaluated.
+- Evaluator revision `002`,
+  `sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319`.
+  All frozen public and private identities were recomputed and match. There
+  is no drift.
+- Result: **FAIL**, classification `IMPLEMENTATION_FAILURE`.
+  - Executable cases passed 11 of 11.
+  - `npm run check` on a clean offline clone exited 0, with 175 of 175 tests
+    passing.
+  - The imported evidence closes all four gaps from attempt 005.
+  - Every procedure was adjudicated to decision depth. One frozen proof item
+    is missing: brief §4 step 1 asks for the `candidate`, `check` and `diff`
+    evidence for the exact candidate against trusted N, and none is
+    committed (AC09).
+  - Criteria: 11 satisfied and 2 not satisfied (AC09, and AC13 as a
+    consequence).
+- Public artifacts: `verification-result.json` and `verification-feedback.md`.
+- Host actions requested: none. There is no promotion after FAIL.
+- Measurement cutoff: immediately before this manifest update.
