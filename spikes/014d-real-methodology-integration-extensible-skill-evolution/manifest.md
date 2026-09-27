@@ -728,3 +728,42 @@
   attempt results and evaluator revision `002`, requested after this
   checkpoint.
 - Measurement cutoff: immediately before this manifest update.
+
+## Run 014 — As-Built
+
+- Skill: `as-built` v3,
+  `sha256:69c6d4964bbdb9dd6163a094d798c58727d84976dc641bf371edc246c4c7f9a8`
+  (pinned bytes delivered by Role Grant
+  `sha256:83c4d22e209337c72b84e7affc6817ba3736313a683071c7213478ebf575fd72`,
+  execution `3652f997-2153-4c39-a1e1-bdd86926fc49`), under trusted N (kernel
+  definition
+  `sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92`).
+- Inspected revision: candidate `9169ccf7d4543c214e7b7890ee29e428a5f8c01a`,
+  diffed against the prepared baseline `0b55064`. Committed public evidence
+  after the candidate, up to `6f6b7bb`, was also read.
+  - The uncommitted host maintenance 003 in the shared working tree is not
+    part of the candidate. It was not described as built.
+  - No evaluator-private material was read.
+- Input identities (all recomputed; all match):
+  - brief `sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d`;
+  - design `sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e`;
+  - verification `sha256:7c30dd1f9d0ce8f135601aadeae4087688748faa789cf11f9da17a4e4c2e55bc`
+    (attempt 007, PASS);
+  - promotion `sha256:9af265620b31924d1a5cb2be13e235c40c4b49e90eb814a165d6841899862d8c`
+    (`evaluation/promotion.json`; `promotion-recorded`
+    `4115a86a-7208-4d7a-b6aa-9f1411775dee`).
+- Artifact: `as-built.md`,
+  `sha256:48152f689e596ee78b496e837bbe2c41bbe877893d6877e08cac525dd08472a3`
+  (303 lines, 15241 bytes).
+- Result: `succeeded`. The reconstruction recorded these discrepancies:
+  - 3 Missing: R3 blocker-reporting observation, R3 initiating request
+    text, and R1 executed skill identities;
+  - 2 Contradictory: the C4 AC05 representative archive has no revision
+    bundle, and this spike's own N PASS has no `promotionPlan`;
+  - 7 Extra: pre-implementation recovery, BLOCKED stopping continuation,
+    the outstanding-request gate, the new policy gates, As-Built committing
+    `promotion.json`, `artifactCommit` provenance, and the Implementation
+    `manifest.md` postcondition.
+- Host actions requested: none. `evaluation/` was left uncommitted, as
+  pinned As-Built v3 requires.
+- Measurement cutoff: immediately before this manifest update.
