@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "revision": "002",
+  "runner": "node --test (project runtime); cwd = clean checkout of the exact candidate commit with its installed node_modules, or HARNESS_PROJECT_ROOT set to it",
+  "support": [".hidden-test/support/repo.ts"],
+  "tests": [
+    {
+      "file": ".hidden-test/e1-promotion-binding.test.ts",
+      "procedure": "E1",
+      "cases": ["E1"],
+      "criteria": ["AC10", "AC13"]
+    },
+    {
+      "file": ".hidden-test/e2-stable-context-prefix.test.ts",
+      "procedure": "E2",
+      "cases": ["E2"],
+      "criteria": ["AC12", "AC13"]
+    },
+    {
+      "file": ".hidden-test/e3-archive-plan-refusals.test.ts",
+      "procedure": "E3",
+      "cases": ["E3"],
+      "criteria": ["AC04", "AC06", "AC13"]
+    },
+    {
+      "file": ".hidden-test/e4-trusted-grant-resolution.test.ts",
+      "procedure": "E4",
+      "cases": ["E4a", "E4b"],
+      "criteria": ["AC08", "AC09", "AC13"]
+    },
+    {
+      "file": ".hidden-test/e5-authority-history-static.test.ts",
+      "procedure": "E5",
+      "cases": ["E5a", "E5b", "E5c", "E5d", "E5e"],
+      "criteria": ["AC02", "AC09", "AC10", "AC13"]
+    },
+    {
+      "file": ".hidden-test/e6-artifact-bound.test.ts",
+      "procedure": "E6",
+      "cases": ["E6"],
+      "criteria": ["AC06", "AC13"]
+    }
+  ]
+}

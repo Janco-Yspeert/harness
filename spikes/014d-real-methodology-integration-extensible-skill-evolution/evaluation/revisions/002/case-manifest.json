@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "spike": "014d-real-methodology-integration-extensible-skill-evolution",
+  "revision": "002",
+  "note": "Revision 002, prepared under trusted N (kernel definition sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92) against the Design Map sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e recorded after pre-implementation recovery d86c645e-d06c-4717-906e-439c0dfb7d83. Revision 001 (derived from the invalidated map) is preserved unchanged under .eval/revisions/001/ and was never used for verification. Executable cases use only seams fixed by the frozen Design Map or existing authoritative public interfaces (C5 promoteMethodology, C9 workerInstructions, the exported archive utility, the production host construction path, the published worker-protocol schema and parser for the C4 bound B, C6 orchestrator identity and history conventions, committed history). Implementation-free seams (plan-schema additions, the location and name of B's definition, fidelity-matrix form, ninth-role attributes, orchestrator test-subject harness and run layout) are covered by frozen public-evidence and review procedures.",
+  "procedures": [
+    {
+      "id": "E1",
+      "criteria": ["AC10", "AC13"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/e1-promotion-binding.test.ts"],
+      "support": [".hidden-test/support/repo.ts"],
+      "cases": ["E1"],
+      "procedure": "From a clean checkout of the exact candidate commit: node --test <private>/.hidden-test/e1-promotion-binding.test.ts (cwd = candidate checkout, or HARNESS_PROJECT_ROOT set to it).",
+      "decisionRule": "Any accepted promotion among: bound commit differs from the promoted revision; bound candidate manifest differs from the reconstructed manifest; stale trusted evaluator; self-evaluated candidate; missing candidate or candidateMethodology binding; or a rejected promotion that changes history; or the correct binding failing to append exactly one event after an unchanged legacy record, is a FAIL for AC10. A failure of the stated fixture-coherence precondition is not classified until the evaluator confirms whether the candidate's check rejects an otherwise coherent comment-only skill change (EA4); if it does, the failure is an implementation failure against public EA4, otherwise an evaluator defect."
+    },
+    {
+      "id": "E2",
+      "criteria": ["AC12", "AC13"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/e2-stable-context-prefix.test.ts"],
+      "support": [".hidden-test/support/repo.ts"],
+      "cases": ["E2"],
+      "procedure": "node --test <private>/.hidden-test/e2-stable-context-prefix.test.ts against the candidate checkout.",
+      "decisionRule": "Non-deterministic instructions; a byte-identical common leading prefix that lacks the complete pinned skill bytes, the complete pinned contract serialization (TR2 forms) or every worker operation name; an execution-scoped value (execution id, Role Grant id, workflow, distinctive input identity) appearing inside that prefix; or such a value missing from the assembled instructions, is a FAIL for AC12."
+    },
+    {
+      "id": "E3",
+      "criteria": ["AC04", "AC06", "AC13"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/e3-archive-plan-refusals.test.ts"],
+      "support": [".hidden-test/support/repo.ts"],
+      "cases": ["E3"],
+      "procedure": "node --test <private>/.hidden-test/e3-archive-plan-refusals.test.ts against the candidate checkout.",
+      "decisionRule": "buildArchiveManifest missing, or producing a manifest (not throwing an Error) for any of: absent plan at the default path; unreadable plan; unsupported schemaVersion; INELIGIBLE decision; source escaping the workspace; absolute destination; duplicate destination; missing revision source; missing terminal attempt history; symbolic-link source, is a FAIL for AC04/AC06."
+    },
+    {
+      "id": "E4",
+      "criteria": ["AC08", "AC09", "AC13"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/e4-trusted-grant-resolution.test.ts"],
+      "support": [".hidden-test/support/repo.ts"],
+      "cases": ["E4a", "E4b"],
+      "procedure": "node --test <private>/.hidden-test/e4-trusted-grant-resolution.test.ts against the candidate checkout (loopback only, no provider).",
+      "decisionRule": "E4a: a new grant from the clean committed candidate checkout, or after uncommitted skill edits, that is refused, or whose recorded kernel.definition does not bind the latest trusted record's exact committed role set and skill bytes, or whose definition id differs between the clean and edited checkouts, is a FAIL for AC09. E4b: any legacy workflow-run/fixture POST under a governed host (even with the legacy flag requested) answered other than 404/405/410, or creating workflow state, is a FAIL for AC08."
+    },
+    {
+      "id": "E5",
+      "criteria": ["AC02", "AC09", "AC10", "AC13"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/e5-authority-history-static.test.ts"],
+      "support": [".hidden-test/support/repo.ts"],
+      "cases": ["E5a", "E5b", "E5c", "E5d", "E5e"],
+      "procedure": "node --test <private>/.hidden-test/e5-authority-history-static.test.ts against the candidate checkout.",
+      "decisionRule": "E5a: trusted.jsonl at the candidate not byte-identical to the brief-freeze commit (a pre-approval trust event) is a FAIL for AC10. E5b: a modified/deleted existing 014c file is a FAIL for AC09 when introduced by an implementation commit; when introduced by a separately recorded human-authorized commit it is classified SPECIFICATION_DRIFT, not an implementation failure. E5c: a methodology/project configuration file, or non-comment src/tools code, encoding the 014d spike identity is a FAIL for AC09. E5d: the committed candidate policy.json, or the candidate methodology manifest built by buildMethodologyManifest at the candidate commit, referencing skills/orchestrator (C6: not a policy role or manifest component) is a FAIL for AC09 and AC02. E5e: when skills/orchestrator/SKILL.md differs from the brief-freeze bytes, a Contract version not greater than the brief-freeze version, or no file added under docs/history/skills/orchestrator/ since the brief freeze whose bytes equal the brief-freeze orchestrator contract (C6 plus the docs/history/skills/README.md preservation convention), is a FAIL for AC02. An unmodified orchestrator passes E5e vacuously; whether it was revised as the brief requires is judged by M-ORCH."
+    },
+    {
+      "id": "E6",
+      "criteria": ["AC06", "AC13"],
+      "mode": "executable",
+      "executable": true,
+      "tests": [".hidden-test/e6-artifact-bound.test.ts"],
+      "support": [".hidden-test/support/repo.ts"],
+      "cases": ["E6"],
+      "procedure": "node --test <private>/.hidden-test/e6-artifact-bound.test.ts against the candidate checkout. B is read from WORKER_PROTOCOL_SCHEMAS.operations.requestAction.request.properties.artifacts.maxItems; requests are validated with the exported parseWorkerRequest.",
+      "decisionRule": "The published requestAction schema lacking a numeric artifact bound; B smaller than 38 (the largest committed historical archive, which C4 requires a representative complete archive to meet or exceed while fitting within B); a well-formed promotion request with exactly B mappings refused or truncated; or a request with B + 1 mappings not refused with an Error, is a FAIL for AC06 (C4: one bound, B + 1 refused, never split or truncated). The value of B is not judged here beyond B >= 38; whether B = 64 is justified or a raise is recorded is judged by M-CODE C4 and M-LIVE L6."
+    },
+    {
+      "id": "R-REG",
+      "criteria": [
+        "AC01",
+        "AC03",
+        "AC04",
+        "AC06",
+        "AC07",
+        "AC08",
+        "AC09",
+        "AC11",
+        "AC12",
+        "AC13"
+      ],
+      "mode": "public-regression",
+      "executable": false,
+      "tests": [],
+      "cases": ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9"],
+      "reason": "The brief requires deterministic tests whose mocking seams, scripted-worker harness, plan-schema additions, ninth-role attributes and fixture layout are implementation freedom (design-map.md Implementation freedom; C7). Hidden duplicates would have to invent those seams. The evaluator instead runs the candidate's committed suite and reviews each required behavior for a genuine, falsifiable test.",
+      "procedure": "R1: on a clean checkout of the candidate, offline with provider CLIs and credentials absent, run npm run check; exit 0 required. R2-R9: locate and read the visible test(s) for each item and confirm each asserts the behavior and would fail if it regressed (no constant or tautological assertion; mocked compliance labelled as such). R2: C7 layers (a) pinned bytes, (b) scripted MCP worker against the real kernel/host producing artifacts, local commit, semantic result, host action, host-owned transition and failure states, (c) static skill-bytes check, for each of the eight roles. R3: archive utility expands an eligible real persisted plan into deterministic identity-checked mappings with decisionIdentity equal to the plan bytes' sha256, and refuses mutated sources, identity mismatch, partial revision bundles, incomplete attempt history, unsafe/duplicate paths and unsupported schema; and a deterministic complete representative manifest (C4) with at least 38 mappings and the 14-attempt, 2-revision shape expands without truncation to a mapping count within B, where B is taken from its one exported definition. R4: promotion negative matrix through the real kernel/host: absent/invalid plan, wrong identity, wrong candidate/revision/attempt, partial bundle, ineligible decision, oversized manifest of B + 1 mappings (B referenced through its one exported definition, not a literal, and refused before any copy), omitted request, denied/failed action, premature exit, duplicate/retried delivery: none records promotion-recorded or creates promotion.json, and a genuine semantic PASS remains recorded. R5: ninth optional public role disposable candidate: candidate/check/diff succeed and describe it, trusted identity unchanged, an eight-role workflow still runs. R6: new-grant trust resolution from the trusted revision irrespective of working-tree bytes. R7: stable/volatile context separation and exact assignment verification still enforced. R8: host continuation under one workflow grant carries multiple eligible machine phases without human requests, human gates stop with the pending decision preserved, and a stop halts remaining automatic work. R9: no production path accepts a command-bearing/generated executor profile or a terminal-prose result.",
+      "decisionRule": "R1 non-zero exit, or any required behavior R2-R9 without a genuine falsifiable visible test, is a FAIL for each criterion mapped to that item (R1: AC13; R2: AC01, AC07; R3: AC04, AC06; R4: AC06; R5: AC11; R6: AC09; R7: AC12; R8: AC03; R9: AC08)."
+    },
+    {
+      "id": "M-MATRIX",
+      "criteria": ["AC01", "AC07"],
+      "mode": "public-evidence",
+      "executable": false,
+      "tests": [],
+      "cases": ["MX1", "MX2", "MX3", "MX4"],
+      "reason": "The fidelity matrix is a committed human-reviewable artifact whose machine form is implementation freedom (design-map.md C8, Implementation freedom). Its truth is judged by cross-reading it against the candidate's actual skill, contract and policy bytes.",
+      "procedure": "MX1: <spike>/evidence/fidelity-matrix.md exists and has one row per actual role (brief-readiness, design-map, evaluator-prepare, implementation, evaluator-verify, evaluator-repair, as-built, outcome) covering skill, contract, MCP operations, required evidence/artifacts and checkpoint, policy transition and failure states. MX2: for every row, confirm against the candidate's bytes that the named skill instructs each listed MCP operation and artifact, the contract grants/declares matching capabilities, workspaces, exposure and postconditions, and the policy outcome/transition matches. MX3: the matrix/evidence labels provider-free layer (b) as scripted compliance and never as provider behavior, and never presents C7 deterministic layers (a)-(c) as satisfying the real-role, AC05 fixture or observed-orchestrator proofs (C7). MX4 (AC07): evaluator prepare/verify/repair rows preserve frozen revision and attempt lineage and are the only evaluation-workspace roles; every non-evaluator row forbids evaluator-private exposure; as-built requires promotion-recorded and outcome distinguishes STANDARD from an authorized, evidenced PROCESS_EXCEPTION with real human acceptance.",
+      "decisionRule": "A missing role row or column, a row contradicted by the candidate's actual bytes, scripted compliance reported as provider behavior, or any MX4 violation, is a FAIL for the mapped criterion (MX1-MX3: AC01; MX4: AC07)."
+    },
+    {
+      "id": "M-LIVE",
+      "criteria": ["AC02", "AC04", "AC05", "AC06", "AC13"],
+      "mode": "public-evidence",
+      "executable": false,
+      "tests": [],
+      "cases": ["L1", "L2", "L3", "L4", "L5", "L6"],
+      "reason": "Real-provider governed runs need credentials and quota and cannot be reproduced by the evaluator; the brief forbids substituting synthetic evidence, and C7 rules that deterministic evidence never replaces the real proofs. The committed evidence (design-map.md C8) is judged and its identities recomputed. The C4 bound record is a committed public evidence artifact whose file name is implementation freedom.",
+      "procedure": "Read the committed real-provider evidence under <spike>/evidence/. No deterministic, scripted or mocked evidence (C7 layers a-c) counts toward L1-L3. L1: at least one real public role ran through a production registered adapter from a gated Role Grant (runtime, installed version, requested and confirmed-or-unavailable model/effort, host result). L2: the actual candidate evaluator skill (its exact bytes identified by commit/identity) ran as a subject in an isolated fixture through the production governed adapter and host, in the order persist plan, build/validate manifest, publish sanitized checkpoint, submitResult PASS, one requestAction(promotion) carrying the manifest mappings; the returned action status is succeeded; the host created promotion.json and recorded promotion-recorded. L3: the fixture had its own explicitly initialized trust root and cannot certify the production candidate. L4: evidence shows no fabricated PASS, action, promotion or human event; diagnostics are safe. L5: the fixture's public verification result carries promotionPlan {identity, decision} and the identity equals sha256 of the real persisted plan bytes; recompute every identity whose bytes are committed. L6 (C4 bound record): <spike>/evidence/ records B and the mapping count of each representative complete archive: (i) the complete manifest produced by the AC05 candidate-evaluator fixture (every attempt, the attempt ledger, every frozen revision bundle and the plan itself) and (ii) a deterministic complete manifest with at least 38 mappings that includes the 14-attempt, 2-revision shape of the 013a archive; every recorded count is <= B; where the fixture manifest is committed its mapping count recomputes; the recorded B equals the candidate's exported definition (and E6's published bound); if B != 64 the record states why it was raised; no split, bundled or truncated archival is described.",
+      "decisionRule": "Missing or unproven real runs, deterministic or synthetic evidence presented as a real run, a synthetic-only promotion, a non-succeeded action reported as archival, identities that do not recompute, or a fixture able to certify the candidate, is a FAIL (L1: AC02, AC13; L2: AC05; L3: AC05; L4: AC13; L5: AC04, AC05). For L6, a missing bound record, a missing representative archive or count, a count above B, a recorded B that disagrees with the candidate's definition, an unexplained B != 64, or split/bundled/truncated archival, is a FAIL for AC06."
+    },
+    {
+      "id": "M-ORCH",
+      "criteria": ["AC02", "AC03"],
+      "mode": "composite-review",
+      "executable": false,
+      "tests": [],
+      "cases": ["O1", "O2", "O3", "O4", "O5", "O6"],
+      "reason": "Orchestrator behavior is instruction-level and observed through a real runtime (design-map.md C6); there is no stable implementation-independent programmatic seam. The frozen evidence plan combines skill-byte review with the committed observed-run record.",
+      "procedure": "O1: read the candidate skills/orchestrator/SKILL.md: actionable development requests (implement, run, continue, repair, verify) default to the configured Harness workflow and registered adapters without incantation; once a grant exists it continues through eligible machine phases without redundant prompts; it asks only at genuine gates (substantive freeze, expanded scope/privilege, accept/reject, bootstrap/process exception, extra spending, missing essential input); read-only requests do not dispatch or mutate; stop overrides; missing adapter/permission/authority is reported as an inspectable blocker, never replaced by a direct provider invocation or generated bridge. O2: committed observed-run evidence shows an ordinary actionable request selecting the governed workflow and one bounded grant carrying multiple machine phases without extra permission prompts. O3: an actual human gate stops and preserves the exact pending decision. O4: a read-only request remains read-only and an explicit stop stops. O5: a missing adapter/permission/authority is reported as a blocker. O6: C6 provenance: the candidate orchestrator is revised (as §2 requires) with its Contract version bumped and a docs/history/skills/orchestrator/ entry added (mechanically confirmed by E5e); it is not a policy role, methodology-manifest component or trusted.jsonl entry (E5d, E5a); the observed-run evidence records the exact orchestrator instruction identity used (git:<commit>:skills/orchestrator/SKILL.md plus contract version plus sha256 of its exact bytes), the actual runtime and its version, and the model or the literal 'unavailable'; the recorded identity recomputes from committed bytes; the candidate orchestrator was exercised only as a bounded test subject and never supervised this 014d workflow (no evidence or ledger record presents it as this workflow's orchestrator).",
+      "decisionRule": "Any O1 rule absent or contradicted, or any O2-O5 behavior not evidenced by the committed observed run, or any O6 provenance item missing, not recomputing, or showing the candidate orchestrator supervising this workflow, is a FAIL (O1, O2, O6: AC02; O1, O3, O4, O5: AC03)."
+    },
+    {
+      "id": "M-CODE",
+      "criteria": ["AC04", "AC06", "AC07", "AC08", "AC09", "AC11", "AC12"],
+      "mode": "manual-review",
+      "executable": false,
+      "tests": [],
+      "cases": ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10"],
+      "reason": "These are properties of the diff, skill/contract bytes and documentation whose structure the Design Map leaves free; pattern-matching tests would either impose structure or give false results.",
+      "procedure": "Review the candidate diff from the brief-freeze commit. C1: one plan path .eval/promotion-plan.json and one exported schema definition in tools/archive-manifest.ts, referenced by the evaluator skill, evaluator-verify contract, tests and host-action input; a new required field increments schemaVersion and unsupported versions are rejected. C2: the evaluator skill instructs the C3 order, inspects the returned action and reports archival only on status succeeded; an ineligible decision is persisted with a safe reason and routed truthfully. C3: a terminal PASS verification-result.json carries promotionPlan {identity, decision} resolving to the real plan; no request digest or summary hash stands in. C4 (design-map.md C4): exactly one exported definition of B is used by the worker-protocol schema, the host check and the archive utility (no second literal bound in those paths); tests refer to that definition, not to a literal; archival is one action per PASS, never split across actions, bundled into a unit bypassing per-file identities, or truncated; an eligible manifest above B is refused before any copy, leaves the PASS genuine and the phase truthfully incomplete; B stays 64 unless the C4 record shows a representative archive did not fit, in which case only the one definition is raised and the reason is recorded. C5: §7 legacy classification exists for governed-claude-bootstrap.ts, legacy-workflow.ts, workflow-backend.ts, claude-workflow.ts and any result parser or wrapper; no production caller of a retired bridge, no arbitrary command profile, no terminal-prose authority. C6: generic methodology evolution has no fixed role-name allowlist; the role set derives from candidate policy/manifest; declared privileged actions stay host-mediated. C7: a public-safe regression-recommendation seam is documented, carries no hidden test bytes or private fixtures, is consumed by no 014d role, and the promotion action is not broadened. C8: workerInstructions keeps {system, prompt}; a shared-public-context seam is documented with evaluator-private taint and per-role grant rules; no shared session is implemented as production. C9: no spike/version-specific runtime, trust exception or override flag (beyond E5c's scan). C10: evaluator roles retain protected evaluation workspaces; non-evaluator contracts forbid evaluator-private; the implementation contract cannot read evaluator-private material.",
+      "decisionRule": "A violated item is a FAIL (C1-C3: AC04; C2, C4: AC06; C10: AC07; C5: AC08; C9: AC09; C6, C7: AC11; C8: AC12)."
+    },
+    {
+      "id": "M-EVOL",
+      "criteria": ["AC09", "AC10", "AC11"],
+      "mode": "public-evidence",
+      "executable": false,
+      "tests": [],
+      "cases": ["V1", "V2", "V3", "V4", "V5", "V6"],
+      "reason": "The N to N+1 process is evidenced by the workflow ledger, committed candidate/check/diff outputs and the separation of evidence from human trust promotion; these are process facts, not a product seam.",
+      "procedure": "V1: committed candidate/check/diff evidence for the exact candidate commit against trusted N is presented. V2: in this workflow's ledger every evaluator-prepare/verify/repair execution binds the N kernel definition sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92; no role of this workflow is governed by N+1. V3: no trust event, acceptance record or claim of human methodology promotion exists before explicit human approval. V4: the human trust-promotion path requires binding to an N-authored PASS, exact candidate commit and manifest (with E1). V5: the ninth-role disposable candidate never becomes authoritative and exposes no evaluator-private content. V6: the evidence presented for the step-6 human acceptance names the exact candidate orchestrator identity (git:<commit>:skills/orchestrator/SKILL.md, contract version, sha256), states that it is adopted together with N+1 only after that acceptance, and nothing claims the orchestrator or N+1 was adopted before it (C6).",
+      "decisionRule": "Missing V1 evidence, any evaluator execution not bound to N, a premature or claimed trust promotion, an unbound promotion path, an authoritative ninth-role fixture, or missing orchestrator identity, is a FAIL (V1, V2: AC09; V3, V4, V6: AC10; V5: AC11)."
+    }
+  ]
+}
