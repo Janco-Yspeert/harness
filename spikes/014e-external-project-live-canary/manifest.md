@@ -380,3 +380,100 @@
   `sha256:3638803e9655f778584237cdd239805a92fcd50a35dd63ccb337b06ffddb4094`.
 - Host actions requested: none. There is no promotion after FAIL.
 - Wall-clock: not measured. Token usage: unknown.
+
+## Run 008 — Implementation (Track A, correction candidate H2)
+
+- Skill: `implementation` v5,
+  `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+  (pinned bytes delivered by Role Grant
+  `sha256:4ff133920510782e013ede54bb4631c9dc72441d4354df3eda6dd2a9f90462a0`,
+  execution `3449bc1c-f859-4e36-95a2-7ecdde141e10`, workflow
+  `014e-external-project-live-canary`).
+- Authority: human root `009a0fe5-9c62-4668-ba7d-061317a72e3b` (permit-role
+  implementation). It names Evaluator Verify attempt 002 (FAIL,
+  `INFRASTRUCTURE_FAILURE`) and asks for a forward-only H2 correction of the
+  operator-environment containment failure. H1
+  `27430d9e80df6e7d075edb549c7c4e7b2c5a48e7`, H1E
+  `96a3f6e933cc8f6e02f74a081de9cc168b3268d7` and both verification attempts
+  are preserved.
+- Inputs (host-bound identities):
+  - frozen `spike.md`
+    `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`;
+  - frozen `design-map.md`
+    `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`;
+  - `eval-requirements.md`
+    `sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef`;
+  - coverage binding
+    `sha256:2536a2fbdb88bc6874af693082e13395a49f94d24d8cee1cae9f91bc45534c04`.
+  - No `IMPLEMENTATION_FAILURE` feedback exists. The current
+    `verification-finalized` event is `INFRASTRUCTURE_FAILURE`. Only its
+    public, non-authoritative observation and routing in
+    `verification-result.json` and `evidence/preflight.md` were used.
+- Baseline: `feat/spike-014` at `2d6e0274201d09180e6575757b509d11d9d55334`.
+- Result: succeeded. The candidate H2 is the local checkpoint that contains
+  this entry.
+- Investigation:
+  - The operator preflight ran with a Node runtime installed under the
+    operator home (nvm, on the operator `PATH`). The evaluator ran with Node
+    under `/usr`.
+  - H1 bound the whole Node installation prefix (`dirname(dirname(node))`).
+    This caused two things:
+    1. The prefix's mount-point ancestors (for example `~/.nvm`) appeared in
+       the in-namespace home listing. The visible probe's oracle allowed only
+       the worker-tools ancestor, so it reported `read-real-home: yes`. This
+       was an over-strict oracle, because D4 permits the Node runtime.
+    2. A real D4 defect: when Node lives in `~/.local/bin`, the whole of
+       `~/.local` became visible, including `~/.local/share`. The new test
+       reproduces this against H1's `containment.ts`, where
+       `read-prefix-sibling` and `read-bin-sibling` are `yes`.
+- Changes:
+  - `src/executors/containment.ts`: a Node runtime outside `/usr` is now
+    exposed only as:
+    - the Node executable;
+    - its `lib/node_modules`;
+    - the `bin` launcher links that resolve into those modules (npm, npx,
+      corepack).
+
+    Nothing else from the prefix is exposed. A protected-root overlap still
+    refuses the launch.
+  - `test/external-project.test.ts`:
+    - The AC03/AC04/D4 probe oracle now allows only the mount-point ancestors
+      of D4-permitted bindings under home: the worker-tools closure, the Node
+      runtime, and the temporary scratch or fixture directories when they
+      live under home. Any other home entry is still a leak.
+    - A new black-box namespace test places Node under a fixture home
+      (`.local/bin/node` with an `npm` link, prefix siblings and `.ssh`). It
+      asserts that Node and npm run, that the siblings and `.ssh` are
+      invisible, and that the home and prefix listings are exactly `.local`
+      and `bin,lib`.
+- Unchanged: trusted history, policy, contracts, role skills, orchestrator
+  and every other H1 file.
+- Output identities (SHA-256 of the committed bytes):
+  - `src/executors/containment.ts`
+    `ae53f7d46177bba5a7cec306db962b626075b92cf7255e3e9b2cfff54f8f244f`;
+  - `test/external-project.test.ts`
+    `d757e0323f078f0ddc16ffbe1cbb5c5c1d4b120885be9f51a20925b66ee94fb4`.
+- Checks:
+  - `node --test test/external-project.test.ts`: 12 tests, 12 pass.
+  - `npm test`: 187 tests, 187 pass, 0 fail. This includes the host
+    maintenance 003 regressions.
+  - `npm run typecheck`: pass.
+  - `npm run lint`: pass.
+  - Prettier check of the changed files: pass.
+  - The new test was also run against H1's `containment.ts`, where it fails
+    as expected.
+- Skipped: a full `npm run check` on a disposable clean clone. This session's
+  permission policy denied it (the `node_modules` link needs a path outside
+  the granted workspace). The working-tree checks above ran instead.
+- Host observations: `bwrap` and nested unprivileged namespaces work in this
+  worker environment. This worker's sandbox hides the operator home, so the
+  operator's exact nvm layout could not be run here. It is reproduced through
+  a fixture home instead. No provider was called.
+- Restricted evaluator material inspected: none. The Stockdif repositories
+  were not inspected.
+- Measurements: wall-clock time and token usage are unknown.
+- Limitations:
+  - H2E, the rerun of the canary preflight under H2, and a D6-conformant
+    canary record are supervisor work. They are not part of this run.
+  - The Node runtime no longer exposes prefix `include/` or `share/`. Native
+    add-on builds that need local Node headers must fetch them.

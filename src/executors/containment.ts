@@ -19,6 +19,7 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   readlinkSync,
   realpathSync,
@@ -118,6 +119,42 @@ function runtimeBinding(
       `${what} location would expose a protected path inside containment`,
     );
   return root;
+}
+
+// The Node runtime outside /usr: the executable itself, its global module
+// directory and the launcher links in its bin directory that point into those
+// modules (npm, npx, corepack). Binding the whole installation prefix instead
+// would expose unrelated siblings, for example all of ~/.local when Node lives
+// in ~/.local/bin.
+function nodeRuntime(
+  nodePath: string,
+  protectedRoots: readonly string[],
+): string[] {
+  const node = runtimeBinding(nodePath, "Node runtime", protectedRoots);
+  if (contains("/usr", node)) return [];
+  const args = ["--ro-bind", node, node];
+  const bin = dirname(node);
+  const modules = join(dirname(bin), "lib", "node_modules");
+  let moduleRoot: string;
+  try {
+    if (!lstatSync(modules).isDirectory()) return args;
+    moduleRoot = runtimeBinding(modules, "Node runtime", protectedRoots);
+  } catch (error) {
+    if (error instanceof AdapterRefusal) throw error;
+    return args;
+  }
+  args.push("--ro-bind", moduleRoot, moduleRoot);
+  for (const entry of readdirSync(bin)) {
+    const link = join(bin, entry);
+    try {
+      if (!lstatSync(link).isSymbolicLink()) continue;
+      if (contains(moduleRoot, realpathSync(link)))
+        args.push("--symlink", readlinkSync(link), link);
+    } catch {
+      /* dangling launcher link */
+    }
+  }
+  return args;
 }
 
 function copyPrivate(source: string, target: string): boolean {
@@ -230,17 +267,7 @@ export function containedLaunch(input: ContainmentInput): {
     /* no resolver configuration */
   }
   args.push("--tmpfs", "/tmp");
-  const node = realpathSync(input.nodePath);
-  if (!contains("/usr", node))
-    args.push(
-      "--ro-bind",
-      runtimeBinding(
-        dirname(dirname(node)),
-        "Node runtime",
-        input.protectedRoots,
-      ),
-      dirname(dirname(node)),
-    );
+  args.push(...nodeRuntime(input.nodePath, input.protectedRoots));
   const program = realpathSync(input.program);
   const programRoot = runtimeBinding(
     packageRoot(program),

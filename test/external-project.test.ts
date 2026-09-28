@@ -4,10 +4,11 @@
 // through the real governed launch path. No provider is ever called: a
 // placeholder program stands in for a registered adapter.
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   appendFileSync,
   chmodSync,
+  copyFileSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -24,6 +25,10 @@ import test, { type TestContext } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 
 import { planLaunch, ADAPTERS } from "../src/executors/adapters.ts";
+import {
+  containedLaunch,
+  locateContainment,
+} from "../src/executors/containment.ts";
 import { startHarnessHost } from "../src/index.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
 import { identity, readLedger } from "../src/kernel/ledger.ts";
@@ -679,13 +684,26 @@ function probe(f: External, program: string, output: string): void {
   const home = process.env.HOME ?? "/root";
   const bare = join(f.dir, "remote.git");
   if (!existsSync(bare)) git(f.dir, ["init", "-q", "--bare", bare]);
-  // Only the directory leading to the read-only worker-tools binding may
-  // appear (empty) under the real home inside containment.
-  const toward = relative(home, repository);
-  const synthetic =
-    toward.startsWith("..") || isAbsolute(toward)
-      ? ""
-      : (toward.split("/")[0] ?? "");
+  // Only the (bubblewrap-created) mount-point directories leading to a D4
+  // runtime binding may appear under the real home inside containment: the
+  // read-only worker-tools closure, the Node runtime, and the scratch,
+  // workspace and placeholder-program bindings when temporary directories
+  // live under home. Any other entry is real home content.
+  const synthetic = [
+    repository,
+    realpathSync(process.execPath),
+    realpathSync(tmpdir()),
+    f.dir,
+  ]
+    .map((path) => relative(home, path))
+    .filter((toward) => !toward.startsWith("..") && !isAbsolute(toward))
+    .map((toward) => toward.split("/")[0] ?? "")
+    .filter((entry) => entry !== "")
+    .map((entry) => ` -e '${entry}'`)
+    .join("");
+  const unexpected = synthetic
+    ? `ls -A '${home}' | grep -v -x -F${synthetic}`
+    : `ls -A '${home}'`;
   const script = `#!/bin/sh
 out="${output}"
 check() { if eval "$2" >/dev/null 2>&1; then echo "$1=yes"; else echo "$1=no"; fi; }
@@ -693,7 +711,7 @@ check() { if eval "$2" >/dev/null 2>&1; then echo "$1=yes"; else echo "$1=no"; f
   check read-private "cat '${join(f.hidden, "promotion-bytes.txt")}'"
   check write-methodology "touch '${join(f.harness, "pwned")}'"
   check write-harness "touch '${join(repository, ".containment-probe")}'"
-  check read-real-home "test -n \\"\\$(ls -A '${home}' | grep -v -x -F '${synthetic}')\\""
+  check read-real-home "test -n \\"\\$(${unexpected})\\""
   check read-host-private "ls '${join(f.dir, "host-private")}'"
   check ledger-content "test -s '${f.ledger}'"
   check write-own "touch ./probe-owned"
@@ -782,6 +800,89 @@ void test("014e AC03/AC04/D4: contained public and protected workers see only th
     git(join(f.dir, "remote.git"), ["branch", "--list", "pushed"]),
     "",
   );
+});
+
+// H2 correction: the operator's Node runtime lived under the operator home.
+// Containment exposes that runtime (D4) as the Node executable, its global
+// modules and their launcher links, never the rest of its installation prefix
+// or of the home directory. Probed black-box inside a real namespace.
+void test("014e D4 (H2): a Node runtime under the operator home exposes only the runtime, not its prefix siblings or the rest of home", (t) => {
+  const located = locateContainment([]);
+  assert.ok(located.ok, "bubblewrap is required for containment tests");
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "node-home-")));
+  t.after(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const home = join(dir, "home");
+  const local = join(home, ".local");
+  const nodeBin = join(local, "bin");
+  mkdirSync(nodeBin, { recursive: true });
+  copyFileSync(realpathSync(process.execPath), join(nodeBin, "node"));
+  chmodSync(join(nodeBin, "node"), 0o755);
+  const npm = join(local, "lib", "node_modules", "npm", "bin");
+  mkdirSync(npm, { recursive: true });
+  writeFileSync(
+    join(npm, "npm-cli.js"),
+    '#!/usr/bin/env node\nconsole.log("npm-ok");\n',
+  );
+  chmodSync(join(npm, "npm-cli.js"), 0o755);
+  symlinkSync("../lib/node_modules/npm/bin/npm-cli.js", join(nodeBin, "npm"));
+  writeFileSync(join(nodeBin, "unrelated-tool"), "#!/bin/sh\n");
+  mkdirSync(join(local, "share", "keyrings"), { recursive: true });
+  writeFileSync(join(local, "share", "keyrings", "login.keyring"), "secret");
+  mkdirSync(join(home, ".ssh"));
+  writeFileSync(join(home, ".ssh", "id_ed25519"), "secret");
+  const workspace = join(dir, "workspace");
+  const scratch = join(dir, "scratch");
+  const bin = join(dir, "bin");
+  for (const path of [workspace, scratch, bin]) mkdirSync(path);
+  const output = join(workspace, "probe.txt");
+  writeFileSync(
+    join(bin, "codex"),
+    `#!/bin/sh
+check() { if eval "$2" >/dev/null 2>&1; then echo "$1=yes"; else echo "$1=no"; fi; }
+{
+  check run-node "'${join(nodeBin, "node")}' -e 'process.exit(0)'"
+  check run-npm "npm | grep -q npm-ok"
+  check read-prefix-sibling "ls '${join(local, "share")}'"
+  check read-bin-sibling "test -e '${join(nodeBin, "unrelated-tool")}'"
+  check read-ssh "ls '${join(home, ".ssh")}'"
+  echo "home=$(ls -A '${home}' | tr '\\n' ',')"
+  echo "prefix=$(ls -A '${local}' | tr '\\n' ',')"
+} > '${output}'
+`,
+  );
+  chmodSync(join(bin, "codex"), 0o755);
+  const path = `${nodeBin}:/usr/bin:/bin`;
+  const command = containedLaunch({
+    bwrap: located.path,
+    provider: "codex",
+    program: join(bin, "codex"),
+    args: [],
+    cwd: workspace,
+    workspaces: [{ path: workspace, mode: "write" }],
+    scratch,
+    nodePath: join(nodeBin, "node"),
+    toolFiles: [],
+    masked: [],
+    protectedRoots: [home],
+    env: { PATH: path },
+    sourceEnv: { HOME: home, PATH: path },
+  });
+  const run = spawnSync(command.program, command.args, {
+    env: command.env,
+    encoding: "utf8",
+  });
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(results(output), {
+    "run-node": "yes",
+    "run-npm": "yes",
+    "read-prefix-sibling": "no",
+    "read-bin-sibling": "no",
+    "read-ssh": "no",
+    home: ".local,",
+    prefix: "bin,lib,",
+  });
 });
 
 void test("014e D4/TR4: a contained provider still reaches the Harness worker tools and its typed result is accepted", async (t) => {
