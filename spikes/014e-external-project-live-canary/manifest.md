@@ -343,3 +343,40 @@
   `sha256:7d00bc2a02ec9607bfb47b879f595e287185bf9701dc3de3141f0003a295a29d`.
 - Host actions requested: none. There is no promotion after BLOCKED.
 - Wall-clock: not measured. Token usage: unknown.
+
+## Run 007 — Evaluator Verify (attempt 002, candidate H1)
+
+- Skill: `evaluator` v14, mode `verify`,
+  `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`
+  (Role Grant
+  `sha256:ab5acb662a9b7a8469dcddd0f9353839214c96ee144c393db446c3f4939eeee6`,
+  execution `1233b758-e687-4bb2-8553-2826ffb4b392`).
+- Retry authority: human root `162b2495-da58-4383-9d63-8a241bb848be`.
+  Attempt 001 and evaluator revision 001 are preserved.
+- Inputs:
+  - candidate H1 `27430d9e80df6e7d075edb549c7c4e7b2c5a48e7`;
+  - evaluator revision `001`
+    `sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623`;
+  - evidence commit `96a3f6e933cc8f6e02f74a081de9cc168b3268d7`, bound by D7
+    rules 1–5.
+  - The brief, Design Map, evaluation requirements and coverage map all
+    matched their frozen identities. No drift.
+- Result: **FAIL**, `INFRASTRUCTURE_FAILURE`.
+  - The evidence binding now holds.
+  - The evidence index still lacks the terminal Stockdif ledger state with
+    the canary status.
+  - The bound evidence records a canary blocked before any Stockdif run.
+  - The operator-recorded containment preflight failure was not reproduced
+    in the evaluator environment. It stays an unconfirmed observation routed
+    to Track A for H2.
+- Safe aggregates:
+  - 6 executable procedures: 5 pass, 1 fails (evidence index);
+  - 3 public-evidence procedures: regression review partially established,
+    design-conformance review found no contradiction, live-canary review
+    failed;
+  - criteria: 3 satisfied, 4 not satisfied, 3 not adjudicated;
+  - visible regression: `npm run check` passes; 186/186 tests pass.
+- Output: `verification-result.json`
+  `sha256:3638803e9655f778584237cdd239805a92fcd50a35dd63ccb337b06ffddb4094`.
+- Host actions requested: none. There is no promotion after FAIL.
+- Wall-clock: not measured. Token usage: unknown.
