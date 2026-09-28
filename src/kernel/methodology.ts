@@ -22,7 +22,11 @@ export function loadDefinition(
 ): MethodologyDefinition {
   return definitionFrom(
     project.policy,
-    (path) => readFileSync(inside(project.root, path), "utf8"),
+    (path) =>
+      readFileSync(
+        inside(project.methodologyRoot ?? project.root, path),
+        "utf8",
+      ),
     validators,
   );
 }

@@ -151,6 +151,39 @@ Harness binds its HTTP and WebSocket interfaces to `127.0.0.1`. There is no
 remote authentication boundary yet. Read [`SECURITY.md`](./SECURITY.md) before
 putting it anywhere near a tunnel, proxy, or shared machine.
 
+### Governing a project in another repository
+
+The governed host normally loads `harness.project.json`, whose methodology and
+project roots are the same Harness checkout. To govern a project in a separate
+Git repository, point `HARNESS_PROJECT_CONFIG` at a `schemaVersion: 1`
+configuration kept outside both repositories. That configuration adds:
+
+- `methodologyRoot`, the Harness checkout. `policy`, `trustedHistory` and
+  `validatorSources` resolve inside it, and trusted history is read only from
+  its committed `HEAD` at host start.
+- Optionally `origin` (`github.com/<owner>/<repo>`). It must match the project
+  repository's actual `origin` remote.
+
+`root`, `workflowDirectory`, `ledgerName`, `workspaces` and `remotes` stay
+relative to the project. The host fails closed at start on these conditions:
+
+- overlapping or symlink-escaping roots and workspaces;
+- a private workspace inside the project repository;
+- a remote naming the methodology repository;
+- a mismatched origin;
+- an uncommitted Harness checkout.
+
+Each grant records the methodology repository, the trusted record and the exact
+Harness runtime commit. Every provider process of such a project runs inside a
+host-built bubblewrap (`bwrap`) namespace with the following properties:
+
+- It sees only its granted workspaces, a scratch `HOME` and read-only runtime
+  paths.
+- Git credentials are withheld.
+- It has no unwrapped fallback.
+
+Nothing is published automatically.
+
 ### Development checks
 
 ```sh

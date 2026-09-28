@@ -162,6 +162,13 @@ export interface Project {
   // Validator name -> root-relative source path. It defines the validator set
   // of this project's trusted methodology manifest.
   validatorSources?: Record<string, string>;
+  // Absolute methodology source root. Present only for an external project,
+  // whose policy, trusted history and validator sources resolve inside this
+  // root's own Git repository instead of the project root.
+  methodologyRoot?: string;
+  // Expected `origin` repository identity (`github.com/<owner>/<repo>`),
+  // checked against the project repository's actual remote at host start.
+  origin?: string;
 }
 // Public-safe execution diagnostics. Categories are observations, never
 // semantic results, host actions or canonical transitions.
@@ -208,6 +215,16 @@ export interface WorkflowGrant {
   supersedes?: string;
   inline?: boolean;
   executor?: { model?: string; reasoning?: string };
+  // Host-written methodology source binding (never caller configuration).
+  source?: MethodologySourceBinding;
+}
+export interface MethodologySourceBinding {
+  // Real Git top-level of the repository the trusted methodology is read from.
+  methodologyRepository: string;
+  trusted: { sequence: number; manifest: string; revision: string };
+  // External projects only: the exact committed Harness checkout the host
+  // runs from.
+  runtime?: { repository: string; commit: string };
 }
 export interface PreimplementationRecoveryAuthority {
   schemaVersion: 1;

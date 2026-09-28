@@ -175,3 +175,134 @@
     (match);
   - the repository `prepared-coverage` validator on `coverage-map.json` (pass);
   - Prettier check of the public artifacts (pass).
+
+## Run 005 — Implementation (Track A, candidate H1)
+
+- Skill: `implementation` v5,
+  `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+  (pinned bytes delivered by Role Grant
+  `sha256:2d8b5d884538f0234f7367c87b37e9fdc723de15419b14150d64a4929a2300a7`,
+  execution `20db9184-5c47-4d67-87ad-edf2c66edb2a`, workflow
+  `014e-external-project-live-canary`).
+- Inputs (SHA-256 matched against the host-bound identities):
+  - frozen `spike.md`
+    `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`;
+  - frozen `design-map.md`
+    `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`;
+  - `eval-requirements.md`
+    `sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef`;
+  - coverage binding
+    `sha256:2536a2fbdb88bc6874af693082e13395a49f94d24d8cee1cae9f91bc45534c04`.
+  - No implementation feedback (first attempt).
+- Baseline: `feat/spike-014` at `730ef2a016606d0a167afbf63d1aa240f6a03e95`.
+- Result: succeeded. The candidate is the local checkpoint that contains this
+  entry.
+- Changes:
+  - D2: optional `methodologyRoot` and `origin` fields in `loadProject`.
+    - Policy, trusted history and validator sources resolve in the
+      methodology repository.
+    - An external project reads trusted history only from a committed revision
+      (the methodology `HEAD` pinned at host start).
+    - Provenance checks stay in the project repository.
+    - `harness.project.json` loads unchanged.
+  - D3: every new Workflow Execution Grant records `source`: the methodology
+    repository, the trusted `{sequence, manifest, revision}` and, for external
+    projects, the exact Harness `runtime` commit. An external host refuses to
+    start, grant or launch when the runtime checkout has uncommitted tracked
+    changes or its `HEAD` has moved.
+  - D2 invariants and D5 (`src/kernel/roots.ts`): fail-closed host-start checks
+    for:
+    - missing, identical, nested, overlapping or symlink-escaping roots and
+      workspaces;
+    - a private workspace inside the project repository;
+    - a private data root inside a workspace;
+    - a remote naming the methodology repository;
+    - an origin identity that is absent, unrecognized, mismatched or swapped
+      with the methodology repository's origin.
+  - D4 (`src/executors/containment.ts`): every external-project provider
+    process is launched inside a host-built bubblewrap user, PID, IPC and UTS
+    namespace at the single `GovernedProviderRun` spawn seam.
+    - Visible: only the granted workspaces at grant mode, scratch with a
+      scratch `HOME`, read-only system/Node/provider paths and the read-only
+      worker-tools closure.
+    - Hidden: ledgers are masked; the root and `/tmp` are read-only.
+    - Withheld: Git credentials.
+    - Containment unavailability and fixture command profiles are refused
+      before any session or allocation.
+    - Under containment, forbidden-exposure grants become eligible for the
+      Codex adapter.
+  - `npm start` reports a refused external host start and exits with status 2.
+  - README section on governing a project in another repository.
+  - A Prettier-only reformat of `test/kernel.test.ts`. It is a pre-existing
+    `format:check` failure introduced at `f6d1456` (host maintenance 003),
+    reproduced from `HEAD` bytes before the change.
+- Unchanged: trusted history, policy, contracts, role skills and orchestrator.
+- Output identities (SHA-256 of the committed bytes):
+  - `src/kernel/roots.ts`
+    `6283c7a9f656fd11798481b4ba3abbc6917f970c9eed9849caab3b910c0b729a`;
+  - `src/executors/containment.ts`
+    `c4ca1c319b3f8e3a1b5151a3af6430f3e1d832897045dc2258c2e60b6478c39a`;
+  - `src/kernel/trust.ts`
+    `841e670de9f8adc885bd7e59bb7871551cd3b5f72d3279f8b91f7a47f621b38c`;
+  - `src/kernel/host.ts`
+    `c297b2a3c29960339036ebb4d9efbf1f8f6d628809d4e9514e9f3ca6391b4c44`;
+  - `src/kernel/configuration.ts`
+    `b8d27764a794fa6d8042b90f71ca4eeaaee6401ae0d18f8be489f261d904b87c`;
+  - `src/kernel/execution.ts`
+    `db46f522b1fb46279a9f93b97d4d387cb1c2b63d6d53d5b00e9bf78631a6020f`;
+  - `src/kernel/model.ts`
+    `b288719f9df17d2ecb902555a4c07718a11a368d8271c98e8a697eb1ceac635f`;
+  - `src/kernel/methodology.ts`
+    `2dfd76c3d7d85067a992c92cbee1d85f675ebc784f124fde94556b19aefe80e0`;
+  - `src/executors/governed.ts`
+    `79e8ceb7b21a1745d7d1c7742f4479449bf846c06a851addd5613e09bf459594`;
+  - `src/executors/adapters.ts`
+    `da179a21c88f62fe7e5fce8eb144b242005d4b7fa3b4d3378230492ceaae785d`;
+  - `src/methodology-evolution.ts`
+    `8b8ab01b30edf62eac7f7e34e16228e1c07559420c4e588881df6d9997ac1829`;
+  - `src/index.ts`
+    `d5e9204b432622b585a55145bb6e37ea62ac5565f0da01dde99a75f5d1878159`;
+  - `test/external-project.test.ts`
+    `9b637844b4fbbbf03de27025577f2a23cca6cd512e72131cb6c98cc631f987ff`;
+  - `test/kernel.test.ts`
+    `6e4fa81a3da6af835c689513130beff478a2a9018fbd96a1e4cc9350b9c87efb`;
+  - `README.md`
+    `e483a9a76f8aa4741a5faf59e3702ce83b7b0278cacc17b527b367ba1d0191bc`.
+- Visible tests: `test/external-project.test.ts` adds 11 deterministic tests.
+  They cover:
+  - the same trusted N+1 (sequence 5) for the self and external configs;
+  - the grant source/runtime record and pinning;
+  - committed-only trusted history;
+  - 15 host-start refusal cases;
+  - origin normalization;
+  - cross-repository committed-input provenance refusal;
+  - containment eligibility;
+  - black-box bwrap probes through the real launch path (public denial,
+    protected positive, no Harness or methodology writes, no push, no
+    credentials);
+  - a contained worker-tool result round trip;
+  - pre-allocation refusals.
+- Checks:
+  - `npm test`: 186 tests, 186 pass, 0 fail. This includes the host maintenance
+    003 recovery-authority regressions.
+  - `npm run typecheck`: pass.
+  - `npm run lint`: pass.
+  - Prettier check of all tracked and new files: pass. `npm run format:check`
+    in this working tree also meets pre-existing, unreadable, untracked sandbox
+    dotfiles (for example `.zshrc`, EACCES). These are outside the candidate.
+  - Full `npm run check` on a disposable clean clone under `/tmp` with the final
+    source bytes: typecheck, lint and format pass; 186 tests pass, 0 fail.
+    - An earlier clone run found the public probe could create a phantom file
+      on the in-namespace `/tmp` tmpfs when the checkout lives under `/tmp`.
+      No host file was created.
+    - The fix remounts `/tmp` read-only; the scratch bind stays writable.
+- Host observations: `bwrap` 0.9.0 is available, and nested unprivileged
+  namespaces work in this environment. No provider was called.
+- Restricted evaluator material inspected: none. The Stockdif repositories
+  were not inspected.
+- Limitations:
+  - The live Track B canary, real Codex/Claude behaviour inside containment
+    and the H1E evidence are not part of this run.
+  - Attached (inline) executors are not processes and are not contained.
+  - Stockdif should ignore its untracked ledger; containment masks ledger
+    content.

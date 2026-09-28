@@ -3,12 +3,22 @@ import { dirname, resolve } from "node:path";
 import type { Project } from "./model.ts";
 import { object } from "./ledger.ts";
 
+// Expected repository identity form (design-map D5).
+export const ORIGIN = /^github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
 // Paths and discovery are project configuration, never methodology inference.
 export function loadProject(path: string): Project {
   const raw = JSON.parse(readFileSync(path, "utf8")) as Project & {
     workflowDirectory?: string;
     ledgerName?: string;
   };
+  if (
+    (raw.methodologyRoot !== undefined &&
+      (typeof raw.methodologyRoot !== "string" || !raw.methodologyRoot)) ||
+    (raw.origin !== undefined &&
+      (typeof raw.origin !== "string" || !ORIGIN.test(raw.origin)))
+  )
+    throw new Error("invalid project methodology root or origin declaration");
   if (object(raw).schemaVersion !== 1 || !raw.id || !raw.root || !raw.policy)
     throw new Error("invalid project configuration");
   if (
@@ -71,6 +81,12 @@ export function loadProject(path: string): Project {
       ]),
     ),
     ...(raw.trustedHistory ? { trustedHistory: raw.trustedHistory } : {}),
+    // Absent: the methodology root is the project root (self-development and
+    // every historical configuration load unchanged).
+    ...(raw.methodologyRoot
+      ? { methodologyRoot: resolve(dirname(path), raw.methodologyRoot) }
+      : {}),
+    ...(raw.origin ? { origin: raw.origin } : {}),
     ...(raw.validatorSources
       ? { validatorSources: { ...raw.validatorSources } }
       : {}),

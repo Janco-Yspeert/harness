@@ -1732,9 +1732,7 @@ void test("pre-implementation recovery revokes a prematurely advanced grant and 
     assert.fail(JSON.stringify(withoutUsableRoot));
   assert.equal(withoutUsableRoot.grant.rootAuthority, null);
   assert.ok(
-    f.kernel
-      .events(f.workflow)
-      .some((event) => event.id === wrongScope.id),
+    f.kernel.events(f.workflow).some((event) => event.id === wrongScope.id),
   );
 
   // A root issued after recovery uses the same scoped basis as resolution.
@@ -1744,11 +1742,7 @@ void test("pre-implementation recovery revokes a prematurely advanced grant and 
     "design-map",
     "one post-recovery Design Map recovery",
   );
-  const rooted = f.kernel.inspect(
-    f.workflow,
-    recovered.grant.id,
-    "design-map",
-  );
+  const rooted = f.kernel.inspect(f.workflow, recovered.grant.id, "design-map");
   if (rooted.kind !== "grant") assert.fail(JSON.stringify(rooted));
   assert.equal(rooted.grant.rootAuthority, scopedRoot.id);
   const rootedAllocation = f.kernel.allocate(f.workflow, recovered.grant.id, {

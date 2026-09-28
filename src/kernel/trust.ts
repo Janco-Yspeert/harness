@@ -3,6 +3,7 @@ import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import {
   buildMethodologyManifest,
+  parseTrustedHistory,
   readTrustedHistory,
   type MethodologyManifest,
   type TrustedMethodologyEvent,
@@ -12,8 +13,10 @@ import { definitionFrom, inside } from "./methodology.ts";
 import type {
   ArtifactValidators,
   MethodologyDefinition,
+  MethodologySourceBinding,
   Project,
 } from "./model.ts";
+import { external, methodologyRoot } from "./roots.ts";
 
 function deny(reason: string): never {
   throw new Error(`trust equivalence denied: ${reason}`);
@@ -30,36 +33,79 @@ interface TrustedSource {
   readonly prefix: string;
 }
 
+// Where trusted methodology authority is read from. `pin` is the exact
+// methodology-repository commit whose committed trusted history is used; an
+// external project always reads committed history (default: the methodology
+// repository's current HEAD). `runtimeRoot` holds the running validator
+// implementations that the equivalence gate compares.
+export interface TrustOptions {
+  readonly pin?: string;
+  readonly runtimeRoot?: string;
+}
+
+function git(cwd: string, args: string[]): string {
+  return execFileSync("git", args, { cwd, encoding: "utf8", stdio: "pipe" });
+}
+
 // Resolves the latest human-trusted record and rebuilds its manifest from that
 // record's exact revision. Readable working-tree files are never trusted
-// merely because they exist.
-function trustedSource(project: Project): TrustedSource {
+// merely because they exist. Methodology bytes come only from the methodology
+// root's own Git repository, never from an external project's repository.
+function trustedSource(
+  project: Project,
+  options: TrustOptions = {},
+): TrustedSource {
   if (!project.trustedHistory)
     deny(`project ${project.id} declares no trusted methodology history`);
-  if (!existsSync(resolve(project.root, project.trustedHistory)))
-    deny(`project ${project.id} has no trusted methodology record`);
-  let history: TrustedMethodologyEvent[];
+  const root = methodologyRoot(project);
+  let repository: string;
+  let prefix: string;
   try {
-    history = readTrustedHistory(inside(project.root, project.trustedHistory));
+    repository = git(root, ["rev-parse", "--show-toplevel"]).trim();
+    prefix = relative(realpathSync(repository), realpathSync(root));
+    if (prefix === ".." || prefix.startsWith("../") || isAbsolute(prefix))
+      throw new Error("methodology root is outside its repository");
   } catch (error) {
-    deny(
-      `trusted methodology history is unreadable or invalid (${firstLine(error)})`,
-    );
+    deny(`methodology repository is unavailable (${firstLine(error)})`);
+  }
+  let history: TrustedMethodologyEvent[];
+  if (external(project) || options.pin !== undefined) {
+    let text: string;
+    try {
+      const pin = git(repository, [
+        "rev-parse",
+        "--verify",
+        `${options.pin ?? "HEAD"}^{commit}`,
+      ]).trim();
+      text = git(repository, [
+        "show",
+        `${pin}:${prefix ? `${prefix}/` : ""}${project.trustedHistory}`,
+      ]);
+    } catch {
+      deny(`project ${project.id} has no committed trusted methodology record`);
+    }
+    try {
+      history = parseTrustedHistory(text);
+    } catch (error) {
+      deny(
+        `trusted methodology history is unreadable or invalid (${firstLine(error)})`,
+      );
+    }
+  } else {
+    if (!existsSync(resolve(root, project.trustedHistory)))
+      deny(`project ${project.id} has no trusted methodology record`);
+    try {
+      history = readTrustedHistory(inside(root, project.trustedHistory));
+    } catch (error) {
+      deny(
+        `trusted methodology history is unreadable or invalid (${firstLine(error)})`,
+      );
+    }
   }
   const record = history.at(-1);
   if (!record) deny(`project ${project.id} has no trusted methodology record`);
   let manifest: MethodologyManifest;
-  let repository: string;
-  let prefix: string;
   try {
-    repository = execFileSync("git", ["rev-parse", "--show-toplevel"], {
-      cwd: project.root,
-      encoding: "utf8",
-      stdio: "pipe",
-    }).trim();
-    prefix = relative(realpathSync(repository), realpathSync(project.root));
-    if (prefix === ".." || prefix.startsWith("../") || isAbsolute(prefix))
-      throw new Error("project root is outside its repository");
     const built = buildMethodologyManifest(
       repository,
       record.revision,
@@ -93,8 +139,9 @@ function trustedSource(project: Project): TrustedSource {
 export function trustedDefinition(
   project: Project,
   validators: ArtifactValidators = {},
+  options: TrustOptions = {},
 ): MethodologyDefinition {
-  const { record, repository, prefix } = trustedSource(project);
+  const { record, repository, prefix } = trustedSource(project, options);
   let definition: MethodologyDefinition;
   try {
     definition = definitionFrom(
@@ -112,8 +159,25 @@ export function trustedDefinition(
       `trusted methodology revision ${record.revision} is not loadable (${firstLine(error)})`,
     );
   }
-  assertTrustedMethodology(project, definition);
+  assertTrustedMethodology(project, definition, options);
   return definition;
+}
+
+// The host-written methodology source recorded in every new Workflow
+// Execution Grant (design-map D3).
+export function trustedBinding(
+  project: Project,
+  options: TrustOptions = {},
+): MethodologySourceBinding {
+  const { record, manifest, repository } = trustedSource(project, options);
+  return {
+    methodologyRepository: realpathSync(repository),
+    trusted: {
+      sequence: record.sequence,
+      manifest: manifest.id,
+      revision: record.revision,
+    },
+  };
 }
 
 // A kernel definition is trusted only when it is the component-equivalent
@@ -123,8 +187,9 @@ export function trustedDefinition(
 export function assertTrustedMethodology(
   project: Project,
   definition: MethodologyDefinition,
+  options: TrustOptions = {},
 ): { record: TrustedMethodologyEvent; manifest: MethodologyManifest } {
-  const { record, manifest } = trustedSource(project);
+  const { record, manifest } = trustedSource(project, options);
   if (definition.policyIdentity !== manifest.policy.identity)
     deny("active policy differs from the trusted methodology");
   const trustedRoles = Object.keys(manifest.roles).sort();
@@ -147,7 +212,11 @@ export function assertTrustedMethodology(
   for (const [name, trusted] of Object.entries(manifest.validators)) {
     let current: string;
     try {
-      current = identity(readFileSync(inside(project.root, trusted.path)));
+      current = identity(
+        readFileSync(
+          inside(options.runtimeRoot ?? methodologyRoot(project), trusted.path),
+        ),
+      );
     } catch {
       deny(`validator source ${name} is unavailable`);
     }

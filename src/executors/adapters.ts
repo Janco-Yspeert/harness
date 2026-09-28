@@ -503,12 +503,17 @@ export function planLaunch(
   adapter: ProviderAdapter,
   grant: RoleGrant,
   profile: ExecutorProfile,
+  // Host OS containment (external projects) confines reads to the granted
+  // workspaces for every adapter; an adapter's own permission rules alone
+  // never satisfy that requirement for an external project.
+  contained = false,
 ): { model?: string; reasoning?: string } {
   adapter.checkCapabilities(grant.capabilities);
   if (
     (grant.executorConstraints.protected ||
       grant.executorConstraints.forbiddenExposure.length > 0) &&
-    !adapter.privateWorkspace
+    !adapter.privateWorkspace &&
+    !contained
   )
     throw new AdapterRefusal(
       "provider-config-invalid",

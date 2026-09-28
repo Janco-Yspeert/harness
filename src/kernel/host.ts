@@ -1,5 +1,7 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { timingSafeEqual } from "node:crypto";
+import { existsSync, realpathSync } from "node:fs";
+import { homedir } from "node:os";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import {
   AdapterRefusal,
@@ -8,6 +10,10 @@ import {
   registeredAdapter,
   type ProviderAdapter,
 } from "../executors/adapters.ts";
+import {
+  locateContainment,
+  probeContainment,
+} from "../executors/containment.ts";
 import { GovernedProviderRun } from "../executors/governed.ts";
 import { ExecutionKernel, type KernelOptions } from "./execution.ts";
 import { object, required, text } from "./ledger.ts";
@@ -18,7 +24,18 @@ import type {
   HumanRequest,
   PromotionArtifact,
 } from "./model.ts";
-import { assertTrustedMethodology, trustedDefinition } from "./trust.ts";
+import {
+  assertExternalProject,
+  external,
+  installedRuntimeRoot,
+  runtimeCommit,
+} from "./roots.ts";
+import {
+  assertTrustedMethodology,
+  trustedBinding,
+  trustedDefinition,
+  type TrustOptions,
+} from "./trust.ts";
 
 // Programmatic-only seams for deterministic adapter tests (mocked provider
 // discovery and event streams). The production entrypoint never sets them.
@@ -28,6 +45,11 @@ export interface ProviderRuntime {
   ) => { ok: true; path: string } | { ok: false; reason: string };
   spawnProvider?: typeof spawn;
   humanWaitMs?: number;
+  // The Harness checkout whose exact commit an external-project host binds as
+  // its runtime. Defaults to the installed checkout this code runs from.
+  runtimeRoot?: string;
+  // Containment program override (deterministic refusal tests only).
+  bwrap?: string;
 }
 export interface GovernedHostOptions extends Omit<
   KernelOptions,
@@ -48,6 +70,14 @@ export class GovernedHost {
   readonly #rootToken: string;
   readonly #runtime: ProviderRuntime;
   readonly #children = new Map<string, () => void>();
+  #external:
+    | {
+        projectRepository: string;
+        methodologyRepository: string;
+        runtimeRoot: string;
+        runtime: { repository: string; commit: string };
+      }
+    | undefined;
   #closed = false;
   constructor(options: GovernedHostOptions) {
     if (options.rootToken.length < 32)
@@ -57,6 +87,28 @@ export class GovernedHost {
     this.#rootToken = options.rootToken;
     this.#runtime = options.providerRuntime ?? {};
     const project = options.project;
+    // An external project (distinct methodology root) is checked fail-closed
+    // at host start: real roots, workspaces, remotes, origin identity, a
+    // clean committed Harness runtime, and the methodology commit whose
+    // committed trusted history this host binds for its whole lifetime.
+    let trust: TrustOptions = {};
+    if (external(project)) {
+      const roots = assertExternalProject(
+        project,
+        options.privateDataRoot
+          ? { privateDataRoot: options.privateDataRoot }
+          : {},
+      );
+      const runtimeRoot = this.#runtime.runtimeRoot ?? installedRuntimeRoot();
+      const runtime = runtimeCommit(runtimeRoot);
+      const pin = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: roots.methodologyRepository,
+        encoding: "utf8",
+        stdio: "pipe",
+      }).trim();
+      trust = { pin, runtimeRoot: runtime.repository };
+      this.#external = { ...roots, runtimeRoot, runtime };
+    }
     // Trust resolution is not configurable: every new grant, for every
     // project, binds the latest trusted record's exact committed methodology,
     // independent of candidate working-tree bytes, and passes the
@@ -64,12 +116,58 @@ export class GovernedHost {
     this.kernel = new ExecutionKernel({
       ...options,
       methodologySource: () =>
-        trustedDefinition(project, options.validators ?? {}),
+        trustedDefinition(project, options.validators ?? {}, trust),
       methodologyGate: (definition) => {
-        assertTrustedMethodology(project, definition);
+        assertTrustedMethodology(project, definition, trust);
+      },
+      methodologyBinding: () => {
+        this.#assertRuntime();
+        return {
+          ...trustedBinding(project, trust),
+          ...(this.#external ? { runtime: this.#external.runtime } : {}),
+        };
       },
     });
     this.kernel.recover();
+  }
+  // An external-project host never runs a Stockdif workflow on an uncommitted
+  // or subsequently changed Harness runtime.
+  #assertRuntime(): void {
+    const bound = this.#external;
+    if (!bound) return;
+    let current: { commit: string };
+    try {
+      current = runtimeCommit(bound.runtimeRoot);
+    } catch (error) {
+      throw new HostRefusal(
+        "provider-config-invalid",
+        (error as Error).message,
+      );
+    }
+    if (current.commit !== bound.runtime.commit)
+      throw new HostRefusal(
+        "provider-config-invalid",
+        "Harness runtime commit changed since host start",
+      );
+  }
+  // Roots that a containment runtime binding must never expose.
+  #protectedRoots(): string[] {
+    const project = this.kernel.project;
+    const bound = this.#external;
+    return [
+      homedir(),
+      project.root,
+      ...Object.values(project.workspaces).map((w) => w.path),
+      ...Object.values(project.workflows).flatMap((w) =>
+        Object.values(w.workspaces ?? {}).map((item) => item.path),
+      ),
+      ...(bound ? [bound.methodologyRepository, bound.runtime.repository] : []),
+      ...(this.kernel.options.privateDataRoot
+        ? [this.kernel.options.privateDataRoot]
+        : []),
+    ]
+      .filter((path) => existsSync(path))
+      .map((path) => realpathSync(path));
   }
   #excludedProviderRoots(): string[] {
     const project = this.kernel.project;
@@ -343,9 +441,42 @@ export class GovernedHost {
           });
           return;
         }
+        const contained = this.#external !== undefined;
+        if (contained) this.#assertRuntime();
         const profile = this.kernel.select(resolution.grant, "spawned");
         if (!profile)
           throw new HostRefusal("no-adapter", "no eligible spawned executor");
+        // An external project launches only registered adapters, and only
+        // inside host containment; there is no unwrapped fallback.
+        let containment:
+          | { bwrap: string; masked: string[]; protectedRoots: string[] }
+          | undefined;
+        if (contained) {
+          if (profile.command?.length)
+            throw new HostRefusal(
+              "provider-config-invalid",
+              "external projects launch only contained registered adapters",
+            );
+          const bwrap = this.#runtime.bwrap
+            ? { ok: true as const, path: this.#runtime.bwrap }
+            : locateContainment(this.#excludedProviderRoots());
+          if (!bwrap.ok)
+            throw new HostRefusal("provider-config-invalid", bwrap.reason);
+          try {
+            probeContainment(bwrap.path);
+          } catch (error) {
+            if (error instanceof AdapterRefusal)
+              throw new HostRefusal(error.category, error.message);
+            throw error;
+          }
+          containment = {
+            bwrap: bwrap.path,
+            masked: Object.keys(this.kernel.project.workflows).map((name) =>
+              this.kernel.path(name),
+            ),
+            protectedRoots: this.#protectedRoots(),
+          };
+        }
         // Production profiles launch only a registered adapter's installed
         // provider. A command profile exists only when passed programmatically.
         let provider:
@@ -375,7 +506,7 @@ export class GovernedHost {
             provider = {
               adapter,
               program: located.path,
-              plan: planLaunch(adapter, resolution.grant, profile),
+              plan: planLaunch(adapter, resolution.grant, profile, contained),
             };
           } catch (error) {
             if (error instanceof AdapterRefusal)
@@ -405,6 +536,7 @@ export class GovernedHost {
             adapter: provider.adapter,
             program: provider.program,
             plan: provider.plan,
+            ...(containment ? { containment } : {}),
             ...(this.kernel.options.privateDataRoot
               ? { privateDataRoot: this.kernel.options.privateDataRoot }
               : {}),

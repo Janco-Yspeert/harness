@@ -39,6 +39,7 @@ import {
   type ProviderAdapter,
   type ProviderEvent,
 } from "./adapters.ts";
+import { containedLaunch, workerToolFiles } from "./containment.ts";
 import {
   parseWorkerRequest,
   WORKER_OPERATIONS,
@@ -160,6 +161,13 @@ export interface GovernedLaunch {
   readonly privateDataRoot?: string;
   readonly humanWaitMs?: number;
   readonly onExit: () => void;
+  // Host-owned OS containment (mandatory for external projects). When set,
+  // the provider is launched only inside it; there is no unwrapped fallback.
+  readonly containment?: {
+    readonly bwrap: string;
+    readonly masked: readonly string[];
+    readonly protectedRoots: readonly string[];
+  };
   // Test seam for the provider process; production always spawns.
   readonly spawnProvider?: typeof spawn;
 }
@@ -381,11 +389,31 @@ export class GovernedProviderRun {
       });
       const cwd = workspaces[0]?.path ?? scratch;
       if (!statSync(cwd).isDirectory()) throw new Error("workspace missing");
-      const child = (launch.spawnProvider ?? spawn)(program, args, {
-        cwd,
-        stdio: ["ignore", "pipe", "pipe"],
-        env: providerEnvironment(scratch),
-      });
+      const command = launch.containment
+        ? containedLaunch({
+            bwrap: launch.containment.bwrap,
+            provider: launch.adapter.id,
+            program,
+            args,
+            cwd,
+            workspaces,
+            scratch,
+            nodePath: process.execPath,
+            toolFiles: workerToolFiles(WORKER_TOOLS_PATH),
+            masked: launch.containment.masked,
+            protectedRoots: launch.containment.protectedRoots,
+            env: providerEnvironment(scratch),
+          })
+        : { program, args, env: providerEnvironment(scratch) };
+      const child = (launch.spawnProvider ?? spawn)(
+        command.program,
+        command.args,
+        {
+          cwd,
+          stdio: ["ignore", "pipe", "pipe"],
+          env: command.env,
+        },
+      );
       this.#child = child;
       await this.#monitor(child);
     } catch (error) {

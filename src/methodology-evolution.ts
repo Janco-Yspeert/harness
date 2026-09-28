@@ -275,7 +275,11 @@ export function buildMethodologyManifest(
 
 export function readTrustedHistory(path: string): TrustedMethodologyEvent[] {
   if (!existsSync(path)) return [];
-  const events = readFileSync(path, "utf8")
+  return parseTrustedHistory(readFileSync(path, "utf8"));
+}
+
+export function parseTrustedHistory(text: string): TrustedMethodologyEvent[] {
+  const events = text
     .split(/\r?\n/)
     .filter(Boolean)
     .map((line, index) => {

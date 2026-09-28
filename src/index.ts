@@ -811,6 +811,14 @@ if (import.meta.main) {
     ...(process.env.HARNESS_HIDDEN_EVIDENCE_ROOT === undefined
       ? {}
       : { hiddenEvidenceRoot: process.env.HARNESS_HIDDEN_EVIDENCE_ROOT }),
+  }).catch((error: unknown) => {
+    // External-project root, origin and runtime checks fail closed here.
+    console.error(
+      `Harness host refused to start: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+    process.exit(2);
   });
   console.log(`Harness session lifecycle spike listening at ${host.url}`);
 

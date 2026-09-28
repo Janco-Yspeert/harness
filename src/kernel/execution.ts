@@ -51,6 +51,7 @@ import type {
   HumanRequest,
   LedgerEvent,
   MethodologyDefinition,
+  MethodologySourceBinding,
   Project,
   PreimplementationRecoveryAuthority,
   RoleGrant,
@@ -77,6 +78,9 @@ export interface KernelOptions {
   // governed host resolves the latest trusted record's committed bytes; a
   // kernel without it (historical/test use) reads the working tree.
   methodologySource?: () => MethodologyDefinition;
+  // The host-written methodology source/runtime binding recorded in every new
+  // Workflow Execution Grant. Installed by the governed host only.
+  methodologyBinding?: () => MethodologySourceBinding;
 }
 const DETAIL_LIMIT = 240;
 // Public diagnostic details are short host-authored phrases. Redaction is a
@@ -182,6 +186,7 @@ export class ExecutionKernel {
         this.options.methodologySource?.() ??
         loadDefinition(this.project, this.options.validators);
       this.options.methodologyGate?.(definition);
+      const source = this.options.methodologyBinding?.();
       const roles = request.roles ?? Object.keys(definition.roles);
       if (
         !roles.length ||
@@ -233,6 +238,7 @@ export class ExecutionKernel {
         ),
         ...(request.inline ? { inline: true } : {}),
         ...(request.executor ? { executor: request.executor } : {}),
+        ...(source ? { source } : {}),
       };
       if (request.supersedes) {
         const old = this.execution(workflow, request.supersedes);
@@ -355,6 +361,7 @@ export class ExecutionKernel {
         throw new Error(
           "recovery must retain the old grant's trusted methodology",
         );
+      const binding = this.options.methodologyBinding?.();
       const authority: PreimplementationRecoveryAuthority = {
         schemaVersion: 1,
         id: randomUUID(),
@@ -397,6 +404,7 @@ export class ExecutionKernel {
         recovery: authority.id,
         ...(old.inline ? { inline: true } : {}),
         ...(old.executor ? { executor: old.executor } : {}),
+        ...(binding ? { source: binding } : {}),
       };
       this.#append(workflow, "kernel.workflow-grant", grant);
       return { authority, grant };
