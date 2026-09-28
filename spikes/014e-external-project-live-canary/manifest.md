@@ -743,3 +743,115 @@
   secondary operator-evidence findings of attempt 007 still need the operator
   to correct them.
 - Wall-clock: not measured. Token usage: unknown.
+
+## Run 013 — Implementation (Track A, correction candidate H4)
+
+- Skill: `implementation` v5,
+  `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+  (pinned bytes delivered by Role Grant
+  `sha256:65d0dd5924d630fe7ae1600e04892c12644b7a9d92ea98577755d9b54949b7f5`,
+  execution `05662882-524e-4ac1-a9dd-8f5df0c7879a`, workflow
+  `014e-external-project-live-canary`).
+- Authority: human root `2147f15a-d9c4-4098-80e5-29461ca788d4` (permit-role
+  implementation). It relies on the actual H3 evidence commit
+  `ae04f9b35c9656c0e28e550052534f3701f837d1`. It asks for a forward-only H4
+  correction of the Codex `git-commit` capability failure, and preserves
+  evaluator revisions 001/002 and all attempts.
+- Inputs (SHA-256 recomputed and matched against the host-bound identities
+  before any change):
+  - frozen `spike.md`
+    `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`;
+  - frozen `design-map.md`
+    `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`;
+  - `eval-requirements.md`
+    `sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef`;
+  - coverage binding
+    `sha256:24984d3f02ee978e5852c520211c3da6b1f8b3facc9ae7413f7a0ab92605c611`
+    (evaluator revision 002).
+  - No `IMPLEMENTATION_FAILURE` feedback was bound. The current
+    `verification-finalized` event is attempt 007 (`BLOCKED`,
+    `EVALUATOR_DEFECT`). The defect was taken only from the public H3 evidence:
+    `evidence/live-canary.md` and `evidence/index.json` at `ae04f9b`.
+- Baseline: `feat/spike-014` at `3596de89adef727a490d57cfc515a128ff94ef66`.
+  H1–H3, H1E–H3E, attempts 001–007 and evaluator revisions 001/002 are
+  preserved.
+- Result: succeeded. The candidate H4 is the local checkpoint that contains
+  this entry.
+- Investigation (codex-cli 0.153.1, bubblewrap 0.9.0, no model call):
+  - Reproduced with `codex sandbox -P :workspace` on a scratch repository:
+    `git commit` fails with `Unable to create '.git/index.lock': Read-only
+    file system`.
+  - `codex debug prompt-input` shows that `workspace-write` resolves to:
+    `:root` read; the working directory, `:slash_tmp` and `:tmpdir` write;
+    `.git`, `.agents` and `.codex` of each writable root read-only.
+    `--add-dir` and `sandbox_workspace_write.writable_roots` do not lift the
+    `.git` protection.
+  - Codex supports named permission profiles (`default_permissions` with
+    `[permissions.<name>]`). An explicit `.git` `write` entry lets the commit
+    succeed. Nested `read` entries still protect `.git/hooks` and
+    `.git/config`, and nothing is created on the host.
+- Changes:
+  - `src/executors/adapters.ts`:
+    - A Codex write grant (`repository-write` with `git-commit`) now launches
+      `codex exec` with the named profile `harness-workspace-git`
+      (`codexWriteProfile`) instead of `--sandbox workspace-write` and
+      `--add-dir`. Codex refuses `--sandbox` together with
+      `default_permissions`.
+    - The profile mirrors `workspace-write`: `:root` read; `:slash_tmp` and
+      `:tmpdir` write; the primary workspace and every other write workspace
+      write; network disabled.
+    - Its only difference: each writable workspace's `.git` is writable, while
+      `.git/hooks`, `.git/config`, `.agents` and `.codex` stay read-only.
+    - Read-only grants keep `--sandbox read-only`.
+    - The Codex sandbox stays in place as D4 defence in depth. Nothing
+      bypasses it or widens D4 containment.
+  - `test/external-project.test.ts`, two new tests:
+    - Deterministic: the exact write-grant argv. It checks for no
+      `--sandbox`, `--add-dir` or bypass flags, the profile entries for
+      exactly the writable workspaces, network off, the bounded-command guard,
+      and the unchanged read-only grant.
+    - Black-box, skipped when `codex` is absent: real `codex sandbox` inside
+      real host `containedLaunch`. Under plain `:workspace` (the H3 shape),
+      the commit is denied. Under the H4 profile the commit lands, the hook
+      and config writes are denied, and the host config is unchanged.
+  - `README.md`: one line on the Codex write profile.
+- Unchanged: trusted history, policy, contracts, role skills, orchestrator,
+  containment, evaluation artifacts and evidence. The legacy
+  `workflow-backend` Codex path is also unchanged.
+- Output identities (SHA-256 of the committed bytes):
+  - `src/executors/adapters.ts`
+    `9c04a58212c4e7bb4cc8fa58a8695cd578c41f54a041cc35ee2d45d0c42bc8a5`;
+  - `test/external-project.test.ts`
+    `f51173629b053d70cfdd7a19d608525644e86e78b3d4c3a4557edf92763f821d`;
+  - `README.md`
+    `40c7db9a021c34692f1cb4a0192f6326d5961d8a21d2b74f412ca6b87390d4d5`.
+- Checks:
+  - `node --test --test-name-pattern=H4 test/external-project.test.ts`: 2
+    tests, 2 pass. The real-Codex test ran; it was not skipped.
+  - `npm test`: 192 tests, 192 pass, 0 fail.
+  - `npm run typecheck`: pass.
+  - `npm run lint`: pass.
+  - Prettier check of every tracked file: pass. `npm run format:check` was not
+    run as a whole, because untracked, permission-denied sandbox dotfiles at
+    the repository root break it (see run 010).
+  - The generated write-grant argv was passed to the real `codex exec` against
+    a dead local model provider. Codex accepted the configuration and started
+    a thread. No model was reached.
+- Skipped:
+  - `npm run check` on a disposable clean clone.
+  - A negative control of `codex exec` with `--sandbox` plus a profile. This
+    session's permission policy denied the command.
+- Restricted evaluator material inspected: none. The Stockdif repositories
+  were not inspected.
+- Measurements: wall-clock time and token usage are unknown.
+- Limitations:
+  - A full model-driven `codex exec` session committing inside containment was
+    not observed. The same profile was exercised through `codex sandbox`.
+  - A workspace whose `.git` is a file (linked worktree) keeps its real Git
+    directory outside the profile, so commits there are still denied.
+  - Not part of this run (supervisor operator-evidence work):
+    - H4E;
+    - the rerun of the affected Stockdif canary steps under H4;
+    - a D6 index that lists every evidence file and writes `"unknown"` for
+      unavailable usage;
+    - a human authorization naming the full evidence commit.

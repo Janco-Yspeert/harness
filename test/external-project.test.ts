@@ -26,6 +26,8 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import {
   AdapterRefusal,
+  CODEX_WRITE_PROFILE,
+  codexWriteProfile,
   planLaunch,
   ADAPTERS,
 } from "../src/executors/adapters.ts";
@@ -50,6 +52,7 @@ import { roleInputs } from "../src/kernel/resolver.ts";
 import { normalizeOrigin } from "../src/kernel/roots.ts";
 import { trustedBinding, trustedDefinition } from "../src/kernel/trust.ts";
 import { harnessValidators } from "../src/methodologies/harness-public.ts";
+import { assertBoundedExecutorCommand } from "../src/workflow-backend.ts";
 import { trustFixtureMethodology } from "./support/trusted-fixture.ts";
 
 const repository = resolve(".");
@@ -1152,4 +1155,195 @@ void test("014e D4 (H3): a Codex worker whose nested sandbox cannot start is ref
   });
   assert.equal(allocated.status, 201, JSON.stringify(allocated.value));
   await settled(host.url, allocated.value.execution.id);
+});
+
+// H4 correction: Codex `workspace-write` keeps each writable root's `.git`
+// read-only, so the H3 canary worker could not create `.git/index.lock`
+// despite its `git-commit` capability. A write grant now selects a named
+// Codex permission profile that mirrors `workspace-write` except that each
+// writable workspace's Git metadata (not its hooks or config) is writable.
+function codexInput(
+  capabilities: readonly string[],
+  workspaces: readonly { path: string; mode: "write" | "read" }[],
+) {
+  return {
+    grant: {
+      capabilities,
+      executorConstraints: { protected: false, forbiddenExposure: [] },
+    } as unknown as RoleGrant,
+    workspaces: workspaces.map((workspace, index) => ({
+      id: `w${String(index)}`,
+      path: workspace.path,
+      mode: workspace.mode,
+      exposure: "public" as const,
+    })),
+    scratch: "/scratch",
+    relay: { port: 40000, key: "relay-key" },
+    nodePath: "/usr/bin/node",
+    workerToolsPath: "/repo/src/executors/worker-tools.ts",
+    system: "system",
+    prompt: "prompt",
+  };
+}
+
+void test("014e D4 (H4): a Codex write grant selects a Git-writable permission profile for exactly its writable workspaces; read-only grants stay read-only", () => {
+  const write = ADAPTERS.codex.command(
+    codexInput(ALL, [
+      { path: "/work/stockdif", mode: "write" },
+      { path: "/work/extra", mode: "write" },
+      { path: "/work/reference", mode: "read" },
+    ]),
+  );
+  assert.deepEqual(write.slice(0, 4), [
+    "codex",
+    "exec",
+    "--cd",
+    "/work/stockdif",
+  ]);
+  // The profile replaces `--sandbox` (Codex refuses both together); nothing
+  // bypasses the provider sandbox.
+  for (const flag of [
+    "--sandbox",
+    "--add-dir",
+    "danger-full-access",
+    "--dangerously-bypass-approvals-and-sandbox",
+  ])
+    assert.ok(!write.includes(flag), flag);
+  const profile = codexWriteProfile(["/work/stockdif", "/work/extra"]);
+  assert.deepEqual(write.slice(4, 4 + profile.length), profile);
+  assert.ok(write.includes(`default_permissions="${CODEX_WRITE_PROFILE}"`));
+  assert.ok(
+    write.includes(`permissions.${CODEX_WRITE_PROFILE}.network.enabled=false`),
+  );
+  const filesystem = write.find((arg) =>
+    arg.startsWith(`permissions.${CODEX_WRITE_PROFILE}.filesystem=`),
+  );
+  assert.ok(filesystem);
+  for (const entry of [
+    '":root"="read"',
+    '":slash_tmp"="write"',
+    '":tmpdir"="write"',
+    '"/work/stockdif"="write"',
+    '"/work/stockdif/.git"="write"',
+    '"/work/stockdif/.git/hooks"="read"',
+    '"/work/stockdif/.git/config"="read"',
+    '"/work/stockdif/.agents"="read"',
+    '"/work/stockdif/.codex"="read"',
+    '"/work/extra"="write"',
+    '"/work/extra/.git"="write"',
+    '"/work/extra/.git/hooks"="read"',
+    '"/work/extra/.git/config"="read"',
+  ])
+    assert.ok(filesystem.includes(entry), entry);
+  assert.ok(!filesystem.includes("/work/reference"));
+  assert.ok(write.includes('approval_policy="never"'));
+  assert.equal(write.at(-1), "system\n\nprompt");
+  assert.doesNotThrow(() => {
+    assertBoundedExecutorCommand(write);
+  });
+
+  const read = ADAPTERS.codex.command(
+    codexInput(
+      ["repository-read", "local-computation", "git-inspect"],
+      [
+        { path: "/work/stockdif", mode: "write" },
+        { path: "/work/extra", mode: "write" },
+      ],
+    ),
+  );
+  assert.equal(read[read.indexOf("--sandbox") + 1], "read-only");
+  assert.ok(!read.includes("--add-dir"));
+  assert.ok(!read.some((arg) => arg.includes("default_permissions")));
+});
+
+function locateCodex(): string | undefined {
+  const found = spawnSync("sh", ["-c", "command -v codex"], {
+    encoding: "utf8",
+  });
+  const path = found.stdout.trim();
+  return found.status === 0 && path.length > 0 ? path : undefined;
+}
+
+// Black-box, with the real Codex sandbox helper (`codex sandbox`, no model
+// call) inside real host containment. Skipped where Codex is not installed.
+void test("014e D4 (H4): inside containment the real Codex sandbox lets a write grant commit, keeps hooks and config read-only, and still denies commits under plain workspace-write", (t) => {
+  const codex = locateCodex();
+  if (codex === undefined) {
+    t.skip("codex is not installed");
+    return;
+  }
+  const located = locateContainment([]);
+  assert.ok(located.ok, "bubblewrap is required for containment tests");
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "codex-git-")));
+  t.after(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const workspace = join(dir, "workspace");
+  const scratch = join(dir, "scratch");
+  mkdirSync(scratch);
+  git(dir, ["init", "-q", "-b", "main", workspace]);
+  git(workspace, ["commit", "-q", "--allow-empty", "-m", "baseline"]);
+  const hooks = join(workspace, ".git", "hooks");
+  mkdirSync(hooks, { recursive: true });
+  const configPath = join(workspace, ".git", "config");
+  const config = readFileSync(configPath, "utf8");
+  const script = (name: string) => `
+cd '${workspace}'
+{
+  echo ${name} > tracked.txt
+  if git add tracked.txt && git -c user.name=Worker -c user.email=worker@example.invalid commit -q -m ${name} 2>/dev/null; then echo commit=yes; else echo commit=no; fi
+  if touch .git/hooks/pre-commit 2>/dev/null; then echo write-hook=yes; else echo write-hook=no; fi
+  if (echo '[core]' >> .git/config) 2>/dev/null; then echo write-config=yes; else echo write-config=no; fi
+} > '${name}.results'
+`;
+  const run = (name: string, sandbox: readonly string[]) => {
+    const command = containedLaunch({
+      bwrap: located.path,
+      provider: "codex",
+      program: codex,
+      args: [
+        "sandbox",
+        "-C",
+        workspace,
+        ...sandbox,
+        "--",
+        "/bin/sh",
+        "-c",
+        script(name),
+      ],
+      cwd: workspace,
+      workspaces: [{ path: workspace, mode: "write" }],
+      scratch,
+      nodePath: process.execPath,
+      toolFiles: [],
+      masked: [],
+      protectedRoots: [repository],
+      env: { PATH: "/usr/bin:/bin" },
+    });
+    const result = spawnSync(command.program, command.args, {
+      env: command.env,
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 0, result.stderr);
+    return results(join(workspace, `${name}.results`));
+  };
+  // The H3 configuration: Git metadata is read-only.
+  assert.deepEqual(run("plain", ["-P", ":workspace"]), {
+    commit: "no",
+    "write-hook": "no",
+    "write-config": "no",
+  });
+  // The H4 write profile: the commit lands; hooks and config stay protected.
+  assert.deepEqual(
+    run("profile", [
+      ...codexWriteProfile([workspace]),
+      "-P",
+      CODEX_WRITE_PROFILE,
+    ]),
+    { commit: "yes", "write-hook": "no", "write-config": "no" },
+  );
+  assert.equal(git(workspace, ["log", "-1", "--format=%s"]), "profile");
+  assert.equal(git(workspace, ["rev-list", "--count", "HEAD"]), "2");
+  assert.equal(existsSync(join(hooks, "pre-commit")), false);
+  assert.equal(readFileSync(configPath, "utf8"), config);
 });

@@ -184,6 +184,9 @@ host-built bubblewrap (`bwrap`) namespace with the following properties:
 - A provider that builds its own nested sandbox (Codex) is launched only after
   the host proves that a nested sandbox can start inside the namespace.
   Otherwise the allocation is refused before any session exists.
+- A Codex write grant keeps Codex's own sandbox, but uses a permission profile
+  that lets the worker commit in its writable workspaces. Git hooks and
+  repository config stay read-only.
 
 Nothing is published automatically.
 

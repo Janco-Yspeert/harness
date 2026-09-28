@@ -219,6 +219,45 @@ function tomlString(value: string): string {
   return JSON.stringify(value);
 }
 
+// Codex `workspace-write` keeps `.git` (with `.agents` and `.codex`) read-only
+// inside every writable root, so a worker granted `git-commit` could never
+// create `.git/index.lock` (the 014e H3 live canary block). Write grants
+// therefore select this named Codex permission profile instead. It mirrors
+// `workspace-write`: the whole filesystem is readable; `/tmp`, `$TMPDIR` and
+// each writable workspace are writable; the network is off. The one difference
+// is that each writable workspace's Git metadata is writable, so the worker can
+// commit. Hooks and repository config stay read-only, so a worker cannot plant
+// code that a later operator `git` command would run outside the sandbox.
+export const CODEX_WRITE_PROFILE = "harness-workspace-git";
+const CODEX_READ_ONLY_METADATA = [
+  join(".git", "hooks"),
+  join(".git", "config"),
+  ".agents",
+  ".codex",
+];
+export function codexWriteProfile(roots: readonly string[]): string[] {
+  const entries = [
+    '":root"="read"',
+    '":slash_tmp"="write"',
+    '":tmpdir"="write"',
+    ...roots.flatMap((root) => [
+      `${tomlString(root)}="write"`,
+      `${tomlString(join(root, ".git"))}="write"`,
+      ...CODEX_READ_ONLY_METADATA.map(
+        (path) => `${tomlString(join(root, path))}="read"`,
+      ),
+    ]),
+  ];
+  return [
+    "-c",
+    `default_permissions=${tomlString(CODEX_WRITE_PROFILE)}`,
+    "-c",
+    `permissions.${CODEX_WRITE_PROFILE}.filesystem={${entries.join(", ")}}`,
+    "-c",
+    `permissions.${CODEX_WRITE_PROFILE}.network.enabled=false`,
+  ];
+}
+
 const codex: ProviderAdapter = {
   id: "codex",
   program: "codex",
@@ -233,7 +272,7 @@ const codex: ProviderAdapter = {
   // own bubblewrap sandbox.
   nestedSandbox: true,
   // Codex sandboxes always permit reading, command execution and Git
-  // inspection, and workspace-write always permits commits. Any grant whose
+  // inspection, and the write profile always permits commits. Any grant whose
   // capabilities differ from what the selected sandbox actually provides is a
   // mismatch and fails closed.
   checkCapabilities(capabilities) {
@@ -266,45 +305,55 @@ const codex: ProviderAdapter = {
     const primary = input.workspaces[0];
     if (!primary) throw new Error("governed Codex launch requires a workspace");
     const write = input.grant.capabilities.includes("repository-write");
-    return codexExecCommand(
+    const options = [
+      "--json",
+      "--ephemeral",
+      "--skip-git-repo-check",
+      "--ignore-user-config",
+      "--ignore-rules",
+      "-c",
+      'approval_policy="never"',
+      "-c",
+      `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.command=${tomlString(input.nodePath)}`,
+      "-c",
+      `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.args=[${tomlString(input.workerToolsPath)}]`,
+      "-c",
+      `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.env={HARNESS_WORKER_RELAY=${tomlString(String(input.relay.port))},HARNESS_WORKER_RELAY_KEY=${tomlString(input.relay.key)}}`,
+      // Under approval_policy="never" Codex declines MCP tool calls that
+      // would need approval, so the worker could never submit its result
+      // (observed in the 014c live smoke). Pre-approve only the Harness
+      // worker tools: every call is still authenticated, execution-bound and
+      // validated by the host, and no sandbox or command permission widens.
+      "-c",
+      `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.default_tools_approval_mode="approve"`,
+      ...(input.model === undefined ? [] : ["-m", input.model]),
+      ...(input.reasoning === undefined
+        ? []
+        : ["-c", `model_reasoning_effort=${tomlString(input.reasoning)}`]),
+    ];
+    const prompt = `${input.system}\n\n${input.prompt}`;
+    if (!write)
+      return codexExecCommand(primary.path, [], "read-only", options, prompt);
+    // As under `workspace-write`, the primary workspace is the writable
+    // working directory and every other write workspace is added.
+    const roots = [
       primary.path,
-      write
-        ? input.workspaces
-            .slice(1)
-            .filter((workspace) => workspace.mode === "write")
-            .map((workspace) => workspace.path)
-        : [],
-      write ? "workspace-write" : "read-only",
-      [
-        "--json",
-        "--ephemeral",
-        "--skip-git-repo-check",
-        "--ignore-user-config",
-        "--ignore-rules",
-        "-c",
-        'approval_policy="never"',
-        "-c",
-        "sandbox_workspace_write.network_access=false",
-        "-c",
-        `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.command=${tomlString(input.nodePath)}`,
-        "-c",
-        `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.args=[${tomlString(input.workerToolsPath)}]`,
-        "-c",
-        `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.env={HARNESS_WORKER_RELAY=${tomlString(String(input.relay.port))},HARNESS_WORKER_RELAY_KEY=${tomlString(input.relay.key)}}`,
-        // Under approval_policy="never" Codex declines MCP tool calls that
-        // would need approval, so the worker could never submit its result
-        // (observed in the 014c live smoke). Pre-approve only the Harness
-        // worker tools: every call is still authenticated, execution-bound and
-        // validated by the host, and no sandbox or command permission widens.
-        "-c",
-        `mcp_servers.${GOVERNED_WORKER_TOOL_SERVER}.default_tools_approval_mode="approve"`,
-        ...(input.model === undefined ? [] : ["-m", input.model]),
-        ...(input.reasoning === undefined
-          ? []
-          : ["-c", `model_reasoning_effort=${tomlString(input.reasoning)}`]),
-      ],
-      `${input.system}\n\n${input.prompt}`,
-    );
+      ...input.workspaces
+        .slice(1)
+        .filter((workspace) => workspace.mode === "write")
+        .map((workspace) => workspace.path),
+    ];
+    // Codex refuses `--sandbox` together with `default_permissions`, so the
+    // profile replaces it (and `--add-dir`) rather than widening it.
+    return [
+      "codex",
+      "exec",
+      "--cd",
+      primary.path,
+      ...codexWriteProfile(roots),
+      ...options,
+      prompt,
+    ];
   },
   // `codex exec --json` events.
   parse(line) {
