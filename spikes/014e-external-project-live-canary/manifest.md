@@ -127,3 +127,51 @@
 - Checks:
   - SHA-256 comparison of the input against the host-bound identity (match);
   - Prettier check of `design-map.md` (pass).
+
+## Run 004 — Evaluator Prepare
+
+- Skill: `evaluator` v14, mode `prepare`,
+  `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`
+  (pinned bytes delivered by Role Grant
+  `sha256:81333c45cfb61cfb8facb7cd72ae8676db5d80c3c01e9144349597774cffeacb`,
+  execution `cc074408-05ec-48a7-af08-9b65c6c38f57`, workflow
+  `014e-external-project-live-canary`).
+- Inputs:
+  - frozen `spike.md`
+    `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`
+    (committed at `ec42cef7820d3274b3dffaf907798a6db2c43e22`);
+  - frozen `design-map.md`
+    `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`
+    (committed at `d365138b49d1991d5c6d320e132c712da6517c7f`).
+- Result: succeeded. Private evaluator revision `001` is frozen, with identity
+  `sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623`.
+  No blocking questions.
+- Outputs:
+  - `eval-requirements.md`
+    `sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef`
+    (seven testability requirements and six evaluator assumptions);
+  - `coverage-map.json`: one record for each of AC01–AC10; the readiness
+    attestation has private inventory
+    `sha256:d024b7a2fd3dffb682121f797c7f4c34b0ba07a03ae376cf9d8b5687e3fe44e6`
+    and integrity validation `PASS`.
+- Safe aggregates:
+  - 10 criterion records;
+  - 9 evidence procedures: 6 executable and 3 public-evidence reviews (public
+    regressions, design conformance and live-canary evidence);
+  - 18 files in the private freeze inventory.
+- Pre-freeze validation:
+  - The repository's `evaluator-integrity` structural validation passed with
+    0 diagnostics, plus bundle-specific consistency checks.
+  - Executable cases were exercised against controlled positive and negative
+    conditions: the pre-implementation baseline and evaluator-authored control
+    commits that are not candidates. No candidate implementation existed or was
+    run.
+- Restricted evaluator material: kept in the private evaluation workspace. None
+  of it is in this checkpoint. The Stockdif repositories were not inspected.
+- Measurements: wall-clock time and token usage are unknown (not exposed to the
+  worker).
+- Checks:
+  - SHA-256 comparison of both inputs against the host-bound identities
+    (match);
+  - the repository `prepared-coverage` validator on `coverage-map.json` (pass);
+  - Prettier check of the public artifacts (pass).

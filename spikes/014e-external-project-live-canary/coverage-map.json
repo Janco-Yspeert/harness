@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "spike": "014e-external-project-live-canary",
+  "evaluationRequirements": "sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 14,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623",
+    "privateInventoryIdentity": "sha256:d024b7a2fd3dffb682121f797c7f4c34b0ba07a03ae376cf9d8b5687e3fe44e6",
+    "validatorResultBinding": "sha256:075a583e4f93ae8c3a292f5f9fd50c9aa1b56b3bf8beac55343fb23027cc4b16",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 10
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01 and §1; design-map.md D1, D2 (methodologyRoot absent/present) and D3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E1", "E6", "R-REG"],
+      "sufficiency": "E1 drives the production host through the D2 seam. The unchanged self-development configuration and a disposable external configuration must both grant workflows bound to trusted record 5's exact committed skill, contract and policy identities. Working-tree edits must not change the binding, and nothing may be copied into the external project. The D3 grant values must stay pinned across a later Harness commit and a project edit. E6 confirms that the trusted history, policy, contracts, role skills and orchestrator are byte-identical to the brief freeze, and that the self-development configuration keeps a defaulted methodology root. R-REG requires genuine visible tests of D3 binding and pinning."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02 and §1 (committed workflow-input provenance); design-map.md D2 and Invariants (cross-repository provenance)",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E1", "E2", "R-REG", "M-CODE"],
+      "sufficiency": "E1 shows that an external workflow's ledger and state are written in the project repository while its methodology identities come from Harness history, and that the Harness checkout is untouched. E2 shows that absent, swapped and nested methodology roots are refused before any launch, measured against a valid control that does launch. Transition-time provenance of committed inputs and artifacts has no frozen hidden seam. R-REG therefore requires genuine visible tests that a methodology-repository-only commit or path is refused for project provenance, and the reverse. M-CODE confirms the provenance code path uses the project repository and that there is no second methodology-source selector."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03 and §2 (Repository boundaries, Actual process isolation); design-map.md D4 and Invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E2", "E3", "R-REG", "M-CODE", "M-LIVE"],
+      "sufficiency": "E3 probes D4 black-box through the production launch path, as D4's testability seam requires. A public external role must be unable to read the evaluation workspace, see or write Harness, the host private root or the operator home, while it can write its repository workspace. Host-side state confirms nothing crossed. E2 shows that missing, identical, overlapping and symlink-escaping workspaces and misplaced private data roots fail closed before launch. R-REG requires genuine visible tests for the protected-grant positive case, the fail-closed refusal when namespaces are unavailable, and Codex eligibility only under containment. M-CODE confirms a single spawn-seam wrap with no fallback and no writable Harness mount. M-LIVE confirms the live protected and public roles ran contained."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04 and §3; design-map.md D4 (No Git credentials) and D5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E3", "E4", "R-REG", "M-CODE"],
+      "sufficiency": "E3 shows that a contained worker sees no credential-shaped environment, no operator credential helper or SSH material, and cannot push to a local bare repository. Nothing is pushed anywhere real. E4 shows that the recognized origin spellings start the host, that mismatched, unrecognized or absent origins refuse the host start, and that an external role grant carries no publication action. R-REG requires genuine visible tests that a publication request is refused as outside the role grant. M-CODE confirms the environment allowlist and the absence of publication grants."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05 and §4 A2–A4; design-map.md Design decisions (self-development default, host maintenance 003)",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E1", "E6", "R-REG"],
+      "sufficiency": "R-REG runs the full repository checks on a clean clone of the exact H1 candidate. It requires the host maintenance 003 recovery-authority regression to be present and passing, and the unchanged self-development regression to run. E1 independently shows that self-development still grants trusted workflows unchanged. E6 shows that no trusted-methodology change occurred and that no Stockdif configuration or authority exception lives in Harness."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06 and §4 Track B steps 1–4; design-map.md D6 and D8",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E5", "M-LIVE"],
+      "sufficiency": "The live run cannot be reproduced by the evaluator, so evidence is the only source. E5 structurally binds the evidence checkpoint to H1 under D7 and validates the D6 index, including the Stockdif branch, origin, ordered commits and canary status. M-LIVE requires the committed evidence to show the Stockdif ledger passing through Brief Readiness, human freeze, Design Map, protected Evaluator Prepare, Implementation and independent Evaluator Verify, under a bounded grant bound to H1 and trusted record 5, with outputs only in Stockdif. A canary blocked before Stockdif Verify leaves AC06 unsatisfied."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07 and §4 Track B step 4; design-map.md D6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E5", "M-LIVE"],
+      "sufficiency": "E5 validates the D6 identities for verification, promotion, As-Built and Outcome, which must be non-null for a completed canary. M-LIVE requires the Stockdif evaluator outcome to be truthful. A FAIL or BLOCKED is acceptable only as recorded. A PASS needs an eligible plan, a promotion action that succeeded into Stockdif's own evaluation directory, promotion-recorded, then As-Built, human acceptance and Outcome, none of which may depend on a GitHub push."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08, §4 Track B step 5 and §5; design-map.md D3 and D6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E5", "M-LIVE"],
+      "sufficiency": "E5 recomputes every listed evidence identity against the committed H1E bytes, requires the exact H1, methodology record and Stockdif commit identities, and forbids evaluator-private-shaped content. M-LIVE requires the remaining items to be present with exact identities: the H1 runtime recorded by the Stockdif grant, host events, provider properties marked confirmed or unconfirmed, usage recorded as unknown when unavailable, allocations within the bound, interventions and forward-only corrections. Nothing may be invented, and identities must recompute where the bytes are committed."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09 and §4 (Cross-track lifecycle and evidence binding); design-map.md D7 and D8",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E5", "M-LIVE", "R-REG"],
+      "sufficiency": "Verification binds H1 for generic behavior (R-REG and the H1-bound executable cases) and H1E for canary evidence. E5 applies D7 rules 1–4 without HEAD. M-LIVE applies rule 5 against the recorded human authorization, and requires the evidence and this evaluator's result to separate architecture success, product success and known limitations, never treating fixture assertions as real execution. Later archive, As-Built and human-acceptance gates follow verification."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10 and §3; design-map.md D5 and Invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E4", "E5", "M-LIVE", "M-CODE"],
+      "sufficiency": "E4 shows that origin identity is verified independently of any worker, and that external grants carry no publication action. E5 shows that the Harness evidence commit changes only its evidence area, so no cross-repository checkpoint exists. M-LIVE requires the evidence to show separate commit histories, grants and evidence roots, no automated push, and any push performed manually by a human after acceptance to Janco-Yspeert/stockdif. M-CODE confirms that the remote sets never name the other project and that promotion targets only the project's own evaluation directory."
+    }
+  ]
+}
