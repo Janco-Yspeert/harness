@@ -11,21 +11,24 @@
 // Nothing else of the operator's home, the Harness checkout, other workspaces,
 // the host private data root or ledgers is visible. The launch environment is
 // an allowlist without Git or forge credentials. There is no unwrapped
-// fallback: when bubblewrap or unprivileged namespaces are unavailable the
-// launch is refused before any session exists.
+// fallback: when bubblewrap or unprivileged namespaces are unavailable, or a
+// provider's own nested sandbox cannot start inside the wrap, the launch is
+// refused before any session exists.
 import { execFileSync } from "node:child_process";
 import {
   copyFileSync,
   existsSync,
   lstatSync,
   mkdirSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   readlinkSync,
   realpathSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 import { AdapterRefusal, locateProvider, type ProviderId } from "./adapters.ts";
@@ -293,11 +296,14 @@ export function containedLaunch(input: ContainmentInput): {
     if (existsSync(file))
       args.push("--ro-bind", "/dev/null", realpathSync(file));
   const scratch = realpathSync(input.scratch);
-  // The namespace root and /tmp (and the parent directories bubblewrap
-  // created on them) are read-only; only the explicit bind mounts above are
-  // writable. TMPDIR points into the scratch bind.
+  // The namespace root (and the parent directories bubblewrap created on it)
+  // is read-only; only the explicit bind mounts above and the private /tmp
+  // are writable. /tmp is a tmpfs that exists only inside this namespace: it
+  // exposes and persists no host path, and a provider's own nested sandbox
+  // needs it writable to create its mount points (Codex protects /tmp/.git as
+  // a writable root). TMPDIR still points into the scratch bind.
   args.push("--bind", scratch, scratch);
-  args.push("--remount-ro", "/tmp", "--remount-ro", "/");
+  args.push("--remount-ro", "/");
   args.push("--chdir", realpathSync(input.cwd));
   args.push("--", program, ...input.args);
   const env: Record<string, string> = { ...input.env, ...homeEnv, HOME: home };
@@ -307,6 +313,80 @@ export function containedLaunch(input: ContainmentInput): {
   env.GIT_TERMINAL_PROMPT = "0";
   env.GIT_CONFIG_NOSYSTEM = "1";
   return { program: input.bwrap, args, env };
+}
+
+// Proves, before any session or allocation exists, that a provider's own
+// nested namespace sandbox can start inside the exact containment this launch
+// would use. The nested bubblewrap has the shape such sandboxes use: new user,
+// PID and network namespaces, the contained filesystem read-only, the
+// writable roots (granted write workspaces, scratch and /tmp) re-bound
+// writable, and a new mount point created on a writable root for a protected
+// path. A failure refuses the launch; there is no unwrapped fallback.
+export function probeNestedSandbox(input: {
+  readonly bwrap: string;
+  readonly provider: ProviderId;
+  readonly cwd: string;
+  readonly workspaces: ReadonlyArray<{ path: string; mode: "read" | "write" }>;
+  readonly nodePath: string;
+  readonly masked: readonly string[];
+  readonly protectedRoots: readonly string[];
+}): void {
+  const scratch = realpathSync(
+    mkdtempSync(join(tmpdir(), "harness-nested-probe-")),
+  );
+  try {
+    const nested = [
+      "--unshare-user",
+      "--unshare-pid",
+      "--unshare-net",
+      "--die-with-parent",
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--bind",
+      "/tmp",
+      "/tmp",
+    ];
+    for (const workspace of input.workspaces)
+      if (workspace.mode === "write") {
+        const path = realpathSync(workspace.path);
+        nested.push("--bind", path, path);
+      }
+    nested.push("--bind", scratch, scratch);
+    nested.push("--ro-bind", "/dev/null", "/tmp/.harness-nested-probe");
+    nested.push("--", "/bin/sh", "-c", "exit 0");
+    const launch = containedLaunch({
+      bwrap: input.bwrap,
+      provider: input.provider,
+      program: input.bwrap,
+      args: nested,
+      cwd: input.cwd,
+      workspaces: input.workspaces,
+      scratch,
+      nodePath: input.nodePath,
+      toolFiles: [],
+      masked: input.masked,
+      protectedRoots: input.protectedRoots,
+      env: { PATH: process.env.PATH ?? "/usr/bin:/bin", TMPDIR: scratch },
+    });
+    execFileSync(launch.program, launch.args, {
+      env: launch.env,
+      stdio: "pipe",
+      timeout: 10_000,
+    });
+  } catch (error) {
+    if (error instanceof AdapterRefusal) throw error;
+    throw new AdapterRefusal(
+      "provider-config-invalid",
+      `${input.provider} nested sandbox cannot start inside host containment`,
+    );
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 }
 
 export function workerToolFiles(workerToolsPath: string): string[] {

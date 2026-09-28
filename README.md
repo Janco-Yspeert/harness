@@ -181,6 +181,9 @@ host-built bubblewrap (`bwrap`) namespace with the following properties:
   paths.
 - Git credentials are withheld.
 - It has no unwrapped fallback.
+- A provider that builds its own nested sandbox (Codex) is launched only after
+  the host proves that a nested sandbox can start inside the namespace.
+  Otherwise the allocation is refused before any session exists.
 
 Nothing is published automatically.
 

@@ -78,6 +78,10 @@ export interface ProviderAdapter {
   // Whether the provider confines reads to the granted workspaces, which is
   // required for protected and forbidden-exposure grants.
   readonly privateWorkspace: boolean;
+  // Whether the provider builds its own nested namespace sandbox for the
+  // commands it runs. Inside host containment such a provider is launched
+  // only after a nested sandbox is proven to start (design-map D4).
+  readonly nestedSandbox: boolean;
   checkCapabilities(capabilities: readonly string[]): void;
   command(input: AdapterCommandInput): string[];
   parse(line: string): ProviderEvent[];
@@ -107,6 +111,8 @@ const claude: ProviderAdapter = {
   // an exact effort constraint blocks rather than being optimistically met.
   reasoning: { enforce: false, attest: false },
   privateWorkspace: true,
+  // Governed Claude runs use permission rules, not a namespace sandbox.
+  nestedSandbox: false,
   checkCapabilities(capabilities) {
     try {
       governedClaudePermissions(capabilities, WORKER_OPERATIONS);
@@ -223,6 +229,9 @@ const codex: ProviderAdapter = {
   reasoning: { enforce: true, attest: false },
   // The Codex sandbox restricts writes, not reads.
   privateWorkspace: false,
+  // `--sandbox read-only|workspace-write` runs every command inside Codex's
+  // own bubblewrap sandbox.
+  nestedSandbox: true,
   // Codex sandboxes always permit reading, command execution and Git
   // inspection, and workspace-write always permits commits. Any grant whose
   // capabilities differ from what the selected sandbox actually provides is a

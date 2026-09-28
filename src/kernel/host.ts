@@ -13,8 +13,12 @@ import {
 import {
   locateContainment,
   probeContainment,
+  probeNestedSandbox,
 } from "../executors/containment.ts";
-import { GovernedProviderRun } from "../executors/governed.ts";
+import {
+  GovernedProviderRun,
+  launchWorkspaces,
+} from "../executors/governed.ts";
 import { ExecutionKernel, type KernelOptions } from "./execution.ts";
 import { object, required, text } from "./ledger.ts";
 import type {
@@ -508,6 +512,20 @@ export class GovernedHost {
               program: located.path,
               plan: planLaunch(adapter, resolution.grant, profile, contained),
             };
+            // A provider that builds its own nested sandbox is launched
+            // inside containment only when that sandbox can start there.
+            if (containment && adapter.nestedSandbox) {
+              const workspaces = launchWorkspaces(resolution.grant);
+              probeNestedSandbox({
+                bwrap: containment.bwrap,
+                provider: adapter.id,
+                cwd: required(workspaces[0]).path,
+                workspaces,
+                nodePath: process.execPath,
+                masked: containment.masked,
+                protectedRoots: containment.protectedRoots,
+              });
+            }
           } catch (error) {
             if (error instanceof AdapterRefusal)
               throw new HostRefusal(error.category, error.message);

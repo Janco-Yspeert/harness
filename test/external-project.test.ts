@@ -24,10 +24,15 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 import test, { type TestContext } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 
-import { planLaunch, ADAPTERS } from "../src/executors/adapters.ts";
+import {
+  AdapterRefusal,
+  planLaunch,
+  ADAPTERS,
+} from "../src/executors/adapters.ts";
 import {
   containedLaunch,
   locateContainment,
+  probeNestedSandbox,
 } from "../src/executors/containment.ts";
 import { startHarnessHost } from "../src/index.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
@@ -983,4 +988,168 @@ void test("014e D4: unavailable containment or an unwrapped fixture command is r
     0,
   );
   assert.equal(existsSync(join(f.stockdif, "never.txt")), false);
+});
+
+// H3 correction: a provider's own nested sandbox (Codex builds one with
+// bubblewrap and protects /tmp/.git as a writable root) must be able to start
+// inside host containment. The namespace root stays read-only; the private
+// /tmp tmpfs, which exposes and persists no host path, is writable. Probed
+// black-box inside a real namespace.
+void test("014e D4 (H3): a nested provider sandbox that creates new mount points on its writable roots starts inside containment", (t) => {
+  const located = locateContainment([]);
+  assert.ok(located.ok, "bubblewrap is required for containment tests");
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "nested-sandbox-")));
+  t.after(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const workspace = join(dir, "workspace");
+  const scratch = join(dir, "scratch");
+  const bin = join(dir, "bin");
+  for (const path of [workspace, scratch, bin]) mkdirSync(path);
+  const output = join(workspace, "nested.txt");
+  const marker = `harness-h3-${String(process.pid)}-${String(Date.now())}`;
+  const nested = [
+    `'${located.path}'`,
+    "--unshare-user --unshare-pid --unshare-net --die-with-parent",
+    "--ro-bind / / --dev /dev --proc /proc --bind /tmp /tmp",
+    `--bind '${workspace}' '${workspace}'`,
+    "--ro-bind /dev/null /tmp/.git",
+    "-- /bin/sh -c 'test -e /tmp/.git'",
+  ].join(" ");
+  writeFileSync(
+    join(bin, "codex"),
+    `#!/bin/sh
+{
+  if ${nested} >/dev/null 2>&1; then echo nested-sandbox=yes; else echo nested-sandbox=no; fi
+  if touch '/${marker}' 2>/dev/null; then echo write-root=yes; else echo write-root=no; fi
+  if touch '/tmp/${marker}' 2>/dev/null; then echo write-private-tmp=yes; else echo write-private-tmp=no; fi
+} > '${output}'
+`,
+  );
+  chmodSync(join(bin, "codex"), 0o755);
+  const command = containedLaunch({
+    bwrap: located.path,
+    provider: "codex",
+    program: join(bin, "codex"),
+    args: [],
+    cwd: workspace,
+    workspaces: [{ path: workspace, mode: "write" }],
+    scratch,
+    nodePath: process.execPath,
+    toolFiles: [],
+    masked: [],
+    protectedRoots: [repository],
+    env: { PATH: "/usr/bin:/bin" },
+  });
+  const run = spawnSync(command.program, command.args, {
+    env: command.env,
+    encoding: "utf8",
+  });
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(results(output), {
+    "nested-sandbox": "yes",
+    "write-root": "no",
+    "write-private-tmp": "yes",
+  });
+  // The namespace /tmp is private: nothing reaches the host.
+  assert.equal(existsSync(join("/tmp", marker)), false);
+  assert.equal(existsSync(join("/", marker)), false);
+});
+
+// A bubblewrap that creates the outer containment, but whose nested sandbox
+// (identified by its own network namespace, which containment itself never
+// requests) cannot start.
+function nestedDenyingBwrap(dir: string, real: string): string {
+  const home = join(dir, "nested-deny");
+  mkdirSync(home);
+  const path = join(home, "bwrap");
+  writeFileSync(
+    path,
+    `#!/bin/sh
+for arg in "$@"; do
+  [ "$arg" = "--" ] && break
+  if [ "$arg" = "--unshare-net" ]; then
+    echo "bwrap: Can't mkdir /tmp/.git: Read-only file system" >&2
+    exit 1
+  fi
+done
+exec '${real}' "$@"
+`,
+  );
+  chmodSync(path, 0o755);
+  return path;
+}
+
+void test("014e D4 (H3): the nested-sandbox probe passes under real containment and refuses when the nested sandbox cannot start", (t) => {
+  const located = locateContainment([]);
+  assert.ok(located.ok, "bubblewrap is required for containment tests");
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "nested-probe-")));
+  t.after(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const workspace = join(dir, "workspace");
+  mkdirSync(workspace);
+  const input = {
+    provider: "codex" as const,
+    cwd: workspace,
+    workspaces: [{ path: workspace, mode: "write" as const }],
+    nodePath: process.execPath,
+    masked: [],
+    protectedRoots: [repository],
+  };
+  probeNestedSandbox({ ...input, bwrap: located.path });
+  const deny = nestedDenyingBwrap(dir, located.path);
+  assert.throws(
+    () => {
+      probeNestedSandbox({ ...input, bwrap: deny });
+    },
+    (error: unknown) =>
+      error instanceof AdapterRefusal &&
+      error.category === "provider-config-invalid" &&
+      error.message.includes("nested sandbox cannot start"),
+  );
+});
+
+void test("014e D4 (H3): a Codex worker whose nested sandbox cannot start is refused before any session or allocation; Claude remains eligible", async (t) => {
+  const f = external(t);
+  const located = locateContainment([]);
+  assert.ok(located.ok, "bubblewrap is required for containment tests");
+  const started = join(f.stockdif, "codex-started.txt");
+  writeFileSync(join(f.bin, "codex"), `#!/bin/sh\ntouch '${started}'\n`);
+  chmodSync(join(f.bin, "codex"), 0o755);
+  writeFileSync(join(f.bin, "claude"), "#!/bin/sh\nexit 0\n");
+  chmodSync(join(f.bin, "claude"), 0o755);
+  const host = await startHarnessHost(0, {
+    governed: hostOptions(f, {
+      bwrap: nestedDenyingBwrap(f.dir, located.path),
+    }),
+  });
+  t.after(() => host.close());
+  const granted = await grant(host.url, "smoke-codex");
+  assert.equal(granted.status, 201, JSON.stringify(granted.value));
+  const refused = await call<{ category?: string }>(host.url, "continue", {
+    workflowGrant: granted.value.grant.id,
+    mode: "spawned",
+    role: "smoke-codex",
+  });
+  assert.equal(refused.status, 409, JSON.stringify(refused.value));
+  assert.equal(refused.value.category, "provider-config-invalid");
+  assert.equal(
+    readLedger(f.ledger).filter((e) =>
+      ["kernel.session", "kernel.allocation"].includes(e.transition),
+    ).length,
+    0,
+  );
+  assert.equal(existsSync(started), false);
+  // The refusal leaves the pre-authorized Claude substitution available:
+  // Claude builds no nested sandbox, so the same host still allocates it.
+  const claude = await grant(host.url, "smoke-claude-promotion");
+  assert.equal(claude.status, 201, JSON.stringify(claude.value));
+  const allocated = await call<{ execution: Execution }>(host.url, "continue", {
+    workflowGrant: claude.value.grant.id,
+    mode: "spawned",
+    role: "smoke-claude-promotion",
+  });
+  assert.equal(allocated.status, 201, JSON.stringify(allocated.value));
+  await settled(host.url, allocated.value.execution.id);
 });

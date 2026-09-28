@@ -221,7 +221,7 @@ export function verifyAssignment(
   };
 }
 
-function launchWorkspaces(grant: RoleGrant): RoleGrant["workspaces"] {
+export function launchWorkspaces(grant: RoleGrant): RoleGrant["workspaces"] {
   // Protected roles work inside their first private workspace.
   const index = grant.executorConstraints.protected
     ? grant.workspaces.findIndex((workspace) => workspace.exposure !== "public")

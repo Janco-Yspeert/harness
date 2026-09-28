@@ -519,3 +519,116 @@
 - Host actions requested: none. There is no promotion after FAIL.
 - Next: an implementation retry (H3) against the same frozen evaluation.
 - Wall-clock: not measured. Token usage: unknown.
+
+## Run 010 — Implementation (Track A, correction candidate H3)
+
+- Skill: `implementation` v5,
+  `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+  (pinned bytes delivered by Role Grant
+  `sha256:3bb0864aded0c61e160368e4768264b9dee546aa5fcc794a14d219aa7f276953`,
+  execution `59fd60e5-8e75-42a6-8cee-fd7e270af8dc`, predecessor
+  `3449bc1c-f859-4e36-95a2-7ecdde141e10`, workflow
+  `014e-external-project-live-canary`).
+- Inputs (host-bound identities; each recomputed before any change):
+  - frozen `spike.md`
+    `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`;
+  - frozen `design-map.md`
+    `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`;
+  - `eval-requirements.md`
+    `sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef`;
+  - coverage binding
+    `sha256:2536a2fbdb88bc6874af693082e13395a49f94d24d8cee1cae9f91bc45534c04`;
+  - implementation feedback `verification-result.json`
+    `sha256:d626cfef3644894273e1ca136d6218fd41db323d24a60c21884af4d3c3d374f3`.
+    It is the current `verification-finalized` event (attempt 003,
+    `IMPLEMENTATION_FAILURE`, candidate H2), committed at
+    `1f41328300ff967ea84bc78fbc6b0acc642243c5`. The committed bytes match.
+    The public `verification-feedback-003.md` was read with it.
+- Baseline: `feat/spike-014` at `1f41328300ff967ea84bc78fbc6b0acc642243c5`.
+  H1, H1E, H2, H2E and attempts 001–003 are preserved.
+- Result: succeeded. The candidate H3 is the local checkpoint that contains
+  this entry.
+- Investigation:
+  - Codex's own sandbox was reproduced locally through H2's
+    `containedLaunch`, with no model call: `codex sandbox -P :workspace`
+    (codex-cli 0.153.1).
+  - It failed with `bwrap: Can't mkdir /tmp/.git: Read-only file system`.
+    Codex treats `/tmp` as a writable root and protects `/tmp/.git` in it.
+    That needs a new mount point on the namespace `/tmp`, which H2 remounted
+    read-only. `:read-only` started.
+- Changes:
+  - `src/executors/containment.ts`:
+    - The namespace root stays read-only. The namespace-private `/tmp` tmpfs
+      is no longer remounted read-only. It maps no host path and persists
+      nothing, so D4's visible and writable host paths are unchanged.
+    - Added `probeNestedSandbox` for D4 fail-closed. Before any session
+      exists, it runs a nested bubblewrap inside the exact containment for
+      the grant, using a temporary scratch that is removed afterwards. The
+      nested bubblewrap has new user, PID and network namespaces, the
+      contained root read-only, the writable roots (write workspaces,
+      scratch, `/tmp`) re-bound, and a new mount point on `/tmp`. If it fails,
+      the launch is refused with `provider-config-invalid`.
+  - `src/executors/adapters.ts`: adapters declare `nestedSandbox`, `true` for
+    Codex and `false` for Claude.
+  - `src/kernel/host.ts`: for a contained launch of a `nestedSandbox`
+    adapter, the probe runs after launch planning and before session
+    registration or allocation. A refusal therefore creates no session or
+    allocation, and Claude, which has no nested sandbox, stays eligible for
+    the pre-authorized substitution.
+  - `src/executors/governed.ts`: exports `launchWorkspaces` so the probe uses
+    the same workspace order as the launch.
+  - `README.md`: one line on the nested-sandbox refusal.
+  - `test/external-project.test.ts`, three new tests:
+    - A black-box namespace test. A contained program starts a nested
+      bubblewrap that creates `/tmp/.git` with its own network namespace. The
+      namespace root stays unwritable, and namespace `/tmp` writes do not
+      reach the host.
+    - The probe passes under real containment and refuses with
+      `provider-config-invalid` when the nested sandbox cannot start.
+    - Through the host: a Codex grant whose nested sandbox cannot start is
+      refused with 409 `provider-config-invalid`. No `kernel.session` or
+      `kernel.allocation` is recorded and the provider never starts. On the
+      same host, a Claude role is still allocated.
+- Unchanged: trusted history, policy, contracts, role skills, orchestrator,
+  evaluation artifacts and evidence.
+- Output identities (SHA-256 of the committed bytes):
+  - `src/executors/containment.ts`
+    `be51997bee59ffcbfb267808536e06ae3dd21b7293f874881dc207231e76e59a`;
+  - `src/executors/adapters.ts`
+    `8c0ea8911afc2139d9904227a61efea22862950bb87c95e225dd1129ae5d5ee4`;
+  - `src/executors/governed.ts`
+    `efda8bd21931305694a9596c4f82d44174ab4bd65286aa31a2f1316ec3625eeb`;
+  - `src/kernel/host.ts`
+    `b8cfa218aef1f00c74db6aecfdd7301c472f55e148825b2022a16a370c236a24`;
+  - `test/external-project.test.ts`
+    `fe3005b6a2275ecaae509137064990922411e86217af41eb7df7520c4c54d99f`;
+  - `README.md`
+    `b5c4a40cbf262e9a6edcf3cf3e5c9de65e7eab1ade9d678eb9b43ef06d6862e1`.
+- Checks:
+  - `node --test test/external-project.test.ts`: 15 tests, 15 pass.
+  - `npm test`: 190 tests, 190 pass, 0 fail. This includes the host
+    maintenance 003 regressions.
+  - `npm run typecheck`: pass.
+  - `npm run lint`: pass.
+  - Prettier check of every tracked file: no style differences.
+    `npm run format:check` itself exits non-zero here only because it cannot
+    read untracked, permission-denied files at the repository root (for
+    example `.profile`, `.zshrc`). These are sandbox residue and are not
+    repository content.
+  - With H2's read-only `/tmp` restored temporarily, both new namespace tests
+    fail as expected: the nested sandbox cannot start and the probe refuses.
+  - With the fix, real `codex sandbox -P :workspace` and `-P :read-only` run
+    `sh` inside `containedLaunch` and exit 0. No model was called.
+- Skipped: `npm run check` on a disposable clean clone. The working-tree
+  checks above ran instead.
+- Restricted evaluator material inspected: none. The Stockdif repositories
+  were not inspected.
+- Measurements: wall-clock time and token usage are unknown.
+- Limitations:
+  - The exact nested sandbox command of a full `codex exec` session was not
+    observed. The probe models its shape, and the real Codex sandbox helper
+    was run locally.
+  - H3E, the rerun of the affected canary steps under H3, and the evidence
+    index corrections (`artifacts` listing every evidence file, `"unknown"`
+    for unavailable usage) are supervisor operator-evidence work. They are
+    not part of this run.
