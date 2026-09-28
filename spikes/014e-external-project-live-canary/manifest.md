@@ -83,3 +83,47 @@
 - Checks:
   - SHA-256 comparison of the input against the host-bound identity (match);
   - Prettier check of `feedback.md` (pass).
+
+## Run 003 — Design Map
+
+- Skill: `design-map` v4,
+  `sha256:238af12bbee012a784f234f2aaab9d4e783a58ec1b7c0257937bc54a16010136`
+  (pinned bytes delivered by Role Grant
+  `sha256:02efc65ad73b98d1541f6ed1cb85dd97badaec312000053162584dd665f49dc0`,
+  execution `7b105acd-4304-49f0-8839-5f663dfb899a`, workflow
+  `014e-external-project-live-canary`).
+- Input: frozen `spike.md`
+  `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`
+  (committed at `ec42cef7820d3274b3dffaf907798a6db2c43e22`), mapped against
+  `feat/spike-014` at `a1158637740a2960f2d7be4b05c58ee9944e3b52`.
+- Result: succeeded.
+- Output: `design-map.md`
+  `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`.
+  - Contracts D1–D8:
+    - trusted authority;
+    - `methodologyRoot` configuration seam;
+    - grant source and runtime binding;
+    - host-owned bubblewrap containment at the provider spawn seam;
+    - origin identity and no publication;
+    - evidence index;
+    - structural H1E binding (resolves readiness C1);
+    - Verify hold (resolves readiness C2).
+  - Readiness note E1 is resolved in D6.
+- Repository evidence inspected:
+  - `harness.project.json`;
+  - `methodologies/harness/{policy.json,trusted.jsonl,contracts/}` (content
+    search);
+  - `src/kernel/{configuration,trust,host,execution,model}.ts` (selected
+    sections);
+  - `src/executors/adapters.ts`;
+  - `AGENTS.md` (supervisor and orchestration sections);
+  - the 014d `design-map.md`;
+  - run 002 `feedback.md`.
+- Host tool observations: `bwrap` 0.9.0 is installed; `codex-cli` 0.153.1 is
+  installed; `claude` was not found on the worker PATH. Nested-namespace
+  viability was not exercised.
+- Restricted evaluator material inspected: none. The Stockdif repositories were
+  not inspected.
+- Checks:
+  - SHA-256 comparison of the input against the host-bound identity (match);
+  - Prettier check of `design-map.md` (pass).
