@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "candidate": "27430d9e80df6e7d075edb549c7c4e7b2c5a48e7",
+    "methodology": {
+      "sequence": 5,
+      "manifest": "sha256:47296d5c73c7833002c482ed7ed75d67ecf21c7aec6fa62a5c84aeeab954effb",
+      "revision": "9169ccf7d4543c214e7b7890ee29e428a5f8c01a"
+    }
+  },
+  "stockdif": {
+    "origin": "github.com/Janco-Yspeert/stockdif",
+    "baseline": "d1bb593fd0b56e58e384a07e8971d6bd75541ac0",
+    "branch": "feat/spike-001",
+    "commits": [],
+    "identities": {
+      "brief": null,
+      "designMap": null,
+      "evaluatorRevision": null,
+      "verification": null,
+      "promotion": null,
+      "asBuilt": null,
+      "outcome": null
+    },
+    "ledgerState": "not-created"
+  },
+  "canary": {
+    "status": "blocked",
+    "blocker": "H1 deterministic containment preflight failed: a public contained probe could read the operator real home. Track B was not started."
+  },
+  "provider": {
+    "public": "not-allocated",
+    "protected": "not-allocated",
+    "usage": "unknown"
+  },
+  "artifacts": [
+    {
+      "path": "preflight.md",
+      "identity": "sha256:427f0381cfccacb25d4b4fb4a9f3fcef64a6e7b7239b3d96e24622a59231a4d9"
+    }
+  ]
+}
