@@ -477,3 +477,45 @@
     canary record are supervisor work. They are not part of this run.
   - The Node runtime no longer exposes prefix `include/` or `share/`. Native
     add-on builds that need local Node headers must fetch them.
+
+## Run 009 — Evaluator Verify (attempt 003, candidate H2)
+
+- Skill: `evaluator` v14, mode `verify`,
+  `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`
+  (Role Grant
+  `sha256:ad2a15ff010b7a5b3ddd981a3667a5141d27ee459dde0f14c4d68a874909e904`,
+  execution `c2d6c80f-13de-4eb1-ad8f-16b384dcd325`).
+- Authority: human root `9ed2a324-49a6-4953-a040-fc3454d08d8d`. Attempts 001
+  and 002 and evaluator revision 001 are preserved.
+- Inputs:
+  - candidate H2 `d4b7975d1bc52ce1f029acc5aba4dd9855ae9743`;
+  - evaluator revision `001`
+    `sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623`;
+  - evidence commit `2604e0590f513c33d7ce05398423d3dc338ad1d5`, bound by D7
+    rules 1–5.
+  - The brief, Design Map, evaluation requirements and coverage map all
+    matched their frozen identities. No drift.
+- Result: **FAIL**, `IMPLEMENTATION_FAILURE`.
+  - The live canary is blocked by a recorded Harness runtime defect. The
+    Codex public worker cannot start its nested sandbox inside H2
+    containment.
+  - H2 does not refuse that condition before any session exists, which D4's
+    fail-closed clause requires.
+  - Secondary operator-evidence finding (`INFRASTRUCTURE_FAILURE`): the
+    evidence index does not list every evidence file, and unavailable usage
+    is not written as `"unknown"`.
+- Safe aggregates:
+  - 6 executable procedures: 5 pass, 1 fails (evidence index);
+  - 3 public-evidence procedures: regression review passes,
+    design-conformance review found no contradiction, live-canary review
+    fails;
+  - criteria: 4 satisfied, 5 not satisfied, 1 not adjudicated;
+  - visible regression: `npm run check` passes; 187/187 tests pass.
+- Outputs:
+  - `verification-result.json`
+    `sha256:d626cfef3644894273e1ca136d6218fd41db323d24a60c21884af4d3c3d374f3`;
+  - `verification-feedback-003.md`
+    `sha256:b184bcbe63ac08d1d645a8438a03b3bbb755248abbc59e1c7661f2f08a13bb04`.
+- Host actions requested: none. There is no promotion after FAIL.
+- Next: an implementation retry (H3) against the same frozen evaluation.
+- Wall-clock: not measured. Token usage: unknown.
