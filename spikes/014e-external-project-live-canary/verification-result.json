@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
-  "attempt": "003",
+  "attempt": "007",
   "cycle": "001",
-  "allocationKey": "sha256:471807c892b1d1490cf8c4b8a783c87b47994d77e74d405c38c604227d83e0a2",
-  "execution": "c2d6c80f-13de-4eb1-ad8f-16b384dcd325",
-  "roleGrant": "sha256:ad2a15ff010b7a5b3ddd981a3667a5141d27ee459dde0f14c4d68a874909e904",
-  "commit": "d4b7975d1bc52ce1f029acc5aba4dd9855ae9743",
+  "allocationKey": "sha256:b6825909f4b966e16f1a2b213300d3f4c4b7c36854e07917ebaa296d12e7a34a",
+  "allocationEvent": "76e3160e-c35f-408e-b63a-301f3c7291cc",
+  "execution": "67511e4b-91f6-442c-b31a-11a7a1a6ec1a",
+  "roleGrant": "sha256:e8aa1f55d0bc10d10711dd1f38a73c52d1fc8d7ed3b269d40c2db150cbedee26",
+  "commit": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
   "evaluatorRevision": "001",
   "evaluatorRevisionIdentity": "sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623",
   "predecessorAttempts": [
@@ -22,9 +23,35 @@
       "result": "FAIL",
       "classification": "INFRASTRUCTURE_FAILURE",
       "preserved": true
+    },
+    {
+      "attempt": "003",
+      "commit": "d4b7975d1bc52ce1f029acc5aba4dd9855ae9743",
+      "result": "FAIL",
+      "classification": "IMPLEMENTATION_FAILURE",
+      "preserved": true
+    },
+    {
+      "attempt": "004",
+      "commit": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
+      "result": null,
+      "note": "Allocated. The provider was rate-limited before a typed result, so it was never finalized by the host. Its private record is preserved unchanged.",
+      "preserved": true
+    },
+    {
+      "attempt": "005",
+      "commit": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
+      "result": null,
+      "note": "Allocated. The provider was rate-limited before any work."
+    },
+    {
+      "attempt": "006",
+      "commit": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
+      "result": null,
+      "note": "Allocated. The provider was rate-limited before any work."
     }
   ],
-  "retryAuthority": "9ed2a324-49a6-4953-a040-fc3454d08d8d",
+  "retryAuthority": "58b469c6-2cbc-4c5c-a408-351e88a4bdb5",
   "inputs": {
     "brief": "sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322",
     "design": "sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0",
@@ -32,50 +59,58 @@
     "coverage": "sha256:2536a2fbdb88bc6874af693082e13395a49f94d24d8cee1cae9f91bc45534c04"
   },
   "evidenceBasis": {
-    "candidate": "d4b7975d1bc52ce1f029acc5aba4dd9855ae9743",
-    "evidenceCommit": "2604e0590f513c33d7ce05398423d3dc338ad1d5",
-    "evidenceBinding": "D7 rules 1-5 hold. The commit has sole parent H2, touches only the evidence area, names H2 and every listed artifact identity recomputes. The recorded human authorization 9ed2a324-49a6-4953-a040-fc3454d08d8d names the same commit.",
+    "candidate": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
+    "evidenceCommit": "ae04f9b35c9656c0e28e550052534f3701f837d1",
+    "namedEvidenceCommit": "ae04f9b5e24f504ce823dceb32830761042b7c97",
+    "evidenceBinding": "D7 rules 1-4 hold. The commit has sole parent H3, touches only the evidence area, names H3, and every listed artifact identity recomputes. Rule 5 does not hold. The human authorization 58b469c6-2cbc-4c5c-a408-351e88a4bdb5 names ae04f9b5e24f504ce823dceb32830761042b7c97, which is not an object in the repository. It shares only the 7-hex prefix with the structurally found commit. D7 forbids guessing, so the live evidence is not adjudicated.",
     "note": "The executable cases and the regression ran on a fresh clean clone of the candidate. The evidence commit was found structurally, not by HEAD."
   },
-  "result": "FAIL",
-  "classification": "IMPLEMENTATION_FAILURE",
+  "result": "BLOCKED",
+  "classification": "EVALUATOR_DEFECT",
   "coverageResults": {
     "AC01": "SATISFIED",
     "AC02": "SATISFIED",
-    "AC03": "NOT_SATISFIED",
-    "AC04": "SATISFIED",
+    "AC03": "NOT_ADJUDICATED",
+    "AC04": "NOT_ADJUDICATED",
     "AC05": "SATISFIED",
-    "AC06": "NOT_SATISFIED",
-    "AC07": "NOT_SATISFIED",
+    "AC06": "NOT_ADJUDICATED",
+    "AC07": "NOT_ADJUDICATED",
     "AC08": "NOT_SATISFIED",
     "AC09": "NOT_SATISFIED",
     "AC10": "NOT_ADJUDICATED"
   },
   "accounting": {
     "criteria": 10,
-    "satisfied": 4,
-    "notSatisfied": 5,
-    "notAdjudicated": 1,
+    "satisfied": 3,
+    "notSatisfied": 2,
+    "notAdjudicated": 5,
     "procedures": 9,
     "executableCases": 6,
-    "executablePassed": 5,
-    "failedProcedures": ["E5", "M-LIVE"],
-    "blockedProcedures": [],
+    "executablePassed": 4,
+    "failedProcedures": ["E5"],
+    "blockedProcedures": ["E3", "M-LIVE"],
     "partialProcedures": [],
-    "note": "E1, E2, E3, E4 and E6 pass. E5 fails on the evidence index only: one evidence file is not listed in artifacts. R-REG passes fully at H2. M-CODE found no contradiction. M-LIVE's binding holds, but the recorded canary was blocked by a Harness runtime defect before any Stockdif Evaluator Verify, which fails AC06. The same defect contradicts D4's fail-closed clause for AC03."
+    "note": "E1, E2, E4 and E6 pass. E3 ran, but its result on H3 is not trustworthy because of an evaluator defect, so it is counted as blocked rather than as an implementation result. E5 fails on the evidence index only. R-REG passes fully at H3. M-CODE found no contradiction. M-LIVE is blocked at the D7 rule 5 binding."
   },
   "failures": [
     {
-      "requirement": "design-map.md D4 (Fail closed: if a nested provider sandbox cannot start inside the wrap, the allocation is refused before any session exists, with a public diagnostic; Adapter eligibility: Claude substitution if Codex cannot run inside the wrap); spike.md AC03, AC06",
-      "expected": "Under H2 containment the external Codex public worker either starts its nested sandbox and proceeds, or the host refuses the allocation before any session exists with a public diagnostic. D4 containment is not weakened.",
-      "observed": "The committed H2E evidence records that the Codex public worker could not build its nested bubblewrap sandbox inside Harness containment (Read-only file system). Two sessions ran and used two Stockdif allocations, each ending blocked before repository access, and the canary stopped. H2's pre-launch check only proves the outer namespaces. Nothing checks that a nested provider sandbox can start, and the namespace root is read-only.",
-      "classification": "IMPLEMENTATION_FAILURE",
-      "diagnostics": "A diagnostic reproduction through H2's containment seam used a placeholder program and no real provider. A nested sandbox that binds only existing paths starts. One that must create a new mount point fails with a read-only file system error. All frozen executable containment checks and the full visible suite pass on H2."
+      "requirement": "design-map.md D4 (the Harness checkout is not visible to a contained worker and is never mounted writable); spike.md AC03, AC04",
+      "expected": "The frozen containment procedure distinguishes a write that reaches the Harness checkout from a write to an ephemeral namespace-private path that maps no host path, which D4 does not forbid.",
+      "observed": "On H3 the frozen containment procedure reported checkout writes as allowed. The authoritative host-side checks in the same runs found no change to the checkout, the private data root, the evaluation workspace or the bare remote. The writes landed on H3's namespace-private temporary filesystem. When the same unmodified procedure runs under an evaluator environment that does not overlap that filesystem, every containment check is denied and the procedure passes.",
+      "classification": "EVALUATOR_DEFECT",
+      "diagnostics": "Rerun in isolation with the same result. A non-authoritative diagnostic confirmed the false positive. Acceptance semantics are unaffected. The correction belongs to the evaluator-repair path, must not adopt a candidate-shaped seam, and must be followed by verify against the unchanged H3."
+    },
+    {
+      "requirement": "design-map.md D7 rule 5 (the recorded human authorization names the same evidence commit)",
+      "expected": "The human authorization names the full 40-hex evidence commit that D7 rules 1-4 identify.",
+      "observed": "The authorization names ae04f9b5e24f504ce823dceb32830761042b7c97, which does not exist. The structural evidence commit is ae04f9b35c9656c0e28e550052534f3701f837d1.",
+      "classification": "INFRASTRUCTURE_FAILURE",
+      "secondary": true
     },
     {
       "requirement": "design-map.md D6 index (artifacts lists every other file in the evidence directory; unknown measurements are written as \"unknown\"); spike.md AC08, AC09",
       "expected": "index.json artifacts lists every file in the evidence directory other than index.json, and unavailable usage is \"unknown\".",
-      "observed": "The evidence directory at the evidence commit contains preflight.md, inherited from H1E, which artifacts does not list. provider.usage is \"unavailable\". The attempt 002 defect (terminal ledger state with the canary status) is corrected.",
+      "observed": "The evidence directory at the evidence commit still contains preflight.md, which artifacts does not list, and provider.usage is \"unavailable\".",
       "classification": "INFRASTRUCTURE_FAILURE",
       "secondary": true
     }
@@ -86,16 +121,18 @@
     "typecheck": "pass",
     "lint": "pass",
     "formatCheck": "pass",
-    "tests": 187,
-    "passed": 187
+    "tests": 190,
+    "passed": 190
   },
   "evaluatorIntegrity": {
     "frozenEvaluationModified": false,
     "specificationDrift": false,
-    "evaluatorDefects": 0
+    "evaluatorDefects": 1,
+    "postImplementationCorrections": 0,
+    "candidateEvaluationBegan": true
   },
-  "architectureVersusProduct": "Track A architecture: every frozen executable case for root separation, fail-closed roots, containment, origin and publication, and unchanged methodology passes on H2, as does the full visible regression. The live canary shows the D4 fail-closed gap for nested provider sandboxes. Track B product: not executed. The bound evidence truthfully records a canary blocked at Brief Readiness, and Stockdif product success is not claimed. Known limitation: the Codex CLI's exact nested-sandbox command was not observed by the evaluator. No real provider was launched.",
-  "routing": "Track A should correct H2 as H3 under the forward-only correction rule. H3 must either make the nested provider sandbox start inside containment without weakening D4, or refuse before any session exists so that the pre-authorized Claude substitution can apply. A new evidence commit should list every evidence file in artifacts and write unavailable usage as \"unknown\".",
+  "architectureVersusProduct": "Track A architecture: every frozen executable case for root separation, fail-closed roots, origin and publication, and unchanged methodology passes on H3, as does the full visible regression. The containment case cannot be trusted on H3 until the evaluator is repaired. Track B product: not adjudicated because the evidence binding fails D7 rule 5. The unbound evidence reports a canary blocked before Stockdif Evaluator Verify, and Stockdif product success is not claimed. No real provider was launched by the evaluator.",
+  "routing": "Repair evaluator revision 001's containment procedure through the evaluator-repair path, then rerun verify against the unchanged H3. Before or with that rerun, the operator evidence needs a human authorization naming the full evidence commit ae04f9b35c9656c0e28e550052534f3701f837d1 (or a corrected evidence commit), an index that lists every evidence file, and unavailable usage written as \"unknown\".",
   "promotionPlan": null,
   "humanAcceptance": "Not applicable. No PASS was produced, so no promotion is requested."
 }

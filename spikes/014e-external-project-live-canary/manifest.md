@@ -632,3 +632,50 @@
     index corrections (`artifacts` listing every evidence file, `"unknown"`
     for unavailable usage) are supervisor operator-evidence work. They are
     not part of this run.
+
+## Run 011 — Evaluator Verify (attempt 007, candidate H3)
+
+- Skill: `evaluator` v14, mode `verify`,
+  `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`
+  (Role Grant
+  `sha256:e8aa1f55d0bc10d10711dd1f38a73c52d1fc8d7ed3b269d40c2db150cbedee26`,
+  execution `67511e4b-91f6-442c-b31a-11a7a1a6ec1a`).
+- Authority: human root `58b469c6-2cbc-4c5c-a408-351e88a4bdb5`.
+  - Host attempts 4–6 against H3 produced no typed result because of
+    provider rate limits. They are not rewritten.
+  - Attempts 001–003 and evaluator revision 001 are preserved.
+- Inputs:
+  - candidate H3 `eb6a06e5bd808918e958103fd63589b4e67d8ce3`;
+  - evaluator revision `001`
+    `sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623`;
+  - evidence commit `ae04f9b35c9656c0e28e550052534f3701f837d1`, found by D7
+    rules 1–4.
+  - The brief, Design Map, evaluation requirements and coverage map all
+    matched their frozen identities. No drift.
+- Result: **BLOCKED**, `EVALUATOR_DEFECT`.
+  - The frozen containment procedure gives a false positive on H3. A write
+    it attributes to the Harness checkout lands on a namespace-private path.
+    Authoritative host-side checks show no escape.
+  - An evaluator repair is required before verify is rerun against the
+    unchanged H3.
+  - Secondary operator-evidence findings (`INFRASTRUCTURE_FAILURE`):
+    - the human authorization names a non-existent evidence commit that
+      shares only its 7-hex prefix, so D7 rule 5 fails;
+    - the evidence index still omits one evidence file;
+    - unavailable usage is not written as `"unknown"`.
+- Safe aggregates:
+  - 6 executable procedures: 4 pass, 1 blocked (evaluator defect), 1 fails
+    (evidence index);
+  - 3 public-evidence procedures: regression review passes,
+    design-conformance review found no contradiction, live-canary review
+    blocked at binding;
+  - criteria: 3 satisfied, 2 not satisfied, 5 not adjudicated;
+  - visible regression: `npm run check` passes; 190/190 tests pass.
+- Outputs: `verification-result.json`
+  `sha256:7b77a12fe11068e6554ed4f627005a6631d25eb7b209e80c20313b39fb5a25cc`.
+- Host actions requested: none. There is no promotion after BLOCKED.
+- Next:
+  1. Evaluator repair of revision 001's containment procedure.
+  2. Verify against the unchanged H3, with a human authorization naming the
+     full evidence commit and a corrected evidence index.
+- Wall-clock: not measured. Token usage: unknown.
