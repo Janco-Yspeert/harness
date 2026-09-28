@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "harness": {
-    "candidate": "d4b7975d1bc52ce1f029acc5aba4dd9855ae9743",
+    "candidate": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
     "methodology": {
       "sequence": 5,
       "manifest": "sha256:47296d5c73c7833002c482ed7ed75d67ecf21c7aec6fa62a5c84aeeab954effb",
@@ -22,18 +22,20 @@
       "asBuilt": null,
       "outcome": null
     },
-    "workflowGrant": "93b4ea6c-1490-42c8-bcf9-332569dc051c",
-    "ledgerIdentity": "sha256:aeea3b2371eda5ec02fe2c619a6a5dcf4329b0cd3a3e1a7bd84921e833cbc7d9",
-    "allocations": 2
+    "workflowGrant": "a5fa0c8f-3117-4caf-827d-dcc5cedfc70e",
+    "ledgerIdentity": "sha256:2791b8ad3671a51b974e7ca93c95b095b39229738b6bf7643e89da9c1dbbc9de",
+    "allocations": 4
   },
   "canary": {
     "status": "blocked",
     "ledgerState": {
-      "transition": "kernel.continuation-stopped",
-      "event": "ce926e7d-5a06-47f7-b6b3-20497f09a64e",
-      "reason": "automatic continuation stopped after semantic BLOCKED result from execution 4298777d-019c-4aae-8f3d-d207af4f30c5"
+      "transition": "kernel.process",
+      "event": "d9f80774-f8f0-461b-9f6a-a0e4451340a7",
+      "execution": "0676c9f8-1849-47dd-b7f5-bbaa7e92722c",
+      "process": "interrupted",
+      "reason": "host recovery could not reattach executor"
     },
-    "blocker": "H2 passed deterministic preflight, but the real Codex public worker could not construct its nested bubblewrap sandbox inside Harness containment; both Brief Readiness allocations ended blocked before repository access."
+    "blocker": "H3 let the real Codex worker complete the READY review in the worktree, but the nested sandbox kept repository Git metadata read-only, so the granted git-commit capability could not create the required checkpoint."
   },
   "provider": {
     "public": {
@@ -42,7 +44,7 @@
       "configuredReasoning": "medium",
       "confirmedModel": null,
       "confirmedReasoning": null,
-      "observation": "adapter does not attest effective model or reasoning; provider failed before repository shell access"
+      "observation": "adapter does not attest effective model or reasoning; provider completed repository review but could not write .git/index.lock"
     },
     "protected": "not-allocated",
     "usage": "unavailable"
@@ -50,7 +52,7 @@
   "artifacts": [
     {
       "path": "live-canary.md",
-      "identity": "sha256:755e0110214e9f3fe63d7db5054b70b712a976fc47df3b306651899c2181c490"
+      "identity": "sha256:b5dc4f2c44735bbb586311bf5d1e9341e6c353af1ffc9dd09231696651a0ef5d"
     }
   ]
 }
