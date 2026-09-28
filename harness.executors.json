@@ -1,0 +1,32 @@
+[
+  {
+    "id": "claude-sonnet",
+    "provider": "claude",
+    "model": "sonnet",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": ["private-workspace"],
+    "available": true
+  },
+  {
+    "id": "claude-production",
+    "provider": "claude",
+    "model": "claude-opus-5-5",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": ["private-workspace"],
+    "available": false
+  }
+]

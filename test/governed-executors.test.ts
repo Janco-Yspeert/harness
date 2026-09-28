@@ -39,6 +39,7 @@ import {
 import { handleMessage } from "../src/executors/worker-tools.ts";
 import { startHarnessHost } from "../src/index.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
+import { ExecutionKernel } from "../src/kernel/execution.ts";
 import { identity, readLedger } from "../src/kernel/ledger.ts";
 import { loadDefinition } from "../src/kernel/methodology.ts";
 import type {
@@ -970,6 +971,45 @@ void test("AC04/AC13/TR5: production executor configuration admits only register
   ] as const)
     assert.throws(() => validateProductionExecutors([profile]), pattern);
   assert.throws(() => validateProductionExecutors({}), /array/);
+});
+
+void test("014e: normal Harness execution selects Sonnet and cannot implicitly select Opus", () => {
+  const configured = validateProductionExecutors(
+    JSON.parse(
+      readFileSync(resolve("harness.executors.json"), "utf8"),
+    ) as unknown,
+  );
+  assert.deepEqual(
+    configured.map(({ id, model, available }) => ({ id, model, available })),
+    [
+      { id: "claude-sonnet", model: "sonnet", available: true },
+      {
+        id: "claude-production",
+        model: "claude-opus-5-5",
+        available: false,
+      },
+    ],
+  );
+  const kernel = new ExecutionKernel({
+    project: loadProject(resolve("harness.project.json")),
+    executors: configured,
+  });
+  const grant = (protectedRole: boolean, model?: string) =>
+    ({
+      capabilities: ALL,
+      executorConstraints: {
+        protected: protectedRole,
+        forbiddenExposure: [],
+        ...(model ? { model } : {}),
+      },
+    }) as unknown as RoleGrant;
+
+  assert.equal(kernel.select(grant(true), "spawned")?.id, "claude-sonnet");
+  assert.equal(kernel.select(grant(false), "spawned")?.id, "claude-sonnet");
+  assert.equal(
+    kernel.select(grant(true, "claude-opus-5-5"), "spawned"),
+    undefined,
+  );
 });
 
 void test("AC04/AC13/TR3/TR5: the production entrypoint refuses a generated bridge without executing it", async (t) => {
