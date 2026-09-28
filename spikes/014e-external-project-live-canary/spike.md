@@ -4,7 +4,7 @@
 **Harness branch:** `feat/spike-014` (draft baseline `455205ee660c8e65c15720014c2ce64b1085f907`; re-resolve at freeze)  
 **Depends on:** 014d's accepted and promoted N+1 methodology (trusted record 5, methodology `sha256:47296d5c73c7833002c482ed7ed75d67ecf21c7aec6fa62a5c84aeeab954effb`, revision `9169ccf7d4543c214e7b7890ee29e428a5f8c01a`)  
 **Canary product:** private `Janco-Yspeert/stockdif`, `spikes/001-inventory-reconciliation/spike.md` on `main` (observed baseline `d1bb593fd0b56e58e384a07e8971d6bd75541ac0`; re-resolve before execution)  
-**Local project directories:** the operator reports `vk-code/spikedif` and `vk-code/spikedif-hidden`. The local spelling differs from the GitHub repository name; resolve actual absolute paths and verify Git identities during preflight.  
+**Local project directories:** `/home/velveteen/vk-code/stockdif` and `/home/velveteen/vk-code/stockdif-hidden`, resolved during initial preflight. Re-resolve their real paths and verify Git identities at the execution boundary rather than trusting directory names.
 **Precedes:** remaining 014a recovery and the proposed 015 usage/quota, restart and context-efficiency work.
 
 ## Context
@@ -30,7 +30,7 @@ There are **two distinct integrations**, not one workflow writing interchangeabl
 | Track | Authority and workspace | Owned changes and evidence | Publication boundary |
 | --- | --- | --- | --- |
 | **A: Harness integration (014e)** | Existing Harness project, current trusted methodology, its own independent evaluator and `feat/spike-014` | Generic configuration, trust/source separation, executor/workspace safety, deterministic tests, 014e public/private evaluation and final cross-project assessment | Local Harness checkpoint commits; any Harness remote push is a separately authorized Harness operation |
-| **B: Stockdif canary (Spike 001)** | A separate project configuration hosted by the exact tested Track A commit; pinned Harness N+1; public `spikedif` repository and protected `spikedif-hidden` workspace | Stockdif's brief, design, tests, application code, ledger, evaluation archive, As-Built, Outcome and local Git commits | **No automatic remote push.** Human checks and manually pushes only the approved Stockdif branch to `Janco-Yspeert/stockdif` |
+| **B: Stockdif canary (Spike 001)** | A separate project configuration hosted by the exact tested Track A commit; pinned Harness N+1; public `stockdif` repository and protected `stockdif-hidden` workspace | Stockdif's brief, design, tests, application code, ledger, evaluation archive, As-Built, Outcome and local Git commits | **No automatic remote push.** Human checks and manually pushes only the approved Stockdif branch to `Janco-Yspeert/stockdif` |
 
 The Harness host is the control plane, **not** Stockdif's working directory. Harness's trusted methodology, role skills, contracts, validators and approved support utilities remain owned by Harness; do not vendor or copy them into Stockdif to make this canary work. Stockdif owns its own project-specific workflow configuration where appropriate, but must not acquire an independent, fabricated methodology trust history.
 
@@ -65,7 +65,7 @@ A configuration or runtime mismatch must **fail closed**. Reject missing/private
 
 ### Actual process isolation
 
-A grant-level workspace declaration alone is insufficient if the provider subprocess can still write to sibling directories under the operator's Unix account. Before the real canary, establish and test an enforceable boundary using the registered adapters' supported sandboxing and, if needed, the smallest general-purpose process-isolation addition. The permitted execution environment must allow assigned Stockdif writes and explicitly granted protected evaluation operations, while denying mutation of Harness and unintended access to `spikedif-hidden` by public workers.
+A grant-level workspace declaration alone is insufficient if the provider subprocess can still write to sibling directories under the operator's Unix account. Before the real canary, establish and test an enforceable boundary using the registered adapters' supported sandboxing and, if needed, the smallest general-purpose process-isolation addition. The permitted execution environment must allow assigned Stockdif writes and explicitly granted protected evaluation operations, while denying mutation of Harness and unintended access to `stockdif-hidden` by **every** public worker regardless of provider.
 
 Where a required access boundary cannot be reliably enforced, **stop before the live run**, record the exact blocker and seek an appropriately scoped solution. Do not claim operating-system isolation from prompts or configuration prose alone.
 
@@ -96,9 +96,17 @@ The current host publication action targets configured host-owned filesystem rem
 
 The final independent 014e verification and human acceptance must include the actual Track B evidence. Preliminary local tests and preflight establish permission to attempt the bounded canary; they are not themselves the final 014e PASS.
 
+### Cross-track lifecycle and evidence binding
+
+Track B is executed by the Codex supervisor, not by a Track A role worker, under the explicit human authorization recorded for this 014e run. It begins only after Track A Implementation has produced and handed off the exact committed H1 candidate and before Track A Evaluator Verify is allocated. The supervisor may operate the separate Stockdif governed host and its human gates, but it may not claim any Stockdif worker identity, edit either evaluator's private artifacts or allow a Stockdif worker to modify Harness.
+
+After Track B reaches its truthful terminal state, the supervisor may make one explicitly human-authorized Harness checkpoint **H1E** containing only the predetermined public-safe `014e/evidence/` summary and exact cross-repository identities. H1E must retain H1's implementation tree unchanged outside the 014e evidence area. The final 014e verification binds candidate H1 for generic implementation behavior and the named H1E commit and artifact identities for AC06–AC09; the evaluator must confirm both bindings and may not infer either from mutable `HEAD`. This evidence-import checkpoint is operator evidence, not a role result or worker-identity claim.
+
+If the canary exposes a Harness defect, H1 is preserved. A normal Track A implementation correction produces a separately identified H2 and new implementation handoff before another verification allocation. The supervisor records which Track B observations remain valid and reruns every affected canary step under H2 before producing an H2E evidence checkpoint; prior H1 evidence and allocation history remain forward-only.
+
 ### Track B — ordinary product workflow, not a special fixture
 
-1. Resolve Stockdif `main` and the committed draft Spike 001 brief; create the local `feat/spike-001` branch. Configure the **separate** Stockdif project/workflow with `spikedif` as `repository` and `spikedif-hidden` as `evaluation`. Start its own host instance/state/credentials as appropriate, pinned to H1, using trusted N+1 from Harness.
+1. Resolve Stockdif `main` and the committed draft Spike 001 brief; create the local `feat/spike-001` branch. Configure the **separate** Stockdif project/workflow with `stockdif` as `repository` and `stockdif-hidden` as `evaluation`. Start its own host instance/state/credentials as appropriate, with the exact H1 runtime commit recorded in its grant or ledger and using trusted N+1 from Harness.
 2. Run normal Stockdif Brief Readiness. Address material product-brief findings within Stockdif, obtain real human freeze, and commit the exact accepted product brief in Stockdif. Then run ordinary Design Map and independent Evaluator Prepare with the protected evaluator workspace.
 3. Run Implementation on the small Node.js 24/TypeScript CSV inventory-reconciliation CLI exactly as Stockdif's brief specifies. The implementation role sees no evaluator-private assets. It produces a normal **local** Stockdif candidate commit.
 4. Independently run Evaluator Verify against that exact Stockdif commit. For an eligible PASS, retain the real private promotion plan and use the existing host-mediated promotion to archive allowed evidence in Stockdif. Run As-Built against the exact verified candidate and completed promotion. Stop at genuine human acceptance, then run Outcome if accepted.
@@ -110,9 +118,9 @@ If Stockdif's independent evaluator finds a product defect, use its normal publi
 
 Use **one** ordinary external-project live run after deterministic preflight, rather than an additional provider-backed fixture for each code edit. Preserve independent, pre-frozen Stockdif evaluation; do not weaken it merely to reduce cost.
 
-Preferred low-cost public-role/orchestrator setup is Codex with the requested Luna/Medium profile **only if the installed CLI supports the actual model identifier and requested effort**. Preferred protected evaluator is the registered Claude adapter with an available Sonnet model. Verify executable versions, credentials, model identifiers, supported controls, protected-workspace behavior and actual role/profile eligibility before allocating; do not claim a model or reasoning level was enforced when the adapter cannot attest it. A necessary provider substitution or material budget expansion is an explicit human decision, not an ungoverned fallback.
+Preferred low-cost public-role/orchestrator setup is Codex with the requested Luna/Medium profile **only if the installed CLI supports the actual model identifier and requested effort**. This is a profile preference recorded as requested but unconfirmed when the adapter cannot attest model or effort; it is not an exact grant constraint in that case. Preferred protected evaluator is the registered Claude adapter with an available Sonnet model. Verify executable versions, credentials, model identifiers, supported controls, protected-workspace behavior and actual role/profile eligibility before allocating; do not claim a model or reasoning level was enforced when the adapter cannot attest it. If Codex cannot enforce the required public-worker read boundary, substitution of an eligible Claude public-role profile is pre-authorized within the same 10-allocation bound and must be recorded; any other provider substitution or material budget expansion is an explicit human decision, not an ungoverned fallback.
 
-Give Stockdif an initial bound of **10 role allocations**: enough for seven normal roles, one implementation correction, one further verification and one spare allocation. Genuine human decisions, unexpected evaluator repair, material scope changes and any increase beyond the grant's bound need their ordinary explicit authority. Track A's allocations and cost are accounted for separately. Avoid speculative token-dollar estimates until reliable telemetry exists.
+Give Stockdif an initial bound of **10 governed role allocations**. Brief Readiness re-review counts; each Design Map, Evaluator Prepare, Implementation, Evaluator Verify, As-Built and Outcome execution counts; retries and corrections count. Supervisor coordination and human decisions are not role allocations. Genuine human decisions, unexpected evaluator repair, material scope changes and any increase beyond the grant's bound need their ordinary explicit authority. Track A's allocations and cost are accounted for separately. Avoid speculative token-dollar estimates until reliable telemetry exists.
 
 Capture actually available provider usage, quota/reset diagnostics, elapsed time, grants, allocations, retries, human interventions and wall-clock blockers. Mark unavailable measurements **unknown** rather than inferring token or cache costs. Restart-after-quota scheduling belongs to later work; a quota wall during 014e is an honest pause/blocker with exact retained progress.
 
@@ -144,7 +152,7 @@ A failure of repository or evaluator-private containment is **not** an acceptabl
 
 ## Completion and handoff
 
-Freeze this brief only after Brief Readiness resolves genuine blockers and the Design Map makes an explicit enforceable runtime/workspace isolation choice. The Stockdif product brief remains a **separate, independent brief** and must pass its own ordinary readiness/freeze gate. The exact external repository and runtime commits are resolved again at the relevant freeze and preflight boundaries.
+Freeze this brief after Brief Readiness resolves genuine blockers. The subsequent Design Map must make an explicit enforceable runtime/workspace isolation choice, and implementation must not begin until it does. The Stockdif product brief remains a **separate, independent brief** and must pass its own ordinary readiness/freeze gate. The exact external repository and runtime commits are resolved again at the relevant freeze and preflight boundaries.
 
 After a successful Stockdif cycle, evaluate 014e against its own pre-frozen plan, obtain Harness-side human acceptance, and produce a truthful 014e Outcome. Record any generic portability defects discovered by the canary without quietly turning them into new product requirements or unfrozen evaluator criteria. Only then consider broader installation/multi-project extraction and the deferred 015 telemetry/recovery work.
 
