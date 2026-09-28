@@ -1,18 +1,19 @@
 {
   "schemaVersion": 1,
-  "attempt": "007",
+  "attempt": "009",
   "cycle": "001",
-  "allocationKey": "sha256:b6825909f4b966e16f1a2b213300d3f4c4b7c36854e07917ebaa296d12e7a34a",
-  "allocationEvent": "76e3160e-c35f-408e-b63a-301f3c7291cc",
-  "execution": "67511e4b-91f6-442c-b31a-11a7a1a6ec1a",
-  "roleGrant": "sha256:e8aa1f55d0bc10d10711dd1f38a73c52d1fc8d7ed3b269d40c2db150cbedee26",
-  "commit": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
-  "evaluatorRevision": "001",
-  "evaluatorRevisionIdentity": "sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623",
+  "allocationKey": "sha256:1a423228aedd4f79ca6531c1b3a8a001aec14e2bdbb502e2360519f8820d5a08",
+  "allocationEvent": "d23edc32-6867-4870-b408-e5e20d0d81a3",
+  "execution": "3d03349a-515b-4de9-9953-08190277efd8",
+  "roleGrant": "sha256:f15f233ad23a5749e16c7e4ea9fd1218e9a5d989ff9b8fc22685793201fd705a",
+  "commit": "e10647bbedc12c48fbcbc0214045a24231f09cdd",
+  "evaluatorRevision": "002",
+  "evaluatorRevisionIdentity": "sha256:b5e895cbec9742d63ec81161b45d48f40f32dd933125d6abd9cae099378a754f",
   "predecessorAttempts": [
     {
       "attempt": "001",
       "commit": "27430d9e80df6e7d075edb549c7c4e7b2c5a48e7",
+      "evaluatorRevision": "001",
       "result": "BLOCKED",
       "classification": "INFRASTRUCTURE_FAILURE",
       "preserved": true
@@ -20,6 +21,7 @@
     {
       "attempt": "002",
       "commit": "27430d9e80df6e7d075edb549c7c4e7b2c5a48e7",
+      "evaluatorRevision": "001",
       "result": "FAIL",
       "classification": "INFRASTRUCTURE_FAILURE",
       "preserved": true
@@ -27,6 +29,7 @@
     {
       "attempt": "003",
       "commit": "d4b7975d1bc52ce1f029acc5aba4dd9855ae9743",
+      "evaluatorRevision": "001",
       "result": "FAIL",
       "classification": "IMPLEMENTATION_FAILURE",
       "preserved": true
@@ -34,85 +37,89 @@
     {
       "attempt": "004",
       "commit": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
+      "evaluatorRevision": "001",
       "result": null,
-      "note": "Allocated. The provider was rate-limited before a typed result, so it was never finalized by the host. Its private record is preserved unchanged.",
+      "note": "Allocated. The provider was rate-limited before a typed result, so the host never finalized it. Its private record is preserved unchanged.",
       "preserved": true
     },
     {
       "attempt": "005",
       "commit": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
+      "evaluatorRevision": "001",
       "result": null,
       "note": "Allocated. The provider was rate-limited before any work."
     },
     {
       "attempt": "006",
       "commit": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
+      "evaluatorRevision": "001",
       "result": null,
       "note": "Allocated. The provider was rate-limited before any work."
+    },
+    {
+      "attempt": "007",
+      "commit": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
+      "evaluatorRevision": "001",
+      "result": "BLOCKED",
+      "classification": "EVALUATOR_DEFECT",
+      "preserved": true
+    },
+    {
+      "attempt": "008",
+      "commit": "e10647bbedc12c48fbcbc0214045a24231f09cdd",
+      "evaluatorRevision": "002",
+      "result": null,
+      "note": "Allocated. The host recorded the executor as interrupted (recovery could not reattach it) before any typed result or private record."
     }
   ],
-  "retryAuthority": "58b469c6-2cbc-4c5c-a408-351e88a4bdb5",
+  "authority": "2147f15a-d9c4-4098-80e5-29461ca788d4",
   "inputs": {
     "brief": "sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322",
     "design": "sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0",
     "evaluationRequirements": "sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef",
-    "coverage": "sha256:2536a2fbdb88bc6874af693082e13395a49f94d24d8cee1cae9f91bc45534c04"
+    "coverage": "sha256:24984d3f02ee978e5852c520211c3da6b1f8b3facc9ae7413f7a0ab92605c611"
   },
   "evidenceBasis": {
-    "candidate": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
-    "evidenceCommit": "ae04f9b35c9656c0e28e550052534f3701f837d1",
-    "namedEvidenceCommit": "ae04f9b5e24f504ce823dceb32830761042b7c97",
-    "evidenceBinding": "D7 rules 1-4 hold. The commit has sole parent H3, touches only the evidence area, names H3, and every listed artifact identity recomputes. Rule 5 does not hold. The human authorization 58b469c6-2cbc-4c5c-a408-351e88a4bdb5 names ae04f9b5e24f504ce823dceb32830761042b7c97, which is not an object in the repository. It shares only the 7-hex prefix with the structurally found commit. D7 forbids guessing, so the live evidence is not adjudicated.",
-    "note": "The executable cases and the regression ran on a fresh clean clone of the candidate. The evidence commit was found structurally, not by HEAD."
+    "candidate": "e10647bbedc12c48fbcbc0214045a24231f09cdd",
+    "evidenceCommit": null,
+    "namedEvidenceCommit": null,
+    "evidenceBinding": "D7 rule 1 does not hold. No commit in the repository has H4 as its sole parent, and no human authorization names an H4 evidence commit (rule 5). The H3 evidence commit ae04f9b35c9656c0e28e550052534f3701f837d1 binds H3, not this candidate, and is not adjudicated here.",
+    "note": "The executable cases and the regression ran on a fresh clean clone of the candidate. The evidence commit was searched for structurally, not by HEAD."
   },
   "result": "BLOCKED",
-  "classification": "EVALUATOR_DEFECT",
+  "classification": "INFRASTRUCTURE_FAILURE",
   "coverageResults": {
     "AC01": "SATISFIED",
     "AC02": "SATISFIED",
     "AC03": "NOT_ADJUDICATED",
-    "AC04": "NOT_ADJUDICATED",
+    "AC04": "SATISFIED",
     "AC05": "SATISFIED",
     "AC06": "NOT_ADJUDICATED",
     "AC07": "NOT_ADJUDICATED",
-    "AC08": "NOT_SATISFIED",
-    "AC09": "NOT_SATISFIED",
+    "AC08": "NOT_ADJUDICATED",
+    "AC09": "NOT_ADJUDICATED",
     "AC10": "NOT_ADJUDICATED"
   },
   "accounting": {
     "criteria": 10,
-    "satisfied": 3,
-    "notSatisfied": 2,
-    "notAdjudicated": 5,
+    "satisfied": 4,
+    "notSatisfied": 0,
+    "notAdjudicated": 6,
     "procedures": 9,
     "executableCases": 6,
-    "executablePassed": 4,
-    "failedProcedures": ["E5"],
-    "blockedProcedures": ["E3", "M-LIVE"],
+    "executablePassed": 5,
+    "failedProcedures": [],
+    "blockedProcedures": ["E5", "M-LIVE"],
     "partialProcedures": [],
-    "note": "E1, E2, E4 and E6 pass. E3 ran, but its result on H3 is not trustworthy because of an evaluator defect, so it is counted as blocked rather than as an implementation result. E5 fails on the evidence index only. R-REG passes fully at H3. M-CODE found no contradiction. M-LIVE is blocked at the D7 rule 5 binding."
+    "note": "E1, E2, E3, E4 and E6 pass. E3 is now under evaluator revision 002 and passes, both in the full suite and in isolation. E5 is blocked at the evidence binding because no H4 evidence commit exists. R-REG passes fully at H4. M-CODE found no contradiction. M-LIVE is blocked at the binding. AC03 stays not adjudicated only because its live-containment review has no evidence."
   },
   "failures": [
     {
-      "requirement": "design-map.md D4 (the Harness checkout is not visible to a contained worker and is never mounted writable); spike.md AC03, AC04",
-      "expected": "The frozen containment procedure distinguishes a write that reaches the Harness checkout from a write to an ephemeral namespace-private path that maps no host path, which D4 does not forbid.",
-      "observed": "On H3 the frozen containment procedure reported checkout writes as allowed. The authoritative host-side checks in the same runs found no change to the checkout, the private data root, the evaluation workspace or the bare remote. The writes landed on H3's namespace-private temporary filesystem. When the same unmodified procedure runs under an evaluator environment that does not overlap that filesystem, every containment check is denied and the procedure passes.",
-      "classification": "EVALUATOR_DEFECT",
-      "diagnostics": "Rerun in isolation with the same result. A non-authoritative diagnostic confirmed the false positive. Acceptance semantics are unaffected. The correction belongs to the evaluator-repair path, must not adopt a candidate-shaped seam, and must be followed by verify against the unchanged H3."
-    },
-    {
-      "requirement": "design-map.md D7 rule 5 (the recorded human authorization names the same evidence commit)",
-      "expected": "The human authorization names the full 40-hex evidence commit that D7 rules 1-4 identify.",
-      "observed": "The authorization names ae04f9b5e24f504ce823dceb32830761042b7c97, which does not exist. The structural evidence commit is ae04f9b35c9656c0e28e550052534f3701f837d1.",
+      "requirement": "design-map.md D7 rules 1 and 5 (exactly one evidence commit has the candidate as its sole parent, and a recorded human authorization names it); spike.md AC06-AC10",
+      "expected": "An operator evidence commit H4E whose sole parent is the candidate, with a complete D6 index, named in full by a recorded human authorization.",
+      "observed": "No commit has the candidate as its sole parent, and no authorization names an H4 evidence commit. The candidate's own run record lists H4E and the Stockdif rerun under H4 as outstanding operator work. Verification was allocated about ten seconds after the implementation handoff.",
       "classification": "INFRASTRUCTURE_FAILURE",
-      "secondary": true
-    },
-    {
-      "requirement": "design-map.md D6 index (artifacts lists every other file in the evidence directory; unknown measurements are written as \"unknown\"); spike.md AC08, AC09",
-      "expected": "index.json artifacts lists every file in the evidence directory other than index.json, and unavailable usage is \"unknown\".",
-      "observed": "The evidence directory at the evidence commit still contains preflight.md, which artifacts does not list, and provider.usage is \"unavailable\".",
-      "classification": "INFRASTRUCTURE_FAILURE",
-      "secondary": true
+      "diagnostics": "Rerun in isolation with the same result. The evidence-binding helper self-check passes. The missing operator evidence is not an implementation fault."
     }
   ],
   "regression": {
@@ -121,18 +128,18 @@
     "typecheck": "pass",
     "lint": "pass",
     "formatCheck": "pass",
-    "tests": 190,
-    "passed": 190
+    "tests": 192,
+    "passed": 192
   },
   "evaluatorIntegrity": {
     "frozenEvaluationModified": false,
     "specificationDrift": false,
-    "evaluatorDefects": 1,
-    "postImplementationCorrections": 0,
+    "evaluatorDefects": 0,
+    "postImplementationCorrections": 1,
     "candidateEvaluationBegan": true
   },
-  "architectureVersusProduct": "Track A architecture: every frozen executable case for root separation, fail-closed roots, origin and publication, and unchanged methodology passes on H3, as does the full visible regression. The containment case cannot be trusted on H3 until the evaluator is repaired. Track B product: not adjudicated because the evidence binding fails D7 rule 5. The unbound evidence reports a canary blocked before Stockdif Evaluator Verify, and Stockdif product success is not claimed. No real provider was launched by the evaluator.",
-  "routing": "Repair evaluator revision 001's containment procedure through the evaluator-repair path, then rerun verify against the unchanged H3. Before or with that rerun, the operator evidence needs a human authorization naming the full evidence commit ae04f9b35c9656c0e28e550052534f3701f837d1 (or a corrected evidence commit), an index that lists every evidence file, and unavailable usage written as \"unknown\".",
+  "architectureVersusProduct": "Track A architecture: every frozen executable case for root separation, fail-closed roots, containment, origin and publication, and unchanged methodology passes on H4, and so does the full visible regression. Track B product: not adjudicated, because no evidence commit binds H4. Stockdif product success is not claimed. The evaluator launched no real provider.",
+  "routing": "Run the affected Stockdif canary steps under H4. Commit H4E as the sole child of H4, with a D6 index that lists every evidence file and writes \"unknown\" for unavailable usage. Record a human authorization that names the full 40-hex H4E. Then rerun verify against the unchanged H4 and evaluator revision 002. No evaluator repair and no implementation change is indicated.",
   "promotionPlan": null,
   "humanAcceptance": "Not applicable. No PASS was produced, so no promotion is requested."
 }

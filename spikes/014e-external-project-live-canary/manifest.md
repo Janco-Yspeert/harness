@@ -855,3 +855,43 @@
     - a D6 index that lists every evidence file and writes `"unknown"` for
       unavailable usage;
     - a human authorization naming the full evidence commit.
+
+## Run 014 — Evaluator Verify (attempt 009, candidate H4)
+
+- Skill: `evaluator` v14, mode `verify`,
+  `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`
+  (Role Grant
+  `sha256:f15f233ad23a5749e16c7e4ea9fd1218e9a5d989ff9b8fc22685793201fd705a`,
+  execution `3d03349a-515b-4de9-9953-08190277efd8`).
+- Authority: workflow grant `884e9f37-2d9a-4d26-a882-918b666e948d`, human root
+  `2147f15a-d9c4-4098-80e5-29461ca788d4`.
+  - Host attempt 8 against H4 was interrupted by the host before any typed
+    result. It is not rewritten.
+  - Attempts 001–007 and evaluator revisions 001 and 002 are preserved.
+- Inputs:
+  - candidate H4 `e10647bbedc12c48fbcbc0214045a24231f09cdd`;
+  - evaluator revision `002`
+    `sha256:b5e895cbec9742d63ec81161b45d48f40f32dd933125d6abd9cae099378a754f`;
+  - evidence commit: none. No commit has H4 as its sole parent.
+  - The brief, Design Map, evaluation requirements and coverage map all matched
+    their frozen identities. No drift.
+- Result: **BLOCKED**, `INFRASTRUCTURE_FAILURE`.
+  - The evidence binding cannot be established: no H4 evidence commit exists,
+    and no human authorization names one. This is missing operator evidence, not
+    an implementation fault.
+  - The repaired containment procedure passes on H4.
+- Safe aggregates:
+  - 6 executable procedures: 5 pass, 1 blocked (evidence binding);
+  - 3 public-evidence procedures: regression review passes, design-conformance
+    review found no contradiction, live-canary review blocked at binding;
+  - criteria: 4 satisfied, 0 not satisfied, 6 not adjudicated;
+  - visible regression: `npm run check` passes; 192/192 tests pass.
+- Outputs: `verification-result.json`
+  `sha256:c3ea1e81ba08ca6d1c4d1c4ecb2727e4308671431ae072f38b582c031894de40`.
+- Host actions requested: none. There is no promotion after BLOCKED.
+- Next:
+  1. Rerun the affected Stockdif canary steps under H4.
+  2. Commit H4E as the sole child of H4, with a complete D6 index.
+  3. Record a human authorization that names the full H4E.
+  4. Rerun verify against the unchanged H4 and evaluator revision `002`.
+- Wall-clock: not measured. Token usage: unknown.
