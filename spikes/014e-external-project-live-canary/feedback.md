@@ -1,172 +1,133 @@
 # Spike 014e — Brief Readiness Feedback
 
 **Reviewed input:** `spikes/014e-external-project-live-canary/spike.md`
-(`sha256:949579299e7068fb3f1f25f90326a49c54f09749585706a5e783a899e302a54d`),
+(`sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`),
 reviewed against `feat/spike-014` at
-`e20253b15bc5c3b2db57004d3922d808672471fa`.
+`ec42cef7820d3274b3dffaf907798a6db2c43e22`.
 
-**Verdict:** **Not ready to freeze** (`NOT_READY`)
+**Prior review:** run 001, `preliminary/001/` (`NOT_READY`; B1, M1–M4,
+E1–E2).
+
+**Verdict:** **Ready after minor clarification** (`READY`)
 
 ## Summary
 
-The brief correctly finds the real coupling in the current host.
-`src/kernel/trust.ts` resolves `trustedHistory`, the policy and the validator
-sources relative to `project.root`, using that root's own Git top-level.
-`src/kernel/resolver.ts` checks committed inputs with
-`git show <commit>:<path>` in `project.root`. `src/kernel/configuration.ts`
-has only one `root`. The dependency identities also match the repository.
-`methodologies/harness/trusted.jsonl` record 5 is methodology
-`sha256:47296d5c…effb` at revision `9169ccf7…`, and host maintenance 003 is
-commit `f6d1456`.
+The revision (`e20253b..ec42cef`) resolves every run 001 finding:
 
-The Track A scope is otherwise well bounded. It has explicit fail-closed
-rules, non-goals and a stop rule for isolation it cannot enforce.
+- **B1:** the new §4 subsection "Cross-track lifecycle and evidence binding"
+  answers all five requested points:
+  - the supervisor runs Track B under recorded human authorization, not a
+    Track A role worker;
+  - Track B runs after H1 `implementation-handoff` and before 014e Evaluator
+    Verify is allocated;
+  - one human-authorized evidence checkpoint, **H1E**, is limited to the
+    evidence area;
+  - verification binds H1 for generic behaviour and H1E for AC06–AC09;
+  - an H2 correction reruns affected steps, and history stays forward-only.
+- **M1:** freeze now comes before the Design Map, which matches the
+  `design-map` precondition in `methodologies/harness/policy.json`.
+- **M2:** read denial now applies to "**every** public worker regardless of
+  provider". Substituting Claude for Codex is pre-authorized within the same
+  bound.
+- **M3:** Luna/Medium is now a profile preference recorded as unconfirmed,
+  not an exact grant constraint. That matches the attestation refusal in
+  `src/executors/adapters.ts`.
+- **M4:** the rules for counting the 10 allocations are now explicit.
+- **E1–E2:** the directory names are now `stockdif`/`stockdif-hidden`
+  throughout, and the H1 runtime is recorded in the Stockdif grant or ledger.
 
-One lifecycle and ownership decision is still missing. The brief does not say
-who runs Track B, or where it falls in the 014e Harness workflow. Because of
-that, it also does not say which exact Harness commit the 014e evaluator
-verifies. That choice decides authority, what the evaluator gets as input, and
-whether AC06–AC09 can be judged fairly. It cannot be left to the Design Map or
-the evaluator.
+The new text is consistent with the repository in these ways:
 
-## Blocker
+- `AGENTS.md` "Supervisor identity" forbids the supervisor from editing role
+  artifacts and from claiming worker identity. The brief keeps both limits and
+  calls H1E operator evidence, not a role result.
+- Evaluator-evidence promotion (`src/kernel/execution.ts`, promotion path)
+  checks the eligibility plan, source identities and the destination
+  workspace. It does not require `HEAD` to equal the candidate, so an H1E
+  commit on top of H1 does not break promotion.
+- Human acceptance binds `candidate` from `implementation-handoff`
+  (`methodologies/harness/policy.json`, `humanDecisions`). That stays H1.
 
-### B1 — Track B has no owner or lifecycle position in the 014e workflow, and the 014e verification candidate is undefined
+Two gaps remain. Both have an apparent answer and should be stated before
+freeze so the Design Map and Evaluator Prepare do not diverge. Neither one
+blocks freeze.
 
-**Brief evidence.**
+## Material clarifications (non-blocking)
 
-- §4 Track A step 3 creates a local checkpoint **H1**. Step 5 treats H1 as the
-  immutable Track B runtime.
-- Track B steps 1–4 need things no current role has:
-  - a separate Stockdif host instance;
-  - real Stockdif human freeze and acceptance;
-  - up to 10 provider allocations.
-- Track B step 5 says the evidence is "cross-referenced" in Harness's
-  `014e/evidence/`.
-- "The final independent 014e verification … must include the actual Track B
-  evidence" (§4). AC09 then has the 014e evaluator verify "H1's generic
-  behavior and the predetermined public-safe canary evidence".
+### C1 — Where the H1E identity is bound, given that Evaluator Verify's grant cannot carry it
+
+**Brief evidence.** §4, "Cross-track lifecycle and evidence binding": "The
+final 014e verification binds candidate H1 … and the named H1E commit and
+artifact identities for AC06–AC09; the evaluator must confirm both bindings
+and may not infer either from mutable `HEAD`." §4 Track A step 3 forbids
+changing the trusted methodology unless an independently justified contract
+defect makes it unavoidable.
 
 **Repository evidence.**
 
-- `skills/implementation/SKILL.md` (Completion and worker protocol): "The host
-  binds the handoff to the committed `HEAD`". The evaluator resolves "the exact
-  committed implementation revision" (`skills/evaluator/SKILL.md`, around line
-  300).
-- An evidence commit made after H1 is therefore a different commit from the
-  implementation handoff. The brief does not say whether the evaluator verifies
-  H1, a later H1+evidence commit, or both.
-- `AGENTS.md`, "Supervisor identity": the supervisor "must not edit role
-  artifacts, submit role results, or claim a worker's executor/model identity"
-  without a separately granted inline Role Grant.
-- The brief also says a worker must not acquire host privilege. A Harness 014e
-  Implementation worker that is confined to the Harness repository cannot run
-  a Stockdif host either (§2, "Track A uses its existing Harness-only
-  project…").
-- So as written, no permitted actor can run Track B and commit its Harness-side
-  evidence.
-- Precedent: the 014d As-Built
-  (`spikes/014d-real-methodology-integration-extensible-skill-evolution/as-built.md`,
-  "Missing" items 1–3) recorded observed-run evidence that could not be tied to
-  exact identities.
+- `methodologies/harness/contracts/evaluator-verify.json` binds only these
+  inputs: `brief`, `design`, `coverage`, `candidate` (from
+  `implementation-handoff.commit`) and `evaluatorRevision`.
+- `methodologies/harness/policy.json` (`evaluator-verify.onAllocate`) records
+  only `commit: candidate` and `evaluatorRevision`.
+- No policy event can carry an operator-made evidence commit.
+- So under the unchanged trusted methodology, H1E cannot be a host-bound grant
+  input. The brief says it is "named" but does not say where.
 
-**Consequence.** A later role would have to decide all of these:
+**Consequence.** Evaluator Prepare has to predeclare how it finds and checks
+H1E before H1E exists. Without a stated source, one design could extend the
+trusted contract, which Track A step 3 argues against. Another could let the
+evaluator take H1E from branch `HEAD`, which the brief forbids. A third could
+use an ad-hoc file. These choices lead to different fair-evaluation evidence.
 
-- whether Track B runs inside the 014e Implementation attempt, or between
-  `implementation-handoff` and Evaluator Verify;
-- which authority lets it run (supervisor, root/human authority, or a role);
-- who commits `014e/evidence/`;
-- which candidate commit the 014e evaluator binds;
-- how an H2 correction re-enters the attempt and allocation history.
+**Smallest clarification requested.** One sentence, for example: "H1E's exact
+commit and evidence-artifact digests are recorded in the explicit human
+authorization/ledger note for the H1E checkpoint. The evaluator resolves H1E
+from that record, not from the Evaluator Verify grant. It confirms that H1E
+descends from H1, changes nothing outside the 014e evidence area, and matches
+the recorded digests. No trusted-methodology change is made for this binding."
 
-Different answers lead to different evidence commits, grants and verification
-inputs. The Evaluator Prepare step also cannot "predeclare" what it will check
-without knowing where the evidence sits in the lifecycle.
+### C2 — How the Track A workflow is held between H1 handoff and Evaluator Verify
 
-**Smallest clarification requested.** Add a short paragraph to §4 that states:
+**Brief evidence.** Track B "begins only after Track A Implementation has …
+handed off … H1 and before Track A Evaluator Verify is allocated."
 
-1. Who executes Track B, and under what authority. For example: the operator
-   or supervisor, under an explicit human authorization recorded in the 014e
-   ledger. It should not be a Harness role worker.
-2. Where Track B sits in the 014e workflow. For example: after 014e
-   `implementation-handoff` of H1 and before 014e Evaluator Verify.
-3. Who commits the public-safe `014e/evidence/` summary to Harness, in which
-   commit, and how that commit relates to H1.
-4. What exactly the 014e Evaluator Verify binds. For example: candidate = H1
-   for generic behaviour, plus a named evidence commit or artifact identity for
-   AC06–AC09.
-5. How an H2 affects the 014e attempt and handoff. For example: H2 is a new
-   implementation correction attempt with its own handoff, and the Track B
-   evidence is rerun or re-bound.
+**Repository evidence.**
 
-## Material clarifications (non-blocking once B1 is resolved)
+- In `methodologies/harness/policy.json`, `evaluator-verify` becomes eligible
+  as soon as `implementation-handoff` is current.
+- `AGENTS.md` "Autonomous orchestration" and `skills/orchestrator/SKILL.md`
+  continue to the next valid action unless a human gate or a human stop
+  request applies.
+- No policy gate holds Verify for external evidence.
 
-### M1 — "Freeze … only after … the Design Map makes an explicit … isolation choice" inverts the lifecycle
+**Consequence.** Without a stated hold, normal orchestration allocates Verify
+right after H1 handoff, before any Track B evidence exists. That uses a
+verification attempt and produces a result that cannot satisfy AC06–AC09.
 
-The completion section makes brief freeze depend on a Design Map. But
-`methodologies/harness/policy.json` (the `design-map` role, around line 39)
-requires `brief-frozen` before Design Map. That condition cannot be met in the
-canonical workflow.
-
-**Request:** reword it along these lines: "Freeze after Brief Readiness; the
-Design Map must make an explicit, enforceable isolation choice, and
-implementation may not start until it does."
-
-### M2 — Public-worker read denial vs. the preferred Codex public roles
-
-`src/executors/adapters.ts` marks Codex as `privateWorkspace: false`, with the
-comment "The Codex sandbox restricts writes, not reads". §2 requires denying
-public workers "unintended access to `spikedif-hidden`". The stop rule already
-covers this, so it is not a blocker.
-
-**Request:** state plainly that read denial of `spikedif-hidden` applies to
-every public role whatever the provider. Also state that if the Design Map
-cannot confine Codex reads, using Claude for public roles is a pre-authorized
-substitution rather than a new human decision (or say explicitly that it is
-not). Otherwise §5's "substitution is a human decision" and §2's stop rule can
-be applied differently by different roles.
-
-### M3 — Model/effort "preference" vs. exact grant constraint
-
-`src/executors/adapters.ts` (around lines 515–527) refuses an *exact*
-`executorConstraints` model or reasoning setting when the adapter cannot attest
-it. Codex attests neither.
-
-**Request:** state that Codex "Luna/Medium" is a profile preference recorded as
-*requested, not attested*, not an exact grant constraint. Otherwise the
-preferred setup is refused at allocation.
-
-### M4 — What the 10-allocation Stockdif bound counts
-
-"Seven normal roles" matches the seven non-orchestrator skills. It is unclear
-whether orchestrator executions count toward the bound. It is also unclear
-whether a Stockdif readiness re-review counts; one is likely, because §4 Track
-B step 2 expects material findings and a material edit needs another readiness
-pass.
-
-**Request:** say which allocations count toward the 10.
+**Smallest clarification requested.** State the hold mechanism. For example:
+"The recorded human authorization includes a stop request after 014e
+`implementation-handoff`. Verify is allocated only after H1E, or a truthful
+blocked-canary record, exists." Also say what happens if the canary is
+blocked: whether Verify still runs against H1 with the evidence recording the
+block (see the §6 final paragraph).
 
 ## Editorial
 
-- **E1.** The header lists local directories `vk-code/spikedif` and
-  `vk-code/spikedif-hidden`, but §1 and the table say "public `spikedif`
-  repository". Pick one name for the Stockdif checkout, or explicitly give the
-  local directory name next to the GitHub name.
-- **E2.** "Track B … pinned to H1" (§4 Track B step 1) would be easier to check
-  if it named the recorded evidence, for example "host commit recorded in the
-  Stockdif grant or ledger".
+- **E1.** `014e/evidence/` is not a repository path. Say whether it means
+  `spikes/014e-external-project-live-canary/evidence/`, so that "outside the
+  014e evidence area" can be checked mechanically.
+- **E2.** The header still gives the draft baseline as `455205e`. The branch is
+  now at `ec42cef`, and the brief already defers this to re-resolution at
+  freeze.
 
 ## Review limitations
 
-- The Stockdif repository, its local directories and its draft Spike 001 brief
-  are outside this execution's granted workspace and were not inspected. Their
-  identities are taken as the brief states them. The brief itself defers them
-  to preflight re-resolution.
-- The installed Codex and Claude CLI versions and their sandbox behaviour were
+- The Stockdif repositories (`/home/velveteen/vk-code/stockdif`,
+  `/home/velveteen/vk-code/stockdif-hidden`) are outside the granted workspace
+  and were not inspected.
+- The installed provider CLIs, their versions and their sandbox behaviour were
   not exercised.
-- An attempt to inspect `methodologies/harness/policy.json` with a Python
-  one-liner was denied by the session permission policy. The policy was
-  inspected with a content search instead.
 - No evaluator-private material (`eval-spec.md`, `.hidden-test/**`,
   `.eval/**`) was inspected.
 
@@ -174,9 +135,12 @@ pass.
 
 - Written:
   - `spikes/014e-external-project-live-canary/feedback.md`;
-  - `spikes/014e-external-project-live-canary/preliminary/001/{spike.md,feedback.md}`;
-  - `spikes/014e-external-project-live-canary/manifest.md`.
-- Checks: SHA-256 of the reviewed `spike.md` compared with the host-bound
-  identity (match).
+  - `spikes/014e-external-project-live-canary/manifest.md` (run 002 appended).
+- No `preliminary/` snapshot, because the verdict passes. `spike.md` was not
+  modified.
+- Checks:
+  - SHA-256 of `spike.md` compared with the host-bound identity (match);
+  - diff `e20253b..ec42cef` reviewed against the run 001 findings;
+  - Prettier check of `feedback.md`.
 
-**Not ready to freeze**
+**Ready after minor clarification**
