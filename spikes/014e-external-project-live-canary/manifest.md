@@ -306,3 +306,40 @@
   - Attached (inline) executors are not processes and are not contained.
   - Stockdif should ignore its untracked ledger; containment masks ledger
     content.
+
+## Run 006 — Evaluator Verify (attempt 001, candidate H1)
+
+- Skill: `evaluator` v14, mode `verify`,
+  `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`
+  (Role Grant
+  `sha256:a6489b976c5d2ed4aceb6fa7676c110a8c8a25ce5f2e2eda85ea8d2aedfd8990`,
+  execution `d6103126-6441-46c0-89d9-503434d6bf84`).
+- Inputs:
+  - candidate H1 `27430d9e80df6e7d075edb549c7c4e7b2c5a48e7`;
+  - evaluator revision `001`
+    `sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623`;
+  - evidence commit `96a3f6e933cc8f6e02f74a081de9cc168b3268d7`, found by D7
+    rules 1–4.
+  - The brief, Design Map, evaluation requirements and coverage map all
+    matched their frozen identities. No drift.
+- Result: **BLOCKED**, `INFRASTRUCTURE_FAILURE`.
+  - D7 rule 5 is unestablished: no recorded human authorization naming the
+    evidence commit was available.
+  - The evidence index lacks the terminal Stockdif ledger state with the
+    canary status.
+  - The canary was blocked before any Stockdif run.
+  - The operator-recorded containment preflight failure was not reproducible
+    in the evaluator environment. It is reported as an unconfirmed
+    observation for Track A, not as an implementation failure.
+- Safe aggregates:
+  - 6 executable procedures: 5 pass, 1 fails (evidence binding and index);
+  - 3 public-evidence procedures: regression review partially established,
+    design-conformance review found no contradiction, live-canary review
+    blocked;
+  - criteria: 3 satisfied, 4 not satisfied, 3 not adjudicated;
+  - visible regression: typecheck, lint and tracked-file format pass;
+    186/186 tests pass.
+- Output: `verification-result.json`
+  `sha256:7d00bc2a02ec9607bfb47b879f595e287185bf9701dc3de3141f0003a295a29d`.
+- Host actions requested: none. There is no promotion after BLOCKED.
+- Wall-clock: not measured. Token usage: unknown.

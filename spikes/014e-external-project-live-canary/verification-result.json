@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "attempt": "001",
+  "cycle": "001",
+  "allocationKey": "sha256:4d79cac81f4d298e775fca89e6df57818d68675e1ecd659468556fcd493d38db",
+  "execution": "d6103126-6441-46c0-89d9-503434d6bf84",
+  "roleGrant": "sha256:a6489b976c5d2ed4aceb6fa7676c110a8c8a25ce5f2e2eda85ea8d2aedfd8990",
+  "commit": "27430d9e80df6e7d075edb549c7c4e7b2c5a48e7",
+  "evaluatorRevision": "001",
+  "evaluatorRevisionIdentity": "sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623",
+  "inputs": {
+    "brief": "sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322",
+    "design": "sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0",
+    "evaluationRequirements": "sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef",
+    "coverage": "sha256:2536a2fbdb88bc6874af693082e13395a49f94d24d8cee1cae9f91bc45534c04"
+  },
+  "evidenceBasis": {
+    "candidate": "27430d9e80df6e7d075edb549c7c4e7b2c5a48e7",
+    "evidenceCommit": "96a3f6e933cc8f6e02f74a081de9cc168b3268d7",
+    "evidenceBinding": "D7 rules 1-4 hold structurally: the commit has sole parent H1, touches only the evidence area, names H1 and every artifact identity recomputes. D7 rule 5 is unestablished: no recorded human authorization naming this commit was available to the evaluator.",
+    "note": "The executable cases and the regression ran on a clean clone of the candidate. The evidence commit changes only documentation under the spike evidence area. It was not chosen by HEAD."
+  },
+  "result": "BLOCKED",
+  "classification": "INFRASTRUCTURE_FAILURE",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "NOT_ADJUDICATED",
+    "AC04": "SATISFIED",
+    "AC05": "NOT_ADJUDICATED",
+    "AC06": "NOT_SATISFIED",
+    "AC07": "NOT_SATISFIED",
+    "AC08": "NOT_SATISFIED",
+    "AC09": "NOT_SATISFIED",
+    "AC10": "NOT_ADJUDICATED"
+  },
+  "accounting": {
+    "criteria": 10,
+    "satisfied": 3,
+    "notSatisfied": 4,
+    "notAdjudicated": 3,
+    "procedures": 9,
+    "executableCases": 6,
+    "executablePassed": 5,
+    "failedProcedures": ["E5"],
+    "blockedProcedures": ["M-LIVE"],
+    "partialProcedures": ["R-REG"],
+    "note": "E1, E2, E3, E4 and E6 pass. E5 fails on the evidence index only: binding rules 1-4 hold, but the canary record lacks the terminal Stockdif ledger state. M-LIVE is blocked by the unestablished rule-5 authorization, and no live Track B evidence exists because the canary was blocked before any Stockdif run. M-CODE's targeted review found no contradiction."
+  },
+  "blockers": [
+    {
+      "requirement": "design-map.md D7 rule 5; eval-requirements Track B evidence binding (AC06-AC10)",
+      "expected": "The supervisor's recorded human authorization names the evidence commit found by D7 rules 1-4.",
+      "observed": "No recorded human authorization naming an evidence commit was available in the workflow ledger or the public spike artifacts.",
+      "classification": "INFRASTRUCTURE_FAILURE"
+    },
+    {
+      "requirement": "design-map.md D6 index (canary.status plus the exact terminal Stockdif ledger state and, if not completed, the blocker); AC08, AC09",
+      "expected": "The canary record carries its status, the terminal Stockdif ledger state and the blocker.",
+      "observed": "The canary record carries status and blocker. The ledger state is recorded elsewhere in the index (stockdif.ledgerState), not with the canary status.",
+      "classification": "INFRASTRUCTURE_FAILURE"
+    },
+    {
+      "requirement": "spike.md AC06-AC09 (live Stockdif canary)",
+      "expected": "Evidence of the real Stockdif Spike 001 workflow through a truthful Evaluator Verify outcome.",
+      "observed": "canary.status is blocked before Stockdif branch creation, host configuration, grant allocation or provider execution. No Stockdif commits or identities exist. Nothing was invented.",
+      "classification": "INFRASTRUCTURE_FAILURE"
+    }
+  ],
+  "unconfirmedImplementationObservations": [
+    {
+      "requirement": "spike.md AC03; design-map.md D4 (a public contained role cannot read the operator home)",
+      "source": "operator evidence evidence/preflight.md",
+      "observed": "In the operator environment, H1's own visible containment test failed: the public contained probe reported that it could read the real operator home.",
+      "evaluatorReproduction": "Not reproduced. In the evaluator environment the same visible test and the full visible suite pass (186/186). The evaluator's own session sandbox already masks the operator home, so this environment cannot faithfully reproduce the operator condition. It is therefore not classified as an implementation failure.",
+      "routing": "Track A should investigate this recorded preflight failure. If it is confirmed, it should be corrected as H2 under the brief's forward-only correction rule."
+    }
+  ],
+  "regression": {
+    "command": "npm run check",
+    "environment": "clean clone of the candidate with the project's installed dependencies; evaluator session sandbox; provider credentials absent",
+    "typecheck": "pass",
+    "lint": "pass",
+    "formatCheck": "pass on every tracked file; the whole-tree check met one sandbox-masked, untracked, non-candidate dotfile (EACCES)",
+    "tests": 186,
+    "passed": 186
+  },
+  "evaluatorIntegrity": {
+    "frozenEvaluationModified": false,
+    "specificationDrift": false,
+    "evaluatorDefects": 0
+  },
+  "architectureVersusProduct": "Track A architecture: the frozen executable root-separation, fail-closed, containment, origin/publication and unchanged-methodology cases pass on H1. Track B product: not executed. Stockdif product success is not claimed. Known limitation: the operator-recorded containment preflight failure is unresolved.",
+  "promotionPlan": null,
+  "humanAcceptance": "Not applicable. No PASS was produced, so no promotion is requested."
+}
