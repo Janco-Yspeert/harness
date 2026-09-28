@@ -679,3 +679,67 @@
   2. Verify against the unchanged H3, with a human authorization naming the
      full evidence commit and a corrected evidence index.
 - Wall-clock: not measured. Token usage: unknown.
+
+## Run 012 — Evaluator Repair (revision 001 → 002)
+
+- Skill: `evaluator` v14, mode `repair`,
+  `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`
+  (pinned bytes delivered by Role Grant
+  `sha256:57cd5422c25f64c36bcdf16daf3e3010c953f2c7ce7dc9625591fbc5a16eca5b`,
+  execution `8d588695-8f0a-4481-b1b1-57861b3d374e`).
+- Trigger: attempt 7, finalized `BLOCKED` / `EVALUATOR_DEFECT` (semantic
+  result `0b95dfea-4d93-416d-beda-9b67e88e0e3f`).
+  - This is the first post-implementation evaluator correction in cycle
+    `001`.
+- Inputs, all matching their host-bound identities:
+  - brief
+    `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`;
+  - Design Map
+    `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`;
+  - `eval-requirements.md`
+    `sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef`
+    (unchanged);
+  - input coverage map
+    `sha256:2536a2fbdb88bc6874af693082e13395a49f94d24d8cee1cae9f91bc45534c04`.
+- Result: succeeded.
+  - Source revision `001`
+    `sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623`
+    is preserved unchanged.
+  - Corrected revision `002`
+    `sha256:b5e895cbec9742d63ec81161b45d48f40f32dd933125d6abd9cae099378a754f`
+    is frozen.
+- Change:
+  - The containment procedure's Harness write check now tells a write that
+    reaches the Harness checkout apart from a write to an ephemeral
+    namespace-private path that maps no host path. Design Map D4 does not
+    forbid the latter.
+  - Affected criteria: AC03 and AC04, through one procedure.
+  - Criterion records, procedures, decision rules and the public evaluation
+    requirements are unchanged. Acceptance semantics are preserved, and no
+    implementation-shaped seam was adopted.
+- Outputs: `coverage-map.json`
+  `sha256:24984d3f02ee978e5852c520211c3da6b1f8b3facc9ae7413f7a0ab92605c611`.
+  - Its readiness now names revision `002` and integrity validation `PASS`.
+  - It carries a public-safe `repair` binding with the trigger, the source
+    and result revisions, the affected criteria and the
+    acceptance-semantics attestation.
+- Safe aggregates:
+  - 10 criterion records and 9 procedures, unchanged;
+  - 5 of 18 private inventory files changed.
+- Validation:
+  - The repository's `evaluator-integrity` structural validation of the
+    complete revision passed with 0 diagnostics, plus bundle-specific
+    checks.
+  - The corrected procedure was exercised only against evaluator-authored
+    control commits built from the pre-implementation baseline. It passes
+    on contained controls, including one that reproduces the prior false
+    positive. It still fails on unwrapped, baseline and writable-checkout
+    controls.
+  - The candidate was not run.
+- Checks: the `prepared-coverage` validator on `coverage-map.json` passes, and
+  so does a Prettier check.
+- Host actions requested: none.
+- Next: verify against the unchanged H3 with evaluator revision `002`. The
+  secondary operator-evidence findings of attempt 007 still need the operator
+  to correct them.
+- Wall-clock: not measured. Token usage: unknown.

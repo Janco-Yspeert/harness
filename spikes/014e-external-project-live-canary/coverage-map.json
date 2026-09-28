@@ -5,12 +5,34 @@
   "readiness": {
     "skill": "evaluator",
     "skillVersion": 14,
-    "evaluatorRevision": "001",
-    "evaluatorRevisionIdentity": "sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623",
+    "evaluatorRevision": "002",
+    "evaluatorRevisionIdentity": "sha256:b5e895cbec9742d63ec81161b45d48f40f32dd933125d6abd9cae099378a754f",
     "privateInventoryIdentity": "sha256:d024b7a2fd3dffb682121f797c7f4c34b0ba07a03ae376cf9d8b5687e3fe44e6",
-    "validatorResultBinding": "sha256:075a583e4f93ae8c3a292f5f9fd50c9aa1b56b3bf8beac55343fb23027cc4b16",
+    "validatorResultBinding": "sha256:afaae2229c4f88ef02c99cbc31f8bb5e4221f2b276f10dc4ec517d93c013b831",
     "integrityValidation": "PASS",
-    "criterionRecordCount": 10
+    "criterionRecordCount": 10,
+    "priorRevision": "001",
+    "priorRevisionIdentity": "sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623"
+  },
+  "repair": {
+    "trigger": "verification-finalized",
+    "triggerAttempt": 7,
+    "triggerSemanticResult": "0b95dfea-4d93-416d-beda-9b67e88e0e3f",
+    "classification": "EVALUATOR_DEFECT",
+    "sourceEvaluatorRevision": "001",
+    "sourceEvaluatorRevisionIdentity": "sha256:8ef73bd723d0471bee546f704c376554c0a1fca8957a298620c9b64e77d95623",
+    "resultEvaluatorRevision": "002",
+    "resultingEvaluatorRevision": "002",
+    "resultEvaluatorRevisionIdentity": "sha256:b5e895cbec9742d63ec81161b45d48f40f32dd933125d6abd9cae099378a754f",
+    "affectedCriteria": ["AC03", "AC04"],
+    "correctionInCycle": 1,
+    "briefIdentity": "sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322",
+    "designMapIdentity": "sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0",
+    "evaluationRequirementsIdentity": "sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef",
+    "summary": "The containment procedure's Harness write check now distinguishes a write that reaches the Harness checkout from a write to an ephemeral namespace-private path that maps no host path, which design-map.md D4 does not forbid. Criterion records, procedures and decision rules are unchanged.",
+    "acceptanceSemanticsPreserved": true,
+    "implementationShapedSeamAdopted": false,
+    "integrityValidation": "PASS"
   },
   "criteria": [
     {
