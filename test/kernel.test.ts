@@ -1557,6 +1557,70 @@ void test("TR8/TR10: duplicate retry survives its bound, one-shot root grants ca
   assert.equal(f.kernel.inspect(f.workflow, parent.id, "produce").kind, "stop");
 });
 
+void test("H5: host recovery preserves a result whose canonical transition was blocked by a rejecting artifact validator", (t) => {
+  const f = fixture(t, "recovery-validator-blocked");
+  required(f.policy.roles.produce).outcomes = [
+    {
+      disposition: "succeeded",
+      transition: "produced",
+      evidence: { artifact: "output.txt", validator: "reject-content" },
+    },
+  ];
+  json(join(f.root, "policy.json"), f.policy);
+  writeFileSync(join(f.root, "items", f.workflow, "output.txt"), "{}\n");
+  git(f.root, ["init", "-b", "main"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "recovery fixture baseline"]);
+  const k = new ExecutionKernel({
+    project: f.project,
+    executors: profiles,
+    validators: {
+      "reject-content": {
+        identity: "sha256:reject-content-test",
+        validate: () => {
+          throw new Error("synthetic artifact rejection");
+        },
+      },
+    },
+  });
+  const grant = k.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached", "spawned"],
+    maxAllocations: 8,
+    inline: true,
+  });
+  const session = k.register(f.workflow, "fixture").session;
+  const { execution } = k.allocate(f.workflow, grant.id, {
+    mode: "attached",
+    session: session.id,
+    role: "produce",
+  });
+  k.process(f.workflow, execution.id, "running");
+  k.result(f.workflow, execution.id, "succeeded", {});
+  // The worker legitimately delivered a result. Only its canonical
+  // transition is blocked, by the artifact validator rejecting the content.
+  const delivered = k.execution(f.workflow, execution.id);
+  assert.equal(delivered.result?.disposition, "succeeded");
+  assert.equal(delivered.transition?.status, "blocked");
+  assert.match(
+    String(delivered.transition.reason),
+    /synthetic artifact rejection/,
+  );
+  assert.equal(delivered.process, "running");
+  // The worker's own "exited" handshake never lands: the host restarts (or
+  // shuts down) while the execution is still marked "running".
+  k.recover();
+  const recovered = k.execution(f.workflow, execution.id);
+  assert.equal(
+    recovered.process,
+    "exited",
+    "a delivered result must not be reported as a lost/uncontactable executor",
+  );
+  assert.equal(recovered.failure, null);
+  assert.equal(recovered.result?.disposition, "succeeded");
+  assert.equal(recovered.transition?.status, "blocked");
+});
+
 void test("pre-implementation recovery revokes a prematurely advanced grant and reopens Design Map after restart", async (t) => {
   const f = fixture(t, "preimplementation-recovery");
   const item = join(f.root, "items", f.workflow);

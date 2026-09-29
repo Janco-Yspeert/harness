@@ -1137,14 +1137,26 @@ export class ExecutionKernel {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       }
       for (const run of this.executions(workflow))
-        if (["allocated", "running"].includes(run.process))
-          this.process(
-            workflow,
-            run.id,
-            "interrupted",
-            null,
-            "host recovery could not reattach executor",
-          );
+        if (["allocated", "running"].includes(run.process)) {
+          // A semantic result already exists when only its exit handshake
+          // was lost (for example the worker's own canonical transition was
+          // blocked by a pre-transition artifact validator, and the host
+          // restarted before the worker reported "exited"). That process
+          // genuinely finished and delivered its result; generic recovery
+          // must not brand it an uncontactable executor. Doing so would both
+          // misreport the cause and permanently deny this execution any
+          // later host action gated on a non-"interrupted" process (for
+          // example promotion or publication).
+          if (run.result) this.process(workflow, run.id, "exited");
+          else
+            this.process(
+              workflow,
+              run.id,
+              "interrupted",
+              null,
+              "host recovery could not reattach executor",
+            );
+        }
     }
   }
   continuationStopped(

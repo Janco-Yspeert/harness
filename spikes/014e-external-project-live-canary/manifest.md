@@ -895,3 +895,150 @@
   3. Record a human authorization that names the full H4E.
   4. Rerun verify against the unchanged H4 and evaluator revision `002`.
 - Wall-clock: not measured. Token usage: unknown.
+
+## Run 015 — Implementation (Track A, correction candidate H5)
+
+- Skill: `implementation` v5,
+  `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+  (pinned bytes delivered by Role Grant
+  `sha256:dca36d1eb7aa26a9965ab5e08babda8a00d205a4a526926566e5fca6b8eaccc9`,
+  execution `0bab4b21-6bb4-4cdd-a5fc-8821949b894d`, workflow
+  `014e-external-project-live-canary`).
+- Authority: human root `c46fb6df-116c-441e-ab36-ebb5ee76e560` (permit-role
+  implementation, one use). Its recorded reason: "Human-authorized H5
+  correction for the generic pre-transition validator rejection recovery
+  defect reproduced by Stockdif execution
+  `9e28f0d3-d165-4a23-8dfe-9e4f1156aeb7`." That Stockdif execution belongs to
+  the separate, private Track B ledger and workspace; it was not read. H4
+  `e10647bbedc12c48fbcbc0214045a24231f09cdd`, H4E's absence, and all prior
+  attempts and evaluator revisions are preserved.
+- Inputs (SHA-256 recomputed and matched against the host-bound identities
+  before any change):
+  - frozen `spike.md`
+    `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`;
+  - frozen `design-map.md`
+    `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`;
+  - `eval-requirements.md`
+    `sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef`;
+  - coverage binding (evaluator revision 002)
+    `sha256:24984d3f02ee978e5852c520211c3da6b1f8b3facc9ae7413f7a0ab92605c611`.
+  - No `IMPLEMENTATION_FAILURE` feedback is bound. The current
+    `verification-finalized` event is attempt 009 (`BLOCKED`,
+    `INFRASTRUCTURE_FAILURE`), so the contract's `implementationFeedback`
+    input is correctly absent; this correction proceeds solely under the
+    named human root authority above, exactly as H2 and H4 did.
+- Baseline: `feat/spike-014` at `a4ce34146ed02749ed119e53c7edacd39669820d`. H1–H4
+  and attempts 001–009 are preserved. This baseline also carries an unrelated,
+  pre-existing administrator change (`harness.executors.json` protected-role
+  default), which is left untouched.
+- Result: succeeded. The candidate H5 is the local checkpoint that contains
+  this entry.
+- Investigation:
+  - The only description of the defect available to this role is the human
+    root's reason text above; the Stockdif ledger that reproduced it is a
+    private, separate workspace this role's grant does not include and never
+    read. The text names a **generic** (not Stockdif-specific) defect in
+    **recovery** after a **pre-transition validator rejection**, so the
+    Harness kernel itself was inspected for a matching, reproducible defect.
+  - `ExecutionKernel#result` records a submitted semantic result and then
+    calls `#transition`, which resolves the role's configured outcome. When
+    that outcome names an `evidence.artifact` (with or without a `validator`),
+    `#transition` reads and checks the artifact inside a `try`/`catch`; on any
+    rejection (a missing/malformed file, a validator throwing, or a pinned
+    validator-identity mismatch) it appends `kernel.transition-blocked` with
+    the rejection reason and returns, **without** touching the execution's
+    `process` state and without rethrowing. The already-recorded `succeeded`
+    result stands; only the canonical transition (for example
+    `evaluation-prepared`) is withheld. This is existing, intentional
+    fail-closed behavior (proven by the 014d "a result without its committed
+    artifact keeps the semantic result and blocks the transition" test) and
+    is not itself the defect.
+  - `ExecutionKernel#recover`, called both at host startup and at host
+    `close()`, generically reattaches every execution still recorded
+    `"allocated"`/`"running"`. Before this change it forced **every** such
+    execution to `"interrupted"` with the fixed reason "host recovery could
+    not reattach executor" — with no check for whether the execution already
+    carries a delivered `kernel.result`. A worker that had already submitted
+    its result (rejected at the pre-transition validator step exactly as
+    above, or accepted and awaiting its own `.../exited` call) but had not yet
+    reported `"exited"` when the host restarted or closed was therefore
+    mischaracterized as a lost/uncontactable executor, even though its result
+    is durably recorded.
+  - This mischaracterization is not only cosmetic. `promote` and `publish`
+    each refuse with "promotion/publication outside role grant" whenever
+    `["interrupted", "cancelled", "failed"].includes(execution.process)`,
+    independent of whether a valid result exists. A single host restart
+    during the narrow window between a worker's `submitResult` and its
+    `.../exited` call — for example while its canonical transition is
+    validator-blocked and the worker is still finishing normally — would
+    therefore permanently deny that execution any later host action, even
+    after the underlying block is understood or corrected.
+  - Reproduced deterministically (no provider, no Stockdif access): a fixture
+    role outcome bound to an artifact validator that always rejects; a
+    submitted `succeeded` result recorded `kernel.transition-blocked` with the
+    process still `"running"`; `recover()` before this change forced
+    `"interrupted"` with the generic reattachment reason, discarding the fact
+    that the result had already been delivered.
+- Changes:
+  - `src/kernel/execution.ts` (`ExecutionKernel#recover`): an execution still
+    `"allocated"`/`"running"` that already carries a `kernel.result` is now
+    recovered to `"exited"` (the same terminal state its own `.../exited` call
+    would have recorded, with no synthetic failure/category), instead of
+    `"interrupted"`. An execution with no result is unchanged: it is still
+    recovered to `"interrupted"` with the existing reason. Nothing else about
+    `#transition`, artifact/validator checking, `promote`, `publish` or retry
+    policy changed; this is the smallest change that stops generic recovery
+    from overwriting a genuinely delivered result with a fabricated
+    infrastructure failure.
+- Unchanged: trusted history, policy, contracts, role skills, orchestrator,
+  containment, D2–D8, evaluation artifacts and evidence, and every other H4
+  file.
+- Output identities (SHA-256 of the committed bytes):
+  - `src/kernel/execution.ts`
+    `28156a90c3955933b4992cb0d38a87d87b3401ad416e34b934907e161d60abf1`;
+  - `test/kernel.test.ts`
+    `cdff5734c767ae2284298cfe456b537767bade2d4d52243b4c40a4ac8582d34b`.
+- Visible tests: `test/kernel.test.ts` adds one deterministic test, "H5: host
+  recovery preserves a result whose canonical transition was blocked by a
+  rejecting artifact validator". It allocates a fixture role whose sole
+  outcome is bound to an artifact validator that always throws, submits a
+  `succeeded` result (confirming the transition is recorded `blocked` with the
+  validator's exact reason and the process stays `"running"`), calls
+  `recover()`, and asserts the process becomes `"exited"` with no synthetic
+  failure while the delivered result and the blocked-transition record are
+  both preserved unchanged. Run against the pre-change bytes, this exact test
+  fails (`actual: 'interrupted'`, `expected: 'exited'`), confirming it
+  exercises the fixed behavior and not a tautology. The existing TR8/TR10
+  restart-recovery test (an execution with **no** submitted result recovers to
+  `"interrupted"`) is unchanged and still passes, confirming the fix is
+  scoped to the delivered-result case only.
+- Checks:
+  - `node --test --test-name-pattern=H5 test/kernel.test.ts`: 1 test, 1 pass.
+    Also run against the unmodified H4 `execution.ts` as a negative control:
+    1 test, 1 fail, with the exact `interrupted`/`exited` mismatch above.
+  - `npm test`: 194 tests, 194 pass, 0 fail.
+  - `npm run typecheck`: pass.
+  - `npm run lint`: pass.
+  - Prettier check of the two changed files: pass. `npm run format:check`
+    across the whole tree was not run as a whole; it still only fails on
+    untracked, permission-denied sandbox dotfiles at the repository root
+    (`.bash_profile`, `.bashrc`, `.gitconfig`, `.gitmodules`, `.idea`,
+    `.mcp.json`, `.profile`, `.ripgreprc`, `.vscode`, `.zprofile`, `.zshrc`),
+    reproducing the same pre-existing sandbox residue reported in runs 005,
+    010 and 013. These are outside the candidate.
+- Skipped: a full `npm run check` on a disposable clean clone. This session's
+  sandbox denies filesystem access needed to set one up; the working-tree
+  checks above ran instead, as in run 013.
+- Restricted evaluator material inspected: none. The Stockdif repositories and
+  the Stockdif ledger (including execution `9e28f0d3-d165-4a23-8dfe-9e4f1156aeb7`)
+  were not read; only the human root's own reason text was used.
+- Measurements: wall-clock time and token usage are unknown.
+- Limitations:
+  - This role cannot confirm that the mechanism found and fixed here is
+    exactly what Stockdif execution `9e28f0d3` hit; only the human root's
+    description was available, and it matches this generic, reproducible
+    kernel defect precisely. If the actual Stockdif observation differs, that
+    would surface as a further, separately authorized correction.
+  - Not part of this run (supervisor operator-evidence work): H5E, the rerun
+    of the affected Stockdif canary steps under H5, a D6-conformant canary
+    record, and a human authorization naming the full H5E commit.
