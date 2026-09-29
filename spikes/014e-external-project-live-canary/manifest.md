@@ -1154,3 +1154,59 @@
 - Measurements: wall-clock time and token usage unknown.
 - Limitations: independent evaluation has not passed; H6E and the Stockdif
   canary rerun remain supervisor/operator-evidence work outside this role.
+
+## Run 018 — Implementation (Track A, H6 governed successor retry)
+
+- Skill: `implementation` v5,
+  `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+  (Role Grant
+  `sha256:7e308d0a28361cccb04068a994ff603cf07d0652faf550bd8ff93383911bdcd2`,
+  execution `f0e78be9-de31-4358-a426-1b0ba78d4233`, workflow
+  `014e-external-project-live-canary`).
+- Inputs (SHA-256 recomputed and matched against the host-bound identities):
+  - frozen `spike.md`
+    `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`;
+  - frozen `design-map.md`
+    `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`;
+  - `eval-requirements.md`
+    `sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef`;
+  - coverage binding (evaluator revision 002)
+    `sha256:24984d3f02ee978e5852c520211c3da6b1f8b3facc9ae7413f7a0ab92605c611`.
+  - No `IMPLEMENTATION_FAILURE` feedback was bound. No evaluator-private
+    material was read.
+- Baseline: `feat/spike-014` at
+  `8b41de4195814e16060cb4b2a035b1b732ce5956`, the Run 017 implementation
+  checkpoint. Existing unrelated workflow-ledger changes and sandbox residue
+  were preserved and excluded.
+- Status: succeeded. The frozen implementation remains complete; the bound
+  public inputs require no source or test change beyond the already committed
+  H6 candidate.
+- Output content identities (unchanged committed candidate bytes):
+  - `src/kernel/execution.ts`
+    `sha256:2ebe446b98468d2fe4de84db33e5dee8a3031c46eb7a81b3098d68c9345767df`;
+  - `test/kernel.test.ts`
+    `sha256:ce301c371ea39ebe58e0d60e669cd1819b5b3cb1c8860d067de373c8209b848f`;
+  - `harness.executors.json`
+    `sha256:c0656d3fd4564cb354f442e3089dd5c79e5a6b37665b54b8efdb785db4dc60aa`;
+  - `test/governed-executors.test.ts`
+    `sha256:229b201ffe1b2e1ca721f294b83be0ce492129b3ccb1f869333199dfb5510cff`.
+- Checks:
+  - `npm run typecheck`: pass.
+  - `npm run lint`: pass.
+  - Prettier check of every tracked TypeScript, JSON, Markdown and YAML file:
+    pass.
+  - Focused executor-routing regression
+    (`node --test --test-name-pattern='014e: public execution selects Codex' test/governed-executors.test.ts`):
+    1 test, 1 pass.
+- Broader-suite limitation: the focused H5/H6 kernel tests and a direct
+  `test/kernel.test.ts` run were attempted. This governed worker sandbox denies
+  their Git fixture subprocesses (`spawnSync git EPERM`) and loopback listeners
+  (`listen EPERM`); the H5/H6 cases failed while initializing their Git
+  fixtures, before exercising assertions. This reproduces Run 017's environment
+  limitation. Run 016 remains the last complete broad result (196/196 pass).
+- Skipped: a clean-clone `npm run check`, because this worker cannot create the
+  Git fixture repositories required by the suite. Whole-tree `format:check`
+  was replaced by the tracked-file check to avoid unrelated sandbox residue.
+- Measurements: wall-clock time and token usage unavailable.
+- Limitations: independent evaluation has not passed; H6E and the Stockdif
+  canary rerun remain supervisor/operator-evidence work outside this role.
