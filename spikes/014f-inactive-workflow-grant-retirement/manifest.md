@@ -27,3 +27,25 @@
   `sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34`.
 - Checks: none run; static repository inspection only.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator Prepare — execution d3c036e9-da32-4cc2-bf20-6a9f238ee1b5
+
+- Skill: `evaluator`, mode `prepare`, contract version 14
+  (`sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`).
+- Workflow: `014f-inactive-workflow-grant-retirement`; Role Grant
+  `sha256:85b7206810438cc7cea257ba1252a01142c69e7677655f0edd6a902590a079ae`.
+- Inputs: `spike.md`
+  `sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c`,
+  `design-map.md`
+  `sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34`
+  (verified by content hash).
+- Result: succeeded; evaluator revision `001` frozen.
+- Outputs: `eval-requirements.md`
+  `sha256:50182839061aeb7bd3efe6da2f6ce6d7166bb1ee6d0f6d393b4c692897c80820`,
+  `coverage-map.json` (8 criterion records, pre-freeze integrity validation
+  PASS, evaluator revision identity
+  `sha256:393a71adc7df9fd60446a7cabcea16f4f7877d1604668720ee98d6dd03737f41`),
+  `manifest.md`.
+- Checks: controlled positive, baseline-negative and single-defect negative
+  exercises on a discarded scratch reference; no candidate execution.
+- Measurements: wall-clock time and token usage unavailable.

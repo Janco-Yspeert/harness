@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "spike": "014f-inactive-workflow-grant-retirement",
+  "evaluationRequirements": "sha256:50182839061aeb7bd3efe6da2f6ce6d7166bb1ee6d0f6d393b4c692897c80820",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 14,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:393a71adc7df9fd60446a7cabcea16f4f7877d1604668720ee98d6dd03737f41",
+    "privateInventoryIdentity": "sha256:09122e31324c9a590b6e879d1ec16f4da0feddcb4a59003228b87f2e08086671",
+    "validatorResultBinding": "sha256:789203fe68f6c417520a9726374835f165b640b3ad17022ae88049890052eb08",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 8
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; §1, §2; design-map.md shared contracts 2 and 3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "E4"
+      ],
+      "sufficiency": "E1 drives the kernel operation on a terminal grant and confirms it records one event bound to the exact grant without allocating a role. E4 confirms the host operation succeeds only for the root credential (executor-session and anonymous callers are refused, invalid bodies refused) and lists retirement evidence."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; design-map.md shared contract 1 and invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "E6"
+      ],
+      "sufficiency": "E1 compares ledger bytes before and after to show a single appended event with the exact evidence and untouched original grant and executions. E6 shows prior executions, results and diagnostics stay identical and readable through kernel and host after retirement and successor use."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03; §3; design-map.md shared contract 6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E3",
+        "E4"
+      ],
+      "sufficiency": "E3 shows inspect is denied with retired wording and allocate, retry and spawned allocation are refused with no ledger write while a sibling grant stays usable. E4 shows attached, spawned and predecessor-bearing continuation over the host, including the request automatic continuation issues, are refused with no session or ledger write."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; §1; design-map.md shared contract 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2",
+        "E5"
+      ],
+      "sufficiency": "E2 shows allocated, running and unresolved-human-request states each refuse retirement with an unchanged ledger, and that answering the request makes retirement succeed. E5 confirms the same refusal through the host path."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; §2; design-map.md shared contract 5 and invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2",
+        "E4"
+      ],
+      "sufficiency": "E2 shows repeat retirement is a deterministic already-retired refusal with no second event. E4 shows the host repeat is a 409 refusal and that a new host and a new kernel over the same ledger both still deny the grant, so restart cannot resurrect or duplicate authority."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; §3; design-map.md design decisions",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": [
+        "E6"
+      ],
+      "sufficiency": "E6 issues a fresh successor grant after retirement, confirms it has its own budget and no supersession link, and runs an allocation through result and exit normally while the retired grant remains denied."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07; §4, §5 item 13",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "R1"
+      ],
+      "sufficiency": "The repository's existing supersession, recovery, correction, continuation and allocation-limit regressions are the authoritative behavior tests; R1 requires them, typecheck, lint and format checks to pass unchanged at the candidate commit, so a hidden duplicate would add no falsifiability."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08; §5; design-map.md invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "P1"
+      ],
+      "sufficiency": "AC08 asks that AC01-AC07 be proven with Harness-owned deterministic fixtures at the exact candidate. E1-E6 use only disposable Harness fixture projects and no Stockdif or provider state; P1 binds the run to a clean committed candidate and to the frozen evaluator identities."
+    }
+  ]
+}
