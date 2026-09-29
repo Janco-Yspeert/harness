@@ -1621,6 +1621,154 @@ void test("H5: host recovery preserves a result whose canonical transition was b
   assert.equal(recovered.transition?.status, "blocked");
 });
 
+void test("H6: a validator-rejected result permits a bounded successor correction, preserving history, and denies retry after canonical success", (t) => {
+  const f = fixture(t, "blocked-correction");
+  required(f.policy.roles.produce).outcomes = [
+    {
+      disposition: "succeeded",
+      transition: "produced",
+      evidence: { artifact: "output.txt", validator: "gate-content" },
+    },
+  ];
+  required(f.policy.roles.produce).retry = {
+    dispositions: ["failed", "interrupted"],
+    limit: 1,
+  };
+  json(join(f.root, "policy.json"), f.policy);
+  writeFileSync(join(f.root, "items", f.workflow, "output.txt"), "{}\n");
+  git(f.root, ["init", "-b", "main"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "correction fixture baseline"]);
+  let accept = false;
+  const k = new ExecutionKernel({
+    project: f.project,
+    executors: profiles,
+    validators: {
+      "gate-content": {
+        identity: "sha256:gate-content-test",
+        validate: () => {
+          if (!accept) throw new Error("synthetic artifact rejection");
+        },
+      },
+    },
+  });
+  const grant = k.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached", "spawned"],
+    maxAllocations: 8,
+    inline: true,
+  });
+  const session = k.register(f.workflow, "fixture").session;
+  const first = k.allocate(f.workflow, grant.id, {
+    mode: "attached",
+    session: session.id,
+    role: "produce",
+  }).execution;
+  k.process(f.workflow, first.id, "running");
+  k.result(f.workflow, first.id, "succeeded", {});
+  assert.equal(k.execution(f.workflow, first.id).transition?.status, "blocked");
+  k.process(f.workflow, first.id, "exited");
+  const retryRequest = {
+    role: "produce",
+    session: session.id,
+    mode: "attached" as const,
+    predecessor: first.id,
+  };
+  const second = k.allocate(f.workflow, grant.id, retryRequest).execution;
+  assert.equal(second.predecessor, first.id);
+  // Rejected history is preserved and no completion was recorded.
+  const kept = k.execution(f.workflow, first.id);
+  assert.equal(kept.result?.disposition, "succeeded");
+  assert.equal(kept.transition?.status, "blocked");
+  assert.equal(
+    k.events(f.workflow).some((e) => e.transition === "produced"),
+    false,
+  );
+  accept = true;
+  k.process(f.workflow, second.id, "running");
+  k.result(f.workflow, second.id, "succeeded", {});
+  assert.equal(
+    k.execution(f.workflow, second.id).transition?.status,
+    "recorded",
+  );
+  assert.equal(
+    k.events(f.workflow).filter((e) => e.transition === "produced").length,
+    1,
+  );
+  k.process(f.workflow, second.id, "exited");
+  // A recorded canonical transition is never retryable.
+  assert.throws(
+    () =>
+      k.allocate(f.workflow, grant.id, {
+        ...retryRequest,
+        predecessor: second.id,
+      }),
+    /retry policy denied/,
+  );
+});
+
+void test("H6: correction from a blocked transition stays inside the retry bound", (t) => {
+  const f = fixture(t, "blocked-correction-bound");
+  required(f.policy.roles.produce).outcomes = [
+    {
+      disposition: "succeeded",
+      transition: "produced",
+      evidence: { artifact: "output.txt", validator: "always-reject" },
+    },
+  ];
+  required(f.policy.roles.produce).retry = {
+    dispositions: ["failed", "interrupted"],
+    limit: 1,
+  };
+  json(join(f.root, "policy.json"), f.policy);
+  writeFileSync(join(f.root, "items", f.workflow, "output.txt"), "{}\n");
+  git(f.root, ["init", "-b", "main"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "bound fixture baseline"]);
+  const k = new ExecutionKernel({
+    project: f.project,
+    executors: profiles,
+    validators: {
+      "always-reject": {
+        identity: "sha256:always-reject-test",
+        validate: () => {
+          throw new Error("synthetic artifact rejection");
+        },
+      },
+    },
+  });
+  const grant = k.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached", "spawned"],
+    maxAllocations: 8,
+    inline: true,
+  });
+  const session = k.register(f.workflow, "fixture").session;
+  let current = k.allocate(f.workflow, grant.id, {
+    mode: "attached",
+    session: session.id,
+    role: "produce",
+  }).execution;
+  const request = (predecessor: string) => ({
+    role: "produce",
+    session: session.id,
+    mode: "attached" as const,
+    predecessor,
+  });
+  k.process(f.workflow, current.id, "running");
+  k.result(f.workflow, current.id, "succeeded", {});
+  k.process(f.workflow, current.id, "exited");
+  const firstId = current.id;
+  current = k.allocate(f.workflow, grant.id, request(firstId)).execution;
+  k.process(f.workflow, current.id, "running");
+  k.result(f.workflow, current.id, "succeeded", {});
+  k.process(f.workflow, current.id, "exited");
+  assert.throws(
+    () => k.allocate(f.workflow, grant.id, request(current.id)),
+    /retry policy denied/,
+  );
+});
+
 void test("pre-implementation recovery revokes a prematurely advanced grant and reopens Design Map after restart", async (t) => {
   const f = fixture(t, "preimplementation-recovery");
   const item = join(f.root, "items", f.workflow);

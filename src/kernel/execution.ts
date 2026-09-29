@@ -925,8 +925,17 @@ export class ExecutionKernel {
           (request.role && request.role !== old.role) ||
           !policy ||
           replacements.length >= policy.retry.limit ||
-          !policy.retry.dispositions.includes(
-            previous.result?.disposition ?? previous.process,
+          !(
+            policy.retry.dispositions.includes(
+              previous.result?.disposition ?? previous.process,
+            ) ||
+            // A delivered result whose mandatory canonical transition was
+            // rejected by artifact/postcondition validation never completed
+            // the role. An explicit successor may correct and revalidate it
+            // within the same retry bound; the rejected execution stays in
+            // history. Once a transition is recorded, nothing is retryable.
+            (previous.result !== null &&
+              previous.transition?.status === "blocked")
           ) ||
           !["exited", "failed", "cancelled", "interrupted"].includes(
             previous.process,

@@ -1042,3 +1042,52 @@
   - Not part of this run (supervisor operator-evidence work): H5E, the rerun
     of the affected Stockdif canary steps under H5, a D6-conformant canary
     record, and a human authorization naming the full H5E commit.
+
+## Run 016 — Implementation (Track A, correction candidate H6)
+
+- Skill: `implementation` v5,
+  `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+  (Role Grant
+  `sha256:6afbfbd85ebfbef822b9e395e0dc0e8f7cb3e4a22327f2f13e3ec71728ca715a`,
+  execution `7fab14e4-804b-45a6-84f7-836e98b314d4`, workflow
+  `014e-external-project-live-canary`).
+- Authority: human root `f459ef55-43d9-4154-9c16-d1fe12744b46` (permit-role
+  implementation, one use): generic bounded recovery when a semantic result
+  exists but its canonical transition was rejected by artifact validation.
+  Prior candidates (through H5 `0797d0f`) and all history are preserved.
+- Inputs (host-bound identities): `spike.md`
+  `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`;
+  `design-map.md`
+  `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`;
+  `eval-requirements.md`
+  `sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef`;
+  coverage
+  `sha256:24984d3f02ee978e5852c520211c3da6b1f8b3facc9ae7413f7a0ab92605c611`.
+  No `IMPLEMENTATION_FAILURE` feedback bound. No evaluator-private material
+  read.
+- Status: succeeded (local checkpoint; not independently evaluated).
+- Change: `ExecutionKernel.allocate` retry gate (`src/kernel/execution.ts`)
+  now also permits an explicit successor when the predecessor delivered a
+  result and its canonical transition is recorded `blocked` (never when
+  `recorded`). The existing process-terminal check, `retry.limit`
+  replacement count, resolver bounds and allocation budgets still apply, so
+  accounting is bounded. The rejected execution, result and blocked record
+  are untouched (forward-only); completion is recorded only when the
+  successor's own validation passes. Ordinary failed/interrupted retry and
+  successful flows are unchanged. The H5 recovery fix is retained.
+- Output identities (SHA-256): `src/kernel/execution.ts`
+  `2ebe446b98468d2fe4de84db33e5dee8a3031c46eb7a81b3098d68c9345767df`;
+  `test/kernel.test.ts`
+  `ce301c371ea39ebe58e0d60e669cd1819b5b3cb1c8860d067de373c8209b848f`.
+- Visible tests: two new H6 tests in `test/kernel.test.ts` — rejection →
+  corrected successor success with preserved history and single recorded
+  transition, then denial after canonical success; and the retry bound
+  (second rejection cannot be retried past `limit: 1`). Both fail against
+  the H5 `execution.ts` (0 pass / 2 fail) and pass now.
+- Checks: `npm test` 196/196 pass; `npm run typecheck` pass; `npm run lint`
+  pass.
+- Skipped: whole-tree `format:check` and clean-clone `npm run check`
+  (sandbox dotfile residue / no clone access; same as runs 005–013).
+- Measurements: wall-clock time and token usage unknown.
+- Limitations: Stockdif ledger not read; operator evidence (H6E, canary
+  rerun) is out of scope.
