@@ -1,5 +1,21 @@
 [
   {
+    "id": "codex-sol-medium",
+    "provider": "codex",
+    "model": "gpt-5.6-sol",
+    "reasoning": "medium",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
     "id": "claude-sonnet",
     "provider": "claude",
     "model": "sonnet",

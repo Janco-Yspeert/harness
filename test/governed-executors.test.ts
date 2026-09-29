@@ -973,7 +973,7 @@ void test("AC04/AC13/TR5: production executor configuration admits only register
   assert.throws(() => validateProductionExecutors({}), /array/);
 });
 
-void test("014e: normal Harness execution selects Sonnet and cannot implicitly select Opus", () => {
+void test("014e: public execution selects Codex, protected execution selects Sonnet, and neither implicitly selects Opus", () => {
   const configured = validateProductionExecutors(
     JSON.parse(
       readFileSync(resolve("harness.executors.json"), "utf8"),
@@ -982,6 +982,7 @@ void test("014e: normal Harness execution selects Sonnet and cannot implicitly s
   assert.deepEqual(
     configured.map(({ id, model, available }) => ({ id, model, available })),
     [
+      { id: "codex-sol-medium", model: "gpt-5.6-sol", available: true },
       { id: "claude-sonnet", model: "sonnet", available: true },
       {
         id: "claude-production",
@@ -1005,7 +1006,7 @@ void test("014e: normal Harness execution selects Sonnet and cannot implicitly s
     }) as unknown as RoleGrant;
 
   assert.equal(kernel.select(grant(true), "spawned")?.id, "claude-sonnet");
-  assert.equal(kernel.select(grant(false), "spawned")?.id, "claude-sonnet");
+  assert.equal(kernel.select(grant(false), "spawned")?.id, "codex-sol-medium");
   assert.equal(
     kernel.select(grant(true, "claude-opus-5-5"), "spawned"),
     undefined,
