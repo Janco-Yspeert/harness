@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "attempt": "002",
+  "execution": "7b471b6f-db44-4208-9ad9-b12977ca2d42",
+  "roleGrant": "sha256:fc3f73454138572fd61f791b561c24df7b60dda48d06e7e7f3949d0375aaf923",
+  "commit": "651352329cca473fb920139e1496f9f508eeabbb",
+  "evaluatorRevision": "001",
+  "evaluatorRevisionIdentity": "sha256:6c5da22f74c91e0047e44b5fd7bce1a322f0211fbd6301410797baebad3863bd",
+  "inputs": {
+    "brief": "sha256:52f1c9fc1164c3fa269d1a009e942cc00202e89fcf96e8ffb4228a519fa3a676",
+    "design": "sha256:b0c6aaf07569ee815d7055440948008cbdb6370439dd4126dc64adab97c8e0a3",
+    "evaluationRequirements": "sha256:f3fd130f1bd3d3e3348918eea6562a2dc2d23f89504dc87277c39df3293a0cca",
+    "coverage": "sha256:2af6e4309556149b48906fe026057e151423eda9a79f5e399a48db0172ee5b15"
+  },
+  "result": "BLOCKED",
+  "classification": "SPECIFICATION_AMBIGUITY",
+  "coverageResults": {
+    "AC01": "NOT_ADJUDICATED",
+    "AC02": "NOT_ADJUDICATED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "NOT_ADJUDICATED",
+    "AC06": "NOT_ADJUDICATED",
+    "AC07": "NOT_ADJUDICATED"
+  },
+  "accounting": {
+    "criteria": 7,
+    "satisfied": 2,
+    "notSatisfied": 0,
+    "notAdjudicated": 5,
+    "executableCases": 5,
+    "executablePassed": 4,
+    "failedProcedures": ["E5"],
+    "note": "The verifier session that ran this attempt was launched under the trusted pinned methodology, whose verifier grant still holds repository write and commit authority. The candidate's reduced verifier composition is therefore not the effective launch authority, and the observation of the verifier's real sandbox cannot establish the candidate's behavior. The brief and Design Map do not say how the candidate's composition becomes effective for the verifier that grades it. Contract, frozen-regression, genericity and frozen 014e checks passed. Lint, format check, full test suite and the manual review were not completed in this attempt. Attempt 001 returned no result (infrastructure)."
+  },
+  "regression": {
+    "command": "tsc --noEmit",
+    "exit": "0; lint, format:check and npm test not run in this attempt",
+    "tests": 0,
+    "passed": 0
+  },
+  "humanAcceptance": "Not applicable. Clarify in the specification how a candidate verifier composition takes effect for its own verification (or methodology adoption), then re-verify."
+}

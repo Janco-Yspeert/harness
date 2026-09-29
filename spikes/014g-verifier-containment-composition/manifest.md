@@ -37,3 +37,12 @@
 - Visible checks: `tsc --noEmit`, `eslint src test`, `prettier --check src test methodologies`, `npm test` (207 pass, 0 fail, 0 skipped; new `test/evidence-action.test.ts`, 014e tests unchanged)
 - Skipped: `prettier --check .` (untracked operator dotfiles in the checkout are unreadable in this sandbox); live Claude run of the verifier
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator Verify — execution 7b471b6f-db44-4208-9ad9-b12977ca2d42
+
+- Skill: `evaluator`, contract version 14, mode `verify`; attempt 002, evaluator revision `001`
+- Candidate: `651352329cca473fb920139e1496f9f508eeabbb`
+- Result: BLOCKED, classification SPECIFICATION_AMBIGUITY (2 criteria satisfied, 5 not adjudicated)
+- Output: `verification-result.json`
+- Note: the verifier launched under the pinned methodology, so the candidate composition was not the effective launch authority; attempt 001 returned no result.
+- Measurements: wall-clock time and token usage unavailable.
