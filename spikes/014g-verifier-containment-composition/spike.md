@@ -34,6 +34,8 @@ The Design Map must decide between the currently viable shapes rather than assum
 2. a host-mediated mutation or verification operation;
 3. a sandbox composition change that preserves exact workspace access while giving nested containment an uncontaminated parent boundary.
 
+If host-mediated mutation is selected, the evaluator must still author or explicitly bind the exact evidence bytes and destination it is requesting. The host may enforce and perform the mutation or commit, but must not infer substantive evaluator output, manufacture verification evidence, or expose a general arbitrary-file mutation API.
+
 ## Required behavior
 
 1. A protected verifier can read the exact public repository and evaluator-private workspace and cannot read arbitrary home, sibling-project, credential, or unrelated temporary paths.
@@ -43,13 +45,14 @@ The Design Map must decide between the currently viable shapes rather than assum
 5. The repair does not special-case Spike 014f, its candidate, its evaluator, or any Stockdif state.
 6. Existing governed execution, private-workspace isolation, promotion, containment, nested-sandbox, and executor-selection regressions remain green.
 7. After independent acceptance of this repair, Harness reruns 014f verification against unchanged candidate `a2ed538330ace7a51b9585dcba404035c72c973f` and unchanged evaluator revision `001`, preserving attempts 001 and 002 and allocating a new attempt.
+8. At freeze, record the exact repository path and committed identity of the containment regression whose assertion must remain unchanged. AC03 refers to those frozen bytes, not merely a test name or equivalent replacement.
 
 ## Acceptance criteria
 
 | ID | Mandatory acceptance |
 | --- | --- |
 | **AC01** | Protected verifier access is confined to the exact granted public and evaluator-private workspaces, with home, sibling, credential and unrelated temporary paths still denied. |
-| **AC02** | Authorized verifier evidence can be written and committed without granting broader ambient repository or host filesystem authority than the selected design requires. |
+| **AC02** | Authorized verifier evidence can be written and committed through only the workspace/capability surface required by the selected design, without granting write authority to unrelated repository paths or host filesystem locations.|
 | **AC03** | The existing nested-containment regression passes unchanged when executed through the real protected-verifier path; its security assertion is neither skipped nor weakened. |
 | **AC04** | The implementation is generic and contains no workflow-, spike-, candidate-, provider-fixture-, or Stockdif-specific exception. |
 | **AC05** | Existing governed execution, private exposure, promotion, containment, nested-sandbox and executor-selection regressions remain green. |
