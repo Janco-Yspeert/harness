@@ -92,3 +92,15 @@
   regression) not adjudicated: an environment-caused failure of one unrelated
   test in each run, plus an unreadable untracked file for the formatter.
 - No promotion requested. Measurements unavailable.
+
+## Evaluator verify — attempt 002
+
+- Skill: evaluator v14, mode verify. Candidate
+  `a2ed538330ace7a51b9585dcba404035c72c973f`, evaluator revision 001
+  (`sha256:393a71adc7df9fd60446a7cabcea16f4f7877d1604668720ee98d6dd03737f41`).
+- Result: BLOCKED, INFRASTRUCTURE_FAILURE. Frozen identities matched; 6/6
+  mandatory executable cases passed; 7/8 criteria satisfied. AC07 (repository
+  regression) not adjudicated: the verification sandbox grants write access to
+  the harness workspace, so one unrelated containment test cannot hold, and the
+  formatter cannot read an untracked sandbox artifact.
+- No promotion requested. Measurements unavailable.
