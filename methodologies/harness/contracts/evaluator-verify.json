@@ -1,13 +1,11 @@
 {
   "schemaVersion": 1,
   "workspaces": ["repository", "evaluation"],
-  "capabilities": [
-    "repository-read",
-    "repository-write",
-    "local-computation",
-    "git-inspect",
-    "git-commit"
-  ],
+  "capabilities": ["repository-read", "local-computation", "git-inspect"],
+  "evidence": {
+    "workspace": "repository",
+    "destinations": ["verification-result.json", "manifest.md", "feedback.md"]
+  },
   "forbiddenExposure": [],
   "protected": true,
   "inputs": [

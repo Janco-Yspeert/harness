@@ -19,6 +19,7 @@ import {
   object,
   text,
 } from "./kernel/ledger.ts";
+import { validEvidenceContract } from "./kernel/methodology.ts";
 import type { RoleContract, WorkflowPolicy } from "./kernel/model.ts";
 
 // The configured role set is always derived from the candidate policy and
@@ -33,6 +34,10 @@ const COMMON_CAPABILITIES = [
   "git-commit",
 ] as const;
 
+const MEDIATED_CAPABILITIES: readonly string[] = [
+  "repository-write",
+  "git-commit",
+];
 const CAPABILITY_VOCABULARY = [...COMMON_CAPABILITIES] as const;
 const CORE_EVALUATOR_ROLES = new Set([
   "evaluator-prepare",
@@ -552,8 +557,23 @@ function inspectMethodology(manifest: MethodologyManifest): CheckResult {
           component.contract.path,
           `unknown capability ${capability}`,
         );
+    // Mediated evidence replaces direct write and commit authority: the host
+    // writes on the role's behalf, so such a role must not hold either.
+    if (!validEvidenceContract(contract))
+      addDiagnostic(
+        diagnostics,
+        "EVIDENCE_AUTHORITY",
+        component.contract.path,
+        "mediated evidence needs an allowlist, a granted workspace and no direct write or commit capability",
+      );
     for (const capability of COMMON_CAPABILITIES)
-      if (!contract.capabilities.includes(capability))
+      if (
+        !contract.capabilities.includes(capability) &&
+        !(
+          contract.evidence !== undefined &&
+          MEDIATED_CAPABILITIES.includes(capability)
+        )
+      )
         addDiagnostic(
           diagnostics,
           "MISSING_CAPABILITY",
@@ -865,6 +885,7 @@ function privilegedRequirements(
   const outcomes = object(policy).outcomes;
   return {
     publication: contract.publication ?? null,
+    evidence: contract.evidence ?? null,
     requiredActions: Array.isArray(outcomes)
       ? outcomes.map((value: unknown) => object(value).requiredActions ?? [])
       : [],

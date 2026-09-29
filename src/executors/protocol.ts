@@ -20,13 +20,18 @@ export const RESULT_DISPOSITIONS = [
   "refused",
   "failed",
 ] as const;
-export const ACTION_KINDS = ["promotion", "publication"] as const;
+export const ACTION_KINDS = ["promotion", "publication", "evidence"] as const;
 export const HUMAN_KINDS = ["input", "approval", "root"] as const;
 // B: the one bound on artifact mappings in a single requestAction. The
 // published schema, request parsing, the host's promotion check and the
 // archive utility all use this definition. An eligible archive above B is
 // refused whole; it is never split, bundled or truncated.
 export const MAX_ACTION_ARTIFACTS = 64;
+// Bounds for one evidence request: file count, bytes of any one file and total
+// bytes. A request always fits within the relay and host request limits.
+export const MAX_EVIDENCE_FILES = 8;
+export const MAX_EVIDENCE_FILE_BYTES = 65_536;
+export const MAX_EVIDENCE_BYTES = 131_072;
 
 type Json = Record<string, unknown>;
 export type WorkerRequest =
@@ -47,6 +52,11 @@ export type WorkerRequest =
         destination: string;
         identity: string;
       }>;
+    }
+  | {
+      operation: "requestAction";
+      kind: "evidence";
+      files: Array<{ destination: string; content: string }>;
     }
   | {
       operation: "requestAction";
@@ -128,7 +138,7 @@ export const WORKER_PROTOCOL_SCHEMAS = {
     },
     requestAction: {
       description:
-        "Request one host-configured action for this execution. kind=promotion needs candidate, evaluatorRevision, attempt and artifacts; kind=publication needs workspace, commit and ref. The host validates and may deny it.",
+        "Request one host-configured action for this execution. kind=promotion needs candidate, evaluatorRevision, attempt and artifacts; kind=publication needs workspace, commit and ref; kind=evidence needs files, each the exact destination and UTF-8 content bytes you authored, which the host writes and commits only when the destinations are allowed by your contract. The host validates and may deny it.",
       request: {
         type: "object",
         additionalProperties: false,
@@ -156,6 +166,20 @@ export const WORKER_PROTOCOL_SCHEMAS = {
           workspace: string,
           commit: string,
           ref: string,
+          files: {
+            type: "array",
+            minItems: 1,
+            maxItems: MAX_EVIDENCE_FILES,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["destination", "content"],
+              properties: {
+                destination: string,
+                content: { type: "string", maxLength: MAX_EVIDENCE_FILE_BYTES },
+              },
+            },
+          },
         },
       },
       response: {
@@ -273,6 +297,37 @@ export function parseWorkerRequest(
       workspace: field(args, "workspace", op),
       commit: field(args, "commit", op),
       ref: field(args, "ref", op),
+    };
+  }
+  if (kind === "evidence") {
+    only(args, ["kind", "files"], op);
+    const files = args.files;
+    if (
+      !Array.isArray(files) ||
+      files.length < 1 ||
+      files.length > MAX_EVIDENCE_FILES
+    )
+      fail(
+        `${op}: files must be a nonempty array of at most ${String(MAX_EVIDENCE_FILES)} files`,
+      );
+    let total = 0;
+    return {
+      operation: op,
+      kind,
+      files: files.map((entry) => {
+        const file = record(entry, `${op} file`);
+        only(file, ["destination", "content"], `${op} file`);
+        const content = file.content;
+        if (
+          typeof content !== "string" ||
+          Buffer.byteLength(content) > MAX_EVIDENCE_FILE_BYTES
+        )
+          fail(`${op}: content must be a string within the file bound`);
+        total += Buffer.byteLength(content);
+        if (total > MAX_EVIDENCE_BYTES)
+          fail(`${op}: files exceed the total byte bound`);
+        return { destination: field(file, "destination", op), content };
+      }),
     };
   }
   only(

@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -22,8 +23,13 @@ import {
   required,
   scopedEvents,
 } from "./ledger.ts";
-import { MAX_ACTION_ARTIFACTS } from "../executors/protocol.ts";
-import { inside, loadDefinition } from "./methodology.ts";
+import {
+  MAX_ACTION_ARTIFACTS,
+  MAX_EVIDENCE_BYTES,
+  MAX_EVIDENCE_FILE_BYTES,
+  MAX_EVIDENCE_FILES,
+} from "../executors/protocol.ts";
+import { evidencePath, inside, loadDefinition } from "./methodology.ts";
 import {
   authorityBasis,
   recoveryScopedAuthorityBasis,
@@ -37,6 +43,8 @@ import {
 } from "./model.ts";
 import type {
   Data,
+  EvidenceActionRequest,
+  EvidenceActionResult,
   Execution,
   ExecutorProfile,
   ExecutorSelector,
@@ -1873,6 +1881,222 @@ export class ExecutionKernel {
       } catch (error) {
         action.reason =
           (error as Error).message.split("\n")[0] ?? "publication failed";
+      }
+      this.#append(workflow, "kernel.action-result", {
+        ...action,
+        execution: id,
+      });
+      this.#actionDiagnostic(workflow, id, action);
+      this.#transition(workflow, id);
+      this.#telemetry("host-action", execution, action.id);
+      return action;
+    });
+  }
+  // Host-mediated evidence write. The role supplies exact destinations and
+  // bytes; the host checks them against the contract allowlist recorded in the
+  // grant, writes only those files, and commits only those paths under an
+  // identity that names the allocated execution. It never infers or generates
+  // content. Anything outside the allowlist is denied before any write.
+  recordEvidence(
+    workflow: string,
+    id: string,
+    files: Array<{ destination: string; content: string }>,
+  ): EvidenceActionResult {
+    return this.#transaction(workflow, () => {
+      const execution = this.execution(workflow, id);
+      const grant = this.roleGrant(workflow, execution.roleGrant);
+      const request: EvidenceActionRequest = {
+        schemaVersion: 1,
+        id: randomUUID(),
+        execution: id,
+        roleGrant: grant.id,
+        kind: "evidence",
+        files: files.map((file) => ({
+          destination: file.destination,
+          identity: identity(Buffer.from(file.content)),
+          bytes: Buffer.byteLength(file.content),
+        })),
+      };
+      this.#append(workflow, "kernel.action-request", { ...request });
+      const action: EvidenceActionResult = {
+        schemaVersion: 1,
+        id: randomUUID(),
+        request,
+        status: "denied",
+        before: null,
+        after: null,
+        reason: null,
+        directPublication: false,
+      };
+      const restore: Array<() => void> = [];
+      let repository: string | undefined;
+      let paths: string[] = [];
+      try {
+        const allowed = grant.hostActions.evidence;
+        const total = files.reduce(
+          (sum, file) => sum + Buffer.byteLength(file.content),
+          0,
+        );
+        if (
+          !allowed ||
+          execution.superseded ||
+          execution.attention === "WAITING_FOR_HUMAN" ||
+          ["interrupted", "cancelled", "failed"].includes(execution.process)
+        )
+          throw new Error("evidence outside role grant");
+        if (
+          files.length === 0 ||
+          files.length > MAX_EVIDENCE_FILES ||
+          total > MAX_EVIDENCE_BYTES ||
+          files.some(
+            (file) => Buffer.byteLength(file.content) > MAX_EVIDENCE_FILE_BYTES,
+          )
+        )
+          throw new Error("evidence exceeds its request bound");
+        if (
+          new Set(files.map((file) => file.destination)).size !== files.length
+        )
+          throw new Error("evidence destinations are duplicated");
+        for (const file of files)
+          if (
+            !evidencePath(file.destination) ||
+            !allowed.destinations.some((rule) =>
+              rule.endsWith("/")
+                ? file.destination.startsWith(rule)
+                : file.destination === rule,
+            )
+          )
+            throw new Error("evidence destination outside role contract");
+        const workspace =
+          this.project.workflows[workflow]?.workspaces?.[allowed.workspace] ??
+          this.project.workspaces[allowed.workspace];
+        if (
+          !workspace ||
+          !grant.workspaces.some(
+            (item) => item.id === workspace.id && item.path === workspace.path,
+          )
+        )
+          throw new Error("evidence workspace outside role grant");
+        action.status = "failed";
+        repository = realpathSync(workspace.path);
+        const workflowRoot = realpathSync(
+          resolve(
+            this.project.root,
+            required(this.project.workflows[workflow]).directory,
+          ),
+        );
+        const delta = relative(repository, workflowRoot);
+        if (delta === ".." || delta.startsWith("../") || isAbsolute(delta))
+          throw new Error("evidence workspace does not contain the workflow");
+        const targets = files.map((file) => {
+          // No symbolic link may stand between the workflow and a target.
+          let current = workflowRoot;
+          for (const part of file.destination.split("/")) {
+            current = resolve(current, part);
+            if (existsSync(current) && lstatSync(current).isSymbolicLink())
+              throw new Error("evidence destination crosses a symbolic link");
+          }
+          if (existsSync(current) && !lstatSync(current).isFile())
+            throw new Error("evidence destination is not a regular file");
+          return current;
+        });
+        paths = targets.map((target) => relative(repository ?? "", target));
+        const env = {
+          ...process.env,
+          GIT_AUTHOR_NAME: `harness-execution-${id}`,
+          GIT_AUTHOR_EMAIL: `${id}@harness.invalid`,
+          GIT_COMMITTER_NAME: `harness-execution-${id}`,
+          GIT_COMMITTER_EMAIL: `${id}@harness.invalid`,
+          GIT_TERMINAL_PROMPT: "0",
+        };
+        const git = (args: string[]): string =>
+          execFileSync(
+            "git",
+            [
+              "-C",
+              required(repository),
+              "-c",
+              "core.hooksPath=/dev/null",
+              "-c",
+              "commit.gpgsign=false",
+              ...args,
+            ],
+            { encoding: "utf8", stdio: "pipe", env },
+          ).trim();
+        action.before = git(["rev-parse", "--verify", "HEAD^{commit}"]);
+        for (const [index, target] of targets.entries()) {
+          const prior = existsSync(target) ? readFileSync(target) : null;
+          const created: string[] = [];
+          let directory = dirname(target);
+          while (!existsSync(directory) && directory !== workflowRoot) {
+            created.push(directory);
+            directory = dirname(directory);
+          }
+          mkdirSync(dirname(target), { recursive: true });
+          restore.push(() => {
+            if (prior) writeFileSync(target, prior);
+            else rmSync(target, { force: true });
+            for (const path of created) rmSync(path, { recursive: true });
+          });
+          writeFileSync(target, required(files[index]).content);
+        }
+        git(["add", "--", ...paths]);
+        if (git(["diff", "--cached", "--name-only", "--", ...paths]) === "")
+          throw new Error("evidence would not change the repository");
+        const message = [
+          `evidence(${grant.role}): record ${String(files.length)} artifact${files.length === 1 ? "" : "s"}`,
+          "",
+          `Harness-Execution: ${id}`,
+          `Harness-Role-Grant: ${grant.id}`,
+          `Harness-Action: ${action.id}`,
+          ...request.files.map(
+            (file) => `Harness-Evidence: ${file.destination} ${file.identity}`,
+          ),
+        ].join("\n");
+        git([
+          "commit",
+          "-q",
+          "--no-verify",
+          "--only",
+          "-m",
+          message,
+          "--",
+          ...paths,
+        ]);
+        restore.length = 0;
+        action.after = git(["rev-parse", "--verify", "HEAD^{commit}"]);
+        for (const [index, path] of paths.entries())
+          if (
+            identity(
+              execFileSync(
+                "git",
+                ["-C", repository, "show", `${action.after}:${path}`],
+                { stdio: "pipe" },
+              ),
+            ) !== required(request.files[index]).identity
+          )
+            throw new Error("committed evidence differs from the request");
+        action.status = "succeeded";
+      } catch (error) {
+        for (const undo of restore.reverse()) {
+          try {
+            undo();
+          } catch {
+            /* best effort: the failure is already recorded */
+          }
+        }
+        if (repository && paths.length > 0 && restore.length > 0)
+          try {
+            execFileSync(
+              "git",
+              ["-C", repository, "reset", "-q", "--", ...paths],
+              { stdio: "pipe" },
+            );
+          } catch {
+            /* the index is restored on the next explicit add */
+          }
+        action.reason =
+          (error as Error).message.split("\n")[0] ?? "evidence failed";
       }
       this.#append(workflow, "kernel.action-result", {
         ...action,

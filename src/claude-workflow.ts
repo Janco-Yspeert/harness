@@ -97,7 +97,10 @@ export const GOVERNED_CLAUDE_FLAGS: readonly string[] =
 
 // OS sandbox for command execution: block siblings of every granted workspace
 // (notably arbitrary /tmp entries), then re-open only the exact allocation.
-export function claudeSandboxSettings(workspaces: readonly string[]): string {
+export function claudeSandboxSettings(
+  workspaces: readonly string[],
+  readOnly: readonly string[] = [],
+): string {
   return JSON.stringify({
     permissions: { blockReadsOutsideWorkingDirectories: true },
     sandbox: {
@@ -111,6 +114,8 @@ export function claudeSandboxSettings(workspaces: readonly string[]): string {
           ...new Set(workspaces.map((workspace) => dirname(workspace))),
         ],
         allowRead: [...workspaces],
+        // Granted read-only workspaces stay unwritable from commands too.
+        ...(readOnly.length > 0 ? { denyWrite: [...readOnly] } : {}),
       },
     },
   });
@@ -321,7 +326,15 @@ export function buildGovernedClaudeCommand(
     "--mcp-config",
     launch.mcpConfig,
     ...(permissions.commands
-      ? ["--settings", claudeSandboxSettings(commandWorkspaces)]
+      ? [
+          "--settings",
+          claudeSandboxSettings(
+            commandWorkspaces,
+            launch.workspaces
+              .filter((workspace) => workspace.mode === "read")
+              .map((workspace) => workspace.path),
+          ),
+        ]
       : []),
     "--tools",
     permissions.tools.join(","),

@@ -567,6 +567,26 @@ export function planLaunch(
   contained = false,
 ): { model?: string; reasoning?: string } {
   adapter.checkCapabilities(grant.capabilities);
+  // Mediated evidence is only meaningful when the role can neither write nor
+  // commit directly and its evidence workspace is read-only. Every registered
+  // adapter enforces a read-only workspace; a grant that does not describe that
+  // composition is refused rather than launched with a write grant.
+  const evidence = (grant.hostActions as RoleGrant["hostActions"] | undefined)
+    ?.evidence;
+  if (evidence) {
+    const workspace = grant.workspaces.find(
+      (item) => item.id === evidence.workspaceId,
+    );
+    if (
+      grant.capabilities.includes("repository-write") ||
+      grant.capabilities.includes("git-commit") ||
+      workspace?.mode !== "read"
+    )
+      throw new AdapterRefusal(
+        "provider-config-invalid",
+        "mediated evidence requires a read-only workspace and no direct write or commit capability",
+      );
+  }
   if (
     (grant.executorConstraints.protected ||
       grant.executorConstraints.forbiddenExposure.length > 0) &&

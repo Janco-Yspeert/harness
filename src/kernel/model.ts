@@ -60,6 +60,15 @@ export interface RoleContract {
     commitInput: string;
     baseInput: string;
   };
+  // Host-mediated evidence writes. The role authors exact file bytes and the
+  // host writes and commits only allowlisted destinations. Destinations are
+  // relative to the workflow directory; an entry ending in "/" is a directory
+  // prefix. The named workspace is granted read-only, and such a contract
+  // carries neither repository-write nor git-commit.
+  evidence?: {
+    workspace: string;
+    destinations: string[];
+  };
   promotion?: {
     sourceWorkspace: string;
     destinationWorkspace: string;
@@ -332,6 +341,12 @@ export interface RoleGrant {
   workspaces: Workspace[];
   capabilities: string[];
   hostActions: {
+    evidence?: {
+      workspace: string;
+      // Identity of the read-only workspace the host writes on the role's behalf.
+      workspaceId: string;
+      destinations: string[];
+    };
     publication?: {
       workspace: string;
       remote: string;
@@ -451,8 +466,21 @@ export interface PromotionActionRequest {
   attempt: number;
   artifacts: PromotionArtifact[];
 }
+export interface EvidenceFileRecord {
+  destination: string;
+  identity: string;
+  bytes: number;
+}
+export interface EvidenceActionRequest {
+  schemaVersion: 1;
+  id: string;
+  execution: string;
+  roleGrant: string;
+  kind: "evidence";
+  files: EvidenceFileRecord[];
+}
 export type HostActionRequest =
-  PublicationActionRequest | PromotionActionRequest;
+  PublicationActionRequest | PromotionActionRequest | EvidenceActionRequest;
 export interface PublicationActionResult {
   schemaVersion: 1;
   id: string;
@@ -474,7 +502,18 @@ export interface PromotionActionResult {
   reason: string | null;
   directPublication: false;
 }
-export type HostActionResult = PublicationActionResult | PromotionActionResult;
+export interface EvidenceActionResult {
+  schemaVersion: 1;
+  id: string;
+  request: EvidenceActionRequest;
+  status: "succeeded" | "failed" | "denied";
+  before: string | null;
+  after: string | null;
+  reason: string | null;
+  directPublication: false;
+}
+export type HostActionResult =
+  PublicationActionResult | PromotionActionResult | EvidenceActionResult;
 export interface Telemetry {
   schemaVersion: 1;
   source: "host";

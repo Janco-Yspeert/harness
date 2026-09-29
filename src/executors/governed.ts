@@ -95,6 +95,7 @@ const WORKER_RULES =
   `Harness worker protocol v${String(WORKER_PROTOCOL_VERSION)} is available as the "harness" tools ${WORKER_OPERATIONS.join(", ")}.\n` +
   "- Your final prose is never a result. Submit exactly one typed result with submitResult {disposition, methodology}, using only the contract's result and methodology vocabulary.\n" +
   "- Use requestAction only when your skill or contract requires a host action; the host validates it and may deny it. Inspect the returned action status; only status succeeded means the action happened.\n" +
+  '- When your Role Grant lists hostActions.evidence, the repository is read-only for you and you hold no direct write or commit authority. Wherever your skill says to write, commit or checkpoint a public artifact at a destination that grant allows, author the exact bytes yourself and call requestAction with kind "evidence" and files [{destination, content}]; the host writes and commits only those bytes and returns the commit. A denied or failed action recorded nothing. Send each file\'s complete content (for an append-only file, the whole file with prior entries preserved).\n' +
   "- Use requestHuman only for input, approval or root requests the contract permits.\n" +
   "- Use only the granted workspaces and capabilities. Never push, publish directly, or reveal credentials.\n" +
   "- Read detailed inputs just in time from their bound paths inside granted workspaces; the identities below say which exact bytes are authoritative.";
@@ -654,11 +655,15 @@ export class GovernedProviderRun {
               attempt: request.attempt,
               artifacts: request.artifacts,
             })
-          : await this.#call("POST", `${path}/publish`, {
-              workspace: request.workspace,
-              commit: request.commit,
-              ref: request.ref,
-            });
+          : request.kind === "evidence"
+            ? await this.#call("POST", `${path}/evidence`, {
+                files: request.files,
+              })
+            : await this.#call("POST", `${path}/publish`, {
+                workspace: request.workspace,
+                commit: request.commit,
+                ref: request.ref,
+              });
       if (!response.ok) {
         this.#diagnostic("action-failed", "host rejected action request");
         throw failure(response.value);

@@ -9,6 +9,47 @@ import type {
   ArtifactValidators,
 } from "./model.ts";
 
+// An evidence destination is a plain relative path under the workflow
+// directory: no absolute path, dot segments, Git metadata or backslashes. A
+// trailing "/" declares a directory prefix in a contract allowlist.
+export function evidencePath(path: unknown, prefix = false): boolean {
+  if (typeof path !== "string" || path.length === 0 || path.length > 512)
+    return false;
+  if (path.startsWith("/") || path.includes("\\") || path.includes("\0"))
+    return false;
+  const trimmed = prefix ? path.replace(/\/$/, "") : path;
+  if (prefix && trimmed === path) return false;
+  return (
+    trimmed.length > 0 &&
+    trimmed
+      .split("/")
+      .every(
+        (part) =>
+          part !== "" &&
+          part !== "." &&
+          part !== ".." &&
+          part.toLowerCase() !== ".git",
+      )
+  );
+}
+// A contract that mediates evidence writes must not also hold direct write or
+// commit authority: the host could not then keep the workspace read-only.
+export function validEvidenceContract(contract: RoleContract): boolean {
+  const evidence = contract.evidence;
+  if (evidence === undefined) return true;
+  return (
+    typeof evidence.workspace === "string" &&
+    contract.workspaces.includes(evidence.workspace) &&
+    !contract.capabilities.includes("repository-write") &&
+    !contract.capabilities.includes("git-commit") &&
+    Array.isArray(evidence.destinations) &&
+    evidence.destinations.length > 0 &&
+    evidence.destinations.every(
+      (item) =>
+        typeof item === "string" && evidencePath(item, item.endsWith("/")),
+    )
+  );
+}
 export function inside(root: string, path: string): string {
   const absolute = resolve(root, path);
   const delta = relative(realpathSync(root), realpathSync(absolute));
@@ -68,6 +109,7 @@ export function definitionFrom(
       !Array.isArray(contract.postconditions) ||
       (contract.resultConstraints !== undefined &&
         !Array.isArray(contract.resultConstraints)) ||
+      !validEvidenceContract(contract) ||
       (contract.promotion !== undefined &&
         (!contract.workspaces.includes(contract.promotion.sourceWorkspace) ||
           !contract.workspaces.includes(

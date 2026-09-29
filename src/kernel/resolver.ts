@@ -317,12 +317,17 @@ export function resolveAuthority(
   } catch (e) {
     return { kind: "denied", reason: (e as Error).message };
   }
+  const evidence = role.contract.evidence;
   const workspaces = role.contract.workspaces.map((key) => {
     const value =
       project.workflows[workflow.workflow]?.workspaces?.[key] ??
       project.workspaces[key];
     if (!value) throw new Error(`workspace not configured: ${key}`);
-    return value;
+    // Evidence is written only by the host, so the role never holds write
+    // access to the workspace it mediates, whatever the project configures.
+    return evidence?.workspace === key
+      ? { ...value, mode: "read" as const }
+      : value;
   });
   if (
     role.contract.protected &&
@@ -385,6 +390,19 @@ export function resolveAuthority(
     workspaces,
     capabilities: role.contract.capabilities,
     hostActions: {
+      ...(evidence
+        ? {
+            evidence: {
+              workspace: evidence.workspace,
+              workspaceId: required(
+                workspaces[
+                  role.contract.workspaces.indexOf(evidence.workspace)
+                ],
+              ).id,
+              destinations: [...evidence.destinations],
+            },
+          }
+        : {}),
       ...(publicationAction ? { publication: publicationAction } : {}),
       ...(promotionAction ? { promotion: promotionAction } : {}),
     },

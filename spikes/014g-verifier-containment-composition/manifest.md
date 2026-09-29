@@ -26,3 +26,14 @@
 - Outputs: `eval-requirements.md` (`sha256:f3fd130f1bd3d3e3348918eea6562a2dc2d23f89504dc87277c39df3293a0cca`), `coverage-map.json` (7 criterion records, pre-freeze integrity validation PASS)
 - Coverage: 5 executable cases, 1 public regression, 1 manual review
 - Measurements: wall-clock time and token usage unavailable.
+
+## Implementation — execution a8d59759-cc65-40ed-9ca3-889367fee534
+
+- Skill: `implementation`, contract version 5; branch `feat/spike-014`
+- Inputs: brief `sha256:52f1c9fc1164c3fa269d1a009e942cc00202e89fcf96e8ffb4228a519fa3a676`, Design Map `sha256:b0c6aaf07569ee815d7055440948008cbdb6370439dd4126dc64adab97c8e0a3`, coverage `sha256:2af6e4309556149b48906fe026057e151423eda9a79f5e399a48db0172ee5b15`, requirements `sha256:f3fd130f1bd3d3e3348918eea6562a2dc2d23f89504dc87277c39df3293a0cca`; no implementation feedback (first attempt)
+- Result: succeeded (candidate committed locally; independent verification not yet run)
+- Output: candidate patch (staged code, contract and test paths, excluding this entry) `sha256:53eeeffa8367e40bcf347ac5d8736dc310e77d1df286291eedc8a4ac4f17220c`
+- Change: host-mediated `requestAction` kind `evidence` (contract `evidence` allowlist, grant `hostActions.evidence`); `evaluator-verify` loses repository-write and git-commit and receives its repository workspace read-only; launch refused in `planLaunch` when the composition is not enforceable; Claude command sandbox denies command writes to read-only workspaces
+- Visible checks: `tsc --noEmit`, `eslint src test`, `prettier --check src test methodologies`, `npm test` (207 pass, 0 fail, 0 skipped; new `test/evidence-action.test.ts`, 014e tests unchanged)
+- Skipped: `prettier --check .` (untracked operator dotfiles in the checkout are unreadable in this sandbox); live Claude run of the verifier
+- Measurements: wall-clock time and token usage unavailable.

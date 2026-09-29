@@ -233,7 +233,8 @@ export class GovernedHost {
         let bytes = "";
         for await (const chunk of request) {
           bytes += String(chunk);
-          if (bytes.length > 65536) throw new Error("request too large");
+          if (bytes.length > (sub === "evidence" ? 262_144 : 65536))
+            throw new Error("request too large");
         }
         body = object(JSON.parse(bytes || "{}"));
       }
@@ -781,6 +782,28 @@ export class GovernedHost {
               text(body.workspace),
               text(body.commit),
               text(body.ref),
+            ),
+          );
+          return;
+        }
+        if (sub === "evidence") {
+          const files = body.files;
+          if (!Array.isArray(files))
+            throw new Error("evidence files are required");
+          send(
+            200,
+            this.kernel.recordEvidence(
+              workflow,
+              execution.id,
+              files.map((entry) => {
+                const file = object(entry);
+                if (typeof file.content !== "string")
+                  throw new Error("evidence content must be a string");
+                return {
+                  destination: text(file.destination),
+                  content: file.content,
+                };
+              }),
             ),
           );
           return;
