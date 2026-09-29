@@ -81,3 +81,14 @@
   unreadable untracked `.zshrc` (EACCES) in the environment. `git diff --check`
   was not run.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator verify — attempt 001
+
+- Skill: evaluator v14, mode verify. Candidate
+  `a2ed538330ace7a51b9585dcba404035c72c973f`, evaluator revision 001
+  (`sha256:393a71adc7df9fd60446a7cabcea16f4f7877d1604668720ee98d6dd03737f41`).
+- Result: BLOCKED, INFRASTRUCTURE_FAILURE. Frozen identities matched; 6/6
+  mandatory executable cases passed; 7/8 criteria satisfied. AC07 (repository
+  regression) not adjudicated: an environment-caused failure of one unrelated
+  test in each run, plus an unreadable untracked file for the formatter.
+- No promotion requested. Measurements unavailable.

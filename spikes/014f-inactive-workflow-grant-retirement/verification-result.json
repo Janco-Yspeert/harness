@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "attempt": "001",
+  "allocationKey": "sha256:eed7664d9cfe636a2a44db0dbfdf0f9245ca678350166a82901fa1c1394ca83c",
+  "execution": "3ceef474-5ddc-4318-909c-d56d428a1b08",
+  "roleGrant": "sha256:a13e9890a387b5fa3da1280950a6c4f48cded9216f0a7ac2eabfd343217da2f1",
+  "commit": "a2ed538330ace7a51b9585dcba404035c72c973f",
+  "evaluatorRevision": "001",
+  "evaluatorRevisionIdentity": "sha256:393a71adc7df9fd60446a7cabcea16f4f7877d1604668720ee98d6dd03737f41",
+  "inputs": {
+    "brief": "sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c",
+    "design": "sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34",
+    "evaluationRequirements": "sha256:50182839061aeb7bd3efe6da2f6ce6d7166bb1ee6d0f6d393b4c692897c80820",
+    "coverage": "sha256:dbe3a22d7e23d1ecb48e8923dbe23011e6a7104716fe91d44d1fc21518a50d68"
+  },
+  "result": "BLOCKED",
+  "classification": "INFRASTRUCTURE_FAILURE",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "NOT_ADJUDICATED",
+    "AC08": "SATISFIED"
+  },
+  "accounting": {
+    "criteria": 8,
+    "satisfied": 7,
+    "notSatisfied": 0,
+    "notAdjudicated": 1,
+    "executableCases": 6,
+    "executablePassed": 6,
+    "failedProcedures": [],
+    "note": "AC07 (existing regression suite) could not be established: the verification environment caused one unrelated repository test failure in each run and an unreadable untracked file for the formatter. No failure touches the retirement change."
+  },
+  "regression": {
+    "command": "npm test; npm run typecheck; npm run lint; npm run format:check; git diff --check",
+    "exit": "typecheck, lint and diff check 0; npm test 197/198 with an environment-caused failure; format check environment-blocked in the working checkout and clean in a clean worktree",
+    "tests": 198,
+    "passed": 197
+  },
+  "humanAcceptance": "Not applicable. Re-verify the unchanged candidate in an environment where the repository suite can run unconstrained."
+}
