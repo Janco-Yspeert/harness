@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "spike": "014g-verifier-containment-composition",
+  "evaluationRequirements": "sha256:f3fd130f1bd3d3e3348918eea6562a2dc2d23f89504dc87277c39df3293a0cca",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 14,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:6c5da22f74c91e0047e44b5fd7bce1a322f0211fbd6301410797baebad3863bd",
+    "privateInventoryIdentity": "sha256:a3ff74def9d04150f6ea26ad0d6e76cdb002406ee765333be670d02bc5a1b60d",
+    "validatorResultBinding": "sha256:13b8f0c176d5cbbdb2ba7028ae516b1226faf02f7be4af3e604b3a4c14d59e3f",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 7
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01, required behavior 1; design-map.md SC2, SC3 and invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E2", "E5"],
+      "sufficiency": "E5 observes, from inside the allocated verifier session, that the granted public and evaluator-private workspaces are readable while home, sibling, temporary and credential locations expose nothing beyond granted paths. E2 runs the frozen protected-worker exposure regression as a verifier command."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02, required behavior 2 and 3; design-map.md SC3, SC4",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E4", "E5", "P1"],
+      "sufficiency": "E4 shows the verifier contract no longer carries repository-write or git-commit while keeping its exact workspaces. E5 shows the verifier cannot write the repository tree yet writes its private workspace. P1 reviews the mediated evidence action for an allowlist derived from contract data, requester-supplied bytes, attribution, ledger recording and no arbitrary-path mutation."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03, required behavior 4 and 8; design-map.md SC1, SC2",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E1", "E2"],
+      "sufficiency": "E1 proves every frozen 014e test block is byte-identical to the recorded blob, so nothing was weakened or rewritten. E2 runs the whole frozen group as a command of the verifier under its effective sandbox and requires each title to pass exactly once with no skip."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04, required behavior 5; design-map.md generic mechanism",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E3"],
+      "sufficiency": "E3 scans the added non-comment code and data under the implementation paths against the frozen base and fails on any workflow, spike, candidate or Stockdif identifier."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05, required behavior 6; design-map.md invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E4", "R1"],
+      "sufficiency": "R1 requires the repository's typecheck, lint, format check and full test suite, which hold the governed-execution, exposure, promotion, containment and executor-selection regressions, to pass unchanged. E4 confirms every other governed role contract and policy entry is byte-identical to base."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; design-map.md SC3, SC5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E4", "P1"],
+      "sufficiency": "E4 confirms the effective capabilities and workspaces in the resolved role contract. P1 confirms they are visible in the verifier's own Role Grant and that the candidate ships passing tests for refusal before session and allocation with no fallback."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07, required behavior 7; design-map.md invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E4", "R1"],
+      "sufficiency": "E4 shows the 014f candidate commit remains in history and that the 014e and 014f spike directories, including prior attempts and evaluator revision, are unchanged from base. R1 shows the kernel and allocation regressions that a later 014f allocation relies on still pass."
+    }
+  ]
+}
