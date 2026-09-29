@@ -1091,3 +1091,66 @@
 - Measurements: wall-clock time and token usage unknown.
 - Limitations: Stockdif ledger not read; operator evidence (H6E, canary
   rerun) is out of scope.
+
+## Run 017 — Implementation (Track A, H6 governed successor)
+
+- Skill: `implementation` v5,
+  `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+  (Role Grant
+  `sha256:b987caa54f76f27b853048dc54d7c8312e67f1213132b395ae05f33687fa0085`,
+  execution `f65e4440-3bc2-47b1-bc70-07c4d9bc2265`, workflow
+  `014e-external-project-live-canary`).
+- Inputs (SHA-256 recomputed and matched against the host-bound identities):
+  - frozen `spike.md`
+    `sha256:ff7a11e3990c4bff89dd151fc04bfb9931cd7ece940170f1747b901f50ef3322`;
+  - frozen `design-map.md`
+    `sha256:997690bb15a9436beb08fc547881b005b80ce3d010591488dd21c490a40f97c0`;
+  - `eval-requirements.md`
+    `sha256:186a2cc1809fab3561aa1bd523123d511051bc66386141328f32a8251160b3ef`;
+  - coverage binding (evaluator revision 002)
+    `sha256:24984d3f02ee978e5852c520211c3da6b1f8b3facc9ae7413f7a0ab92605c611`.
+  - No `IMPLEMENTATION_FAILURE` feedback was bound. No evaluator-private
+    material was read.
+- Baseline: `feat/spike-014` at
+  `168177dbf4f422966546911f3a5f8512de396387`. This is H6
+  `366067d6fd54b33aa3f3bd09b3db6bb36986fd40` plus the separately committed
+  administrator executor-routing checkpoint. Existing unrelated workflow
+  ledger changes were left untouched and excluded from this checkpoint.
+- Status: succeeded. The frozen implementation is complete at this local
+  checkpoint; no additional implementation change was required by the bound
+  public inputs.
+- Decisions:
+  - Retained H6's bounded successor behavior and H5's delivered-result
+    recovery behavior unchanged. Their committed output identities still
+    match: `src/kernel/execution.ts`
+    `sha256:2ebe446b98468d2fe4de84db33e5dee8a3031c46eb7a81b3098d68c9345767df`
+    and `test/kernel.test.ts`
+    `sha256:ce301c371ea39ebe58e0d60e669cd1819b5b3cb1c8860d067de373c8209b848f`.
+  - Preserved the administrator routing checkpoint without claiming it as
+    this worker's change. Its committed identities are
+    `harness.executors.json`
+    `sha256:c0656d3fd4564cb354f442e3089dd5c79e5a6b37665b54b8efdb785db4dc60aa`
+    and `test/governed-executors.test.ts`
+    `sha256:229b201ffe1b2e1ca721f294b83be0ce492129b3ccb1f869333199dfb5510cff`.
+  - Confirmed the trusted methodology and orchestrator have no diff from the
+    brief-freeze commit.
+- Checks:
+  - `npm run typecheck`: pass.
+  - `npm run lint`: pass.
+  - Prettier check of every tracked file: pass.
+  - Focused executor-routing regression
+    (`node --test --test-name-pattern='014e: public execution selects Codex' test/governed-executors.test.ts`):
+    1 test, 1 pass.
+- Broader-suite limitation: `npm test` was attempted twice. In this governed
+  worker sandbox, fixture tests cannot spawn `git` (`spawnSync git EPERM`) and
+  cannot read host-owned workflow ledgers (`EACCES`); the aggregate runner
+  then remained open without a final summary and was terminated. A direct
+  focused run exposed those environment denials. No assertion failure in the
+  changed routing behavior was observed. Run 016's pre-administrator suite
+  remains the last complete broad result (196/196 pass).
+- Skipped: clean-clone `npm run check`, because this worker cannot create the
+  Git fixture repositories required by the suite. Whole-tree `format:check`
+  was replaced by the tracked-file check to avoid unrelated sandbox residue.
+- Measurements: wall-clock time and token usage unknown.
+- Limitations: independent evaluation has not passed; H6E and the Stockdif
+  canary rerun remain supervisor/operator-evidence work outside this role.
