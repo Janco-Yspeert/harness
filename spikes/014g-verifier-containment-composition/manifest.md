@@ -46,3 +46,12 @@
 - Output: `verification-result.json`
 - Note: the verifier launched under the pinned methodology, so the candidate composition was not the effective launch authority; attempt 001 returned no result.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator Verify — execution 10e9aeb3-008d-451c-b298-26a578111089
+
+- Skill: `evaluator`, contract version 14, mode `verify`; attempt 003, evaluator revision `001`
+- Candidate: `651352329cca473fb920139e1496f9f508eeabbb`
+- Result: BLOCKED, classification SPECIFICATION_AMBIGUITY (0 criteria satisfied, 7 not adjudicated)
+- Output: `verification-result.json`
+- Note: the verifier again launched under the pinned methodology with repository write authority, so the candidate composition was not the effective launch authority; command execution was restricted and no frozen case was re-run.
+- Measurements: wall-clock time and token usage unavailable.
