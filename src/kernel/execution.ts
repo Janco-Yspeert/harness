@@ -157,15 +157,75 @@ export class ExecutionKernel {
     if (!value) throw new Error("unknown workflow grant");
     return value as unknown as WorkflowGrant;
   }
+  // One liveness predicate: a grant is permanently non-executable once it is
+  // revoked (pre-implementation recovery) or retired (inactive retirement).
   #revocation(
     events: LedgerEvent[],
     workflowGrant: string,
-  ): LedgerEvent | undefined {
-    return events.findLast(
-      (event) =>
-        event.transition === "kernel.workflow-grant-revoked" &&
-        event.evidence.workflowGrant === workflowGrant,
+  ): { event: LedgerEvent; reason: string } | undefined {
+    const event = events.findLast(
+      (entry) =>
+        (entry.transition === "kernel.workflow-grant-revoked" ||
+          entry.transition === "kernel.workflow-grant-retired") &&
+        entry.evidence.workflowGrant === workflowGrant,
     );
+    if (!event) return undefined;
+    return {
+      event,
+      reason:
+        event.transition === "kernel.workflow-grant-retired"
+          ? "workflow grant permanently retired"
+          : "workflow grant permanently revoked by pre-implementation recovery",
+    };
+  }
+  retireWorkflowGrant(
+    workflow: string,
+    request: { workflowGrant: string; reason: string },
+  ): { workflowGrant: string; origin: "human"; reason: string } {
+    return this.#transaction(workflow, () => {
+      if (
+        typeof request.workflowGrant !== "string" ||
+        !request.workflowGrant ||
+        typeof request.reason !== "string" ||
+        !request.reason.trim()
+      )
+        throw new Error("invalid workflow grant retirement request");
+      const grant = this.grant(workflow, request.workflowGrant);
+      const events = this.events(workflow);
+      const existing = this.#revocation(events, grant.id);
+      if (existing)
+        throw new Error(
+          existing.event.transition === "kernel.workflow-grant-retired"
+            ? "workflow grant is already retired"
+            : "workflow grant is already permanently revoked",
+        );
+      const owned = this.executions(workflow).filter(
+        (execution) => execution.workflowGrant === grant.id,
+      );
+      if (
+        owned.some((execution) =>
+          ["allocated", "running"].includes(execution.process),
+        )
+      )
+        throw new Error(
+          "workflow grant retirement requires no active execution",
+        );
+      if (
+        owned.some((execution) =>
+          execution.requests.some((request) => !request.response),
+        )
+      )
+        throw new Error(
+          "workflow grant retirement requires no unresolved human request",
+        );
+      const evidence = {
+        workflowGrant: grant.id,
+        origin: "human" as const,
+        reason: request.reason,
+      };
+      this.#append(workflow, "kernel.workflow-grant-retired", evidence);
+      return evidence;
+    });
   }
   authorize(
     workflow: string,
@@ -657,12 +717,8 @@ export class ExecutionKernel {
     sessionId?: string,
   ): Resolution {
     const grant = this.grant(workflow, grantId);
-    if (this.#revocation(this.events(workflow), grant.id))
-      return {
-        kind: "denied",
-        reason:
-          "workflow grant permanently revoked by pre-implementation recovery",
-      };
+    const dead = this.#revocation(this.events(workflow), grant.id);
+    if (dead) return { kind: "denied", reason: dead.reason };
     return resolveAuthority(
       this.project,
       this.events(workflow),
@@ -875,10 +931,8 @@ export class ExecutionKernel {
   ): { execution: Execution; grant: RoleGrant; duplicate: boolean } {
     return this.#transaction(workflow, () => {
       const parent = this.grant(workflow, workflowGrant);
-      if (this.#revocation(this.events(workflow), parent.id))
-        throw new Error(
-          "workflow grant permanently revoked by pre-implementation recovery",
-        );
+      const dead = this.#revocation(this.events(workflow), parent.id);
+      if (dead) throw new Error(dead.reason);
       if (!parent.delegation.includes(request.mode))
         throw new Error("delegation mode denied");
       if (

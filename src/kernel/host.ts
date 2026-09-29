@@ -659,6 +659,26 @@ export class GovernedHost {
         );
         return;
       }
+      if (operation === "grant-retirements") {
+        needRoot();
+        if (get) {
+          send(200, {
+            retirements: this.kernel
+              .events(workflow)
+              .filter((e) => e.transition === "kernel.workflow-grant-retired")
+              .map((e) => e.evidence),
+          });
+          return;
+        }
+        send(
+          201,
+          this.kernel.retireWorkflowGrant(workflow, {
+            workflowGrant: text(body.workflowGrant),
+            reason: text(body.reason),
+          }),
+        );
+        return;
+      }
       if (operation === "root") {
         needRoot();
         if (get) throw new Error("root decision requires POST");

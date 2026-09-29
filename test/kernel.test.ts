@@ -2601,3 +2601,137 @@ void test("TR7/TR9: host action boundaries reject workspace symlink aliases and 
     "",
   );
 });
+
+void test("014f: inactive workflow grant retirement is permanent, non-consuming and fail-closed", (t) => {
+  const f = fixture(t, "grant-retirement");
+  const k = f.kernel;
+  const grant = f.authorize();
+  const session = k.register(f.workflow, "fixture").session;
+  const request = (predecessor?: string) => ({
+    role: "produce",
+    session: session.id,
+    mode: "attached" as const,
+    ...(predecessor ? { predecessor } : {}),
+  });
+  const retire = (workflowGrant: string, reason: string) =>
+    k.retireWorkflowGrant(f.workflow, { workflowGrant, reason });
+  const active = k.allocate(f.workflow, grant.id, request()).execution;
+  k.process(f.workflow, active.id, "running");
+  assert.throws(() => retire(grant.id, "active"), /no active execution/);
+  const asked = k.ask(f.workflow, active.id, "input", "which?", null);
+  k.process(f.workflow, active.id, "exited");
+  assert.throws(
+    () => retire(grant.id, "unresolved"),
+    /unresolved human request/,
+  );
+  k.respond(f.workflow, active.id, asked.id, "answer");
+  const count = (transition: string) =>
+    k.events(f.workflow).filter((e) => e.transition === transition).length;
+  const allocationsBefore = count("kernel.allocation");
+  const executionsBefore = structuredClone(k.executions(f.workflow));
+  const grantBefore = structuredClone(k.grant(f.workflow, grant.id));
+  const eventsBefore = k.events(f.workflow).length;
+  for (const [id, reason] of [
+    ["", "x"],
+    [grant.id, " "],
+    ["unknown", "x"],
+  ] as const)
+    assert.throws(() => retire(id, reason));
+  assert.equal(k.events(f.workflow).length, eventsBefore);
+
+  const evidence = retire(grant.id, "stranded");
+  assert.deepEqual(evidence, {
+    workflowGrant: grant.id,
+    origin: "human",
+    reason: "stranded",
+  });
+  assert.equal(k.events(f.workflow).length, eventsBefore + 1);
+  assert.equal(count("kernel.workflow-grant-retired"), 1);
+  assert.equal(count("kernel.allocation"), allocationsBefore);
+  assert.deepEqual(k.executions(f.workflow), executionsBefore);
+  assert.deepEqual(k.grant(f.workflow, grant.id), grantBefore);
+
+  assert.throws(() => retire(grant.id, "again"), /already retired/);
+  assert.equal(k.events(f.workflow).length, eventsBefore + 1);
+
+  const denied = k.inspect(f.workflow, grant.id, "produce", session.id);
+  assert.equal(denied.kind, "denied");
+  assert.match(JSON.stringify(denied), /retired/);
+  assert.doesNotMatch(JSON.stringify(denied), /recovery/);
+  assert.throws(() => k.allocate(f.workflow, grant.id, request()), /retired/);
+  assert.throws(
+    () => k.allocate(f.workflow, grant.id, request(active.id)),
+    /retired/,
+  );
+  assert.equal(k.executions(f.workflow).length, executionsBefore.length);
+
+  const restarted = new ExecutionKernel({
+    project: f.project,
+    executors: profiles,
+  });
+  assert.equal(
+    restarted.inspect(f.workflow, grant.id, "produce", session.id).kind,
+    "denied",
+  );
+  assert.throws(
+    () => restarted.allocate(f.workflow, grant.id, request()),
+    /retired/,
+  );
+
+  const successor = f.authorize();
+  assert.notEqual(successor.id, grant.id);
+  const next = k.allocate(f.workflow, successor.id, request()).execution;
+  assert.equal(next.workflowGrant, successor.id);
+});
+
+void test("014f: host retirement operation is root-only and lists evidence", async (t) => {
+  const f = fixture(t, "grant-retirement-host");
+  const grant = f.authorize();
+  const host = await startHarnessHost(0, {
+    governed: { project: f.project, executors: profiles, rootToken },
+  });
+  t.after(() => host.close());
+  const path = `${host.url}/governed/work-item/grant-retirements`;
+  const body = JSON.stringify({ workflowGrant: grant.id, reason: "done" });
+  const session = f.kernel.register(f.workflow, "fixture");
+  const noRoot = await fetch(path, {
+    method: "POST",
+    headers: {
+      ...auth,
+      authorization: `Bearer ${session.token}`,
+      "x-harness-session": session.session.id,
+    },
+    body,
+  });
+  assert.equal(noRoot.status, 409);
+  assert.equal(
+    f.kernel
+      .events(f.workflow)
+      .filter((e) => e.transition === "kernel.workflow-grant-retired").length,
+    0,
+  );
+  const ok = await fetch(path, { method: "POST", headers: auth, body });
+  assert.equal(ok.status, 201);
+  const again = await fetch(path, { method: "POST", headers: auth, body });
+  assert.equal(again.status, 409);
+  assert.match(await again.text(), /already retired/);
+  const listed = await api<{ retirements: Array<{ workflowGrant: string }> }>(
+    host.url,
+    "grant-retirements",
+  );
+  assert.deepEqual(
+    listed.retirements.map((r) => r.workflowGrant),
+    [grant.id],
+  );
+  const cont = await fetch(`${host.url}/governed/work-item/continue`, {
+    method: "POST",
+    headers: auth,
+    body: JSON.stringify({
+      workflowGrant: grant.id,
+      mode: "attached",
+      session: session.session.id,
+    }),
+  });
+  assert.equal(cont.status, 409);
+  assert.equal(f.kernel.executions(f.workflow).length, 0);
+});

@@ -49,3 +49,35 @@
 - Checks: controlled positive, baseline-negative and single-defect negative
   exercises on a discarded scratch reference; no candidate execution.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Implementation — execution 7db79cf5-1777-4c91-a0b2-b88acfc25880
+
+- Skill: `implementation`, contract version 5
+  (`sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`).
+- Workflow: `014f-inactive-workflow-grant-retirement`; Role Grant
+  `sha256:a2bdbe5dda301d326b390b271c769f0414279f32f97f1e3b3e49688839e652b1`.
+- Inputs: `spike.md`
+  `sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c`,
+  `design-map.md`
+  `sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34`,
+  `eval-requirements.md`
+  `sha256:50182839061aeb7bd3efe6da2f6ce6d7166bb1ee6d0f6d393b4c692897c80820`.
+  No implementation feedback (first attempt). Base commit `17bdde7`.
+- Outputs (sha256): `src/kernel/execution.ts`
+  `321c2a41c2573527454b74bca4693c000542b4650f040faf8a03b6d8ffba6690`,
+  `src/kernel/host.ts`
+  `a7c99cec44c8fee46742b7a118ba87bba07a4f93079db6167a8daed109058414`,
+  `src/kernel/resolver.ts`
+  `5291a24bfdc20bd327e69aa5b6368a48bec0a5a1bd0b443b7e54bdb5165f6263`,
+  `test/kernel.test.ts`
+  `1ada4a494cfea38e7e4021107a5805c07ad2892f432bed0f7f8afe21140047b2`.
+- Status: candidate produced. Added `retireWorkflowGrant`, a shared
+  revoked/retired liveness predicate, the `grant-retirements` host operation,
+  and two visible tests.
+- Checks: `node --test test/kernel.test.ts` 34/34 pass; `tsc --noEmit` clean;
+  `eslint` clean; `prettier --check` on sources clean. `npm test`: 197/198
+  pass; the one failure (`test/legacy-bridges.test.ts` 014d §7, EISDIR reading
+  a directory) is unrelated to this change. `npm run format:check` reports an
+  unreadable untracked `.zshrc` (EACCES) in the environment. `git diff --check`
+  was not run.
+- Measurements: wall-clock time and token usage unavailable.
