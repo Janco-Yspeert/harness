@@ -406,7 +406,12 @@ export interface Execution {
   requests: HumanRequest[];
   executor?: {
     requested: { model?: string; reasoning?: string };
+    enforced: { model: boolean; reasoning: boolean };
     confirmed: { model: string | null; reasoning: string | null };
+    attestation: {
+      model: "provider-attested" | "unavailable";
+      reasoning: "provider-attested" | "unavailable";
+    };
   };
   // Public-safe host containment evidence (Spike 014h). Present only when the
   // spawned provider was launched inside host filesystem isolation; it holds

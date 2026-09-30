@@ -866,7 +866,7 @@ export class ExecutionKernel {
       if (event.transition === "kernel.supersession") run.superseded = true;
       if (event.transition === "kernel.diagnostic")
         (run.diagnostics ??= []).push(event.evidence as unknown as Diagnostic);
-      if (event.transition === "kernel.executor-confirmed" && run.executor)
+      if (event.transition === "kernel.executor-confirmed" && run.executor) {
         run.executor.confirmed = {
           model:
             typeof event.evidence.model === "string"
@@ -877,6 +877,17 @@ export class ExecutionKernel {
               ? event.evidence.reasoning
               : null,
         };
+        run.executor.attestation = {
+          model:
+            typeof event.evidence.model === "string"
+              ? "provider-attested"
+              : "unavailable",
+          reasoning:
+            typeof event.evidence.reasoning === "string"
+              ? "provider-attested"
+              : "unavailable",
+        };
+      }
       if (event.transition === "kernel.human-response") {
         const request = run.requests.find(
           (r) => r.id === event.evidence.request,
@@ -937,6 +948,9 @@ export class ExecutionKernel {
       inline?: boolean;
       // Set by the host only for a launch it contained.
       contained?: boolean;
+      // Concrete settings passed by the registered adapter for this launch.
+      // Provider attestation is recorded separately.
+      executorPlan?: { model?: string; reasoning?: string };
     },
   ): { execution: Execution; grant: RoleGrant; duplicate: boolean } {
     return this.#transaction(workflow, () => {
@@ -1085,16 +1099,21 @@ export class ExecutionKernel {
         requests: [],
         executor: {
           requested: {
-            ...(grant.executorConstraints.model
-              ? { model: grant.executorConstraints.model }
+            ...(request.executorPlan?.model
+              ? { model: request.executorPlan.model }
               : {}),
-            ...(grant.executorConstraints.reasoning
-              ? { reasoning: grant.executorConstraints.reasoning }
+            ...(request.executorPlan?.reasoning
+              ? { reasoning: request.executorPlan.reasoning }
               : {}),
+          },
+          enforced: {
+            model: request.executorPlan?.model !== undefined,
+            reasoning: request.executorPlan?.reasoning !== undefined,
           },
           // Only provider-reported evidence confirms a model or effort; profile
           // configuration and supervisor identity never do.
           confirmed: { model: null, reasoning: null },
+          attestation: { model: "unavailable", reasoning: "unavailable" },
         },
         ...(request.contained
           ? {

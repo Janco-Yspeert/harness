@@ -262,8 +262,9 @@ const codex: ProviderAdapter = {
   id: "codex",
   program: "codex",
   capabilities: [...CODEX_INHERENT, ...CODEX_WRITE],
-  // `codex exec --json` does not report the effective model or effort, so an
-  // exact constraint cannot be attested and therefore blocks allocation.
+  // `codex exec --json` does not report the effective model or effort. The CLI
+  // can still enforce both launch settings; attestation remains separately
+  // unavailable in execution provenance.
   model: { enforce: true, attest: false },
   reasoning: { enforce: true, attest: false },
   // The Codex sandbox restricts writes, not reads.
@@ -588,10 +589,10 @@ export function planLaunch(
     const requested = exact ?? profile[key];
     if (requested === undefined) continue;
     const support = adapter[key];
-    if (!support.enforce || (exact !== undefined && !support.attest))
+    if (!support.enforce)
       throw new AdapterRefusal(
         "provider-config-invalid",
-        `${adapter.id} adapter cannot enforce and attest the exact ${key} constraint`,
+        `${adapter.id} adapter cannot enforce the exact ${key} constraint`,
       );
     plan[key] = requested;
   }

@@ -545,6 +545,7 @@ export class GovernedHost {
           ...(role ? { role } : {}),
           ...(predecessor ? { predecessor } : {}),
           ...(containment ? { contained: true } : {}),
+          ...(provider ? { executorPlan: provider.plan } : {}),
         });
         const address = request.socket.localPort;
         if (!allocation.duplicate && provider) {

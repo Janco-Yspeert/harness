@@ -16,6 +16,22 @@
     "available": true
   },
   {
+    "id": "codex-luna-medium",
+    "provider": "codex",
+    "model": "gpt-5.6-luna",
+    "reasoning": "medium",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
     "id": "claude-sonnet",
     "provider": "claude",
     "model": "sonnet",

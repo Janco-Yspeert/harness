@@ -361,7 +361,8 @@ export class GovernedProviderRun {
     }
     const assignment = this.#assignment;
     this.#confirmed =
-      assignment.roleGrant.executorConstraints.model === undefined;
+      assignment.roleGrant.executorConstraints.model === undefined ||
+      !launch.adapter.model.attest;
     try {
       this.#preparePrivateLog();
       const scratch = mkdtempSync(join(tmpdir(), "harness-scratch-"));
@@ -531,7 +532,11 @@ export class GovernedProviderRun {
         return;
       }
       const exact = this.#assignment?.roleGrant.executorConstraints.model;
-      if (exact !== undefined && event.model !== exact) {
+      if (
+        launch.adapter.model.attest &&
+        exact !== undefined &&
+        event.model !== exact
+      ) {
         this.#fail(
           "provider-config-invalid",
           "provider did not confirm the exact requested model",

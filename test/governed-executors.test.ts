@@ -894,31 +894,19 @@ void test("AC04/AC13: unregistered, generated, uninstalled or unenforceable laun
     ledger: missing.ledger,
   });
   const constrained = smoke(t, {
-    executors: [
-      { ...claudeProfile, reasoning: "high" },
-      { ...codexProfile, model: "gpt-exact" },
-    ],
+    executors: [{ ...claudeProfile, reasoning: "high" }, codexProfile],
   });
   const constrainedHost = await startHarnessHost(0, {
     governed: constrained.options,
   });
   t.after(() => constrainedHost.close());
-  cases.push(
-    {
-      host: constrainedHost.url,
-      role: CODEX,
-      category: "provider-config-invalid",
-      ledger: constrained.ledger,
-      extra: { executor: { model: "gpt-exact" } },
-    },
-    {
-      host: constrainedHost.url,
-      role: PROMOTION,
-      category: "provider-config-invalid",
-      ledger: constrained.ledger,
-      extra: { executor: { reasoning: "high" } },
-    },
-  );
+  cases.push({
+    host: constrainedHost.url,
+    role: PROMOTION,
+    category: "provider-config-invalid",
+    ledger: constrained.ledger,
+    extra: { executor: { reasoning: "high" } },
+  });
   for (const item of cases) {
     const grant = await call<{ grant: WorkflowGrant }>(item.host, "grants", {
       continuation: false,
@@ -946,6 +934,40 @@ void test("AC04/AC13: unregistered, generated, uninstalled or unenforceable laun
   }
   for (const f of [bridge, missing, constrained])
     assert.deepEqual(f.launched, []);
+});
+
+void test("Codex launch configuration and provider attestation are separate provenance", async (t) => {
+  const profile = {
+    ...codexProfile,
+    model: "gpt-5.6-sol",
+    reasoning: "medium",
+  };
+  const { f, host, started } = await run(
+    t,
+    CODEX,
+    {
+      steps: [
+        {
+          tool: "submitResult",
+          args: { disposition: "succeeded", methodology: { smoke: "PASS" } },
+        },
+      ],
+    },
+    { executor: { model: profile.model, reasoning: profile.reasoning } },
+    [profile],
+  );
+  assert.equal(started.status, 201, JSON.stringify(started.value));
+  const execution = await settled(host.url, started.value.execution?.id ?? "");
+  assert.deepEqual(execution.executor, {
+    requested: { model: "gpt-5.6-sol", reasoning: "medium" },
+    enforced: { model: true, reasoning: true },
+    confirmed: { model: null, reasoning: null },
+    attestation: { model: "unavailable", reasoning: "unavailable" },
+  });
+  assert.equal(execution.result?.disposition, "succeeded");
+  const argv = providerEvidence(f.evidence).argv;
+  assert.equal(argv[argv.indexOf("-m") + 1], "gpt-5.6-sol");
+  assert.ok(argv.includes('model_reasoning_effort="medium"'));
 });
 
 void test("AC04/EA1: provider discovery never selects or executes a temporary or workspace program", (t) => {
@@ -1007,6 +1029,7 @@ void test("014e: public execution selects Codex, protected execution selects Son
     configured.map(({ id, model, available }) => ({ id, model, available })),
     [
       { id: "codex-sol-medium", model: "gpt-5.6-sol", available: true },
+      { id: "codex-luna-medium", model: "gpt-5.6-luna", available: true },
       { id: "claude-sonnet", model: "sonnet", available: true },
       {
         id: "claude-production",
