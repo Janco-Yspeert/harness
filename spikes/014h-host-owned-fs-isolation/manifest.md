@@ -17,3 +17,12 @@
 - Outputs: `feedback.md`
 - Findings: 0 blockers, 3 non-blocking clarifications (N1–N3), 1 editorial
 - Measurements: wall-clock time and token usage unavailable.
+
+## Design Map — execution 4b9951b6-1a48-461f-89d6-2525b1670dd1
+
+- Skill: `design-map`, contract version 4
+- Input: `spike.md` (`sha256:e228070ac2030685c8f725a2aacc16980790c95b9b797d93c0ffcd659874d417`)
+- Result: succeeded
+- Outputs: `design-map.md` (`sha256:aeb1eafba99ff258859488ad4ccc77030096cbc1ee45d1ba8c75a64510d0aedf`)
+- Statistics: 956 words, 6 shared contracts
+- Measurements: wall-clock time and token usage unavailable.
