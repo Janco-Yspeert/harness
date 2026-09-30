@@ -95,6 +95,16 @@
 - Provider calls: one Codex and one Claude; neither was retried
 - Measurements: Codex preflight completed in 28.45 s; Claude preflight completed in 12.40 s; token usage unavailable.
 
+## Result-handshake diagnostic repair and Stage A checkpoint refresh
+
+- Trigger: protected verification executions `d95215c3-d5c0-44cf-a777-5afba8b3256f` and `af0abaa0-04c3-4ade-8d83-3753219c98cf` each had their semantic result rejected by the host, but the public diagnostic discarded the validation reason
+- Repair: governed result rejection diagnostics retain the host's bounded validation error; no evaluator-private content or provider output is exposed
+- Verification: typecheck and lint passed; focused AC11 regression passed
+- Checkpoint refresh: one Codex Sol/medium execution passed under `bwrap` at runtime `adc3eb0d86c98b8022b05c4c00d011d403609423`; requested settings were enforced and provider attestation remained unavailable
+- Refreshed Stage A public ledger identity: `sha256:9650627aa58f24779c773b89a207da0a0f860d19babd1573f79aceea3d52d818`
+- Provider calls: one Codex; no retry
+- Measurements: checkpoint preflight completed in 25.42 s; token usage unavailable.
+
 ## Implementation — execution 9a1fd057-7d0a-420e-a0cf-2e6de61b7773
 
 - Skill: `implementation`, contract version 5, pinned identity `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
