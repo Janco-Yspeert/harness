@@ -44,6 +44,14 @@ const output = resolve(
   process.env.HARNESS_SMOKE_OUTPUT ?? join(tmpdir(), "harness-governed-smoke"),
 );
 const MAX_TURNS = 8;
+const selectedRoles = (
+  process.env.HARNESS_SMOKE_ROLES ?? "smoke-codex,smoke-claude-promotion"
+).split(",");
+const repositoryMode = process.env.HARNESS_SMOKE_REPOSITORY_MODE ?? "write";
+assert.ok(
+  repositoryMode === "read" || repositoryMode === "write",
+  "HARNESS_SMOKE_REPOSITORY_MODE must be read or write",
+);
 
 function executables(root: string): string[] {
   const found: string[] = [];
@@ -76,7 +84,7 @@ void test("014c live smoke: real Codex and Claude through the production governe
       repository: {
         id: "smoke-repository",
         path: workflowDir,
-        mode: "write",
+        mode: repositoryMode,
         exposure: "public",
       },
       private: {
@@ -91,6 +99,7 @@ void test("014c live smoke: real Codex and Claude through the production governe
     {
       id: "claude",
       provider: "claude",
+      model: process.env.HARNESS_SMOKE_CLAUDE_MODEL ?? "sonnet",
       modes: ["spawned"],
       capabilities: ["repository-read", "local-computation", "git-inspect"],
       isolation: ["private-workspace"],
@@ -100,6 +109,8 @@ void test("014c live smoke: real Codex and Claude through the production governe
     {
       id: "codex",
       provider: "codex",
+      model: process.env.HARNESS_SMOKE_CODEX_MODEL ?? "gpt-5.6-sol",
+      reasoning: process.env.HARNESS_SMOKE_CODEX_REASONING ?? "medium",
       modes: ["spawned"],
       capabilities: ["repository-read", "local-computation", "git-inspect"],
       isolation: [],
@@ -149,7 +160,7 @@ void test("014c live smoke: real Codex and Claude through the production governe
     ]),
   );
   const runs: Record<string, Execution> = {};
-  for (const role of ["smoke-codex", "smoke-claude-promotion"]) {
+  for (const role of selectedRoles) {
     const grant = await call<{ grant: WorkflowGrant; error?: string }>(
       "grants",
       {
@@ -210,6 +221,9 @@ void test("014c live smoke: real Codex and Claude through the production governe
           failure: execution.failure,
           diagnostics: execution.diagnostics ?? [],
           executor: execution.executor,
+          filesystemIsolation: execution.filesystemIsolation ?? null,
+          workspaces: execution.workspaces ?? [],
+          syntheticHome: execution.syntheticHome ?? false,
           result: execution.result,
           actions: execution.actions.map((action) => ({
             kind: action.request.kind,
@@ -238,17 +252,25 @@ void test("014c live smoke: real Codex and Claude through the production governe
     `smoke evidence: ${join(output, `smoke-${stamp}.json`)}\n`,
   );
   assert.deepEqual(record.generatedExecutables, []);
-  for (const provider of ["claude", "codex"])
+  for (const provider of selectedRoles.map((role) =>
+    role === "smoke-codex" ? "codex" : "claude",
+  ))
     assert.ok(located[provider]?.ok, `${provider} is not installed`);
-  assert.equal(runs["smoke-codex"]?.result?.disposition, "succeeded");
-  assert.equal(
-    runs["smoke-claude-promotion"]?.result?.disposition,
-    "succeeded",
-  );
-  assert.equal(runs["smoke-claude-promotion"].actions[0]?.status, "succeeded");
-  assert.ok(record.events.includes("smoke-promotion-recorded"));
-  assert.equal(
-    record.promotedBytes,
-    identity(readFileSync(join(fixture, "private", "promotion-bytes.txt"))),
-  );
+  if (selectedRoles.includes("smoke-codex"))
+    assert.equal(runs["smoke-codex"]?.result?.disposition, "succeeded");
+  if (selectedRoles.includes("smoke-claude-promotion")) {
+    assert.equal(
+      runs["smoke-claude-promotion"]?.result?.disposition,
+      "succeeded",
+    );
+    assert.equal(
+      runs["smoke-claude-promotion"].actions[0]?.status,
+      "succeeded",
+    );
+    assert.ok(record.events.includes("smoke-promotion-recorded"));
+    assert.equal(
+      record.promotedBytes,
+      identity(readFileSync(join(fixture, "private", "promotion-bytes.txt"))),
+    );
+  }
 });
