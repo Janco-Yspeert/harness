@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "stage": "A",
+  "runtimeCommit": "fbaa60a9eb8f3df0a562ade95c6d42ef6c27fb73",
+  "containment": {
+    "mechanism": "bwrap",
+    "syntheticHome": true,
+    "result": "PASS"
+  },
+  "workspaceGrant": [
+    {
+      "id": "smoke-repository",
+      "mode": "write"
+    }
+  ],
+  "executor": {
+    "profile": "codex",
+    "provider": "codex",
+    "providerVersion": "codex-cli 0.157.1",
+    "requested": {},
+    "confirmed": {
+      "model": null,
+      "reasoning": null
+    },
+    "attestation": "The Codex adapter does not attest model or reasoning identity; no identity is inferred."
+  },
+  "liveExecution": {
+    "execution": "e9dab9cc-cc36-4676-9c52-379797d86c29",
+    "roleGrant": "sha256:f3057af5813ea84fb4164dfba3571476e8bcac39673ea81fb1dd74f5bcb1901e",
+    "semanticResult": "PASS",
+    "process": "exited"
+  },
+  "checks": [
+    {
+      "kind": "deterministic",
+      "result": "PASS",
+      "evidence": "npm test at runtime commit: 217 passed, 0 failed; production-launcher fixtures cover granted read/write, scratch, private/sibling/home exclusion, and traversal refusal."
+    },
+    {
+      "kind": "live-provider",
+      "result": "PASS",
+      "evidence": "One Codex role used the production registered-adapter launcher, received the Harness worker tools, read its granted repository marker, and returned the required typed PASS result."
+    },
+    {
+      "kind": "filesystem-view",
+      "result": "PASS",
+      "evidence": "The public execution record reports bwrap, a single granted write workspace, and syntheticHome=true; the same launcher construction tested deterministically excludes known ungranted fixture roots."
+    }
+  ],
+  "source": {
+    "generatedAt": "2026-09-30T14:28:00.132Z",
+    "smokeLedgerIdentity": "sha256:4d5eb47d4882d7471c0cfbd0b2b216dec2d6c44c68fc84feb83697b3fa69b0b1"
+  }
+}

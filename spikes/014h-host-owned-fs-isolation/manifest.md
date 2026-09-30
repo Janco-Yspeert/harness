@@ -45,3 +45,16 @@
 - Status: candidate complete for the deterministic scope (AC01–AC04, AC07, AC09–AC13 in code and tests); NOT complete for the live-provider scope. The Stage A/Stage B real-provider preflights, `preflight/stage-a.json`, `preflight/stage-b.json` and the Codex executor-routing cutover were not produced (need live provider credentials and network unavailable to this worker); no artifact was fabricated (AC05, AC06, AC08, AC14 open)
 - Visible verification: `tsc --noEmit`, `eslint .`, `prettier --check src test tools spikes/014h-*` clean; `npm test` 217 pass / 0 fail. `prettier --check .` cannot read untracked sandbox dotfiles in the repository root (EACCES), unrelated to this change
 - Measurements: wall-clock time and token usage unavailable.
+
+## Host-owned Stage A and Stage B preflight — runtime `fbaa60a`
+
+- Runtime: `fbaa60a9eb8f3df0a562ade95c6d42ef6c27fb73`
+- Deterministic prerequisite: `npm test` at the runtime commit, 217 passed / 0 failed, as recorded by implementation attempt 1
+- Stage A: one Codex execution through the production registered-adapter launcher; `bwrap`, one granted write workspace, synthetic home, typed result PASS
+- Stage A executor evidence: profile `codex`, Codex CLI `0.157.1`; the adapter reported no confirmed model or reasoning identity, so none is inferred
+- Stage B: one protected Claude execution through the same launcher; `bwrap`, two simultaneous granted write workspaces, synthetic home, typed result PASS, promotion succeeded
+- Stage B executor evidence: profile `claude`, Claude Code `2.1.284`; provider-confirmed model `claude-opus-5-5`
+- Public outputs: `preflight/stage-a.json`, `preflight/stage-b.json`
+- Public smoke ledger identity: `sha256:4d5eb47d4882d7471c0cfbd0b2b216dec2d6c44c68fc84feb83697b3fa69b0b1`
+- Provider calls: one Codex and one Claude; neither was retried
+- Measurements: smoke started at `2026-09-30T14:27:16.729Z` and completed by `2026-09-30T14:28:00.132Z`; token usage unavailable.
