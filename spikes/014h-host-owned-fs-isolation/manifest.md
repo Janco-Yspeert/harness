@@ -26,3 +26,12 @@
 - Outputs: `design-map.md` (`sha256:aeb1eafba99ff258859488ad4ccc77030096cbc1ee45d1ba8c75a64510d0aedf`)
 - Statistics: 956 words, 6 shared contracts
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator prepare — execution 98c03bca-c51e-467f-af86-a1f1cd22447e
+
+- Skill: `evaluator`, contract version 14, mode `prepare`
+- Inputs: `spike.md` (`sha256:e228070ac2030685c8f725a2aacc16980790c95b9b797d93c0ffcd659874d417`), `design-map.md` (`sha256:aeb1eafba99ff258859488ad4ccc77030096cbc1ee45d1ba8c75a64510d0aedf`)
+- Result: succeeded; evaluator revision 001 frozen (`sha256:12c99f0a8f8d9a97ee6a5e2df07fb696d0ec3692b0ffb33506d208affaa0c731`), pre-freeze integrity validation PASS
+- Outputs: `eval-requirements.md` (`sha256:e865df63af3cb5d0a371a25cad370679f145ce13f7623e6311bcc1b9f339a6a1`); `coverage-map.json`
+- Statistics: 14 criterion records, 9 procedures (4 executable, 5 review/regression)
+- Measurements: wall-clock time and token usage unavailable.
