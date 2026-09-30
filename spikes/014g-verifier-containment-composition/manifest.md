@@ -63,3 +63,12 @@
 - Result: NOT_READY (1 blocker, 3 material clarifications, 1 editorial)
 - Outputs: `feedback.md`, `preliminary/001/spike.md`, `preliminary/001/feedback.md`
 - Measurements: wall-clock time and token usage unavailable.
+
+## Brief Readiness (recovery revision 2) — execution ee9670df-8132-4ab6-a191-8dc07f01992b
+
+- Skill: `brief-readiness`, contract version 5
+- Input: brief `sha256:c54324b00dd8fa4c54d8f567046e36fe2558cf2b5c14bc2b8edffe4ee2644759`
+- Result: succeeded, verdict READY (Ready after minor clarification)
+- Outputs: `feedback.md`; no preliminary snapshot (passing verdict)
+- Findings: 0 blockers, 2 material clarifications (C1–C2), 1 editorial; prior B1, M1–M3 and E1 resolved
+- Measurements: wall-clock time and token usage unavailable.

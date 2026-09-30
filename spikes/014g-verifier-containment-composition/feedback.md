@@ -1,81 +1,59 @@
-# Brief Readiness — Spike 014g Verifier Containment Composition (recovery revision)
+# Brief Readiness — Spike 014g Verifier Containment Composition (recovery revision 2)
 
 Reviewed: `spikes/014g-verifier-containment-composition/spike.md`
-(`sha256:a29c32f4b8ddd7be5fa22bd4bd46e1d0309eb2dad3e19f9d734181f3252f0c5a`).
+(`sha256:c54324b00dd8fa4c54d8f567046e36fe2558cf2b5c14bc2b8edffe4ee2644759`).
 Skill: `brief-readiness`, contract version 5. This supersedes the earlier review of
-revision `sha256:52f1c9fc1164c3fa269d1a009e942cc00202e89fcf96e8ffb4228a519fa3a676`, which
-is still preserved in git history at `a36fd6e`.
+`sha256:a29c32f4b8ddd7be5fa22bd4bd46e1d0309eb2dad3e19f9d734181f3252f0c5a`, preserved at
+`spikes/014g-verifier-containment-composition/preliminary/001/`.
+
+## Disposition of prior findings
+
+- **B1 (resolved)**: Required behavior 6 and AC05 now say the frozen 014e group is adjudicated only
+  through the candidate-subject evidence under AC03. Trusted N adjudicates the rest of the suite. If
+  trusted N encounters 014e under its broader parent authority, it records the group as not
+  adjudicated, binds the subject result, and counts it as neither a pass nor a failure.
+- **M1 (resolved)**: The Handoff limits reuse of the `27af3a8` evidence to launch composition and
+  host-mediated evidence observations. It requires a new bounded subject run of the unchanged 014e group.
+- **M2 (resolved)**: Requirement 8 carries forward the SC1 identity, blob
+  `4b361f81e307e129be6d106c9df9a4910e674be9` at `a36fd6e`. I confirmed that
+  `a36fd6e:test/external-project.test.ts` resolves to this blob. The candidate must not alter those bytes.
+- **M3 (resolved)**: Requirement 7, AC07 and AC08 mark the 014f rerun and post-promotion cutover as
+  non-gating handoff conditions.
+- **E1 (resolved)**: The status line names the prior frozen revision identity.
 
 ## Findings
 
-### B1 — Blocker: no stated way to adjudicate AC05 (and the 014e group) under trusted N
+### C1 — Material clarification (non-blocking): the record of "not adjudicated"
 
-Brief: Authority model clarification (authoritative verification runs under the exact
-trusted N role, skill and contract); requirement 4; AC03, AC05 and AC08.
-Repository: `spikes/014g-verifier-containment-composition/manifest.md` records that
-attempts 002 and 003 launched under the pinned methodology *with repository write*, so
-the candidate composition was not the launch authority and no frozen case could be
-re-run fairly. `spikes/014g-verifier-containment-composition/design-map.md` SC1 and SC2
-freeze the whole `014e` group in `test/external-project.test.ts` and require it to run as
-a verifier command under the verifier's effective sandbox.
-Consequence: the brief now puts authoritative verification under N, which is the exact
-context that cannot observe the 014e boundary (the original defect). AC03 moves the 014e
-run to the candidate-subject, but AC05 still requires existing containment and
-nested-sandbox regressions to stay green, and the brief does not say where that
-full-suite run happens or how the 014e group is treated in the N-run. Left open, the
-evaluator would have to decide whether an N-run 014e failure blocks, is excepted, or is
-satisfied by subject evidence. That is a fair-evaluation decision this brief must make,
-not a later role. The same ambiguity already produced three blocked attempts.
-Smallest clarification: state that (a) the 014e group is adjudicated through the
-candidate-subject run under AC03, and trusted N adjudicates AC05 for the remaining
-suite; or (b) name the alternative. Also state what trusted N records for the 014e group
-in its own run (for example not adjudicated there, with subject evidence bound instead)
-so that it is neither counted as a pass nor as an environmental failure by itself.
+Brief: requirement 6, AC05. Requirement 6 requires a trusted-N 014e result to be recorded as "not
+adjudicated". The brief does not say where it is recorded. The likely answer is the evaluator's
+verification record, next to the bound subject evidence. The evaluator preparation role should confirm
+that the existing verification-result vocabulary can carry this. If it cannot, the evaluator must state
+its representation in the evaluator requirements. This is ordinary evaluator-design work, not a product
+decision.
 
-### M1 — Material clarification: existing subject evidence cannot satisfy AC03
+### C2 — Material clarification (non-blocking): fixture scope for the subject run
 
-Brief: Handoff ("may be reused only if ... required observations").
-Repository: `spikes/014g-verifier-containment-composition/evidence/candidate-evaluator-subject-001.md`
-says the subject ended `BLOCKED / INFRASTRUCTURE_FAILURE` and "does not itself establish
-AC03's frozen 014e regression result".
-Consequence: the handoff implies reuse may suffice. It cannot for AC03, because no
-frozen 014e run occurred in that subject. Implementations and the evaluator could diverge
-on how much to rerun.
-Smallest clarification: say that the `27af3a8` evidence is reusable only for launch
-composition and host-mediated evidence observations, and that a subject run of the frozen
-014e group is required for AC03.
-
-### M2 — Material clarification: frozen regression identity on re-freeze
-
-Brief: requirement 8 ("At freeze, record ...").
-Repository: `spikes/014g-verifier-containment-composition/design-map.md` SC1 already
-records blob `4b361f81e307e129be6d106c9df9a4910e674be9` at `a36fd6e`.
-Consequence: it is unclear whether re-freeze keeps that identity or re-records it after
-the candidate commits.
-Smallest clarification: say the SC1 identity carries over unchanged unless the freeze
-record re-derives it, and that the candidate must not alter those bytes.
-
-### M3 — Material clarification: AC08 and requirement 7 include post-acceptance conditions
-
-Brief: requirement 7, AC07, AC08 (last sentence).
-Consequence: "a later ordinary grant uses the reduced composition only after human
-acceptance and methodology promotion" and the 014f rerun cannot be observed before this
-verification ends, so they cannot gate the verdict. Double-counting with AC07 is likely.
-Smallest clarification: mark these as non-gating handoff conditions, with AC07 checked
-only as "no modification to frozen 014f authority or prior attempts". AC08 gates only the
-observable separation of trusted-N and subject evidence and the absence of subject
-authority.
+Brief: Handoff ("rerun only the smallest fixture needed"). The fixture may be chosen by the Design Map
+or evaluator preparation. It must run the unchanged 014e blob bytes under the candidate-defined
+composition, must not modify the candidate, and must not become an authoritative result. The brief
+already implies these constraints.
 
 ### E1 — Editorial
 
-- AC02 row lacks a trailing space before the closing `|`.
-- Status line says "prior frozen revision preserved"; name its identity (`52f1c9fc...`).
+The brief mixes `Status`/`Depends on` prose with the recovery narrative. This is not blocking.
 
 ## Review notes
 
-- Feasibility: a fixture-isolated subject is shown viable by the `27af3a8` evidence.
-- Limitations: did not run tests, and did not inspect evaluator-private material.
-- Files changed: `feedback.md`, `preliminary/001/spike.md`, `preliminary/001/feedback.md`, `manifest.md`.
-- Checks run: read brief, prior feedback, Design Map, evaluation requirements, manifest, subject evidence.
+- Feasibility: `spikes/014g-verifier-containment-composition/evidence/candidate-evaluator-subject-001.md`
+  shows that a bounded candidate-subject launch is viable.
+- Scope, authority, ownership, failure behavior and lifecycle decisions are stated. The authority model
+  is explicit that N+1 cannot govern its own verification.
+- Limitations: I did not run tests and did not inspect evaluator-private material. I did not
+  independently resolve the commit ids `a5819dc`, `27af3a8` or `651352329cca` because command
+  approval was denied. I relied on the manifest and the prior evidence for those.
+- Files changed: `feedback.md` and `manifest.md`. No preliminary snapshot, because the verdict passes.
+- Checks run: read the brief, prior feedback, manifest and subject evidence; confirmed the SC1 blob
+  identity; confirmed the brief bytes match the bound identity.
 
-**Verdict: Not ready to freeze**
+**Verdict: Ready after minor clarification**
