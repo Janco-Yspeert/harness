@@ -783,6 +783,13 @@ void test("AC11: missing result, crash, rate limit, tool denial, rejected result
       execution.category ?? null,
       process === "exited" ? null : categories.at(-1),
     );
+    if (categories.includes("result-rejected"))
+      assert.match(
+        execution.diagnostics?.find(
+          (diagnostic) => diagnostic.category === "result-rejected",
+        )?.detail ?? "",
+        /result violates pinned contract/,
+      );
   }
 });
 

@@ -643,7 +643,10 @@ export class GovernedProviderRun {
         methodology: request.methodology,
       });
       if (!response.ok) {
-        this.#diagnostic("result-rejected", "host rejected semantic result");
+        this.#diagnostic(
+          "result-rejected",
+          `host rejected semantic result: ${failure(response.value).message}`,
+        );
         throw failure(response.value);
       }
       return {
