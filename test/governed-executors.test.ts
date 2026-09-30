@@ -32,7 +32,10 @@ import {
   validateProductionExecutors,
 } from "../src/executors/adapters.ts";
 import { locateContainment } from "../src/executors/containment.ts";
-import { providerEnvironment } from "../src/executors/governed.ts";
+import {
+  providerEnvironment,
+  resultContractInstructions,
+} from "../src/executors/governed.ts";
 import {
   parseWorkerRequest,
   WORKER_OPERATIONS,
@@ -1383,6 +1386,17 @@ void test("AC08: the versioned worker protocol is typed, provider-neutral and ca
   assert.doesNotThrow(() => {
     assertBoundedExecutorCommand(codexArgs);
   });
+});
+
+void test("worker result instructions surface the pinned methodology vocabulary and constraints", () => {
+  const instruction = resultContractInstructions({
+    methodology: { result: ["PASS", "FAIL"] },
+    resultConstraints: [
+      { when: { result: "FAIL" }, required: ["classification"] },
+    ],
+  } as unknown as Parameters<typeof resultContractInstructions>[0]);
+  assert.match(instruction, /"result":\["PASS","FAIL"\]/);
+  assert.match(instruction, /"required":\["classification"\]/);
 });
 
 void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is loadable and callable by both providers", () => {

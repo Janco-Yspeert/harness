@@ -130,6 +130,13 @@ export function workerContext(assignment: Assignment): {
   };
 }
 
+export function resultContractInstructions(contract: RoleContract): string {
+  return (
+    `The methodology object must satisfy this pinned contract vocabulary: ${JSON.stringify(contract.methodology)}. ` +
+    `Apply these pinned result constraints: ${JSON.stringify(contract.resultConstraints ?? [])}.`
+  );
+}
+
 export function workerInstructions(assignment: Assignment): {
   system: string;
   prompt: string;
@@ -137,7 +144,9 @@ export function workerInstructions(assignment: Assignment): {
   const context = workerContext(assignment);
   return {
     system: `${context.stable}${context.volatile}`,
-    prompt: `Perform the allocated ${assignment.roleGrant.role} work for workflow ${assignment.workflow}, then submit your typed result with the Harness submitResult tool.`,
+    prompt:
+      `Perform the allocated ${assignment.roleGrant.role} work for workflow ${assignment.workflow}, then submit your typed result with the Harness submitResult tool. ` +
+      resultContractInstructions(assignment.contract),
   };
 }
 
