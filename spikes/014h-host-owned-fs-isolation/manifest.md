@@ -94,3 +94,13 @@
 - Outputs updated: `preflight/stage-a.json`, `preflight/stage-b.json`
 - Provider calls: one Codex and one Claude; neither was retried
 - Measurements: Codex preflight completed in 28.45 s; Claude preflight completed in 12.40 s; token usage unavailable.
+
+## Implementation — execution 9a1fd057-7d0a-420e-a0cf-2e6de61b7773
+
+- Skill: `implementation`, contract version 5, pinned identity `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+- Inputs: brief `sha256:e228070ac2030685c8f725a2aacc16980790c95b9b797d93c0ffcd659874d417`; design `sha256:aeb1eafba99ff258859488ad4ccc77030096cbc1ee45d1ba8c75a64510d0aedf`; coverage `sha256:e932bc07decfc8df7142c1dac1afe1583b2c82844daabdeb6be0b859324d1ccd`; requirements `sha256:e865df63af3cb5d0a371a25cad370679f145ce13f7623e6311bcc1b9f339a6a1`. Working bytes matched every binding and each input had committed provenance; no retry feedback was bound.
+- Base/output inspected: commit `1ad07455afedad37e4ea86ed5871bcd9da651dae`, candidate tree `1fdf863c3ecbffbd13ab37c67aaa91cf0576de29`. The committed containment implementation, executor policy and refreshed Stage A/Stage B preflight artifacts were preserved; this execution changes only this manifest.
+- Status: succeeded. The committed candidate supplies one Role-Grant-derived `bwrap` launcher for spawned production adapters, mixed read/write workspace enforcement, fail-closed host refusals, public isolation records, provider-policy cleanup and public-safe real-provider preflight provenance. Independent evaluation was not performed or claimed.
+- Visible verification: `npm run typecheck`, `npm run lint`, targeted Prettier check and `git diff --check 17de0b2..HEAD` passed. A fresh `npm test` did not complete in this worker sandbox: multiple files failed immediately and the run hung; the focused `node --test-isolation=none --test test/host-fs-isolation.test.ts` diagnostic showed all six cases stop during fixture setup at `spawnSync git EPERM`, before containment assertions. The committed runtime evidence records the earlier unrestricted full run as 218 passed / 0 failed.
+- Scope review: the candidate diff contains only executor configuration, containment/launch and execution-record code, visible tests, the two required preflight artifacts and this spike's manifest. Existing unrelated workflow-ledger and fixture residue remained unstaged and unmodified.
+- Measurements: token usage and wall-clock time unavailable.
