@@ -72,3 +72,12 @@
 - Outputs: `feedback.md`; no preliminary snapshot (passing verdict)
 - Findings: 0 blockers, 2 material clarifications (C1–C2), 1 editorial; prior B1, M1–M3 and E1 resolved
 - Measurements: wall-clock time and token usage unavailable.
+
+## Design Map (recovery revision) — execution 01befe37-c769-474d-b95d-7d0c1ba07b0b
+
+- Skill: `design-map`, contract version 4
+- Input: `spike.md` (`sha256:c54324b00dd8fa4c54d8f567046e36fe2558cf2b5c14bc2b8edffe4ee2644759`)
+- Result: succeeded
+- Output: `design-map.md` (`sha256:2ef8d4ca3494945f1ad3f4abfaff18a398178fd9bae6e0fb2470997ec7aa7cd3`)
+- Decisions: prior host-mediated-mutation decisions carried forward; added SC6 separating authoritative trusted-N evidence from bounded candidate-subject evidence (subject cannot emit the authoritative result; smallest fixture runs the unchanged 014e blob).
+- Measurements: wall-clock time and token usage unavailable.
