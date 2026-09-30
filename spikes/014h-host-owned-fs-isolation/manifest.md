@@ -58,3 +58,14 @@
 - Public smoke ledger identity: `sha256:4d5eb47d4882d7471c0cfbd0b2b216dec2d6c44c68fc84feb83697b3fa69b0b1`
 - Provider calls: one Codex and one Claude; neither was retried
 - Measurements: smoke started at `2026-09-30T14:27:16.729Z` and completed by `2026-09-30T14:28:00.132Z`; token usage unavailable.
+
+## Implementation — execution 343ee97b-b1a7-4821-9e34-5645bb6446c6
+
+- Skill: `implementation`, contract version 5, pinned identity `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+- Inputs: brief `sha256:e228070ac2030685c8f725a2aacc16980790c95b9b797d93c0ffcd659874d417`; design `sha256:aeb1eafba99ff258859488ad4ccc77030096cbc1ee45d1ba8c75a64510d0aedf`; coverage `sha256:e932bc07decfc8df7142c1dac1afe1583b2c82844daabdeb6be0b859324d1ccd`; requirements `sha256:e865df63af3cb5d0a371a25cad370679f145ce13f7623e6311bcc1b9f339a6a1`. Working bytes and committed HEAD bytes match each binding; no retry feedback was bound.
+- Base/output inspected: commit `e78716cdd3ee0d8f6e59b688dec7ae0a14ba07e5`, tree `1a074c7c1e6bbc7704e87579b4f941404085c73a`. Existing implementation and preflight artifacts preserved; this execution changes only this manifest.
+- Status: failed to produce a complete candidate. The existing Stage B artifact records two write grants; frozen requirement TR2 requires both read and write modes in the real-provider artifact. Deterministic mixed-mode evidence does not change the actual live grant. No preflight observation was rewritten or fabricated. Stage A conditional-authority/checkpoint recording and routing chronology remain unverified by this execution.
+- Authority limitation: the grant permits repository/local work, grants no host actions, and forbids evaluator-private exposure. A protocol `requestHuman` root request for host-produced mixed-mode preflight evidence and the Stage A authority record returned `human interaction denied`. No provider execution or routing change was attempted.
+- Visible verification: `node --test test/host-fs-isolation.test.ts` failed at test-file execution. Diagnostic rerun with `--test-isolation=none` reported all six cases failing during fixture setup with `spawnSync git EPERM`, before containment assertions. This environment therefore supplied no new passing containment evidence.
+- Checks skipped: broader suite and static checks, because no implementation code changed and the required fixture subprocess execution was unavailable. Independent evaluation was not performed or claimed.
+- Unrelated working-tree changes were preserved and excluded from the checkpoint.
