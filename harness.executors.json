@@ -64,6 +64,134 @@
     "available": true
   },
   {
+    "id": "codex-sol-low",
+    "provider": "codex",
+    "model": "gpt-5.6-sol",
+    "reasoning": "low",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
+    "id": "codex-sol-high",
+    "provider": "codex",
+    "model": "gpt-5.6-sol",
+    "reasoning": "high",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
+    "id": "codex-luna-low",
+    "provider": "codex",
+    "model": "gpt-5.6-luna",
+    "reasoning": "low",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
+    "id": "codex-luna-high",
+    "provider": "codex",
+    "model": "gpt-5.6-luna",
+    "reasoning": "high",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
+    "id": "codex-terra-low",
+    "provider": "codex",
+    "model": "gpt-5.6-terra",
+    "reasoning": "low",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
+    "id": "codex-terra-high",
+    "provider": "codex",
+    "model": "gpt-5.6-terra",
+    "reasoning": "high",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
+    "id": "codex-astra-low",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "reasoning": "low",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
+    "id": "codex-astra-high",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "reasoning": "high",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
     "id": "claude-sonnet",
     "provider": "claude",
     "model": "sonnet",

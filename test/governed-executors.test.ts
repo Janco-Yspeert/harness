@@ -1025,19 +1025,31 @@ void test("014e: public execution selects Codex, protected execution selects Son
       readFileSync(resolve("harness.executors.json"), "utf8"),
     ) as unknown,
   );
+  const codexProfiles = configured.filter(
+    (profile) => profile.provider === "codex",
+  );
+  assert.equal(codexProfiles.length, 12);
+  for (const model of [
+    "gpt-5.6-sol",
+    "gpt-5.6-luna",
+    "gpt-5.6-terra",
+    "gpt-6-astra",
+  ])
+    assert.deepEqual(
+      codexProfiles
+        .filter((profile) => profile.model === model)
+        .map((profile) => profile.reasoning)
+        .sort(),
+      ["high", "low", "medium"],
+    );
+  assert.ok(codexProfiles.every((profile) => profile.available));
   assert.deepEqual(
-    configured.map(({ id, model, available }) => ({ id, model, available })),
+    configured
+      .filter((profile) => profile.provider === "claude")
+      .map(({ id, model, available }) => ({ id, model, available })),
     [
-      { id: "codex-sol-medium", model: "gpt-5.6-sol", available: true },
-      { id: "codex-luna-medium", model: "gpt-5.6-luna", available: true },
-      { id: "codex-terra-medium", model: "gpt-5.6-terra", available: true },
-      { id: "codex-astra-medium", model: "gpt-6-astra", available: true },
       { id: "claude-sonnet", model: "sonnet", available: true },
-      {
-        id: "claude-production",
-        model: "claude-opus-5-5",
-        available: false,
-      },
+      { id: "claude-production", model: "claude-opus-5-5", available: false },
     ],
   );
   const kernel = new ExecutionKernel({

@@ -76,6 +76,7 @@
 - Resume finding: execution `343ee97b-b1a7-4821-9e34-5645bb6446c6` used `codex exec --ephemeral`; it left no durable Codex session identity and cannot be safely resumed
 - Supported model identifiers resolved from the installed Codex model cache: `gpt-5.6-sol`, `gpt-5.6-luna`, `gpt-5.6-terra` and `gpt-6-astra`
 - Configuration: substantial public work uses `gpt-5.6-sol` at medium reasoning; lighter public work can select `gpt-5.6-luna` at medium reasoning; `gpt-5.6-terra` and `gpt-6-astra` are also selectable at medium reasoning; protected evaluator policy remains Claude Sonnet
+- Reasoning variants: every configured Codex model has explicit `low`, `medium` and `high` profiles; the user-facing term “light” maps to the CLI's actual `low` value
 - Provenance behavior: execution records now distinguish requested launch settings, whether each setting was enforced at launch, provider-confirmed values, and per-field provider-attestation availability
 - Codex semantics: an exact supported launch setting is passed to the CLI and may be accepted without false provider confirmation when Codex JSONL omits effective-model evidence
 - Verification: `npm test` 218 passed / 0 failed; `npm run typecheck` and `npm run lint` passed; targeted formatting passed
