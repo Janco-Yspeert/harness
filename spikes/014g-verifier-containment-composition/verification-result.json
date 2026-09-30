@@ -1,43 +1,44 @@
 {
   "schemaVersion": 1,
-  "attempt": "003",
-  "execution": "10e9aeb3-008d-451c-b298-26a578111089",
-  "roleGrant": "sha256:5560788287d2de919e211998fa315ba635e0a954fd48c29cd8067eada3b2d057",
+  "attempt": "004",
+  "execution": "370e66df-cdb6-4104-827f-308f70b9404b",
+  "roleGrant": "sha256:9d1c068c32a4eec281ed8fbe844fc40a979b8ce10a5907becbfdb11ae1dbe3eb",
   "commit": "651352329cca473fb920139e1496f9f508eeabbb",
-  "evaluatorRevision": "001",
-  "evaluatorRevisionIdentity": "sha256:6c5da22f74c91e0047e44b5fd7bce1a322f0211fbd6301410797baebad3863bd",
+  "evaluatorRevision": "002",
+  "evaluatorRevisionIdentity": "sha256:6091eac3062c17711a9828fe813a71389ca83a9f5c30c99bfe92a42f659b0f82",
   "inputs": {
-    "brief": "sha256:52f1c9fc1164c3fa269d1a009e942cc00202e89fcf96e8ffb4228a519fa3a676",
-    "design": "sha256:b0c6aaf07569ee815d7055440948008cbdb6370439dd4126dc64adab97c8e0a3",
-    "evaluationRequirements": "sha256:f3fd130f1bd3d3e3348918eea6562a2dc2d23f89504dc87277c39df3293a0cca",
-    "coverage": "sha256:2af6e4309556149b48906fe026057e151423eda9a79f5e399a48db0172ee5b15"
+    "brief": "sha256:c54324b00dd8fa4c54d8f567046e36fe2558cf2b5c14bc2b8edffe4ee2644759",
+    "design": "sha256:2ef8d4ca3494945f1ad3f4abfaff18a398178fd9bae6e0fb2470997ec7aa7cd3",
+    "evaluationRequirements": "sha256:8ede56f90b8d37cfbdf6840c650e56587fbe2d33005149378bc8b8730cf94551",
+    "coverage": "sha256:6a8ff239d917ce31286bfa024e1fc7f1c157b8c1eed62e4c5a23180252c19afb"
   },
   "result": "BLOCKED",
-  "classification": "SPECIFICATION_AMBIGUITY",
+  "classification": "INFRASTRUCTURE_FAILURE",
   "coverageResults": {
     "AC01": "NOT_ADJUDICATED",
     "AC02": "NOT_ADJUDICATED",
     "AC03": "NOT_ADJUDICATED",
-    "AC04": "NOT_ADJUDICATED",
-    "AC05": "NOT_ADJUDICATED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
     "AC06": "NOT_ADJUDICATED",
-    "AC07": "NOT_ADJUDICATED"
+    "AC07": "SATISFIED",
+    "AC08": "NOT_ADJUDICATED"
   },
   "accounting": {
-    "criteria": 7,
-    "satisfied": 0,
+    "criteria": 8,
+    "satisfied": 3,
     "notSatisfied": 0,
-    "notAdjudicated": 7,
+    "notAdjudicated": 5,
     "executableCases": 5,
-    "executablePassed": 0,
+    "executablePassed": 3,
     "failedProcedures": [],
-    "note": "The verifier session was again launched under the trusted pinned methodology: its repository workspace was writable, it held repository write and commit authority, and a direct write to the repository root succeeded. The candidate's reduced composition is not the effective launch authority, and the brief and Design Map do not say how it becomes effective for the verifier that grades it. Command execution in this session was restricted, so no frozen executable case or regression was re-run in this attempt and no results are asserted; attempt 002 recorded the frozen regression, genericity and contract checks as passing and the boundary check as failing under the same launch condition."
+    "note": "Trusted N passed the frozen regression identity, genericity and verifier-contract checks and the repository regression (typecheck, lint, format, and the full suite excluding the frozen 014e group, which is recorded not adjudicated under trusted N) at the exact candidate. The two cases that run inside the bounded candidate-subject verifier, and the subject-evidence binding, could not be established: no candidate-subject evidence bound to the exact candidate, composition, runtime and raw outputs exists, and this verifier could not launch the subject (no provider runtime and no bootstrap authority for a disposable trust root in its sandbox). Affected criteria are not satisfied and are not silently passed; nothing is attributed to the candidate."
   },
   "regression": {
-    "command": "not run in this attempt",
-    "exit": "not run",
-    "tests": 0,
-    "passed": 0
+    "command": "typecheck, lint, format:check, and node --test excluding the 014e title group, at the candidate commit",
+    "exit": 0,
+    "tests": 190,
+    "passed": 190
   },
-  "humanAcceptance": "Not applicable. Specify how a candidate verifier composition takes effect for its own verification (or adopt the candidate methodology through human bootstrap authority), then re-verify."
+  "humanAcceptance": "Not applicable. Provide a candidate-subject launch capability or admissible subject evidence bound to the exact candidate, then re-verify against the unchanged frozen evaluator revision 002."
 }

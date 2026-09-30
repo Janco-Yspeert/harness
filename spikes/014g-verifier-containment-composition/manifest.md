@@ -90,3 +90,11 @@
 - Evaluator revision identity: `sha256:6091eac3062c17711a9828fe813a71389ca83a9f5c30c99bfe92a42f659b0f82`
 - Result: succeeded; pre-freeze integrity validation PASS (8 criteria, 9 procedures)
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator Verify attempt 004 — execution 370e66df-cdb6-4104-827f-308f70b9404b
+
+- Skill: `evaluator`, contract version 14, mode `verify`; evaluator revision `002`
+- Candidate: `651352329cca473fb920139e1496f9f508eeabbb`
+- Output: `verification-result.json`
+- Result: succeeded; BLOCKED / INFRASTRUCTURE_FAILURE (trusted-N cases and regression passed; candidate-subject evidence could not be produced or admitted)
+- Measurements: wall-clock time and token usage unavailable.
