@@ -1030,6 +1030,8 @@ void test("014e: public execution selects Codex, protected execution selects Son
     [
       { id: "codex-sol-medium", model: "gpt-5.6-sol", available: true },
       { id: "codex-luna-medium", model: "gpt-5.6-luna", available: true },
+      { id: "codex-terra-medium", model: "gpt-5.6-terra", available: true },
+      { id: "codex-astra-medium", model: "gpt-6-astra", available: true },
       { id: "claude-sonnet", model: "sonnet", available: true },
       {
         id: "claude-production",

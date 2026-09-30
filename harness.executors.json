@@ -32,6 +32,38 @@
     "available": true
   },
   {
+    "id": "codex-terra-medium",
+    "provider": "codex",
+    "model": "gpt-5.6-terra",
+    "reasoning": "medium",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
+    "id": "codex-astra-medium",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "reasoning": "medium",
+    "modes": ["spawned"],
+    "capabilities": [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit"
+    ],
+    "isolation": [],
+    "available": true
+  },
+  {
     "id": "claude-sonnet",
     "provider": "claude",
     "model": "sonnet",
