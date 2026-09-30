@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "attempt": "004",
-  "execution": "370e66df-cdb6-4104-827f-308f70b9404b",
-  "roleGrant": "sha256:9d1c068c32a4eec281ed8fbe844fc40a979b8ce10a5907becbfdb11ae1dbe3eb",
+  "attempt": "005",
+  "execution": "f7a04d8e-1c78-4a16-857b-83f99a43eeb0",
+  "roleGrant": "sha256:4f6930543b4578f534cf69f00c50e82f05f335c80409f5e615c2a957621f824d",
   "commit": "651352329cca473fb920139e1496f9f508eeabbb",
   "evaluatorRevision": "002",
   "evaluatorRevisionIdentity": "sha256:6091eac3062c17711a9828fe813a71389ca83a9f5c30c99bfe92a42f659b0f82",
@@ -18,27 +18,27 @@
     "AC01": "NOT_ADJUDICATED",
     "AC02": "NOT_ADJUDICATED",
     "AC03": "NOT_ADJUDICATED",
-    "AC04": "SATISFIED",
-    "AC05": "SATISFIED",
+    "AC04": "NOT_ADJUDICATED",
+    "AC05": "NOT_ADJUDICATED",
     "AC06": "NOT_ADJUDICATED",
-    "AC07": "SATISFIED",
+    "AC07": "NOT_ADJUDICATED",
     "AC08": "NOT_ADJUDICATED"
   },
   "accounting": {
     "criteria": 8,
-    "satisfied": 3,
+    "satisfied": 0,
     "notSatisfied": 0,
-    "notAdjudicated": 5,
+    "notAdjudicated": 8,
     "executableCases": 5,
-    "executablePassed": 3,
+    "executablePassed": 0,
     "failedProcedures": [],
-    "note": "Trusted N passed the frozen regression identity, genericity and verifier-contract checks and the repository regression (typecheck, lint, format, and the full suite excluding the frozen 014e group, which is recorded not adjudicated under trusted N) at the exact candidate. The two cases that run inside the bounded candidate-subject verifier, and the subject-evidence binding, could not be established: no candidate-subject evidence bound to the exact candidate, composition, runtime and raw outputs exists, and this verifier could not launch the subject (no provider runtime and no bootstrap authority for a disposable trust root in its sandbox). Affected criteria are not satisfied and are not silently passed; nothing is attributed to the candidate."
+    "note": "This attempt could not create a disposable checkout at the candidate in its sandbox, so no trusted-N executable case was run and none is claimed. The public candidate-subject evidence binds the candidate, composition and frozen test blob but gives only a summary (16 of 17 frozen titles passing, one failing) rather than raw runner output, and has no boundary-probe output, so the oracles could not be applied and it is not admitted. The failing title was not shown independent of subject sandbox enforcement and was not rerun in isolation, so it is not attributed to the candidate. No criterion is silently passed."
   },
   "regression": {
-    "command": "typecheck, lint, format:check, and node --test excluding the 014e title group, at the candidate commit",
-    "exit": 0,
-    "tests": 190,
-    "passed": 190
+    "command": "not run in this attempt",
+    "exit": null,
+    "tests": 0,
+    "passed": 0
   },
-  "humanAcceptance": "Not applicable. Provide a candidate-subject launch capability or admissible subject evidence bound to the exact candidate, then re-verify against the unchanged frozen evaluator revision 002."
+  "humanAcceptance": "Not applicable. Provide raw-output subject evidence (frozen group and boundary probe) bound to the exact candidate, and a verifier able to create a disposable checkout, then re-verify against the unchanged frozen evaluator revision 002."
 }

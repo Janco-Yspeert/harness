@@ -98,3 +98,11 @@
 - Output: `verification-result.json`
 - Result: succeeded; BLOCKED / INFRASTRUCTURE_FAILURE (trusted-N cases and regression passed; candidate-subject evidence could not be produced or admitted)
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator Verify attempt 005 — execution f7a04d8e-1c78-4a16-857b-83f99a43eeb0
+
+- Skill: `evaluator`, contract version 14, mode `verify`; evaluator revision `002`
+- Candidate: `651352329cca473fb920139e1496f9f508eeabbb`
+- Output: `verification-result.json`
+- Result: succeeded; BLOCKED / INFRASTRUCTURE_FAILURE (no executable case could be run in this sandbox; subject evidence lacks raw outputs)
+- Measurements: wall-clock time and token usage unavailable.
