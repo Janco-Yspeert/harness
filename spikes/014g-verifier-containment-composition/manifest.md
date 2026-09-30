@@ -55,3 +55,11 @@
 - Output: `verification-result.json`
 - Note: the verifier again launched under the pinned methodology with repository write authority, so the candidate composition was not the effective launch authority; command execution was restricted and no frozen case was re-run.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Brief Readiness (recovery revision) — execution dd09c411-5b83-494f-a767-dbd66cd6a043
+
+- Skill: `brief-readiness`, contract version 5
+- Input: brief `sha256:a29c32f4b8ddd7be5fa22bd4bd46e1d0309eb2dad3e19f9d734181f3252f0c5a`
+- Result: NOT_READY (1 blocker, 3 material clarifications, 1 editorial)
+- Outputs: `feedback.md`, `preliminary/001/spike.md`, `preliminary/001/feedback.md`
+- Measurements: wall-clock time and token usage unavailable.
