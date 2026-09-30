@@ -82,3 +82,15 @@
 - Verification: `npm test` 218 passed / 0 failed; `npm run typecheck` and `npm run lint` passed; targeted formatting passed
 - Checkpoint consequence: the material launch/provenance change invalidates the earlier `fbaa60a` Stage A checkpoint for subsequent routing; the prior artifacts remain immutable historical evidence and a new exact-runtime checkpoint is required before another public-role allocation
 - Measurements: token usage and wall-clock time unavailable.
+
+## Re-established Stage A and corrected Stage B preflights — runtime `e132221`
+
+- Runtime: `e132221b7c96e70ff7e83d4f794184e125f28c07`; the later fixture-assertion-only change does not alter `containment.ts`, `host.ts` or `governed.ts`
+- Stage A: one Codex Sol/medium execution passed under `bwrap` with a write-granted repository and synthetic home; requested model/reasoning were launch-enforced and separately recorded as not provider-attested
+- Stage A public ledger identity: `sha256:52190465d1d63a542192485c2cb3102e80c948d44b2bad63daca57e34f95384d`
+- Stage B: one protected Claude Sonnet execution returned semantic PASS under the same `bwrap` path with repository read-only plus private write and synthetic home
+- Stage B public ledger identity: `sha256:a84a38ae25d571f6e3f1786111e6efd262fb4197676d8b7be6d98245472a2b1d`
+- Expected host action: promotion into the read-only repository was denied; this confirms rather than weakens the granted mode and does not negate the protected execution's typed PASS
+- Outputs updated: `preflight/stage-a.json`, `preflight/stage-b.json`
+- Provider calls: one Codex and one Claude; neither was retried
+- Measurements: Codex preflight completed in 28.45 s; Claude preflight completed in 12.40 s; token usage unavailable.

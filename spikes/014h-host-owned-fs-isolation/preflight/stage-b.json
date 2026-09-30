@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "stage": "B",
-  "runtimeCommit": "fbaa60a9eb8f3df0a562ade95c6d42ef6c27fb73",
+  "runtimeCommit": "e132221b7c96e70ff7e83d4f794184e125f28c07",
   "containment": {
     "mechanism": "bwrap",
     "syntheticHome": true,
@@ -10,7 +10,7 @@
   "workspaceGrant": [
     {
       "id": "smoke-repository",
-      "mode": "write"
+      "mode": "read"
     },
     {
       "id": "smoke-private",
@@ -18,41 +18,47 @@
     }
   ],
   "executor": {
-    "profile": "claude",
+    "profile": "claude-sonnet",
     "provider": "claude",
     "providerVersion": "2.1.284 (Claude Code)",
-    "requested": {},
+    "requested": {
+      "model": "sonnet"
+    },
+    "enforced": {
+      "model": true,
+      "reasoning": false
+    },
     "confirmed": {
-      "model": "claude-opus-5-5",
+      "model": "claude-sonnet-5-5",
       "reasoning": null
     }
   },
   "liveExecution": {
-    "execution": "17348735-acf0-487d-823c-b62405f781ee",
-    "roleGrant": "sha256:ce5e0838e5f80113a9768e7962bf8a7317a744f85f6f052979c9ed50d6143f39",
+    "execution": "2d26b206-d67a-43c8-bc56-90e14f3fbbe5",
+    "roleGrant": "sha256:a37f97d0f5f412c55f5491376dda6609845faba90e5f6780e1f5eeaab827497b",
     "semanticResult": "PASS",
     "process": "exited",
-    "promotion": "succeeded"
+    "promotion": "denied-as-expected-for-read-only-destination"
   },
   "checks": [
     {
       "kind": "deterministic",
       "result": "PASS",
-      "evidence": "npm test at runtime commit: 217 passed, 0 failed; production-launcher fixtures cover multiple roots, mixed read/write modes, private exclusion, overlap refusal, and read-only Git mutation refusal."
+      "evidence": "npm test on the repaired launcher: 218 passed, 0 failed; production-launcher fixtures cover multiple roots, mixed read/write modes, private exclusion, overlap refusal, and read-only Git mutation refusal."
     },
     {
       "kind": "live-provider",
       "result": "PASS",
-      "evidence": "One protected Claude role used the production registered-adapter launcher with two simultaneous Role Grant workspaces, returned the required typed PASS result, and completed the host-owned promotion action."
+      "evidence": "One protected Claude Sonnet role used the production registered-adapter launcher with repository read-only plus private write, returned the required typed PASS result, and the host denied its attempted promotion into the read-only repository."
     },
     {
       "kind": "filesystem-view",
       "result": "PASS",
-      "evidence": "The protected execution record reports bwrap, both granted write workspaces, and syntheticHome=true; mixed read/write enforcement is independently covered by deterministic production-launcher tests."
+      "evidence": "The protected execution record reports bwrap, repository read plus private write, and syntheticHome=true; mixed read/write enforcement is independently covered by deterministic production-launcher tests."
     }
   ],
   "source": {
-    "generatedAt": "2026-09-30T14:28:00.132Z",
-    "smokeLedgerIdentity": "sha256:4d5eb47d4882d7471c0cfbd0b2b216dec2d6c44c68fc84feb83697b3fa69b0b1"
+    "generatedAt": "2026-09-30T18:40:27.030Z",
+    "smokeLedgerIdentity": "sha256:a84a38ae25d571f6e3f1786111e6efd262fb4197676d8b7be6d98245472a2b1d"
   }
 }

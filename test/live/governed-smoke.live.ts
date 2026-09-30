@@ -263,14 +263,19 @@ void test("014c live smoke: real Codex and Claude through the production governe
       runs["smoke-claude-promotion"]?.result?.disposition,
       "succeeded",
     );
-    assert.equal(
-      runs["smoke-claude-promotion"].actions[0]?.status,
-      "succeeded",
-    );
-    assert.ok(record.events.includes("smoke-promotion-recorded"));
-    assert.equal(
-      record.promotedBytes,
-      identity(readFileSync(join(fixture, "private", "promotion-bytes.txt"))),
-    );
+    if (repositoryMode === "write") {
+      assert.equal(
+        runs["smoke-claude-promotion"].actions[0]?.status,
+        "succeeded",
+      );
+      assert.ok(record.events.includes("smoke-promotion-recorded"));
+      assert.equal(
+        record.promotedBytes,
+        identity(readFileSync(join(fixture, "private", "promotion-bytes.txt"))),
+      );
+    } else {
+      assert.equal(runs["smoke-claude-promotion"].actions[0]?.status, "denied");
+      assert.equal(record.promotedBytes, null);
+    }
   }
 });

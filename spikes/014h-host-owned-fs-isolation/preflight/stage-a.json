@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "stage": "A",
-  "runtimeCommit": "fbaa60a9eb8f3df0a562ade95c6d42ef6c27fb73",
+  "runtimeCommit": "e132221b7c96e70ff7e83d4f794184e125f28c07",
   "containment": {
     "mechanism": "bwrap",
     "syntheticHome": true,
@@ -14,19 +14,30 @@
     }
   ],
   "executor": {
-    "profile": "codex",
+    "profile": "codex-sol-medium",
     "provider": "codex",
     "providerVersion": "codex-cli 0.157.1",
-    "requested": {},
+    "requested": {
+      "model": "gpt-5.6-sol",
+      "reasoning": "medium"
+    },
+    "enforced": {
+      "model": true,
+      "reasoning": true
+    },
     "confirmed": {
       "model": null,
       "reasoning": null
     },
-    "attestation": "The Codex adapter does not attest model or reasoning identity; no identity is inferred."
+    "attestation": {
+      "model": "unavailable",
+      "reasoning": "unavailable",
+      "note": "Launch settings were passed and enforced by the Codex CLI; its JSONL did not provider-attest the effective values."
+    }
   },
   "liveExecution": {
-    "execution": "e9dab9cc-cc36-4676-9c52-379797d86c29",
-    "roleGrant": "sha256:f3057af5813ea84fb4164dfba3571476e8bcac39673ea81fb1dd74f5bcb1901e",
+    "execution": "00dbb88f-5811-4090-ab7c-ef233467d02b",
+    "roleGrant": "sha256:a531f1d02d9ce57be8580990162d0f4b6096da5191b18500b73c48c280e0b0be",
     "semanticResult": "PASS",
     "process": "exited"
   },
@@ -34,7 +45,7 @@
     {
       "kind": "deterministic",
       "result": "PASS",
-      "evidence": "npm test at runtime commit: 217 passed, 0 failed; production-launcher fixtures cover granted read/write, scratch, private/sibling/home exclusion, and traversal refusal."
+      "evidence": "npm test on the repaired launcher: 218 passed, 0 failed; production-launcher fixtures cover granted read/write, scratch, private/sibling/home exclusion, and traversal refusal."
     },
     {
       "kind": "live-provider",
@@ -48,7 +59,7 @@
     }
   ],
   "source": {
-    "generatedAt": "2026-09-30T14:28:00.132Z",
-    "smokeLedgerIdentity": "sha256:4d5eb47d4882d7471c0cfbd0b2b216dec2d6c44c68fc84feb83697b3fa69b0b1"
+    "generatedAt": "2026-09-30T18:40:02.920Z",
+    "smokeLedgerIdentity": "sha256:52190465d1d63a542192485c2cb3102e80c948d44b2bad63daca57e34f95384d"
   }
 }
