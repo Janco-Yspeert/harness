@@ -81,3 +81,12 @@
 - Output: `design-map.md` (`sha256:2ef8d4ca3494945f1ad3f4abfaff18a398178fd9bae6e0fb2470997ec7aa7cd3`)
 - Decisions: prior host-mediated-mutation decisions carried forward; added SC6 separating authoritative trusted-N evidence from bounded candidate-subject evidence (subject cannot emit the authoritative result; smallest fixture runs the unchanged 014e blob).
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator Prepare (recovery revision) — execution 4979763a-cc58-48c3-907e-9be28bf8502d
+
+- Skill: `evaluator`, contract version 14, mode `prepare`; evaluator revision `002` (revision `001` preserved)
+- Inputs: brief `sha256:c54324b00dd8fa4c54d8f567046e36fe2558cf2b5c14bc2b8edffe4ee2644759`, Design Map `sha256:2ef8d4ca3494945f1ad3f4abfaff18a398178fd9bae6e0fb2470997ec7aa7cd3`
+- Outputs: `eval-requirements.md` (`sha256:8ede56f90b8d37cfbdf6840c650e56587fbe2d33005149378bc8b8730cf94551`), `coverage-map.json`
+- Evaluator revision identity: `sha256:6091eac3062c17711a9828fe813a71389ca83a9f5c30c99bfe92a42f659b0f82`
+- Result: succeeded; pre-freeze integrity validation PASS (8 criteria, 9 procedures)
+- Measurements: wall-clock time and token usage unavailable.
