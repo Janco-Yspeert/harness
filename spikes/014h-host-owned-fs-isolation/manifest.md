@@ -105,6 +105,16 @@
 - Provider calls: one Codex; no retry
 - Measurements: checkpoint preflight completed in 25.42 s; token usage unavailable.
 
+## Worker submission-boundary repair and Stage A checkpoint refresh
+
+- Trigger: protected verification execution `ffe693c4-3251-4512-a191-db4a9cdb99ca` proved the rejected payload lacked the evaluator contract's required `methodology.result`
+- Repair: the generic worker prompt now places the pinned methodology vocabulary and result constraints directly at the `submitResult` boundary; evaluator bytes and acceptance criteria are unchanged
+- Verification: typecheck and lint passed; focused worker-instruction regression passed
+- Checkpoint refresh: one Codex Sol/medium execution passed under `bwrap` at runtime `bd08a3ed26bbb31746a421c506f9b18ec64c2336`
+- Refreshed Stage A public ledger identity: `sha256:5e95110ec05fd9f2cf63bf2952e609011e076782b2de564d2d1f5f9181014cdf`
+- Provider calls: one Codex; no retry
+- Measurements: checkpoint preflight completed in 29.44 s; token usage unavailable.
+
 ## Implementation — execution 9a1fd057-7d0a-420e-a0cf-2e6de61b7773
 
 - Skill: `implementation`, contract version 5, pinned identity `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "stage": "A",
-  "runtimeCommit": "adc3eb0d86c98b8022b05c4c00d011d403609423",
+  "runtimeCommit": "bd08a3ed26bbb31746a421c506f9b18ec64c2336",
   "containment": {
     "mechanism": "bwrap",
     "syntheticHome": true,
@@ -36,8 +36,8 @@
     }
   },
   "liveExecution": {
-    "execution": "c44f8e8f-9eda-4aa5-b0cb-eb394832f80a",
-    "roleGrant": "sha256:c438b9279bf04e283632e894fbc2df9d61b1ebf6d9a701a850c09cc66d553780",
+    "execution": "e6cc062c-3e43-40ef-bc20-0497211b941d",
+    "roleGrant": "sha256:98315a50866858a14a8e143dee63ac61b47548e380e31a1248569cb46412f381",
     "semanticResult": "PASS",
     "process": "exited"
   },
@@ -59,7 +59,7 @@
     }
   ],
   "source": {
-    "generatedAt": "2026-09-30T18:51:27.624Z",
-    "smokeLedgerIdentity": "sha256:9650627aa58f24779c773b89a207da0a0f860d19babd1573f79aceea3d52d818"
+    "generatedAt": "2026-09-30T19:01:04.732Z",
+    "smokeLedgerIdentity": "sha256:5e95110ec05fd9f2cf63bf2952e609011e076782b2de564d2d1f5f9181014cdf"
   }
 }
