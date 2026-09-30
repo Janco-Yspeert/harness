@@ -408,6 +408,12 @@ export interface Execution {
     requested: { model?: string; reasoning?: string };
     confirmed: { model: string | null; reasoning: string | null };
   };
+  // Public-safe host containment evidence (Spike 014h). Present only when the
+  // spawned provider was launched inside host filesystem isolation; it holds
+  // no paths, credentials or provider configuration.
+  filesystemIsolation?: "bwrap";
+  workspaces?: Array<{ id: string; mode: "read" | "write" }>;
+  syntheticHome?: true;
 }
 export interface RootAuthority {
   schemaVersion: 1;

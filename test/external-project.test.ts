@@ -673,16 +673,13 @@ function definitionRole(definition: ReturnType<typeof loadDefinition>) {
   return role;
 }
 
-void test("014e D4: containment makes forbidden-exposure grants eligible for every adapter only when enforced", () => {
+void test("014h AC10: privateWorkspace metadata no longer decides forbidden-exposure launch eligibility", () => {
   const grant = {
     capabilities: ["repository-read", "local-computation", "git-inspect"],
     executorConstraints: { protected: false, forbiddenExposure: ["private"] },
   } as unknown as RoleGrant;
-  assert.throws(
-    () => planLaunch(ADAPTERS.codex, grant, codexProfile),
-    /read isolation/,
-  );
-  assert.deepEqual(planLaunch(ADAPTERS.codex, grant, codexProfile, true), {});
+  assert.equal(ADAPTERS.codex.privateWorkspace, false);
+  assert.deepEqual(planLaunch(ADAPTERS.codex, grant, codexProfile), {});
 });
 
 // A placeholder provider: records what it could and could not do inside the

@@ -11,6 +11,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -533,6 +534,13 @@ async function harness(t: TestContext, roles: Record<string, Step[]>) {
       exposure: "evaluator-private",
     },
   };
+  // Placeholder provider programs: spawned launches are contained (014h).
+  const bin = join(dir, "bin");
+  mkdirSync(bin);
+  for (const program of ["claude", "codex"]) {
+    writeFileSync(join(bin, program), "#!/bin/sh\nexit 0\n");
+    chmodSync(join(bin, program), 0o755);
+  }
   const evidence = join(dir, "provider");
   const scenarioPath = join(dir, "scenario.json");
   writeFileSync(scenarioPath, JSON.stringify({ evidence, roles }));
@@ -546,7 +554,7 @@ async function harness(t: TestContext, roles: Record<string, Step[]>) {
       providerRuntime: {
         locate: (program: string) => ({
           ok: true as const,
-          path: `/opt/provider/${program}`,
+          path: join(bin, program),
         }),
         humanWaitMs: 2000,
         spawnProvider: ((
@@ -556,7 +564,8 @@ async function harness(t: TestContext, roles: Record<string, Step[]>) {
         ) =>
           spawn(
             process.execPath,
-            [fakeProvider, scenarioPath, program, ...args],
+            // The wrapped provider argv follows the containment `--`.
+            [fakeProvider, scenarioPath, ...args.slice(args.indexOf("--") + 1)],
             options,
           )) as unknown as typeof spawn,
       },

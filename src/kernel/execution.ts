@@ -935,6 +935,8 @@ export class ExecutionKernel {
       mode: "attached" | "spawned";
       predecessor?: string;
       inline?: boolean;
+      // Set by the host only for a launch it contained.
+      contained?: boolean;
     },
   ): { execution: Execution; grant: RoleGrant; duplicate: boolean } {
     return this.#transaction(workflow, () => {
@@ -1094,6 +1096,16 @@ export class ExecutionKernel {
           // configuration and supervisor identity never do.
           confirmed: { model: null, reasoning: null },
         },
+        ...(request.contained
+          ? {
+              filesystemIsolation: "bwrap" as const,
+              workspaces: grant.workspaces.map((workspace) => ({
+                id: workspace.id,
+                mode: workspace.mode,
+              })),
+              syntheticHome: true as const,
+            }
+          : {}),
       };
       // Record exposure before delivering any workspace or contract to an executor.
       for (const workspace of grant.workspaces)

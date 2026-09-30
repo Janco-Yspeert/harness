@@ -12,6 +12,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -30,6 +31,7 @@ import {
   planLaunch,
   validateProductionExecutors,
 } from "../src/executors/adapters.ts";
+import { locateContainment } from "../src/executors/containment.ts";
 import { providerEnvironment } from "../src/executors/governed.ts";
 import {
   parseWorkerRequest,
@@ -157,6 +159,14 @@ function smoke(
     JSON.stringify({ evidence, ...(options.scenario ?? {}) }),
   );
   const launched: string[] = [];
+  // Real (placeholder) provider programs: every spawned registered-adapter
+  // launch is contained (014h), and containment binds the located program.
+  const bin = join(dir, "bin");
+  mkdirSync(bin);
+  for (const program of ["claude", "codex"]) {
+    writeFileSync(join(bin, program), "#!/bin/sh\nexit 0\n");
+    chmodSync(join(bin, program), 0o755);
+  }
   return {
     dir,
     root,
@@ -189,7 +199,7 @@ function smoke(
           : {
               locate: (program: string) => ({
                 ok: true as const,
-                path: `/opt/provider/${program}`,
+                path: join(bin, program),
               }),
             }),
         humanWaitMs: 2000,
@@ -198,10 +208,16 @@ function smoke(
           args: readonly string[],
           spawnOptions: object,
         ) => {
-          launched.push(program);
+          // The seam receives the real containment command. Its wrapped
+          // provider argv (after `--`) is run by the in-process fake so the
+          // scenario can observe it; the containment build itself is real.
+          const separator = args.indexOf("--");
+          assert.ok(separator >= 0, "launch must be contained");
+          const wrapped = args.slice(separator + 1);
+          launched.push(String(wrapped[0]));
           return spawn(
             process.execPath,
-            [fakeProvider, scenarioPath, program, ...args],
+            [fakeProvider, scenarioPath, ...wrapped],
             spawnOptions,
           );
         }) as unknown as typeof spawn,
@@ -298,7 +314,7 @@ void test("AC08/AC09/AC07: Claude adapter delivers the exact assignment, relays 
     model: "fake-model",
     reasoning: null,
   });
-  assert.deepEqual(f.launched, ["/opt/provider/claude"]);
+  assert.deepEqual(f.launched, [join(realpathSync(f.dir), "bin", "claude")]);
   const promoted = readFileSync(
     join(f.workflowDir, "promoted", "promotion-bytes.txt"),
   );
@@ -955,6 +971,14 @@ void test("AC04/EA1: provider discovery never selects or executes a temporary or
 void test("AC04/AC13/TR5: production executor configuration admits only registered adapters", () => {
   const good = validateProductionExecutors([claudeProfile, codexProfile]);
   assert.equal(good.length, 2);
+  // 014h AC10: the adapter's privateWorkspace flag no longer gates a declared
+  // private-workspace isolation; host containment enforces visibility.
+  assert.equal(
+    validateProductionExecutors([
+      { ...codexProfile, isolation: ["private-workspace"] },
+    ]).length,
+    1,
+  );
   for (const [profile, pattern] of [
     [{ ...claudeProfile, command: ["/tmp/bridge.js"] }, /command/],
     [
@@ -962,7 +986,7 @@ void test("AC04/AC13/TR5: production executor configuration admits only register
       /unregistered provider/,
     ],
     [{ ...claudeProfile, program: "/tmp/claude" }, /unsupported field program/],
-    [{ ...codexProfile, isolation: ["private-workspace"] }, /isolation/],
+    [{ ...codexProfile, isolation: ["network"] }, /isolation/],
     [{ ...claudeProfile, reasoning: "high" }, /cannot enforce a reasoning/],
     [
       { ...claudeProfile, capabilities: ["network"] },
@@ -1180,10 +1204,9 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
     capabilities: ALL,
     executorConstraints: { protected: true, forbiddenExposure: [] },
   } as unknown as RoleGrant;
-  assert.throws(
-    () => planLaunch(codex, protectedGrant, codexProfile),
-    /private-workspace read isolation/,
-  );
+  // 014h: the provider flag no longer gates the protected launch check;
+  // protected routing is executor-policy (profile isolation), not the flag.
+  assert.deepEqual(planLaunch(codex, protectedGrant, codexProfile), {});
   assert.deepEqual(
     planLaunch(ADAPTERS.claude, protectedGrant, claudeProfile),
     {},
@@ -1579,4 +1602,139 @@ void test("AC16/014d EA5: the synthetic fixture grants through its own trust roo
     1,
   );
   assert.match(f.trusted.methodology, /^sha256:[a-f0-9]{64}$/);
+});
+
+// ---- Spike 014h: every spawned registered-adapter launch is contained ----
+
+function shellProgram(dir: string, body: string, name: string): string {
+  const path = join(dir, name);
+  writeFileSync(path, `#!/bin/sh\n${body}\n`);
+  chmodSync(path, 0o755);
+  return path;
+}
+
+const ledgerCount = (ledger: string, ...names: string[]): number =>
+  readLedger(ledger).filter((e) => names.includes(e.transition)).length;
+
+void test("014h AC01: a spawned registered-adapter launch of the Harness project itself is contained and its execution carries public isolation evidence", async (t) => {
+  const { f, host, started } = await run(t, CODEX, { steps: [] });
+  assert.equal(started.status, 201, JSON.stringify(started.value));
+  const execution = await settled(host.url, started.value.execution?.id ?? "");
+  assert.equal(execution.filesystemIsolation, "bwrap");
+  assert.equal(execution.syntheticHome, true);
+  assert.deepEqual(execution.workspaces, [
+    { id: "smoke-repository", mode: "write" },
+  ]);
+  // Public-safe: no path, credential or configuration content.
+  const serialized = JSON.stringify(execution);
+  assert.equal(serialized.includes(f.dir), false);
+  assert.equal(serialized.includes(realpathSync(f.dir)), false);
+  assert.doesNotMatch(serialized, /token|credential|auth\.json|\/home\//i);
+  // The persisted allocation record carries the same fields.
+  const allocation = readLedger(f.ledger).find(
+    (e) => e.transition === "kernel.allocation",
+  );
+  const recorded = (allocation?.evidence as { execution: Execution }).execution;
+  assert.equal(recorded.filesystemIsolation, "bwrap");
+});
+
+void test("014h AC01: a protected role records its mixed workspace ids and modes", async (t) => {
+  const { host, started } = await run(t, PROMOTION, { steps: [] });
+  const execution = await settled(host.url, started.value.execution?.id ?? "");
+  assert.equal(execution.filesystemIsolation, "bwrap");
+  assert.ok(execution.workspaces && execution.workspaces.length >= 2);
+  for (const workspace of execution.workspaces)
+    assert.deepEqual(Object.keys(workspace).sort(), ["id", "mode"]);
+  assert.ok(
+    execution.workspaces.some((workspace) => workspace.id === "smoke-private"),
+  );
+});
+
+void test("014h: uncontained kinds (programmatic command profiles) omit the isolation fields", async (t) => {
+  const fixture: ExecutorProfile = {
+    ...codexProfile,
+    id: "fixture",
+    command: ["/bin/true"],
+  };
+  const { host, started } = await run(t, CODEX, {}, {}, [fixture]);
+  assert.equal(started.status, 201, JSON.stringify(started.value));
+  const execution = started.value.execution;
+  assert.ok(execution);
+  assert.equal("filesystemIsolation" in execution, false);
+  assert.equal("workspaces" in execution, false);
+  assert.equal("syntheticHome" in execution, false);
+  await settled(host.url, execution.id);
+});
+
+async function refusedLaunch(
+  t: TestContext,
+  role: string,
+  change: (f: ReturnType<typeof smoke>) => void,
+) {
+  const f = smoke(t, { scenario: { steps: [] } });
+  change(f);
+  const host = await startHarnessHost(0, { governed: f.options });
+  t.after(() => host.close());
+  const grant = await call<{ grant: WorkflowGrant }>(host.url, "grants", {
+    continuation: false,
+    delegation: ["spawned"],
+    maxAllocations: 2,
+    roles: [role],
+  });
+  assert.equal(grant.status, 201, JSON.stringify(grant.value));
+  const refused = await call<{ category?: string }>(host.url, "continue", {
+    workflowGrant: grant.value.grant.id,
+    mode: "spawned",
+    role,
+  });
+  assert.equal(refused.status, 409, JSON.stringify(refused.value));
+  assert.equal(
+    ledgerCount(f.ledger, "kernel.session", "kernel.allocation"),
+    0,
+    "no session or allocation exists",
+  );
+  assert.deepEqual(f.launched, [], "nothing launched, no unwrapped fallback");
+  return refused.value.category;
+}
+
+void test("014h AC11: unavailable namespaces, a failing nested sandbox, an unresolvable workspace and an unsafe overlap are refused before any session or allocation", async (t) => {
+  const real = locateContainment([]);
+  assert.ok(real.ok, "bubblewrap is required for containment tests");
+  assert.equal(
+    await refusedLaunch(t, CODEX, (f) => {
+      Object.assign(f.options.providerRuntime, {
+        bwrap: shellProgram(f.dir, "exit 1", "failing-bwrap"),
+      });
+    }),
+    "permission-denied",
+  );
+  assert.equal(
+    await refusedLaunch(t, CODEX, (f) => {
+      Object.assign(f.options.providerRuntime, {
+        bwrap: shellProgram(
+          f.dir,
+          `for arg in "$@"; do [ "$arg" = "--" ] && break; [ "$arg" = "--unshare-net" ] && exit 1; done\nexec '${real.path}' "$@"`,
+          "nested-denying-bwrap",
+        ),
+      });
+    }),
+    "provider-config-invalid",
+  );
+  assert.equal(
+    await refusedLaunch(t, PROMOTION, (f) => {
+      rmSync(f.privateDir, { recursive: true, force: true });
+    }),
+    "provider-config-invalid",
+  );
+  assert.equal(
+    await refusedLaunch(t, PROMOTION, (f) => {
+      const workspaces = f.project.workflows.smoke?.workspaces;
+      assert.ok(workspaces?.repository && workspaces.private);
+      const nested = join(f.workflowDir, "nested-private");
+      mkdirSync(nested);
+      workspaces.repository.mode = "read";
+      workspaces.private.path = nested;
+    }),
+    "provider-config-invalid",
+  );
 });

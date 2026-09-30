@@ -35,3 +35,13 @@
 - Outputs: `eval-requirements.md` (`sha256:e865df63af3cb5d0a371a25cad370679f145ce13f7623e6311bcc1b9f339a6a1`); `coverage-map.json`
 - Statistics: 14 criterion records, 9 procedures (4 executable, 5 review/regression)
 - Measurements: wall-clock time and token usage unavailable.
+
+## Implementation — execution 5b5a2566-8bbd-4e6f-8750-30327a4f749b (attempt 1)
+
+- Skill: `implementation`, contract version 5
+- Inputs: `spike.md` (`sha256:e228070ac2030685c8f725a2aacc16980790c95b9b797d93c0ffcd659874d417`), `design-map.md` (`sha256:aeb1eafba99ff258859488ad4ccc77030096cbc1ee45d1ba8c75a64510d0aedf`), `eval-requirements.md` (`sha256:e865df63af3cb5d0a371a25cad370679f145ce13f7623e6311bcc1b9f339a6a1`); no implementation feedback
+- Base: `17de0b2ab3e86f56fe0c435ae95ed6dc2280ff6d`
+- Output: candidate diff over 9 paths (`sha256:c17cb11aa2964eb6181a845f0aaad32d38cc50ad324da05e76bde49a600748a7` of `git diff --cached` before this entry), 607 insertions, 53 deletions
+- Status: candidate complete for the deterministic scope (AC01–AC04, AC07, AC09–AC13 in code and tests); NOT complete for the live-provider scope. The Stage A/Stage B real-provider preflights, `preflight/stage-a.json`, `preflight/stage-b.json` and the Codex executor-routing cutover were not produced (need live provider credentials and network unavailable to this worker); no artifact was fabricated (AC05, AC06, AC08, AC14 open)
+- Visible verification: `tsc --noEmit`, `eslint .`, `prettier --check src test tools spikes/014h-*` clean; `npm test` 217 pass / 0 fail. `prettier --check .` cannot read untracked sandbox dotfiles in the repository root (EACCES), unrelated to this change
+- Measurements: wall-clock time and token usage unavailable.

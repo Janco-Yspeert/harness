@@ -75,8 +75,8 @@ export interface ProviderAdapter {
   // (confirmed from provider-reported evidence).
   readonly model: { enforce: boolean; attest: boolean };
   readonly reasoning: { enforce: boolean; attest: boolean };
-  // Whether the provider confines reads to the granted workspaces, which is
-  // required for protected and forbidden-exposure grants.
+  // Informational only: whether the provider itself confines reads. Filesystem
+  // visibility is decided by host containment (Spike 014h), never by this flag.
   readonly privateWorkspace: boolean;
   // Whether the provider builds its own nested namespace sandbox for the
   // commands it runs. Inside host containment such a provider is launched
@@ -525,12 +525,11 @@ export function validateProductionExecutors(raw: unknown): ExecutorProfile[] {
         `executor profile ${name}: ${adapter.id} adapter has no mapping for capability ${unmapped}`,
       );
     const isolation = strings("isolation");
-    if (
-      !isolation.every((item) => item === "private-workspace") ||
-      (isolation.length > 0 && !adapter.privateWorkspace)
-    )
+    // Filesystem visibility is enforced by host containment, not by the
+    // adapter; the provider's own `privateWorkspace` flag is informational.
+    if (!isolation.every((item) => item === "private-workspace"))
       throw new Error(
-        `executor profile ${name}: ${adapter.id} adapter cannot enforce the declared isolation`,
+        `executor profile ${name}: unsupported declared isolation`,
       );
     if (typeof profile.available !== "boolean")
       throw new Error(`executor profile ${name} needs boolean availability`);
@@ -561,10 +560,6 @@ export function planLaunch(
   adapter: ProviderAdapter,
   grant: RoleGrant,
   profile: ExecutorProfile,
-  // Host OS containment (external projects) confines reads to the granted
-  // workspaces for every adapter; an adapter's own permission rules alone
-  // never satisfy that requirement for an external project.
-  contained = false,
 ): { model?: string; reasoning?: string } {
   adapter.checkCapabilities(grant.capabilities);
   // Mediated evidence is only meaningful when the role can neither write nor
@@ -587,16 +582,6 @@ export function planLaunch(
         "mediated evidence requires a read-only workspace and no direct write or commit capability",
       );
   }
-  if (
-    (grant.executorConstraints.protected ||
-      grant.executorConstraints.forbiddenExposure.length > 0) &&
-    !adapter.privateWorkspace &&
-    !contained
-  )
-    throw new AdapterRefusal(
-      "provider-config-invalid",
-      `${adapter.id} adapter cannot enforce private-workspace read isolation`,
-    );
   const plan: { model?: string; reasoning?: string } = {};
   for (const key of ["model", "reasoning"] as const) {
     const exact = grant.executorConstraints[key];

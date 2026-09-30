@@ -1,5 +1,6 @@
-// Host-owned operating-system containment for governed provider processes of
-// an external project (Spike 014e, design-map D4).
+// Host-owned operating-system containment for every spawned governed provider
+// process, for the Harness repository and external projects alike (Spike 014e
+// design-map D4, generalized by Spike 014h).
 //
 // Every provider subprocess, and therefore every shell, `git`, test runner and
 // the worker tool server it starts, runs inside a bubblewrap mount, PID and
@@ -108,6 +109,55 @@ export interface ContainmentInput {
   readonly protectedRoots: readonly string[];
   readonly env: Readonly<Record<string, string>>;
   readonly sourceEnv?: NodeJS.ProcessEnv;
+}
+
+// Resolves every granted root before launch and refuses what cannot be
+// represented safely: an unresolvable root, a duplicate, a root nested inside
+// another with a different mode, or a root overlapping the writable scratch.
+function resolveWorkspaces(
+  granted: ContainmentInput["workspaces"],
+  scratchPath?: string,
+): Array<{ path: string; mode: "read" | "write" }> {
+  const refuse = (message: string): never => {
+    throw new AdapterRefusal("provider-config-invalid", message);
+  };
+  const real = (path: string, what: string): string => {
+    try {
+      return realpathSync(path);
+    } catch {
+      return refuse(`${what} cannot be resolved`);
+    }
+  };
+  const scratch =
+    scratchPath === undefined ? undefined : real(scratchPath, "scratch");
+  const resolved = granted.map((workspace) => ({
+    ...workspace,
+    path: real(workspace.path, "granted workspace"),
+  }));
+  for (const [index, a] of resolved.entries()) {
+    if (a.path === "/") refuse("a granted workspace cannot be the root");
+    if (
+      scratch !== undefined &&
+      (contains(a.path, scratch) || contains(scratch, a.path))
+    )
+      refuse("a granted workspace overlaps the execution scratch");
+    for (const b of resolved.slice(index + 1))
+      if (
+        contains(a.path, b.path) || contains(b.path, a.path)
+          ? a.path === b.path || a.mode !== b.mode
+          : false
+      )
+        refuse("granted workspaces overlap unsafely");
+  }
+  return resolved.sort((a, b) => a.path.length - b.path.length);
+}
+
+// Pre-launch validation of a grant's workspaces (host refusal before any
+// session exists); the launcher applies the same checks when it builds mounts.
+export function assertWorkspaces(
+  workspaces: ContainmentInput["workspaces"],
+): void {
+  resolveWorkspaces(workspaces);
 }
 
 function runtimeBinding(
@@ -283,9 +333,7 @@ export function containedLaunch(input: ContainmentInput): {
     const real = realpathSync(file);
     args.push("--ro-bind", real, real);
   }
-  const workspaces = [...input.workspaces]
-    .map((workspace) => ({ ...workspace, path: realpathSync(workspace.path) }))
-    .sort((a, b) => a.path.length - b.path.length);
+  const workspaces = resolveWorkspaces(input.workspaces, input.scratch);
   for (const workspace of workspaces)
     args.push(
       workspace.mode === "write" ? "--bind" : "--ro-bind",

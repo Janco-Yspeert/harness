@@ -11,6 +11,7 @@ import {
   type ProviderAdapter,
 } from "../executors/adapters.ts";
 import {
+  assertWorkspaces,
   locateContainment,
   probeContainment,
   probeNestedSandbox,
@@ -446,22 +447,24 @@ export class GovernedHost {
           });
           return;
         }
-        const contained = this.#external !== undefined;
-        if (contained) this.#assertRuntime();
+        if (this.#external) this.#assertRuntime();
         const profile = this.kernel.select(resolution.grant, "spawned");
         if (!profile)
           throw new HostRefusal("no-adapter", "no eligible spawned executor");
-        // An external project launches only registered adapters, and only
-        // inside host containment; there is no unwrapped fallback.
+        // Every spawned registered-adapter launch, for the Harness repository
+        // and external projects alike, runs inside host containment; there is
+        // no unwrapped fallback. Programmatic command profiles (test fixtures)
+        // are the only uncontained spawned kind.
+        if (this.#external && profile.command?.length)
+          throw new HostRefusal(
+            "provider-config-invalid",
+            "external projects launch only contained registered adapters",
+          );
+        const contained = !profile.command?.length;
         let containment:
           | { bwrap: string; masked: string[]; protectedRoots: string[] }
           | undefined;
         if (contained) {
-          if (profile.command?.length)
-            throw new HostRefusal(
-              "provider-config-invalid",
-              "external projects launch only contained registered adapters",
-            );
           const bwrap = this.#runtime.bwrap
             ? { ok: true as const, path: this.#runtime.bwrap }
             : locateContainment(this.#excludedProviderRoots());
@@ -511,8 +514,10 @@ export class GovernedHost {
             provider = {
               adapter,
               program: located.path,
-              plan: planLaunch(adapter, resolution.grant, profile, contained),
+              plan: planLaunch(adapter, resolution.grant, profile),
             };
+            if (containment)
+              assertWorkspaces(launchWorkspaces(resolution.grant));
             // A provider that builds its own nested sandbox is launched
             // inside containment only when that sandbox can start there.
             if (containment && adapter.nestedSandbox) {
@@ -539,6 +544,7 @@ export class GovernedHost {
           mode: "spawned",
           ...(role ? { role } : {}),
           ...(predecessor ? { predecessor } : {}),
+          ...(containment ? { contained: true } : {}),
         });
         const address = request.socket.localPort;
         if (!allocation.duplicate && provider) {
