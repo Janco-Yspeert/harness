@@ -186,3 +186,13 @@
 - Scope: this adds no evaluator result vocabulary, criterion change, general incomplete-archive eligibility, provider call, evaluator retry or revision. The follow-up retention defect is recorded for later work rather than implemented here.
 - Verification: focused archive-loss, ordinary archive and kernel promotion tests passed 45/45; lint and typecheck passed; the complete regression suite passed 226/226 in 58.00 s. Targeted formatting and `git diff --check` passed before this final manifest update.
 - Measurements: provider calls 0; token usage unavailable.
+
+## As-Built — execution 800a0d3e-b38f-4c50-869a-c05891cf9661
+
+- Skill: `as-built`, contract version 4, pinned identity `sha256:dc3c422691fb36a292b49db411ff9aefd5199f8602b73ef87428fd0a09ea534b`.
+- Inspected revision: candidate `dee86d2314bffa7cc2da0d8ac72004250a06debb`.
+- Inputs: brief `sha256:e228070ac2030685c8f725a2aacc16980790c95b9b797d93c0ffcd659874d417`; Design Map `sha256:aeb1eafba99ff258859488ad4ccc77030096cbc1ee45d1ba8c75a64510d0aedf`; verification `sha256:199a61eab02e432725abb8df222cb366ce34c5752f4a8d4c95efb32a7a1e717c`; promotion `sha256:2333929b0798e7d150afa66a63ccc87ccfb8123c5c2bd1d93b27c5059889a2e4`.
+- Result: succeeded; the reconstruction found no Missing, Contradictory, or Extra discrepancies.
+- Output: `as-built.md`, identity `sha256:7a061a35616c5f346f877b3e4da2c90f7fdbc67815b8d800ab958d7c1ff2551b`.
+- Promotion validation: `evaluation/promotion.json` bytes matched the bound promotion identity and were already committed in `a14e227b18b4ae92ce9fb23dc3ce0d0328b7479d`.
+- Measurements: no additional runtime statistics were available.
