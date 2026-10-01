@@ -503,6 +503,14 @@ export interface PromotionActionRequest {
   evaluatorRevision: string;
   attempt: number;
   artifacts: PromotionArtifact[];
+  archiveLoss?: {
+    archiveCompleteness: "incomplete-known-loss";
+    authority: string;
+    declarationPath: string;
+    declarationIdentity: string;
+    normalValidation: "INELIGIBLE";
+    normalValidationReason: string;
+  };
 }
 export interface EvidenceFileRecord {
   destination: string;

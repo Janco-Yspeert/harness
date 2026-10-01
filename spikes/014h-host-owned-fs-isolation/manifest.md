@@ -177,3 +177,12 @@
 - Promotion: not performed. The evaluator recorded its promotion plan as `INELIGIBLE` because the complete six-attempt history was not present in the evaluator-private workspace. A post-PASS run of the repository's existing archive-manifest validator confirmed that exact reason without exposing private artifact contents. Missing historical evidence was not reconstructed, prior failed attempts were not reinterpreted, and no second evaluator attempt was allocated.
 - Workflow consequence: `verification-finalized` is recorded, but `promotion-recorded` is not. The frozen workflow therefore does not permit As-Built yet; human acceptance has not started.
 - Measurements: protected execution duration approximately 6 minutes; token usage unavailable.
+
+## Supervisor-authorized loss-aware promotion bootstrap implementation
+
+- Skill: `implementation`, contract version 5. Authority is the initiating human's explicit one-time recovery instruction; frozen 014h criteria, candidate `dee86d2314bffa7cc2da0d8ac72004250a06debb`, evaluator revision `001` and authoritative verification PASS remain unchanged.
+- Change: added a root-only promotion recovery boundary that requires canonical `verification-finalized: PASS`, a committed `incomplete-known-loss` declaration matching every canonical evaluator allocation, intact public verification bytes at the recorded evidence commit, an intact successful private attempt result, an unchanged ineligible promotion plan whose sole reason is missing historical attempt evidence, and a complete identity-checked frozen revision inventory.
+- Truthfulness: the ordinary archive validator remains unchanged and continues to report the history `INELIGIBLE`. The recovery archives only retained bytes, embeds the loss declaration identity, ordinary validation result and one-time authority in `promotion.json` and `promotion-recorded`, and never creates absent attempt files.
+- Scope: this adds no evaluator result vocabulary, criterion change, general incomplete-archive eligibility, provider call, evaluator retry or revision. The follow-up retention defect is recorded for later work rather than implemented here.
+- Verification: focused archive-loss, ordinary archive and kernel promotion tests passed 45/45; lint and typecheck passed; the complete regression suite passed 226/226 in 58.00 s. Targeted formatting and `git diff --check` passed before this final manifest update.
+- Measurements: provider calls 0; token usage unavailable.

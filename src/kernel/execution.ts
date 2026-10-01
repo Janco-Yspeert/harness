@@ -31,6 +31,13 @@ import {
 } from "../executors/protocol.ts";
 import { evidencePath, inside, loadDefinition } from "./methodology.ts";
 import {
+  buildKnownLossArtifacts,
+  parseArchiveLossDeclaration,
+  validateKnownLossContext,
+  type ArchiveLossDeclaration,
+  type KnownAttempt,
+} from "./archive-loss.ts";
+import {
   authorityBasis,
   recoveryScopedAuthorityBasis,
   resolveAuthority,
@@ -2234,6 +2241,165 @@ export class ExecutionKernel {
       `host ${action.request.kind} action ${action.status}: ${action.id}`,
     );
   }
+  authorizeKnownLossPromotion(
+    workflow: string,
+    request: {
+      execution: string;
+      declarationPath: string;
+      declarationIdentity: string;
+    },
+  ): {
+    authority: string;
+    declaration: ArchiveLossDeclaration;
+    artifacts: PromotionArtifact[];
+  } {
+    return this.#transaction(workflow, () => {
+      const execution = this.execution(workflow, request.execution);
+      const grant = this.roleGrant(workflow, execution.roleGrant);
+      const allowed = grant.hostActions.promotion;
+      const events = this.events(workflow);
+      const finalized = events.findLast(
+        (event) =>
+          event.transition === "verification-finalized" &&
+          event.evidence.execution === execution.id,
+      );
+      if (
+        grant.role !== "evaluator-verify" ||
+        !allowed ||
+        execution.result?.methodology.result !== "PASS" ||
+        finalized?.evidence.result !== "PASS" ||
+        finalized.evidence.commit !== allowed.candidate ||
+        finalized.evidence.evaluatorRevision !== allowed.evaluatorRevision
+      )
+        throw new Error(
+          "loss-aware promotion requires canonical finalized verification PASS",
+        );
+      const repository = realpathSync(this.project.root);
+      const workflowRoot = realpathSync(
+        resolve(
+          repository,
+          required(this.project.workflows[workflow]).directory,
+        ),
+      );
+      const declarationPath = boundedPath(
+        workflowRoot,
+        request.declarationPath,
+      );
+      const declarationBytes = readFileSync(declarationPath);
+      if (identity(declarationBytes) !== request.declarationIdentity)
+        throw new Error("archive-loss declaration identity mismatch");
+      const relativeDeclaration = relative(repository, declarationPath);
+      const committed = execFileSync(
+        "git",
+        ["-C", repository, "show", `HEAD:${relativeDeclaration}`],
+        { stdio: "pipe" },
+      );
+      if (identity(committed) !== request.declarationIdentity)
+        throw new Error("archive-loss declaration lacks committed provenance");
+      const declaration = parseArchiveLossDeclaration(
+        JSON.parse(declarationBytes.toString("utf8")),
+      );
+      const sourceWorkspace = grant.workspaces.find((workspace) => {
+        const configured =
+          this.project.workflows[workflow]?.workspaces?.[
+            allowed.sourceWorkspace
+          ] ?? this.project.workspaces[allowed.sourceWorkspace];
+        return configured?.id === workspace.id;
+      });
+      if (!sourceWorkspace)
+        throw new Error("loss-aware promotion source workspace is unavailable");
+      const sourceRoot = realpathSync(sourceWorkspace.path);
+      const terminalAttempt = Number(finalized.evidence[allowed.attemptField]);
+      const attempts: KnownAttempt[] = events
+        .filter(
+          (event) =>
+            event.transition === allowed.allocationEvent &&
+            typeof event.evidence[allowed.attemptField] === "number" &&
+            Number(event.evidence[allowed.attemptField]) <= terminalAttempt,
+        )
+        .sort(
+          (a, b) =>
+            Number(a.evidence[allowed.attemptField]) -
+            Number(b.evidence[allowed.attemptField]),
+        )
+        .map((allocation) => {
+          const number = Number(allocation.evidence[allowed.attemptField]);
+          const executionId = String(allocation.evidence.execution);
+          const terminal = events.findLast(
+            (event) =>
+              event.transition === "verification-finalized" &&
+              event.evidence.execution === executionId,
+          );
+          const prior = this.execution(workflow, executionId);
+          const expectedPrivateArtifact = `.eval/attempts/${String(number).padStart(3, "0")}/eval-result.md`;
+          return {
+            attempt: number,
+            execution: executionId,
+            candidate: String(allocation.evidence.commit),
+            evaluatorRevision: String(allocation.evidence.evaluatorRevision),
+            publicOutcome: terminal
+              ? String(terminal.evidence.result)
+              : `${prior.process}:${prior.failure ?? "no-finalized-verdict"}`,
+            expectedPrivateArtifact,
+            privateArtifact: existsSync(
+              resolve(sourceRoot, expectedPrivateArtifact),
+            )
+              ? "present"
+              : "missing",
+          };
+        });
+      validateKnownLossContext(declaration, {
+        spike: workflow,
+        candidate: allowed.candidate,
+        evaluatorRevision: allowed.evaluatorRevision,
+        successfulExecution: execution.id,
+        successfulAttempt: terminalAttempt,
+        attempts,
+      });
+      const publicArtifact = boundedPath(
+        workflowRoot,
+        String(finalized.evidence.path),
+      );
+      if (
+        identity(readFileSync(publicArtifact)) !==
+          finalized.evidence.identity ||
+        finalized.evidence.identity !==
+          identity(
+            execFileSync(
+              "git",
+              [
+                "-C",
+                repository,
+                "show",
+                `${String(finalized.evidence.artifactCommit)}:${relative(repository, publicArtifact)}`,
+              ],
+              { stdio: "pipe" },
+            ),
+          )
+      )
+        throw new Error(
+          "successful public verification evidence is not intact",
+        );
+      const artifacts = buildKnownLossArtifacts(sourceRoot, declaration);
+      const authority = randomUUID();
+      this.#append(workflow, "kernel.loss-aware-promotion-authorized", {
+        schemaVersion: 1,
+        id: authority,
+        origin: "human",
+        execution: execution.id,
+        candidate: allowed.candidate,
+        evaluatorRevision: allowed.evaluatorRevision,
+        verification: finalized.id,
+        declarationPath: request.declarationPath,
+        declarationIdentity: request.declarationIdentity,
+        archiveCompleteness: "incomplete-known-loss",
+        normalValidation: "INELIGIBLE",
+        normalValidationReason: declaration.promotionPlan.reason,
+        bootstrapRuntimeCommit: declaration.bootstrapRuntimeCommit,
+      });
+      return { authority, declaration, artifacts };
+    });
+  }
   promote(
     workflow: string,
     id: string,
@@ -2241,6 +2407,7 @@ export class ExecutionKernel {
     evaluatorRevision: string,
     attempt: number,
     artifacts: PromotionArtifact[],
+    archiveLoss?: NonNullable<PromotionActionRequest["archiveLoss"]>,
   ): PromotionActionResult {
     return this.#transaction(workflow, () => {
       const execution = this.execution(workflow, id);
@@ -2255,6 +2422,7 @@ export class ExecutionKernel {
         evaluatorRevision,
         attempt,
         artifacts,
+        ...(archiveLoss ? { archiveLoss } : {}),
       };
       this.#append(workflow, "kernel.action-request", { ...request });
       const action: PromotionActionResult = {
@@ -2386,6 +2554,7 @@ export class ExecutionKernel {
                 attempt,
                 destination: allowed.destination,
                 artifacts: request.artifacts,
+                ...(archiveLoss ? { archiveLoss } : {}),
               },
               result: {
                 artifacts: action.artifacts,
@@ -2433,6 +2602,7 @@ export class ExecutionKernel {
           roleGrant: grant.id,
           semanticResult: required(execution.result).id,
           action: action.id,
+          ...(archiveLoss ? { archiveLoss } : {}),
         });
       this.#transition(workflow, id);
       this.#telemetry("host-action", execution, action.id);

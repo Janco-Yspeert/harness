@@ -844,6 +844,35 @@ export class GovernedHost {
           );
           return;
         }
+        if (sub === "promote-known-loss") {
+          needRoot();
+          const recovery = this.kernel.authorizeKnownLossPromotion(workflow, {
+            execution: execution.id,
+            declarationPath: text(body.declarationPath),
+            declarationIdentity: text(body.declarationIdentity),
+          });
+          send(
+            200,
+            this.kernel.promote(
+              workflow,
+              execution.id,
+              recovery.declaration.candidate,
+              recovery.declaration.evaluatorRevision,
+              recovery.declaration.successfulAttempt.attempt,
+              recovery.artifacts,
+              {
+                archiveCompleteness: "incomplete-known-loss",
+                authority: recovery.authority,
+                declarationPath: text(body.declarationPath),
+                declarationIdentity: text(body.declarationIdentity),
+                normalValidation: "INELIGIBLE",
+                normalValidationReason:
+                  recovery.declaration.promotionPlan.reason,
+              },
+            ),
+          );
+          return;
+        }
         if (sub === "cancel") {
           needRoot();
           // Record the terminal status first, then terminate the actual child.
