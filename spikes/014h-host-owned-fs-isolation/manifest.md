@@ -166,3 +166,14 @@
 - Protected-provider command preflight: one completed Sonnet preflight at code commit `88972ad` ran `node --test` successfully inside `containedLaunch`/bubblewrap with the new unattended mode and returned `PRECHECK_OK`; no permission denial occurred. An initial local launcher invocation exited before a provider turn because its disposable empty MCP JSON had the wrong shape; correcting that preflight-only input produced the single complete observation.
 - Provenance: the following checkpoint commit contains this final manifest entry; its full identity is recorded by the subsequent root authority and evaluator allocation. Provider model configuration and provider attestation remain separate execution facts.
 - Measurements: token usage unavailable.
+
+## Protected verification attempt 006 — PASS, promotion blocked
+
+- Trusted methodology: commit `9169ccf`; frozen evaluator revision `001`, identity `sha256:12c99f0a8f8d9a97ee6a5e2df07fb696d0ec3692b0ffb33506d208affaa0c731`; candidate `dee86d2314bffa7cc2da0d8ac72004250a06debb`; bootstrap runtime `44749909f63bed69752d2e01ab9796d0110704b2`.
+- Execution: `9539f28b-5cb6-4dbc-b903-b57dbacafb05`, allocation attempt 6, protected Claude Sonnet under host-owned bubblewrap. The provider reported `claude-sonnet-5-5`; effective reasoning attestation was unavailable.
+- Bootstrap behavior exercised: immutable execution context supplied the candidate/revision/attempt identities; the role-specific result contract accepted `disposition=succeeded` with `methodology.result=PASS`; unattended Claude command execution completed without provider permission denial; workflow ledgers remained masked.
+- Evidence publication: the root-authorized legacy bridge accepted only evaluator-authored `verification-result.json`; destination validation passed and the host committed identity `sha256:199a61eab02e432725abb8df222cb366ce34c5752f4a8d4c95efb32a7a1e717c` in commit `e38ec3280c3480b8b3ef0bc24e09ef9d433bcc60`.
+- Result: authoritative PASS. All 14 criteria were satisfied, all four frozen executable cases passed, and the evaluator reported 219/219 public tests passing together with typecheck, lint and format checks.
+- Promotion: not performed. The evaluator recorded its promotion plan as `INELIGIBLE` because the complete six-attempt history was not present in the evaluator-private workspace. A post-PASS run of the repository's existing archive-manifest validator confirmed that exact reason without exposing private artifact contents. Missing historical evidence was not reconstructed, prior failed attempts were not reinterpreted, and no second evaluator attempt was allocated.
+- Workflow consequence: `verification-finalized` is recorded, but `promotion-recorded` is not. The frozen workflow therefore does not permit As-Built yet; human acceptance has not started.
+- Measurements: protected execution duration approximately 6 minutes; token usage unavailable.
