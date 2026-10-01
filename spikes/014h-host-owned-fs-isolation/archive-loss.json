@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "kind": "evaluator-archive-loss",
+  "archiveCompleteness": "incomplete-known-loss",
+  "spike": "014h-host-owned-fs-isolation",
+  "candidate": "dee86d2314bffa7cc2da0d8ac72004250a06debb",
+  "evaluatorRevision": "001",
+  "successfulExecution": "9539f28b-5cb6-4dbc-b903-b57dbacafb05",
+  "authoritativeVerificationResult": "PASS",
+  "attempts": [
+    {
+      "attempt": 1,
+      "execution": "d95215c3-d5c0-44cf-a777-5afba8b3256f",
+      "candidate": "6cce8a20dda215756ccd2487fd4640042372b877",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:missing semantic result handshake",
+      "expectedPrivateArtifact": ".eval/attempts/001/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 2,
+      "execution": "af0abaa0-04c3-4ade-8d83-3753219c98cf",
+      "candidate": "6cce8a20dda215756ccd2487fd4640042372b877",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:missing semantic result handshake",
+      "expectedPrivateArtifact": ".eval/attempts/002/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 3,
+      "execution": "ffe693c4-3251-4512-a191-db4a9cdb99ca",
+      "candidate": "d6277922670ac4d79b4413319f72b3115c81abda",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:missing semantic result handshake",
+      "expectedPrivateArtifact": ".eval/attempts/003/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 4,
+      "execution": "dbb5b7c3-4e64-4860-bb0d-6ea6a734136d",
+      "candidate": "dee86d2314bffa7cc2da0d8ac72004250a06debb",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:missing semantic result handshake",
+      "expectedPrivateArtifact": ".eval/attempts/004/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 5,
+      "execution": "ca690476-da8f-49aa-aaac-06e75d9ffa69",
+      "candidate": "dee86d2314bffa7cc2da0d8ac72004250a06debb",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:missing semantic result handshake",
+      "expectedPrivateArtifact": ".eval/attempts/005/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 6,
+      "execution": "9539f28b-5cb6-4dbc-b903-b57dbacafb05",
+      "candidate": "dee86d2314bffa7cc2da0d8ac72004250a06debb",
+      "evaluatorRevision": "001",
+      "publicOutcome": "PASS",
+      "expectedPrivateArtifact": ".eval/attempts/006/eval-result.md",
+      "privateArtifact": "present"
+    }
+  ],
+  "successfulAttempt": {
+    "attempt": 6,
+    "resultPath": ".eval/attempts/006/eval-result.md",
+    "resultIdentity": "sha256:d2d91bdc7011ec623024eb38b8ffa9953ccddd19927784ac27b80580be33d9d5"
+  },
+  "promotionPlan": {
+    "path": ".eval/promotion-plan.json",
+    "identity": "sha256:ab1d0cea667aff7e7ea493e7f9e032086179e52969ff302edb13e979098368e5",
+    "ordinaryValidation": "INELIGIBLE",
+    "reason": "The attempt history of this cycle is not fully present in the private workspace, so a complete archive cannot be built truthfully."
+  },
+  "missingArtifactsReconstructed": false,
+  "authorization": "root-supervisor-bootstrap",
+  "bootstrapRuntimeCommit": "161f4a80d5855106f70768ad1251e21ed7863a9a",
+  "reason": "Historical evaluator-private retention failed before promotion; this is not an evaluator semantic failure.",
+  "followUpDefect": "If promotion requires complete private history, evaluator-private evidence must be durably retained whenever an attempt terminates, including failed, blocked and infrastructure-failed attempts."
+}
