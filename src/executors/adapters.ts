@@ -573,11 +573,18 @@ export function planLaunch(
     const workspace = grant.workspaces.find(
       (item) => item.id === evidence.workspaceId,
     );
-    if (
-      grant.capabilities.includes("repository-write") ||
-      grant.capabilities.includes("git-commit") ||
-      workspace?.mode !== "read"
-    )
+    const legacy = grant.legacyEvidenceCompatibility;
+    const ordinaryComposition =
+      !grant.capabilities.includes("repository-write") &&
+      !grant.capabilities.includes("git-commit") &&
+      workspace?.mode === "read";
+    const legacyComposition =
+      legacy?.destination === "verification-result.json" &&
+      legacy.rootAuthority === grant.rootAuthority &&
+      grant.capabilities.includes("repository-write") &&
+      grant.capabilities.includes("git-commit") &&
+      workspace?.mode === "write";
+    if (!ordinaryComposition && !legacyComposition)
       throw new AdapterRefusal(
         "provider-config-invalid",
         "mediated evidence requires a read-only workspace and no direct write or commit capability",

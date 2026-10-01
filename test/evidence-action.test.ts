@@ -37,7 +37,13 @@ const profiles: ExecutorProfile[] = [
     id: "fixture",
     provider: "repository-fixture",
     modes: ["attached"],
-    capabilities: ["repository-read", "local-computation"],
+    capabilities: [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit",
+    ],
     isolation: ["private-workspace"],
     available: true,
     command: [process.execPath, worker],
@@ -63,7 +69,7 @@ function write(path: string, value: unknown): void {
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function fixture(t: TestContext) {
+function fixture(t: TestContext, legacy = false) {
   const dir = mkdtempSync(join(tmpdir(), "evidence-"));
   t.after(() => {
     rmSync(dir, { recursive: true, force: true });
@@ -75,23 +81,35 @@ function fixture(t: TestContext) {
   const contract: RoleContract = {
     schemaVersion: 1,
     workspaces: ["repository", "evaluation"],
-    capabilities: ["repository-read", "local-computation"],
+    capabilities: legacy
+      ? [
+          "repository-read",
+          "repository-write",
+          "local-computation",
+          "git-inspect",
+          "git-commit",
+        ]
+      : ["repository-read", "local-computation"],
     forbiddenExposure: [],
     protected: true,
     inputs: [],
     results: ["succeeded", "failed"],
     methodology: {},
     human: ["input"],
-    postconditions: [],
-    evidence: {
-      workspace: "repository",
-      destinations: ["result.json", "notes/"],
-    },
+    postconditions: legacy ? ["verification-result.json"] : [],
+    ...(legacy
+      ? {}
+      : {
+          evidence: {
+            workspace: "repository",
+            destinations: ["result.json", "notes/"],
+          },
+        }),
   };
   const policy: WorkflowPolicy = {
     schemaVersion: 1,
     roles: {
-      verify: {
+      [legacy ? "evaluator-verify" : "verify"]: {
         contract: "contracts/verify.json",
         skill: "skills/verify.md",
         when: { not: { event: "done" } },
@@ -137,11 +155,18 @@ function fixture(t: TestContext) {
     maxAllocations: 4,
     inline: true,
   });
+  if (legacy)
+    kernel.root(
+      workflow,
+      grant.id,
+      "evaluator-verify",
+      `legacy-evaluator-publication-compatibility trusted-methodology=9169ccf runtime=${"a".repeat(40)}`,
+    );
   const session = kernel.register(workflow, "fixture").session;
   const run = kernel.allocate(workflow, grant.id, {
     mode: "attached",
     session: session.id,
-    role: "verify",
+    role: legacy ? "evaluator-verify" : "verify",
   });
   kernel.process(workflow, run.execution.id, "running");
   const actions = () =>
@@ -150,6 +175,54 @@ function fixture(t: TestContext) {
       .filter((event) => event.transition.startsWith("kernel.action-"));
   return { root, workflow, kernel, run, actions, contract, project };
 }
+
+void test("legacy evaluator publication compatibility is root-authorized, bounded to its required result, and preserves existing write authority", (t) => {
+  const f = fixture(t, true);
+  const grant = f.run.grant;
+  assert.equal(
+    required(grant.workspaces.find((workspace) => workspace.id === "repo"))
+      .mode,
+    "write",
+  );
+  assert.ok(grant.capabilities.includes("repository-write"));
+  assert.ok(grant.capabilities.includes("git-commit"));
+  assert.deepEqual(grant.hostActions.evidence, {
+    workspace: "repository",
+    workspaceId: "repo",
+    destinations: ["verification-result.json"],
+  });
+  assert.deepEqual(grant.legacyEvidenceCompatibility, {
+    trustedMethodologyCommit: "9169ccf",
+    runtimeCommit: "a".repeat(40),
+    rootAuthority: grant.rootAuthority,
+    destination: "verification-result.json",
+    existingCapabilities: ["repository-write", "git-commit"],
+  });
+  assert.deepEqual(
+    planLaunch(ADAPTERS.claude, grant, {
+      id: "legacy-claude",
+      provider: "claude",
+      modes: ["spawned"],
+      capabilities: grant.capabilities,
+      isolation: ["private-workspace"],
+      available: true,
+    }),
+    {},
+  );
+
+  const denied = f.kernel.recordEvidence(f.workflow, f.run.execution.id, [
+    { destination: "manifest.md", content: "nope\n" },
+  ]);
+  assert.equal(denied.status, "denied");
+  const published = f.kernel.recordEvidence(f.workflow, f.run.execution.id, [
+    {
+      destination: "verification-result.json",
+      content: '{"result":"PASS"}\n',
+    },
+  ]);
+  assert.equal(published.status, "succeeded", published.reason ?? "");
+  assert.match(published.after ?? "", /^[a-f0-9]{40}$/);
+});
 
 void test("014g: the grant records read-only repository access, no direct write or commit, and the mediated action", (t) => {
   const f = fixture(t);

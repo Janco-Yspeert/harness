@@ -27,6 +27,9 @@ import type {
 export type Resolution =
   | { kind: "grant"; grant: RoleGrant }
   | { kind: "denied" | "gate" | "stop"; reason: string };
+
+const LEGACY_EVIDENCE_REASON =
+  /^legacy-evaluator-publication-compatibility trusted-methodology=(9169ccf) runtime=([a-f0-9]{40})$/;
 // A recovery does not erase history. It creates a later authority scope in
 // which exactly the defective frozen transitions cannot satisfy predicates or
 // supply role inputs. Everything else, including the frozen brief and a
@@ -379,6 +382,28 @@ export function resolveAuthority(
       kind: "denied",
       reason: "promotion requires exact candidate/revision inputs",
     };
+  const legacyEvidenceMatch = override?.reason.match(LEGACY_EVIDENCE_REASON);
+  const legacyEvidenceDestination = "verification-result.json";
+  const repositoryIndex = role.contract.workspaces.indexOf("repository");
+  const repositoryWorkspace = workspaces[repositoryIndex];
+  const legacyEvidenceCompatibility =
+    legacyEvidenceMatch &&
+    name === "evaluator-verify" &&
+    role.contract.protected &&
+    !evidence &&
+    role.contract.capabilities.includes("repository-write") &&
+    role.contract.capabilities.includes("git-commit") &&
+    role.contract.postconditions.includes(legacyEvidenceDestination) &&
+    repositoryWorkspace?.exposure === "public" &&
+    repositoryWorkspace.mode === "write"
+      ? {
+          trustedMethodologyCommit: required(legacyEvidenceMatch[1]),
+          runtimeCommit: required(legacyEvidenceMatch[2]),
+          rootAuthority: required(override).id,
+          destination: legacyEvidenceDestination,
+          existingCapabilities: ["repository-write", "git-commit"] as const,
+        }
+      : undefined;
   const semantics = {
     workflowGrant: workflow.id,
     authorityBasis: basis,
@@ -403,9 +428,19 @@ export function resolveAuthority(
             },
           }
         : {}),
+      ...(legacyEvidenceCompatibility
+        ? {
+            evidence: {
+              workspace: "repository",
+              workspaceId: required(repositoryWorkspace).id,
+              destinations: [legacyEvidenceDestination],
+            },
+          }
+        : {}),
       ...(publicationAction ? { publication: publicationAction } : {}),
       ...(promotionAction ? { promotion: promotionAction } : {}),
     },
+    ...(legacyEvidenceCompatibility ? { legacyEvidenceCompatibility } : {}),
     executorConstraints: {
       forbiddenExposure: role.contract.forbiddenExposure,
       protected: role.contract.protected,

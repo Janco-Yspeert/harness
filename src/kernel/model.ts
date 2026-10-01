@@ -367,6 +367,16 @@ export interface RoleGrant {
       plan?: string;
     };
   };
+  // Explicit, root-authorized transport compatibility for a legacy protected
+  // evaluator that already held direct repository write + commit authority.
+  // This grants no result vocabulary or evaluation authority.
+  legacyEvidenceCompatibility?: {
+    trustedMethodologyCommit: string;
+    runtimeCommit: string;
+    rootAuthority: string;
+    destination: string;
+    existingCapabilities: readonly ["repository-write", "git-commit"];
+  };
   executorConstraints: {
     forbiddenExposure: string[];
     protected: boolean;

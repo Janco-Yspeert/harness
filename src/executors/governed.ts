@@ -95,7 +95,7 @@ const WORKER_RULES =
   `Harness worker protocol v${String(WORKER_PROTOCOL_VERSION)} is available as the "harness" tools ${WORKER_OPERATIONS.join(", ")}.\n` +
   "- Your final prose is never a result. Submit exactly one typed result with submitResult {disposition, methodology}, using only the contract's result and methodology vocabulary.\n" +
   "- Use requestAction only when your skill or contract requires a host action; the host validates it and may deny it. Inspect the returned action status; only status succeeded means the action happened.\n" +
-  '- When your Role Grant lists hostActions.evidence, the repository is read-only for you and you hold no direct write or commit authority. Wherever your skill says to write, commit or checkpoint a public artifact at a destination that grant allows, author the exact bytes yourself and call requestAction with kind "evidence" and files [{destination, content}]; the host writes and commits only those bytes and returns the commit. A denied or failed action recorded nothing. Send each file\'s complete content (for an append-only file, the whole file with prior entries preserved).\n' +
+  '- When your Role Grant lists hostActions.evidence, author the exact bytes yourself and call requestAction with kind "evidence" and files [{destination, content}]; the host writes and commits only those bytes and returns the commit. Except for an explicitly recorded legacyEvidenceCompatibility bridge, the repository is read-only for you and you hold no direct write or commit authority. A denied or failed action recorded nothing. Send each file\'s complete content (for an append-only file, the whole file with prior entries preserved).\n' +
   "- Use requestHuman only for input, approval or root requests the contract permits.\n" +
   "- Use only the granted workspaces and capabilities. Never push, publish directly, or reveal credentials.\n" +
   "- Read detailed inputs just in time from their bound paths inside granted workspaces; the identities below say which exact bytes are authoritative.";
@@ -112,6 +112,9 @@ export function workerContext(assignment: Assignment): {
   volatile: string;
 } {
   const grant = assignment.roleGrant;
+  const compatibilityInstruction = grant.legacyEvidenceCompatibility
+    ? '\nLegacy publication compatibility instruction: The frozen contract still requires the public "verification-result.json". For this execution, satisfy that existing postcondition by authoring the complete required JSON and publishing those exact bytes through the granted "evidence" host action instead of relying on a direct repository write/commit. This changes only publication transport; all frozen evaluation criteria and result semantics remain unchanged.\n'
+    : "";
   return {
     stable:
       `You are the governed Harness worker for role ${grant.role}.\n\n` +
@@ -126,6 +129,7 @@ export function workerContext(assignment: Assignment): {
       `Role Grant: ${grant.id}\n` +
       `Methodology: ${assignment.methodology}\n` +
       `Host-bound input identities: ${JSON.stringify(assignment.inputs)}\n` +
+      compatibilityInstruction +
       "Call the assignment tool for the full Role Grant, including granted workspaces and host actions.",
   };
 }
