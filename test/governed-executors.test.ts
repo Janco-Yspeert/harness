@@ -1223,6 +1223,36 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
   const disallowed = command[command.indexOf("--disallowedTools") + 1] ?? "";
   assert.match(disallowed, /Edit\(\/\/work\/public\/\*\*\)/);
   assert.equal(command[command.indexOf("--setting-sources") + 1], "");
+  assert.equal(
+    command[command.indexOf("--permission-mode") + 1],
+    "acceptEdits",
+  );
+  const unattended = buildGovernedClaudeCommand({
+    workspaces: [
+      { path: "/work/private", mode: "write" },
+      { path: "/work/public", mode: "read" },
+    ],
+    capabilities: ALL,
+    workerOperations: WORKER_OPERATIONS,
+    scratch: "/work/scratch",
+    mcpConfig: "{}",
+    system: "system",
+    prompt: "prompt",
+    unattendedProtected: true,
+  });
+  assert.equal(unattended[unattended.indexOf("--permission-mode") + 1], "auto");
+  assert.equal(
+    unattended[unattended.indexOf("--permission-prompts") + 1],
+    "none",
+  );
+  assert.match(
+    unattended[unattended.indexOf("--allowedTools") + 1] ?? "",
+    /Bash\(node \*\)/,
+  );
+  assert.match(
+    unattended[unattended.indexOf("--disallowedTools") + 1] ?? "",
+    /Bash\(git push \*\)/,
+  );
   assert.throws(() => {
     assertBoundedExecutorCommand([
       ...command,

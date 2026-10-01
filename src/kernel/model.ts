@@ -394,6 +394,23 @@ export interface RoleResult {
   disposition: string;
   methodology: Data;
 }
+export interface TerminalOutcome {
+  disposition: string;
+  methodology: Data;
+  requiredMethodology: string[];
+  allowedMethodology: Record<string, string[]>;
+}
+export interface WorkerExecutionContext {
+  workflow: string;
+  execution: string;
+  candidate?: string;
+  evaluatorRevision?: string;
+  attempt?: number;
+  publicArtifactRoot: string;
+  permittedEvidenceDestinations: string[];
+  privateWorkspaceIds: string[];
+  terminalOutcomes: TerminalOutcome[];
+}
 export interface Execution {
   schemaVersion: 1;
   id: string;

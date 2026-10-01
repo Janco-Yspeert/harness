@@ -32,6 +32,7 @@ import type {
   ExecutorProfile,
   RoleContract,
   RoleGrant,
+  WorkerExecutionContext,
 } from "../kernel/model.ts";
 import { stopChild, workflowScratchEnvironment } from "../workflow-backend.ts";
 import {
@@ -89,6 +90,7 @@ export interface Assignment {
   contract: RoleContract;
   contractIdentity: string;
   inputs: Record<string, string>;
+  executionContext: WorkerExecutionContext;
 }
 
 const WORKER_RULES =
@@ -115,6 +117,10 @@ export function workerContext(assignment: Assignment): {
   const compatibilityInstruction = grant.legacyEvidenceCompatibility
     ? '\nLegacy publication compatibility instruction: The frozen contract still requires the public "verification-result.json". For this execution, satisfy that existing postcondition by authoring the complete required JSON and publishing those exact bytes through the granted "evidence" host action instead of relying on a direct repository write/commit. This changes only publication transport; all frozen evaluation criteria and result semantics remain unchanged.\n'
     : "";
+  const outcomeInstruction =
+    assignment.executionContext.terminalOutcomes.length === 0
+      ? ""
+      : `\nHost-derived legal terminal outcomes (machine-readable): ${JSON.stringify(assignment.executionContext.terminalOutcomes)}\n"disposition" describes whether this role invocation successfully completed its reporting protocol. It does not duplicate the evaluator verdict. An evaluator that successfully concludes the verification is BLOCKED must still submit "disposition": "succeeded" with "methodology.result": "BLOCKED".\n`;
   return {
     stable:
       `You are the governed Harness worker for role ${grant.role}.\n\n` +
@@ -129,6 +135,8 @@ export function workerContext(assignment: Assignment): {
       `Role Grant: ${grant.id}\n` +
       `Methodology: ${assignment.methodology}\n` +
       `Host-bound input identities: ${JSON.stringify(assignment.inputs)}\n` +
+      `Host-issued execution context: ${JSON.stringify(assignment.executionContext)}\n` +
+      outcomeInstruction +
       compatibilityInstruction +
       "Call the assignment tool for the full Role Grant, including granted workspaces and host actions.",
   };
@@ -150,6 +158,7 @@ export function workerInstructions(assignment: Assignment): {
     system: `${context.stable}${context.volatile}`,
     prompt:
       `Perform the allocated ${assignment.roleGrant.role} work for workflow ${assignment.workflow}, then submit your typed result with the Harness submitResult tool. ` +
+      `Use the host-issued candidate, evaluator revision and attempt identities; do not inspect workflow ledgers. Publish required public evaluator-authored artifacts through the granted evidence action. ` +
       resultContractInstructions(assignment.contract),
   };
 }
@@ -205,11 +214,12 @@ export function verifyAssignment(
     grant: RoleGrant;
     skill: { path: string; identity: string; content: string };
     contract: RoleContract;
+    executionContext: WorkerExecutionContext;
   }>;
   const bound = matching[0];
   if (matching.length !== 1 || !bound)
     throw new Error("host delivered no unique assignment for this execution");
-  const { grant, skill, contract } = bound;
+  const { grant, skill, contract, executionContext } = bound;
   if (
     typeof skill.content !== "string" ||
     identity(skill.content) !== skill.identity ||
@@ -218,6 +228,11 @@ export function verifyAssignment(
     throw new Error("pinned skill identity mismatch");
   if (contentId(contract) !== grant.contractIdentity)
     throw new Error("pinned contract identity mismatch");
+  if (
+    executionContext.execution !== execution ||
+    executionContext.workflow !== workflow
+  )
+    throw new Error("execution context identity mismatch");
   return {
     protocolVersion: WORKER_PROTOCOL_VERSION,
     execution,
@@ -232,6 +247,7 @@ export function verifyAssignment(
     contract,
     contractIdentity: grant.contractIdentity,
     inputs: grant.inputs,
+    executionContext,
   };
 }
 

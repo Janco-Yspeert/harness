@@ -93,8 +93,24 @@ function fixture(t: TestContext, legacy = false) {
     forbiddenExposure: [],
     protected: true,
     inputs: [],
-    results: ["succeeded", "failed"],
-    methodology: {},
+    results: legacy
+      ? ["succeeded", "blocked", "refused", "failed"]
+      : ["succeeded", "failed"],
+    methodology: legacy
+      ? {
+          result: ["PASS", "FAIL", "BLOCKED"],
+          classification: ["IMPLEMENTATION_FAILURE", "INFRASTRUCTURE_FAILURE"],
+        }
+      : {},
+    ...(legacy
+      ? {
+          resultConstraints: [
+            { when: { result: "PASS" }, absent: ["classification"] },
+            { when: { result: "FAIL" }, required: ["classification"] },
+            { when: { result: "BLOCKED" }, required: ["classification"] },
+          ],
+        }
+      : {}),
     human: ["input"],
     postconditions: legacy ? ["verification-result.json"] : [],
     ...(legacy
@@ -114,7 +130,34 @@ function fixture(t: TestContext, legacy = false) {
         skill: "skills/verify.md",
         when: { not: { event: "done" } },
         retry: { dispositions: ["failed"], limit: 1 },
-        outcomes: [{ disposition: "succeeded", transition: "done" }],
+        outcomes: legacy
+          ? [
+              {
+                disposition: "succeeded",
+                methodology: { result: "PASS" },
+                transition: "done",
+              },
+              {
+                disposition: "succeeded",
+                methodology: { result: "FAIL" },
+                transition: "done",
+              },
+              {
+                disposition: "succeeded",
+                methodology: { result: "BLOCKED" },
+                transition: "done",
+              },
+            ]
+          : [{ disposition: "succeeded", transition: "done" }],
+        ...(legacy
+          ? {
+              onAllocate: {
+                transition: "verification-allocated",
+                fromInputs: {},
+                counterField: "attempt",
+              },
+            }
+          : {}),
       },
     },
     gates: [],
@@ -198,6 +241,47 @@ void test("legacy evaluator publication compatibility is root-authorized, bounde
     destination: "verification-result.json",
     existingCapabilities: ["repository-write", "git-commit"],
   });
+  const context = f.kernel.workerExecutionContext(
+    f.workflow,
+    f.run.execution.id,
+  );
+  assert.equal(context.attempt, 1);
+  assert.deepEqual(context.permittedEvidenceDestinations, [
+    "verification-result.json",
+  ]);
+  assert.deepEqual(context.privateWorkspaceIds, ["private"]);
+  assert.deepEqual(
+    context.terminalOutcomes.map((outcome) => ({
+      disposition: outcome.disposition,
+      result: outcome.methodology.result,
+      required: outcome.requiredMethodology,
+    })),
+    [
+      { disposition: "succeeded", result: "PASS", required: [] },
+      {
+        disposition: "succeeded",
+        result: "FAIL",
+        required: ["classification"],
+      },
+      {
+        disposition: "succeeded",
+        result: "BLOCKED",
+        required: ["classification"],
+      },
+    ],
+  );
+  assert.throws(
+    () =>
+      f.kernel.result(f.workflow, f.run.execution.id, "blocked", {
+        result: "BLOCKED",
+        classification: "INFRASTRUCTURE_FAILURE",
+      }),
+    /BLOCKED verdict still uses disposition=succeeded/,
+  );
+  assert.throws(
+    () => f.kernel.result(f.workflow, f.run.execution.id, "succeeded", {}),
+    /methodology\.result=PASS.*methodology\.result=FAIL.*methodology\.result=BLOCKED/,
+  );
   assert.deepEqual(
     planLaunch(ADAPTERS.claude, grant, {
       id: "legacy-claude",
@@ -222,6 +306,34 @@ void test("legacy evaluator publication compatibility is root-authorized, bounde
   ]);
   assert.equal(published.status, "succeeded", published.reason ?? "");
   assert.match(published.after ?? "", /^[a-f0-9]{40}$/);
+});
+
+void test("evaluator PASS, FAIL and BLOCKED verdicts all complete through disposition succeeded", (t) => {
+  const cases = [
+    { result: "PASS" },
+    { result: "FAIL", classification: "IMPLEMENTATION_FAILURE" },
+    { result: "BLOCKED", classification: "INFRASTRUCTURE_FAILURE" },
+  ];
+  for (const methodology of cases) {
+    const f = fixture(t, true);
+    assert.equal(
+      f.kernel.recordEvidence(f.workflow, f.run.execution.id, [
+        {
+          destination: "verification-result.json",
+          content: `${JSON.stringify(methodology)}\n`,
+        },
+      ]).status,
+      "succeeded",
+    );
+    const result = f.kernel.result(
+      f.workflow,
+      f.run.execution.id,
+      "succeeded",
+      methodology,
+    );
+    assert.equal(result.result?.disposition, "succeeded");
+    assert.deepEqual(result.result.methodology, methodology);
+  }
 });
 
 void test("014g: the grant records read-only repository access, no direct write or commit, and the mediated action", (t) => {

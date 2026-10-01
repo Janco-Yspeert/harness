@@ -400,6 +400,10 @@ export class GovernedHost {
             );
             return {
               execution: this.kernel.humanView(workflow, execution.id),
+              executionContext: this.kernel.workerExecutionContext(
+                workflow,
+                execution.id,
+              ),
               grant,
               skill: required(definition.roles[grant.role]).skill,
               contract: required(definition.roles[grant.role]).contract,

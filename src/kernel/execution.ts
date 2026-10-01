@@ -66,7 +66,9 @@ import type {
   RoleResult,
   RootAuthority,
   Session,
+  TerminalOutcome,
   TelemetrySink,
+  WorkerExecutionContext,
   WorkflowGrant,
   ArtifactValidators,
 } from "./model.ts";
@@ -916,6 +918,86 @@ export class ExecutionKernel {
     if (!allocation) throw new Error("unknown role grant");
     return allocation.evidence.grant as RoleGrant;
   }
+  terminalOutcomes(workflow: string, grant: RoleGrant): TerminalOutcome[] {
+    const role = required(
+      this.definition(workflow, grant.methodology).roles[grant.role],
+    );
+    return role.policy.outcomes.map((outcome) => {
+      const methodology = outcome.methodology ?? {};
+      const requiredMethodology = [
+        ...new Set(
+          (role.contract.resultConstraints ?? [])
+            .filter((constraint) => matches(methodology, constraint.when))
+            .flatMap((constraint) => constraint.required ?? []),
+        ),
+      ];
+      return {
+        disposition: outcome.disposition,
+        methodology,
+        requiredMethodology,
+        allowedMethodology: Object.fromEntries(
+          requiredMethodology.map((field) => [
+            field,
+            role.contract.methodology[field] ?? [],
+          ]),
+        ),
+      };
+    });
+  }
+  #terminalOutcomeError(workflow: string, grant: RoleGrant): Error {
+    const legal = this.terminalOutcomes(workflow, grant)
+      .map((outcome, index) => {
+        const fixed = Object.entries(outcome.methodology).map(
+          ([key, value]) => `methodology.${key}=${String(value)}`,
+        );
+        const requiredFields = outcome.requiredMethodology.map(
+          (field) =>
+            `methodology.${field}=<${(outcome.allowedMethodology[field] ?? []).join("|")}>`,
+        );
+        return `${String(index + 1)}. disposition=${outcome.disposition}, ${[...fixed, ...requiredFields].join(", ")}`;
+      })
+      .join("; ");
+    return new Error(
+      `submitted result violates the cross-field contract or does not match an allowed terminal outcome; submit exactly one of: ${legal}. disposition reports protocol completion, not the evaluator verdict; a successfully reported evaluator BLOCKED verdict still uses disposition=succeeded`,
+    );
+  }
+  workerExecutionContext(
+    workflow: string,
+    executionId: string,
+  ): WorkerExecutionContext {
+    const execution = this.execution(workflow, executionId);
+    const grant = this.roleGrant(workflow, execution.roleGrant);
+    const role = required(
+      this.definition(workflow, grant.methodology).roles[grant.role],
+    );
+    const allocation = role.policy.onAllocate
+      ? this.events(workflow).findLast(
+          (event) =>
+            event.transition === role.policy.onAllocate?.transition &&
+            event.evidence.execution === executionId,
+        )
+      : undefined;
+    const attemptField = role.policy.onAllocate?.counterField;
+    const attempt = attemptField
+      ? allocation?.evidence[attemptField]
+      : undefined;
+    return {
+      workflow,
+      execution: executionId,
+      ...(grant.inputs.candidate ? { candidate: grant.inputs.candidate } : {}),
+      ...(grant.inputs.evaluatorRevision
+        ? { evaluatorRevision: grant.inputs.evaluatorRevision }
+        : {}),
+      ...(typeof attempt === "number" ? { attempt } : {}),
+      publicArtifactRoot: required(this.project.workflows[workflow]).directory,
+      permittedEvidenceDestinations:
+        grant.hostActions.evidence?.destinations ?? [],
+      privateWorkspaceIds: grant.workspaces
+        .filter((workspace) => workspace.exposure !== "public")
+        .map((workspace) => workspace.id),
+      terminalOutcomes: this.terminalOutcomes(workflow, grant),
+    };
+  }
   select(
     grant: RoleGrant,
     mode: "attached" | "spawned",
@@ -1399,14 +1481,14 @@ export class ExecutionKernel {
               (constraint.absent ?? []).some((field) => field in methodology)),
         )
       )
-        throw new Error("result violates pinned cross-field contract");
+        throw this.#terminalOutcomeError(workflow, grant);
       const matchingOutcomes = role.policy.outcomes.filter(
         (rule) =>
           rule.disposition === disposition &&
           matches(methodology, rule.methodology ?? {}),
       );
       if (resultConstraints.length && matchingOutcomes.length !== 1)
-        throw new Error("result lacks an explicit configured outcome");
+        throw this.#terminalOutcomeError(workflow, grant);
       for (const path of disposition === "succeeded"
         ? role.contract.postconditions
         : [])

@@ -65,6 +65,24 @@ function assignment(n: string): Assignment {
     contract,
     contractIdentity: contentId(contract),
     inputs: grant.inputs,
+    executionContext: {
+      workflow: `workflow-${n}`,
+      execution: `execution-${n}`,
+      candidate: n.repeat(40),
+      evaluatorRevision: "001",
+      attempt: Number(n),
+      publicArtifactRoot: `spikes/workflow-${n}`,
+      permittedEvidenceDestinations: [],
+      privateWorkspaceIds: [],
+      terminalOutcomes: [
+        {
+          disposition: "succeeded",
+          methodology: {},
+          requiredMethodology: [],
+          allowedMethodology: {},
+        },
+      ],
+    },
   };
 }
 
@@ -92,6 +110,10 @@ void test("014d C9: identical pinned inputs give a byte-identical stable prefix;
     assert.ok(!stable.includes(value), value);
     assert.ok(a.system.indexOf(value) >= stable.length, value);
   }
+  assert.ok(
+    a.system.includes(JSON.stringify(first.executionContext)),
+    "host execution context is delivered without a ledger read",
+  );
 });
 
 void test("014d C9: exact assignment identities are still enforced before launch", () => {
@@ -103,6 +125,7 @@ void test("014d C9: exact assignment identities are still enforced before launch
         grant: good.roleGrant,
         skill: { ...good.skill, content: skillContent },
         contract: pinned,
+        executionContext: good.executionContext,
       },
     ],
   });

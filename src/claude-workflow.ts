@@ -302,6 +302,10 @@ export interface GovernedClaudeLaunch {
   readonly prompt: string;
   readonly model?: string;
   readonly maxTurns?: number;
+  // A spawned protected worker has no approval UI. Claude's supported auto
+  // mode exercises the reviewed tool set inside Harness containment without
+  // turning provider prompts into automatic denials.
+  readonly unattendedProtected?: boolean;
 }
 
 export function buildGovernedClaudeCommand(
@@ -343,7 +347,7 @@ export function buildGovernedClaudeCommand(
     "--disallowedTools",
     [...permissions.disallowedTools, ...readOnly].join(","),
     "--permission-mode",
-    permissions.permissionMode,
+    launch.unattendedProtected ? "auto" : permissions.permissionMode,
     "--permission-prompts",
     "none",
     "--no-session-persistence",

@@ -147,6 +147,7 @@ const claude: ProviderAdapter = {
       }),
       system: input.system,
       prompt: input.prompt,
+      unattendedProtected: input.grant.executorConstraints.protected,
       ...(input.model === undefined ? {} : { model: input.model }),
       ...(input.maxTurns === undefined ? {} : { maxTurns: input.maxTurns }),
     });

@@ -95,6 +95,7 @@ export const WORKER_PROTOCOL_SCHEMAS = {
           "skill",
           "contract",
           "inputs",
+          "executionContext",
         ],
         properties: {
           protocolVersion: { const: WORKER_PROTOCOL_VERSION },
@@ -109,12 +110,13 @@ export const WORKER_PROTOCOL_SCHEMAS = {
           contract: { type: "object" },
           contractIdentity: string,
           inputs: { type: "object" },
+          executionContext: { type: "object" },
         },
       },
     },
     submitResult: {
       description:
-        "Submit this execution's typed semantic result: a generic disposition and the role contract's methodology fields. Process exit and prose are never results.",
+        "Submit this execution's typed semantic result using exactly one host-derived legal terminal outcome returned by assignment.executionContext. disposition reports successful protocol completion, not an evaluator verdict: a successfully reported evaluator PASS, FAIL, or BLOCKED uses disposition=succeeded and places that verdict in methodology.result. Process exit and prose are never results.",
       request: {
         type: "object",
         additionalProperties: false,
