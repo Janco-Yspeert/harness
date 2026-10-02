@@ -359,6 +359,32 @@ void test("014i AC06/TR3f: sealing and read-only publication fail closed for cha
   manifest.streams.stdout.truncated = true;
   writeFileSync(manifestPath, `${JSON.stringify(manifest)}\n`);
   assert.throws(() => validateSubjectBundle(truncated), /stream is incomplete/);
+  const unclosed = copy("unclosed");
+  const unclosedManifestPath = join(unclosed, "manifest.json");
+  chmodSync(unclosedManifestPath, 0o644);
+  const unclosedManifest = JSON.parse(
+    readFileSync(unclosedManifestPath, "utf8"),
+  ) as { streams: { stderr: { closed: boolean } } };
+  unclosedManifest.streams.stderr.closed = false;
+  writeFileSync(unclosedManifestPath, `${JSON.stringify(unclosedManifest)}\n`);
+  assert.throws(() => validateSubjectBundle(unclosed), /stream is incomplete/);
+  const escaping = copy("escaping");
+  const escapingManifestPath = join(escaping, "manifest.json");
+  chmodSync(escapingManifestPath, 0o644);
+  const escapingManifest = JSON.parse(
+    readFileSync(escapingManifestPath, "utf8"),
+  ) as { artifacts: Array<{ path: string }> };
+  assert.ok(escapingManifest.artifacts[0]);
+  escapingManifest.artifacts[0].path = "../outside.bin";
+  writeFileSync(escapingManifestPath, `${JSON.stringify(escapingManifest)}\n`);
+  assert.throws(() => validateSubjectBundle(escaping), /unsafe relative path/);
+  const substituted = copy("substituted");
+  chmodSync(join(substituted, "stdout.bin"), 0o644);
+  writeFileSync(
+    join(substituted, "stdout.bin"),
+    readFileSync(join(substituted, "stderr.bin")),
+  );
+  assert.throws(() => validateSubjectBundle(substituted), /artifact changed/);
   const publishRoot = mkdtempSync(join(tmpdir(), "candidate-subject-publish-"));
   const destination = join(publishRoot, "published");
   t.after(() => {
