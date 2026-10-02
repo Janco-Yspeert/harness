@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "workspaces": ["repository", "evaluation"],
+  "capabilities": ["repository-read", "local-computation", "network"],
+  "forbiddenExposure": [],
+  "protected": true,
+  "inputs": [],
+  "results": ["succeeded"],
+  "methodology": { "result": ["PASS"] },
+  "human": [],
+  "postconditions": []
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "roles": {
+    "evaluator-verify": {
+      "contract": "methodologies/synthetic/contracts/evaluator-verify.json",
+      "skill": "skills/evaluator/SKILL.md",
+      "when": { "event": "implementation-handoff" },
+      "retry": { "dispositions": ["failed"], "limit": 0 },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "methodology": { "result": "PASS" },
+          "transition": "verification-finalized"
+        }
+      ]
+    }
+  },
+  "gates": [],
+  "maxAllocations": 1
+}
