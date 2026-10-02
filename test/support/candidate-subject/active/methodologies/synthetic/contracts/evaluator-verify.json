@@ -6,6 +6,7 @@
   ],
   "capabilities": [
     "repository-read",
+    "repository-write",
     "local-computation",
     "git-inspect"
   ],

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "synthetic-contained",
+  "id": "synthetic-over-authorized",
   "root": ".",
   "policy": "methodologies/synthetic/policy.json",
   "trustedHistory": "methodologies/synthetic/trusted.jsonl",
