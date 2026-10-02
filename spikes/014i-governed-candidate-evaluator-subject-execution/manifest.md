@@ -97,3 +97,15 @@
 - Candidate `1efcb5b74278d57c94e2826a80d0d94224eabaac`; evaluator revision `002` (`sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410`); inputs matched their frozen identities
 - Result: FAIL, `IMPLEMENTATION_FAILURE` — published bundles bind the contract identity in a form outside TR2; see `verify-feedback.md` and `verification-result.json`
 - Measurements: provider calls 0; token usage unavailable
+
+## Implementation — execution db8444d2-e4da-4591-951a-29bb62d9a73d
+
+- Skill: `implementation`, contract version 5, pinned identity `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+- Inputs: brief `sha256:36143fc057b9a67594103baabb994f7b3c3b28a110c7d87b6baf39aa73796c7e`; Design Map `sha256:69548f440c3f54efbcf3c2cf621d5c75d5c7f951b75b397c4dbeb9c2b5ca5f3b`; evaluation requirements `sha256:33bc7a34dca20798c1d59e5c98aae2b9213aea8c06475f1069d282f6d4d9d2e2`; prepared coverage `sha256:6fdd13c2e733f1ac3cd9586dc3bdbb0f7754fd5ca702bc976f205f52d97e385e`; implementation feedback `sha256:1e3d99ebeed9131f42eeafe3a7b331c2c635929d4b4d32900df9e432d99229c3`
+- Result: succeeded; corrected attempt 002's TR2 implementation failure
+- Output content identity before this manifest update: Git tree `99abf88e9b02cd60f32ecb0b9223dd271ab77e2f`
+- Change: exact committed contract bytes now receive a distinct source identity; reconstruction continues to validate the canonical parsed-contract identity, while sealed manifests bind the contract-file SHA-256 required by TR2
+- Regenerated sealed evidence: contained manifest `sha256:85273030f81d9813c6ad9908d6d0f33ea879ffab19043daa52fd1eab51886884`; over-authorized manifest `sha256:cb62e9276aa37aeb42347fa8820c7753e89a2614dde2fdd0b6057f26c6f661d6`; runtime commit `b98d8b4bc9dc817afab9f79b9cf6b60e487d4648`; fixture candidate commits and frozen fixture tree unchanged
+- Checks passed: `npm run typecheck`; `npm run lint` on retry after one ESLint segmentation fault; `npm run format:check`; `node --test test/candidate-subject.test.ts`; direct `node test/candidate-subject.test.ts` (7/7); both bundles passed `validateSubjectBundle`; manifest contract identities matched the fixture contract-file SHA-256 values; frozen fixture tree remained `315593c0e9278f3df5b62e1806f5ea068144eac6`
+- Broader checks: `npm test`, `node test/host-fs-isolation.test.ts` and `node test/governed-executors.test.ts` were attempted; affected tests could not complete under the managed host because Node child Git operations returned `EPERM` despite status 0, and one governed regression could not read a host-managed workflow ledger. The aggregate run hung after reporting these infrastructure failures and was terminated; no related assertion failure was observed.
+- Measurements: provider calls 0; token usage unavailable
