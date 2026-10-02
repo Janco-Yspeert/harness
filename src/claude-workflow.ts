@@ -315,6 +315,19 @@ export function buildGovernedClaudeCommand(
     launch.capabilities,
     launch.workerOperations,
   );
+  // Claude's `auto` mode still asks for a Bash invocation that does not match
+  // an exact `Bash(command-prefix *)` entry. A protected governed worker has
+  // no approval surface (`--permission-prompts none`), so ordinary evaluator
+  // shell composition would otherwise be denied even though its Role Grant
+  // already grants local computation. For that one contained launch shape,
+  // admit Claude's Bash tool family rather than trying to enumerate every
+  // harmless shell composition. Host-owned bubblewrap remains the filesystem
+  // boundary; explicit disallowed tool rules still win for operations such as
+  // `git push`, and unprotected launches keep their prefix-bounded mapping.
+  const allowedTools =
+    launch.unattendedProtected && permissions.commands
+      ? [...permissions.allowedTools, "Bash"]
+      : permissions.allowedTools;
   const paths = launch.workspaces.map((workspace) => workspace.path);
   const commandWorkspaces = [...paths, launch.scratch];
   const readOnly = launch.workspaces
@@ -343,7 +356,7 @@ export function buildGovernedClaudeCommand(
     "--tools",
     permissions.tools.join(","),
     "--allowedTools",
-    permissions.allowedTools.join(","),
+    allowedTools.join(","),
     "--disallowedTools",
     [...permissions.disallowedTools, ...readOnly].join(","),
     "--permission-mode",

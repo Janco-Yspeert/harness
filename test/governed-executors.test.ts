@@ -1249,6 +1249,14 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
     unattended[unattended.indexOf("--allowedTools") + 1] ?? "",
     /Bash\(node \*\)/,
   );
+  // `auto` with no approval UI must accept the complete Bash tool family for
+  // protected roles: exact command-prefix allowlists deny normal evaluator
+  // shell composition before the already-required host containment can apply.
+  assert.ok(
+    (unattended[unattended.indexOf("--allowedTools") + 1] ?? "")
+      .split(",")
+      .includes("Bash"),
+  );
   assert.match(
     unattended[unattended.indexOf("--disallowedTools") + 1] ?? "",
     /Bash\(git push \*\)/,
@@ -1260,6 +1268,34 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
       "bypassPermissions",
     ]);
   });
+
+  // Verify and repair differ only in their frozen role contract. Both are
+  // protected launches and must therefore receive the same noninteractive
+  // contained Bash authority; neither gets an unrestricted-host bypass.
+  for (const role of ["evaluator-verify", "evaluator-repair"]) {
+    const protectedCommand = buildGovernedClaudeCommand({
+      workspaces: [
+        { path: "/work/private", mode: "write" },
+        { path: "/work/public", mode: "read" },
+      ],
+      capabilities: ALL,
+      workerOperations: WORKER_OPERATIONS,
+      scratch: "/work/scratch",
+      mcpConfig: "{}",
+      system: `${role} system`,
+      prompt: `${role} prompt`,
+      unattendedProtected: true,
+    });
+    const flag = (name: string): string =>
+      protectedCommand[protectedCommand.indexOf(name) + 1] ?? "";
+    assert.equal(flag("--permission-mode"), "auto", role);
+    assert.equal(flag("--permission-prompts"), "none", role);
+    assert.ok(flag("--allowedTools").split(",").includes("Bash"), role);
+    assert.match(flag("--disallowedTools"), /Bash\(git push \*\)/, role);
+    assert.doesNotThrow(() => {
+      assertBoundedExecutorCommand(protectedCommand);
+    });
+  }
   const codex = ADAPTERS.codex;
   assert.doesNotThrow(() => {
     codex.checkCapabilities(ALL);
