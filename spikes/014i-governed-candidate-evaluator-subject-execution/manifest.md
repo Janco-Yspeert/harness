@@ -90,3 +90,10 @@
 - Live preflight: one disposable protected execution (`943d7a82-2d90-4f1c-a8c8-6fdab0de91c0`) initialized in `dontAsk`; an authorized composed Bash command completed, a host-side `/tmp` sentinel remained invisible inside `bwrap`, and a separate `git push` was denied before execution. The preflight submitted `PASS` and exited cleanly; it was not an evaluator repair or verification attempt.
 - Revision `002` audit: retained 24/24 repair controls passed; a fresh repaired self-test passed; all seven frozen artifact identities and the archived bundle matched; deterministic integrity validation returned `PASS` with no diagnostics and reproduced both public readiness identities.
 - Checks: `npm run check` passed (typecheck, lint, format and 233 tests).
+
+## Verification — execution ab9057a7-6b1e-49fb-8c63-2a53b4943194 (attempt 002)
+
+- Skill: `evaluator`, contract version 14, mode `verify`
+- Candidate `1efcb5b74278d57c94e2826a80d0d94224eabaac`; evaluator revision `002` (`sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410`); inputs matched their frozen identities
+- Result: FAIL, `IMPLEMENTATION_FAILURE` — published bundles bind the contract identity in a form outside TR2; see `verify-feedback.md` and `verification-result.json`
+- Measurements: provider calls 0; token usage unavailable

@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "attempt": "001",
-  "execution": "9539014f-abd0-4ea5-820c-37d19d775f03",
-  "commit": "202a1bf1df26cb95f4f22c859063cf87d11daa31",
-  "evaluatorRevision": "001",
-  "evaluatorRevisionIdentity": "sha256:dbaa99ca4e277226d1f214632cc5af6b0be7af757ddf96ad3007fd925508a9ed",
+  "attempt": "002",
+  "execution": "ab9057a7-6b1e-49fb-8c63-2a53b4943194",
+  "commit": "1efcb5b74278d57c94e2826a80d0d94224eabaac",
+  "evaluatorRevision": "002",
+  "evaluatorRevisionIdentity": "sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410",
   "inputs": {
     "brief": "sha256:36143fc057b9a67594103baabb994f7b3c3b28a110c7d87b6baf39aa73796c7e",
     "design": "sha256:69548f440c3f54efbcf3c2cf621d5c75d5c7f951b75b397c4dbeb9c2b5ca5f3b",
     "evaluationRequirements": "sha256:33bc7a34dca20798c1d59e5c98aae2b9213aea8c06475f1069d282f6d4d9d2e2",
-    "coverage": "sha256:8b994aa35375d25f16e3ff25340fc131e1d962dfedf0999df6760dab3f8ab4b6"
+    "coverage": "sha256:6fdd13c2e733f1ac3cd9586dc3bdbb0f7754fd5ca702bc976f205f52d97e385e"
   },
-  "result": "BLOCKED",
-  "classification": "EVALUATOR_DEFECT",
+  "result": "FAIL",
+  "classification": "IMPLEMENTATION_FAILURE",
   "coverageResults": {
-    "AC01": "NOT_ADJUDICATED",
+    "AC01": "NOT_SATISFIED",
     "AC02": "NOT_ADJUDICATED",
     "AC03": "NOT_ADJUDICATED",
     "AC04": "NOT_ADJUDICATED",
@@ -28,25 +28,30 @@
   "accounting": {
     "criteria": 10,
     "satisfied": 0,
-    "notSatisfied": 0,
-    "notAdjudicated": 10,
+    "notSatisfied": 1,
+    "notAdjudicated": 9,
     "procedures": 7,
     "executableCases": 2,
     "executablePassed": 1,
-    "failedProcedures": [],
-    "blockedProcedures": ["E1"],
+    "failedProcedures": ["E1"],
+    "blockedProcedures": [],
     "partialProcedures": [],
-    "note": "The bound fixture-package check passed. The sealed-bundle check could not be adjudicated because its frozen oracle over-constrains two representations the frozen authority leaves open. The remaining regression and review procedures were not completed and no results are claimed for them."
+    "note": "The bound fixture-package check passed. The sealed-bundle check failed on both published bundles for one reason. The remaining regression and review procedures were not completed and no results are claimed for them."
+  },
+  "feedback": {
+    "requirement": "TR2: each published bundle must bind the candidate's contract and skill identities as Git blob ids or SHA-256 of the fixture bytes (as in the fixture package).",
+    "expected": "Each bundle manifest carries, for the candidate contract, either the Git blob id or the SHA-256 of the fixture contract file bytes.",
+    "observed": "Both bundle manifests carry a contract identity that is neither: it is a SHA-256 of a canonical re-serialisation of the contract, not of the fixture file bytes. The skill identity is acceptable. All other checked bundle properties were satisfied.",
+    "safeDiagnostics": "Fixture package check passes. Isolated re-check of each bundle reproduces exactly this one finding. Remedy: record the contract identity in the TR2 form (blob id or SHA-256 of the fixture bytes) alongside or instead of the canonical identity, and republish the bundles."
   },
   "evaluatorIntegrity": {
     "frozenEvaluationModified": false,
     "specificationDrift": false,
-    "evaluatorDefects": 2,
-    "postImplementationCorrections": 0,
+    "evaluatorDefects": 0,
+    "postImplementationCorrections": 1,
     "candidateEvaluationBegan": true
   },
   "promotionPlan": {
     "decision": "NOT_APPLICABLE"
-  },
-  "note": "Evaluator correction (repair) against the unchanged candidate is required before re-verification. No implementation failure is established."
+  }
 }
