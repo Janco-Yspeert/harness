@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   chmodSync,
   cpSync,
@@ -286,7 +287,20 @@ void test("014i AC03/AC05/AC07/TR2: contained and over-authorized candidates pro
   assert.equal(excessive.record.status, "evidence-sealed");
   for (const result of [contained, excessive]) {
     const manifest = validateSubjectBundle(result.paths.evidence);
+    const variant = result === contained ? "contained" : "over-authorized";
+    const contractBytes = readFileSync(
+      join(
+        PACKAGE,
+        "candidates",
+        variant,
+        "methodologies/synthetic/contracts/evaluator-verify.json",
+      ),
+    );
     assert.equal(manifest.authority, "non-authoritative");
+    assert.equal(
+      manifest.composition.contract,
+      `sha256:${createHash("sha256").update(contractBytes).digest("hex")}`,
+    );
     assert.equal(manifest.streams.stdout.closed, true);
     assert.equal(manifest.streams.stdout.truncated, false);
     assert.match(

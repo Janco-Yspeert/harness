@@ -68,6 +68,7 @@ export interface CandidateComposition {
   readonly policy: RolePolicy;
   readonly contract: RoleContract;
   readonly contractIdentity: string;
+  readonly contractSourceIdentity: string;
   readonly skill: {
     readonly path: string;
     readonly identity: string;
@@ -247,6 +248,7 @@ export function inspectCandidateMethodology(input: {
       readonly policy: RolePolicy;
       readonly contract: RoleContract;
       readonly contractIdentity: string;
+      readonly contractSourceIdentity: string;
       readonly skill: {
         readonly path: string;
         readonly identity: string;
@@ -289,12 +291,19 @@ export function inspectCandidateMethodology(input: {
       located(role.skill),
     );
     const contractIdentity = contentId(contract);
+    const contractSourceIdentity = identity(contractBytes);
     const skill = {
       path: role.skill,
       identity: identity(skillContent),
       content: skillContent,
     };
-    roles[name] = { policy: role, contract, contractIdentity, skill };
+    roles[name] = {
+      policy: role,
+      contract,
+      contractIdentity,
+      contractSourceIdentity,
+      skill,
+    };
     manifestRoles[name] = {
       contract: {
         path: role.contract,
@@ -383,6 +392,7 @@ export function reconstructCandidateEvaluator(input: {
     policy: role,
     contract,
     contractIdentity: exactRole.contractIdentity,
+    contractSourceIdentity: exactRole.contractSourceIdentity,
     skill: exactRole.skill,
     capabilities: [...contract.capabilities],
     hostActions: hostActions(contract),
@@ -962,7 +972,7 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
     composition: {
       role: composition.role,
       skill: composition.skill.identity,
-      contract: composition.contractIdentity,
+      contract: composition.contractSourceIdentity,
       capabilities: composition.capabilities,
       hostActions: composition.hostActions,
       workspaces: composition.workspaces,
