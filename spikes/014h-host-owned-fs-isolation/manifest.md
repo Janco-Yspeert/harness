@@ -196,3 +196,12 @@
 - Output: `as-built.md`, identity `sha256:7a061a35616c5f346f877b3e4da2c90f7fdbc67815b8d800ab958d7c1ff2551b`.
 - Promotion validation: `evaluation/promotion.json` bytes matched the bound promotion identity and were already committed in `a14e227b18b4ae92ce9fb23dc3ce0d0328b7479d`.
 - Measurements: no additional runtime statistics were available.
+
+## Outcome — execution a0d69b53-a623-41b1-8724-7f6cf38a5c94
+
+- Skill: `outcome`, contract version 5, pinned identity `sha256:2ab64cee141d06a88ff04dc540ddfa7a15c364e07bb717b7fab70c15460b7e82`
+- Completion mode: `STANDARD`
+- Candidate: `dee86d2314bffa7cc2da0d8ac72004250a06debb`; accepted evaluation, promotion, and As-Built identities match the bound inputs
+- Output: `outcome.md` (`sha256:e31718200497138e21da36c474d82acdc7ddca2cf2ac5682aed2dcf3ac5d34e2`)
+- Result: succeeded; the outcome records the accepted PASS, exact provenance, implementation findings, material correction history, loss-aware promotion qualification, deferred concerns, and next step
+- Measurements: no additional runtime statistics were available; token usage unavailable.
