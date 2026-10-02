@@ -41,3 +41,11 @@
 - Checks: `npm run typecheck`, `npm run lint` and `npm run format:check` passed; `node test/candidate-subject.test.ts` passed 7/7, including real `bubblewrap` fixture runs; both committed bundles passed `validateSubjectBundle`; frozen fixture tree remained `315593c0e9278f3df5b62e1806f5ea068144eac6`
 - Broader suite: `npm test` was attempted; the new candidate-subject suite passed, but the managed host returned `EPERM` from otherwise successful Node child Git operations and unrelated existing suites failed or hung. A direct existing archive-manifest run passed 5/6 with its sole failure at that `EPERM`, and the existing 014h isolation suite failed during fixture `git init` for the same reason. The hung aggregate run was terminated.
 - Measurements: provider calls 0; token usage unavailable
+
+## Evaluator Verify — execution 9539014f-abd0-4ea5-820c-37d19d775f03
+
+- Skill: `evaluator`, contract version 14, mode `verify`, attempt 001
+- Candidate: `202a1bf1df26cb95f4f22c859063cf87d11daa31`; evaluator revision `001` (`sha256:dbaa99ca4e277226d1f214632cc5af6b0be7af757ddf96ad3007fd925508a9ed`)
+- Result: BLOCKED, classification EVALUATOR_DEFECT; public record `verification-result.json`
+- Summary: frozen identities matched; the bound fixture-package check passed; the sealed-bundle check could not be adjudicated because its oracle over-constrains representations the frozen authority leaves open; remaining procedures not completed
+- Measurements: provider calls 0; token usage unavailable
