@@ -19,3 +19,12 @@
 - Decisions: one exact-commit candidate `evaluator-verify` subject operation; separate non-authoritative worker-tool relay; host-created disposable roots; host-owned lifecycle and raw capture; fail-closed sealing; unchanged committed evidence handoff for read-only trusted-N inspection
 - Checks: bound brief identity and committed provenance verified; relevant repository contracts, public interfaces, implementation, tests and prior public Design Maps inspected; `git diff --check` passed for the map; evaluator-private material not inspected
 - Measurements: runtime-provided wall-clock time and token usage unavailable
+
+## Evaluator Prepare — execution 6a6ba593-76cd-4162-bff2-34a0798fd2a5
+
+- Skill: `evaluator` (mode `prepare`), contract version 14, pinned identity `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`
+- Inputs: brief `sha256:36143fc057b9a67594103baabb994f7b3c3b28a110c7d87b6baf39aa73796c7e`; Design Map `sha256:69548f440c3f54efbcf3c2cf621d5c75d5c7f951b75b397c4dbeb9c2b5ca5f3b`
+- Outputs: `eval-requirements.md`, `coverage-map.json`, bound fixture package (commit `21e037c71e7b2617fadb89f4a3edeb86cc985d3a`, tree `315593c0e9278f3df5b62e1806f5ea068144eac6`)
+- Result: succeeded; evaluator revision `001` frozen after passing pre-freeze integrity validation (10 criterion records, 7 procedures)
+- Coverage: 2 executable, 1 public regression and 4 manual-review procedures; absence of further hidden tests preserves Design Map implementation freedom
+- Measurements: provider calls 0; token usage unavailable

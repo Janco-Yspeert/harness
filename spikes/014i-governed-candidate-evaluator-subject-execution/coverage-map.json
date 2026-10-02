@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "spike": "014i-governed-candidate-evaluator-subject-execution",
+  "evaluationRequirements": "sha256:33bc7a34dca20798c1d59e5c98aae2b9213aea8c06475f1069d282f6d4d9d2e2",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 14,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:dbaa99ca4e277226d1f214632cc5af6b0be7af757ddf96ad3007fd925508a9ed",
+    "privateInventoryIdentity": "sha256:96be64cf863a7941efd08201e928c001190c40de2b9e3beb6d619e66ad297643",
+    "validatorResultBinding": "sha256:e4539459827d083147234935af4590b6b97e7904d31d2de398bd8ea1b7a1c448",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 10
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01, section 1; design-map.md shared contracts 1, 2",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "E2",
+        "R1",
+        "M1"
+      ],
+      "sufficiency": "E1 shows each sealed fixture bundle binds the candidate commit, methodology, contract and skill identities that match the fixture variant actually run. E2 shows the bound fixture package is unchanged in the candidate. R1 requires the implementer's reconstruction, rejection and drift tests to exist and pass. M1 reviews that reconstruction uses the committed-revision loader with no working-tree read."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02, section 2; design-map.md shared contract 4 and invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "R1",
+        "M1"
+      ],
+      "sufficiency": "E1 shows the retained worker-tool exchange records the subject's assignment and submitResult with complete request and response and that the bundle is labelled non-authoritative. R1 requires tests showing no kernel submit, finalization, trust or promotion path is reachable. M1 reviews the relay for the absence of any authoritative call."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03, section 3; design-map.md shared contract 3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "E2",
+        "R1",
+        "M2"
+      ],
+      "sufficiency": "E2 binds the host-created inputs to the bound fixture. E1 shows the contained candidate's raw probe output reflects its read-only repository mode and the over-authorized candidate's write mode, evidence of candidate-defined modes enforced by the host. R1 requires layout and containment tests. M2 reviews that the single 014h containment primitive is used and the four roots are disjoint and host-created."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04, section 2 requestAction; design-map.md shared contract 4 and invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M1"
+      ],
+      "sufficiency": "R1 requires the implementer's tests that candidate host actions touch only disposable fixture state and real promotion or publication targets are denied. M1 reviews the action relay for destination confinement and denial of real workflow targets."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05, section 4; design-map.md shared contract 6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "M2"
+      ],
+      "sufficiency": "E1 shows each bundle retains byte-bound raw stdout and stderr, ordered worker-tool requests and responses, process data and an external before/after observation file, and rejects summary-only content. M2 reviews that the external observations are host snapshots consistent with the raw output."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06, section 5; design-map.md shared contract 7",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "R1"
+      ],
+      "sufficiency": "E1 verifies every retained file by path, length and SHA-256, safe paths, closed and untruncated streams, and its controls prove tamper, omission, truncation and path substitution are detected. R1 requires the implementer's sealing tests, including refusal of such evidence and the subject's inability to write the evidence root."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07, section 3 and 4; design-map.md shared contract 6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "M2"
+      ],
+      "sufficiency": "E1 requires a bundle for both the contained and the over-authorized fixture and attributes each from its raw runner lines, never from the subject's prose. M2 reviews that the external observations match those lines: unchanged repository and sentinel for contained, changed repository for over-authorized."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08, section 7; design-map.md shared contract 7",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "M3"
+      ],
+      "sufficiency": "E1 reads the committed published bundle with read-only file access alone. M3 reviews that publication uses the existing host-owned path, creates no authority event and leaves trusted N's contract and frozen criteria untouched."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09, section 8",
+      "mode": "REGRESSION",
+      "required": true,
+      "procedures": [
+        "R1"
+      ],
+      "sufficiency": "R1 runs typecheck, lint, format check and the full suite, which contain the 014h filesystem isolation, evaluator-private, governed execution, evidence-action, trust and promotion regressions."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10, section 2 scope; design-map.md shared contract 1",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M4"
+      ],
+      "sufficiency": "R1 requires a test showing roles other than evaluator-verify are refused. M4 reviews that the only production entry point is restricted to candidate evaluator-verify."
+    }
+  ]
+}
