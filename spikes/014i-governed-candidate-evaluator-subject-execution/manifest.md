@@ -49,3 +49,15 @@
 - Result: BLOCKED, classification EVALUATOR_DEFECT; public record `verification-result.json`
 - Summary: frozen identities matched; the bound fixture-package check passed; the sealed-bundle check could not be adjudicated because its oracle over-constrains representations the frozen authority leaves open; remaining procedures not completed
 - Measurements: provider calls 0; token usage unavailable
+
+## Implementation — execution db807964-80aa-4afe-a8f6-d9cb4932483f
+
+- Skill: `implementation`, contract version 5, pinned identity `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+- Inputs: brief `sha256:36143fc057b9a67594103baabb994f7b3c3b28a110c7d87b6baf39aa73796c7e`; Design Map `sha256:69548f440c3f54efbcf3c2cf621d5c75d5c7f951b75b397c4dbeb9c2b5ca5f3b`; evaluation requirements `sha256:33bc7a34dca20798c1d59e5c98aae2b9213aea8c06475f1069d282f6d4d9d2e2`; prepared coverage `sha256:8b994aa35375d25f16e3ff25340fc131e1d962dfedf0999df6760dab3f8ab4b6`
+- Result: succeeded; no implementation-failure feedback was bound, and the existing candidate required no contract-driven code change
+- Output content identity before this manifest update: Git tree `be6322532afd38784f36a0d6192eb29e03c00c50`
+- Candidate retained: exact-commit evaluator reconstruction, non-authoritative relay, host-created four-root containment, raw capture, fail-closed sealing, read-only publication and evaluator-only production authorization
+- Sealed evidence revalidated: contained manifest `sha256:3b4ee2b1ab9f6d00a2c529471bc40a2e3d480706a11227bb252e1eaa24b4a64c`; over-authorized manifest `sha256:0f70c6f9894ec101de6d458fb04f1793a7db48b5f22c3a8d388e7f7d5ad05cb3`; frozen fixture tree remained `315593c0e9278f3df5b62e1806f5ea068144eac6`
+- Checks: `node --test test/candidate-subject.test.ts`, `npm run typecheck`, `npm run lint` and `npm run format:check` passed
+- Broader suite: `npm test` was attempted; the candidate-subject suite passed, while multiple existing suites failed under the managed host's `spawnSync git EPERM` behavior and the aggregate hung until terminated. Direct `node test/host-fs-isolation.test.ts` confirmed all six 014h failures occurred at fixture `git init` with reported process status 0 and `EPERM`.
+- Measurements: provider calls 0; token usage unavailable
