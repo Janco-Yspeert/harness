@@ -61,3 +61,13 @@
 - Checks: `node --test test/candidate-subject.test.ts`, `npm run typecheck`, `npm run lint` and `npm run format:check` passed
 - Broader suite: `npm test` was attempted; the candidate-subject suite passed, while multiple existing suites failed under the managed host's `spawnSync git EPERM` behavior and the aggregate hung until terminated. Direct `node test/host-fs-isolation.test.ts` confirmed all six 014h failures occurred at fixture `git init` with reported process status 0 and `EPERM`.
 - Measurements: provider calls 0; token usage unavailable
+
+## Attached runtime repair — execution fbf59bd8-1294-4d2c-ba64-aa68c10d7375
+
+- Authority: one attached inline governed implementation Role Grant, explicitly limited to protected-Claude command-permission plumbing; no 014i brief, Design Map, candidate, evaluator revision or failed evaluator-repair attempt was changed.
+- Pre-repair runtime: `1efcb5b74278d57c94e2826a80d0d94224eabaac`; repair: `4adb5dd1ce8d9777511673c83bbc4eab925e5ed4` (`fix: authorize protected Claude Bash in containment`).
+- Files: `src/claude-workflow.ts`, `test/governed-executors.test.ts`.
+- Change: protected unattended launches with granted local computation pass Claude's supported `Bash` tool-family permission inside the existing 014h bwrap boundary; ordinary launches remain prefix-bounded, explicit `git push` denial remains, and bypass flags remain forbidden.
+- Coverage: deterministic protected verify and evaluator-repair launch construction asserts `auto`, no prompts, Bash authority, preserved push denial and rejection of bypass flags; existing governed-executor and 014h containment coverage passed.
+- Checks: `node --test test/governed-executors.test.ts test/host-fs-isolation.test.ts` (37/37); `npm run check` passed (typecheck, lint, format and full test suite).
+- Product boundary: provider execution plumbing only; candidate `202a1bf1df26cb95f4f22c859063cf87d11daa31` remains unchanged.
