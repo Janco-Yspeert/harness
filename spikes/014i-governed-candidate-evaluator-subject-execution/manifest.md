@@ -109,3 +109,10 @@
 - Checks passed: `npm run typecheck`; `npm run lint` on retry after one ESLint segmentation fault; `npm run format:check`; `node --test test/candidate-subject.test.ts`; direct `node test/candidate-subject.test.ts` (7/7); both bundles passed `validateSubjectBundle`; manifest contract identities matched the fixture contract-file SHA-256 values; frozen fixture tree remained `315593c0e9278f3df5b62e1806f5ea068144eac6`
 - Broader checks: `npm test`, `node test/host-fs-isolation.test.ts` and `node test/governed-executors.test.ts` were attempted; affected tests could not complete under the managed host because Node child Git operations returned `EPERM` despite status 0, and one governed regression could not read a host-managed workflow ledger. The aggregate run hung after reporting these infrastructure failures and was terminated; no related assertion failure was observed.
 - Measurements: provider calls 0; token usage unavailable
+
+## Verification — execution 2490bada-07d4-4fcb-914a-1d3e861fb134 (attempt 003)
+
+- Skill: `evaluator`, contract version 14, mode `verify`
+- Candidate `fcd6c399bc6b2983853498e378ecfe8d8c1edae3`; evaluator revision `002` (`sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410`); inputs matched their frozen identities
+- Result: FAIL, `IMPLEMENTATION_FAILURE` — methodology reconstruction duplicates the existing builder and diverges from it; sealed-bundle and fixture checks passed; see `verify-feedback.md` and `verification-result.json`
+- Measurements: provider calls 0; token usage unavailable

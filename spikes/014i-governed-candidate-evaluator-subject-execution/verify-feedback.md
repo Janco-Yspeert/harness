@@ -1,17 +1,20 @@
-# Verification Feedback — Spike 014i, attempt 002
+# Verification Feedback — Spike 014i, attempt 003
 
-Candidate `1efcb5b74278d57c94e2826a80d0d94224eabaac`, evaluator revision `002`.
+Candidate `fcd6c399bc6b2983853498e378ecfe8d8c1edae3`, evaluator revision `002`.
 Result: FAIL — classification `IMPLEMENTATION_FAILURE`.
 
-- **Violated public requirement:** TR2 (evaluation requirements): each published
-  bundle binds the candidate's contract and skill identities as Git blob ids or
-  SHA-256 of the fixture bytes.
-- **Expected:** the contract identity in each bundle manifest is the blob id or the
-  SHA-256 of the fixture contract file bytes.
-- **Observed:** both bundles bind a SHA-256 of a canonical re-serialisation of the
-  contract, which matches neither form. The skill identity is acceptable and all
-  other checked bundle properties were satisfied; the fixture-package identity
-  check passed.
-- **Safe diagnostics:** the finding reproduces in isolation for each bundle; the
-  evaluator already accepts both permitted forms. Regression and review procedures
-  were not completed in this attempt.
+- **Violated public requirement:** Design Map decision 2 and shared contract: the
+  operation reconstructs the candidate methodology with the existing
+  committed-revision methodology builder and adds no second methodology loader.
+- **Expected:** manifest and identity come from the existing builder.
+- **Observed:** the operation reimplements manifest construction with an empty,
+  hard-coded validator set. At the candidate's own Harness methodology it yields a
+  different identity than the existing builder, so it cannot reproduce a real
+  trusted identity; it agrees only for validator-free fixture methodologies.
+- **Passed:** fixture-package identity and sealed-bundle checks (the attempt 002
+  contract-identity finding is corrected). One pre-existing nested-sandbox failure in
+  the ordinary suite also occurs at the pre-candidate baseline and is not attributed
+  to the candidate.
+- **Remedy:** call the existing builder (it accepts a project prefix and explicit
+  validator sources) and verify identities against its result.
+- Measurements: provider calls 0; token usage unavailable

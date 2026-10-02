@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "attempt": "002",
-  "execution": "ab9057a7-6b1e-49fb-8c63-2a53b4943194",
-  "commit": "1efcb5b74278d57c94e2826a80d0d94224eabaac",
+  "attempt": "003",
+  "execution": "2490bada-07d4-4fcb-914a-1d3e861fb134",
+  "commit": "fcd6c399bc6b2983853498e378ecfe8d8c1edae3",
   "evaluatorRevision": "002",
   "evaluatorRevisionIdentity": "sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410",
   "inputs": {
@@ -32,17 +32,19 @@
     "notAdjudicated": 9,
     "procedures": 7,
     "executableCases": 2,
-    "executablePassed": 1,
-    "failedProcedures": ["E1"],
+    "executablePassed": 2,
+    "failedProcedures": [
+      "M1"
+    ],
     "blockedProcedures": [],
     "partialProcedures": [],
-    "note": "The bound fixture-package check passed. The sealed-bundle check failed on both published bundles for one reason. The remaining regression and review procedures were not completed and no results are claimed for them."
+    "note": "Both executable checks passed, including the sealed-bundle check corrected since the previous attempt. The review of committed-revision reconstruction failed. Regression results were environmentally limited (one pre-existing failure that also occurs at the pre-candidate baseline). Remaining review procedures were not completed and no results are claimed for them."
   },
   "feedback": {
-    "requirement": "TR2: each published bundle must bind the candidate's contract and skill identities as Git blob ids or SHA-256 of the fixture bytes (as in the fixture package).",
-    "expected": "Each bundle manifest carries, for the candidate contract, either the Git blob id or the SHA-256 of the fixture contract file bytes.",
-    "observed": "Both bundle manifests carry a contract identity that is neither: it is a SHA-256 of a canonical re-serialisation of the contract, not of the fixture file bytes. The skill identity is acceptable. All other checked bundle properties were satisfied.",
-    "safeDiagnostics": "Fixture package check passes. Isolated re-check of each bundle reproduces exactly this one finding. Remedy: record the contract identity in the TR2 form (blob id or SHA-256 of the fixture bytes) alongside or instead of the canonical identity, and republish the bundles."
+    "requirement": "Design Map decision 2 and shared contract: reconstruction uses the existing committed-revision methodology builder and adds no second methodology loader.",
+    "expected": "The subject operation obtains the candidate methodology manifest and identity from the existing committed-revision methodology builder.",
+    "observed": "The operation reimplements manifest construction in its own module, with its validator set hard-coded empty. For the Harness repository's own methodology at the candidate commit it yields a methodology identity different from the existing builder's, so it cannot reproduce a real trusted identity. It happens to agree only for fixture methodologies that declare no validators.",
+    "safeDiagnostics": "Fixture-package and sealed-bundle checks pass. Remedy: call the existing builder (it already accepts a project prefix and an explicit validator-source set) instead of a parallel construction, and keep identity checks against its result."
   },
   "evaluatorIntegrity": {
     "frozenEvaluationModified": false,
