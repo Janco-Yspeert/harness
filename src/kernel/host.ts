@@ -11,6 +11,13 @@ import {
   type ProviderAdapter,
 } from "../executors/adapters.ts";
 import {
+  runCandidateEvaluatorSubject,
+  type RunSubjectInput,
+  type SubjectManifest,
+  type SubjectPaths,
+  type SubjectRecord,
+} from "../candidate-subject.ts";
+import {
   assertWorkspaces,
   locateContainment,
   probeContainment,
@@ -134,6 +141,39 @@ export class GovernedHost {
       },
     });
     this.kernel.recover();
+  }
+  // Root-authorized callers may exercise only the exact candidate
+  // evaluator-verify composition. The host, not the caller, supplies the
+  // installed runtime identity and the probed containment executable. The
+  // returned semantic result remains subject evidence; it never enters the
+  // authoritative kernel.
+  candidateEvaluatorSubject(
+    input: Omit<RunSubjectInput, "bwrap" | "runtimeCommit">,
+  ): {
+    readonly record: SubjectRecord;
+    readonly paths: SubjectPaths;
+    readonly manifest?: SubjectManifest;
+  } {
+    this.#assertRuntime();
+    const runtimeRoot = this.#external?.runtimeRoot ?? installedRuntimeRoot();
+    const runtime = runtimeCommit(runtimeRoot);
+    const excluded = [
+      ...this.#excludedProviderRoots(),
+      input.candidateRepository,
+      input.fixtureRoot,
+      ...(input.outputRoot ? [input.outputRoot] : []),
+    ];
+    const located = this.#runtime.bwrap
+      ? { ok: true as const, path: this.#runtime.bwrap }
+      : locateContainment(excluded);
+    if (!located.ok)
+      throw new HostRefusal("provider-config-invalid", located.reason);
+    probeContainment(located.path);
+    return runCandidateEvaluatorSubject({
+      ...input,
+      bwrap: located.path,
+      runtimeCommit: runtime.commit,
+    });
   }
   // An external-project host never runs a Stockdif workflow on an uncommitted
   // or subsequently changed Harness runtime.
