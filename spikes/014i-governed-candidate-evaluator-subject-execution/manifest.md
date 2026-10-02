@@ -71,3 +71,12 @@
 - Coverage: deterministic protected verify and evaluator-repair launch construction asserts `auto`, no prompts, Bash authority, preserved push denial and rejection of bypass flags; existing governed-executor and 014h containment coverage passed.
 - Checks: `node --test test/governed-executors.test.ts test/host-fs-isolation.test.ts` (37/37); `npm run check` passed (typecheck, lint, format and full test suite).
 - Product boundary: provider execution plumbing only; candidate `202a1bf1df26cb95f4f22c859063cf87d11daa31` remains unchanged.
+
+## Evaluator Repair — execution 5006b9fb-d74c-4086-93ce-2e778078a066
+
+- Skill: `evaluator`, contract version 14, mode `repair`
+- Trigger: finalized verification attempt 001 classified `EVALUATOR_DEFECT` (`7f9be350-30e3-49e8-8c33-768b5fea1ffc`)
+- Source evaluator revision `001` (`sha256:dbaa99ca4e277226d1f214632cc5af6b0be7af757ddf96ad3007fd925508a9ed`) preserved; resulting revision `002` (`sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410`)
+- Inputs unchanged: brief `sha256:36143fc057b9a67594103baabb994f7b3c3b28a110c7d87b6baf39aa73796c7e`; Design Map `sha256:69548f440c3f54efbcf3c2cf621d5c75d5c7f951b75b397c4dbeb9c2b5ca5f3b`; evaluation requirements `sha256:33bc7a34dca20798c1d59e5c98aae2b9213aea8c06475f1069d282f6d4d9d2e2`
+- Result: structural integrity PASS; acceptance semantics preserved; no implementation-shaped seam adopted; candidate not executed
+- Measurements: provider calls 0; token usage unavailable

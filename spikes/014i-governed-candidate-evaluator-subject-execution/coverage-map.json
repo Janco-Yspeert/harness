@@ -5,10 +5,10 @@
   "readiness": {
     "skill": "evaluator",
     "skillVersion": 14,
-    "evaluatorRevision": "001",
-    "evaluatorRevisionIdentity": "sha256:dbaa99ca4e277226d1f214632cc5af6b0be7af757ddf96ad3007fd925508a9ed",
+    "evaluatorRevision": "002",
+    "evaluatorRevisionIdentity": "sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410",
     "privateInventoryIdentity": "sha256:96be64cf863a7941efd08201e928c001190c40de2b9e3beb6d619e66ad297643",
-    "validatorResultBinding": "sha256:e4539459827d083147234935af4590b6b97e7904d31d2de398bd8ea1b7a1c448",
+    "validatorResultBinding": "sha256:d15a33bfb68dfb5bbf1aaae502ba59956b705e49af16e6923770894c18eba67c",
     "integrityValidation": "PASS",
     "criterionRecordCount": 10
   },
@@ -127,5 +127,21 @@
       ],
       "sufficiency": "R1 requires a test showing roles other than evaluator-verify are refused. M4 reviews that the only production entry point is restricted to candidate evaluator-verify."
     }
-  ]
+  ],
+  "repair": {
+    "trigger": "7f9be350-30e3-49e8-8c33-768b5fea1ffc",
+    "sourceEvaluatorRevision": "001",
+    "resultingEvaluatorRevision": "002",
+    "affectedCriteria": [
+      "AC01",
+      "AC02",
+      "AC03",
+      "AC05",
+      "AC06",
+      "AC07",
+      "AC08"
+    ],
+    "integrityValidation": "PASS",
+    "acceptanceSemanticsPreserved": true
+  }
 }
