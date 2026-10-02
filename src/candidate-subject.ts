@@ -28,14 +28,8 @@ import {
   WORKER_PROTOCOL_VERSION,
   type WorkerRequest,
 } from "./executors/protocol.ts";
-import {
-  canonical,
-  contentId,
-  identity,
-  matches,
-  object,
-  text,
-} from "./kernel/ledger.ts";
+import { buildMethodologyManifest } from "./methodology-evolution.ts";
+import { canonical, identity, matches, object, text } from "./kernel/ledger.ts";
 import type {
   RoleContract,
   RolePolicy,
@@ -117,6 +111,7 @@ export interface RunSubjectInput {
   readonly candidateRepository: string;
   readonly candidateCommit: string;
   readonly candidateProjectPrefix?: string;
+  readonly candidateValidatorSources?: Readonly<Record<string, string>>;
   readonly candidateMethodology: string;
   readonly expectedSkillIdentity: string;
   readonly expectedContractIdentity: string;
@@ -237,6 +232,7 @@ export function inspectCandidateMethodology(input: {
   readonly repository: string;
   readonly commit: string;
   readonly projectPrefix?: string;
+  readonly validatorSources?: Readonly<Record<string, string>>;
 }): {
   readonly candidate: string;
   readonly projectPrefix: string;
@@ -273,66 +269,40 @@ export function inspectCandidateMethodology(input: {
     ),
   );
   const policyPath = text(project.policy);
-  const policy = JSON.parse(
-    committedText(input.repository, candidate, located(policyPath)),
-  ) as WorkflowPolicy;
+  const built = buildMethodologyManifest(
+    input.repository,
+    candidate,
+    policyPath,
+    {
+      ...(projectPrefix ? { projectPrefix } : {}),
+      ...(input.validatorSources
+        ? { validatorSources: input.validatorSources }
+        : {}),
+    },
+  );
+  const policy = built.manifest.policy.content;
   const roles: ReturnType<typeof inspectCandidateMethodology>["roles"] = {};
-  const manifestRoles: Record<string, unknown> = {};
-  for (const [name, role] of Object.entries(policy.roles)) {
+  for (const [name, exactRole] of Object.entries(built.manifest.roles)) {
+    const role = policy.roles[name];
+    if (!role) throw new Error(`candidate role ${name} is missing from policy`);
     const contractBytes = committedText(
       input.repository,
       candidate,
       located(role.contract),
     );
-    const contract = JSON.parse(contractBytes) as RoleContract;
-    const skillContent = committedText(
-      input.repository,
-      candidate,
-      located(role.skill),
-    );
-    const contractIdentity = contentId(contract);
     const contractSourceIdentity = identity(contractBytes);
-    const skill = {
-      path: role.skill,
-      identity: identity(skillContent),
-      content: skillContent,
-    };
     roles[name] = {
       policy: role,
-      contract,
-      contractIdentity,
+      contract: exactRole.contract.content,
+      contractIdentity: exactRole.contract.identity,
       contractSourceIdentity,
-      skill,
-    };
-    manifestRoles[name] = {
-      contract: {
-        path: role.contract,
-        identity: contractIdentity,
-        content: contract,
-      },
-      skill,
+      skill: exactRole.skill,
     };
   }
-  const manifestCore = {
-    schemaVersion: 1,
-    capabilityVocabulary: {
-      schemaVersion: 1,
-      values: [
-        "repository-read",
-        "repository-write",
-        "local-computation",
-        "git-inspect",
-        "git-commit",
-      ],
-    },
-    policy: { path: policyPath, identity: contentId(policy), content: policy },
-    roles: manifestRoles,
-    validators: {},
-  };
   return {
     candidate,
     projectPrefix,
-    methodology: contentId(manifestCore),
+    methodology: built.manifest.id,
     policy,
     roles,
   };
@@ -345,6 +315,7 @@ export function reconstructCandidateEvaluator(input: {
   readonly skillIdentity: string;
   readonly contractIdentity: string;
   readonly projectPrefix?: string;
+  readonly validatorSources?: Readonly<Record<string, string>>;
   readonly role?: string;
 }): CandidateComposition {
   if ((input.role ?? SUBJECT_ROLE) !== SUBJECT_ROLE)
@@ -355,6 +326,9 @@ export function reconstructCandidateEvaluator(input: {
     repository: input.repository,
     commit: input.commit,
     ...(input.projectPrefix ? { projectPrefix: input.projectPrefix } : {}),
+    ...(input.validatorSources
+      ? { validatorSources: input.validatorSources }
+      : {}),
   });
   if (inspected.methodology !== input.methodology)
     throw new Error("candidate methodology identity mismatch");
@@ -839,6 +813,9 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
     contractIdentity: input.expectedContractIdentity,
     ...(input.candidateProjectPrefix
       ? { projectPrefix: input.candidateProjectPrefix }
+      : {}),
+    ...(input.candidateValidatorSources
+      ? { validatorSources: input.candidateValidatorSources }
       : {}),
   });
   const execution = input.execution ?? randomUUID();

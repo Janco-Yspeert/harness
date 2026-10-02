@@ -167,11 +167,20 @@ function repositoryPath(path: string): string {
 }
 
 function git(repositoryRoot: string, args: readonly string[]): string {
-  return execFileSync("git", [...args], {
-    cwd: repositoryRoot,
-    encoding: "utf8",
-    stdio: "pipe",
-  }).trim();
+  try {
+    return execFileSync("git", [...args], {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+      stdio: "pipe",
+    }).trim();
+  } catch (error) {
+    // Some confined hosts report EPERM after a successful, fully captured Git
+    // child. Accept only its explicit zero status; real Git failures propagate.
+    const completed = error as { status?: unknown; stdout?: unknown };
+    if (completed.status === 0 && typeof completed.stdout === "string")
+      return completed.stdout.trim();
+    throw error;
+  }
 }
 
 function exactRevision(repositoryRoot: string, revision: string): string {
@@ -190,11 +199,22 @@ function readRevisionFile(
   revision: string,
   path: string,
 ): string {
-  return execFileSync("git", ["show", `${revision}:${repositoryPath(path)}`], {
-    cwd: repositoryRoot,
-    encoding: "utf8",
-    stdio: "pipe",
-  });
+  try {
+    return execFileSync(
+      "git",
+      ["show", `${revision}:${repositoryPath(path)}`],
+      {
+        cwd: repositoryRoot,
+        encoding: "utf8",
+        stdio: "pipe",
+      },
+    );
+  } catch (error) {
+    const completed = error as { status?: unknown; stdout?: unknown };
+    if (completed.status === 0 && typeof completed.stdout === "string")
+      return completed.stdout;
+    throw error;
+  }
 }
 
 function jsonAt(

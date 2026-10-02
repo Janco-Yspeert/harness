@@ -116,3 +116,15 @@
 - Candidate `fcd6c399bc6b2983853498e378ecfe8d8c1edae3`; evaluator revision `002` (`sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410`); inputs matched their frozen identities
 - Result: FAIL, `IMPLEMENTATION_FAILURE` — methodology reconstruction duplicates the existing builder and diverges from it; sealed-bundle and fixture checks passed; see `verify-feedback.md` and `verification-result.json`
 - Measurements: provider calls 0; token usage unavailable
+
+## Implementation — execution 81d2e46e-d6e0-4d0e-a12e-5a88755e7be2
+
+- Skill: `implementation`, contract version 5, pinned identity `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+- Inputs: brief `sha256:36143fc057b9a67594103baabb994f7b3c3b28a110c7d87b6baf39aa73796c7e`; Design Map `sha256:69548f440c3f54efbcf3c2cf621d5c75d5c7f951b75b397c4dbeb9c2b5ca5f3b`; evaluation requirements `sha256:33bc7a34dca20798c1d59e5c98aae2b9213aea8c06475f1069d282f6d4d9d2e2`; prepared coverage `sha256:6fdd13c2e733f1ac3cd9586dc3bdbb0f7754fd5ca702bc976f205f52d97e385e`; implementation feedback `sha256:f2883f86dda38f766e244476cc1fa67b04e984300196e6682f184b22c3db477d`
+- Result: succeeded; corrected attempt 003's committed-revision methodology reconstruction failure
+- Output content identity before this manifest update: Git tree `29794f9a691c557a7b86d03b08a3c700e312adae`
+- Change: candidate-subject reconstruction now delegates manifest, policy, role, skill, contract and validator identity construction to the existing committed-revision methodology builder; explicit validator-source bindings support the frozen validator-free synthetic fixtures, while production reconstruction uses the builder's Harness validator set
+- Regression: the visible candidate-subject suite now compares reconstructed Harness methodology, policy, skills and contracts directly with the existing builder; confined-host Git reads accept only the observed `EPERM` case carrying an explicit zero status and captured output, while real Git failures still propagate
+- Checks passed: `npm run typecheck`; full `npm run lint`; full `npm run format:check`; targeted ESLint and Prettier checks; `node --test test/candidate-subject.test.ts` (8/8 when run directly, including real `bubblewrap` fixture runs); `git diff --check`; frozen fixture tree remained `315593c0e9278f3df5b62e1806f5ea068144eac6`
+- Broader checks: `npm run check` and a serial full-suite retry were attempted. Static phases passed and the candidate-subject suite passed; unrelated suites failed or did not terminate cleanly because this managed host reports otherwise successful Node child Git operations as `EPERM` with status 0. Direct archive-manifest testing passed 5/6 before the sole `git ls-files` boundary failure, and all nine methodology-evolution cases stopped at fixture `git init`; no related assertion failure was observed.
+- Measurements: 3 implementation/test files changed before this entry (99 insertions, 63 deletions); provider calls 0; token usage unavailable

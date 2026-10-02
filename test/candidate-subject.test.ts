@@ -27,6 +27,7 @@ import {
   type CandidateComposition,
 } from "../src/candidate-subject.ts";
 import { locateContainment } from "../src/executors/containment.ts";
+import { buildMethodologyManifest } from "../src/methodology-evolution.ts";
 
 const PACKAGE = join(
   process.cwd(),
@@ -73,6 +74,7 @@ function candidate(
     repository: root,
     commit,
     projectPrefix: prefix,
+    validatorSources: {},
   });
   const role = inspected.roles["evaluator-verify"];
   return {
@@ -93,6 +95,7 @@ function reconstruct(f: CandidateFixture): CandidateComposition {
     skillIdentity: f.skill,
     contractIdentity: f.contract,
     projectPrefix: f.prefix,
+    validatorSources: {},
   });
 }
 
@@ -114,6 +117,7 @@ function run(
     candidateRepository: f.root,
     candidateCommit: f.commit,
     candidateProjectPrefix: f.prefix,
+    candidateValidatorSources: {},
     candidateMethodology: f.methodology,
     expectedSkillIdentity: f.skill,
     expectedContractIdentity: f.contract,
@@ -154,6 +158,7 @@ void test("014i AC01/TR3a: exact committed reconstruction is pinned despite work
         skillIdentity: f.skill,
         contractIdentity: f.contract,
         projectPrefix: f.prefix,
+        validatorSources: {},
       }),
     /exact 40-hex/,
   );
@@ -166,6 +171,7 @@ void test("014i AC01/TR3a: exact committed reconstruction is pinned despite work
         skillIdentity: f.skill,
         contractIdentity: f.contract,
         projectPrefix: f.prefix,
+        validatorSources: {},
       }),
     /methodology identity mismatch/,
   );
@@ -178,6 +184,7 @@ void test("014i AC01/TR3a: exact committed reconstruction is pinned despite work
         skillIdentity: "sha256:wrong",
         contractIdentity: f.contract,
         projectPrefix: f.prefix,
+        validatorSources: {},
       }),
     /skill identity mismatch/,
   );
@@ -190,6 +197,7 @@ void test("014i AC01/TR3a: exact committed reconstruction is pinned despite work
         skillIdentity: f.skill,
         contractIdentity: "sha256:wrong",
         projectPrefix: f.prefix,
+        validatorSources: {},
       }),
     /contract identity mismatch/,
   );
@@ -202,9 +210,40 @@ void test("014i AC01/TR3a: exact committed reconstruction is pinned despite work
         skillIdentity: f.skill,
         contractIdentity: f.contract,
         projectPrefix: f.prefix,
+        validatorSources: {},
         role: "implementation",
       }),
     /restricted to evaluator-verify/,
+  );
+});
+
+void test("014i AC01/TR3a: reconstruction uses the committed-revision methodology builder", () => {
+  const repository = process.cwd();
+  const commit = git(repository, ["rev-parse", "HEAD"]);
+  const inspected = inspectCandidateMethodology({ repository, commit });
+  const built = buildMethodologyManifest(repository, commit);
+  assert.equal(inspected.candidate, built.revision);
+  assert.equal(inspected.methodology, built.manifest.id);
+  assert.deepEqual(inspected.policy, built.manifest.policy.content);
+  assert.deepEqual(
+    Object.fromEntries(
+      Object.entries(inspected.roles).map(([name, role]) => [
+        name,
+        {
+          contract: role.contractIdentity,
+          skill: role.skill.identity,
+        },
+      ]),
+    ),
+    Object.fromEntries(
+      Object.entries(built.manifest.roles).map(([name, role]) => [
+        name,
+        {
+          contract: role.contract.identity,
+          skill: role.skill.identity,
+        },
+      ]),
+    ),
   );
 });
 
