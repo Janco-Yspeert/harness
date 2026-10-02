@@ -302,9 +302,9 @@ export interface GovernedClaudeLaunch {
   readonly prompt: string;
   readonly model?: string;
   readonly maxTurns?: number;
-  // A spawned protected worker has no approval UI. Claude's supported auto
-  // mode exercises the reviewed tool set inside Harness containment without
-  // turning provider prompts into automatic denials.
+  // A spawned protected worker has no approval UI. Harness has already
+  // resolved its authority, so the provider must apply the explicit reviewed
+  // allow/deny rules without an independent command classifier.
   readonly unattendedProtected?: boolean;
 }
 
@@ -315,15 +315,14 @@ export function buildGovernedClaudeCommand(
     launch.capabilities,
     launch.workerOperations,
   );
-  // Claude's `auto` mode still asks for a Bash invocation that does not match
-  // an exact `Bash(command-prefix *)` entry. A protected governed worker has
-  // no approval surface (`--permission-prompts none`), so ordinary evaluator
-  // shell composition would otherwise be denied even though its Role Grant
-  // already grants local computation. For that one contained launch shape,
-  // admit Claude's Bash tool family rather than trying to enumerate every
-  // harmless shell composition. Host-owned bubblewrap remains the filesystem
-  // boundary; explicit disallowed tool rules still win for operations such as
-  // `git push`, and unprotected launches keep their prefix-bounded mapping.
+  // A protected governed worker has no approval surface
+  // (`--permission-prompts none`). For that one contained launch shape, admit
+  // Claude's Bash tool family rather than trying to enumerate every harmless
+  // shell composition. `dontAsk` then applies these explicit Harness-derived
+  // rules deterministically instead of consulting auto mode's independent
+  // command classifier. Host-owned bubblewrap remains the filesystem boundary;
+  // explicit disallowed tool rules still win for operations such as `git push`,
+  // and unprotected launches keep their prefix-bounded mapping.
   const allowedTools =
     launch.unattendedProtected && permissions.commands
       ? [...permissions.allowedTools, "Bash"]
@@ -360,7 +359,7 @@ export function buildGovernedClaudeCommand(
     "--disallowedTools",
     [...permissions.disallowedTools, ...readOnly].join(","),
     "--permission-mode",
-    launch.unattendedProtected ? "auto" : permissions.permissionMode,
+    launch.unattendedProtected ? "dontAsk" : permissions.permissionMode,
     "--permission-prompts",
     "none",
     "--no-session-persistence",

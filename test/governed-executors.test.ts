@@ -1240,7 +1240,10 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
     prompt: "prompt",
     unattendedProtected: true,
   });
-  assert.equal(unattended[unattended.indexOf("--permission-mode") + 1], "auto");
+  assert.equal(
+    unattended[unattended.indexOf("--permission-mode") + 1],
+    "dontAsk",
+  );
   assert.equal(
     unattended[unattended.indexOf("--permission-prompts") + 1],
     "none",
@@ -1249,7 +1252,7 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
     unattended[unattended.indexOf("--allowedTools") + 1] ?? "",
     /Bash\(node \*\)/,
   );
-  // `auto` with no approval UI must accept the complete Bash tool family for
+  // `dontAsk` with no approval UI receives the complete Bash tool family for
   // protected roles: exact command-prefix allowlists deny normal evaluator
   // shell composition before the already-required host containment can apply.
   assert.ok(
@@ -1288,7 +1291,7 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
     });
     const flag = (name: string): string =>
       protectedCommand[protectedCommand.indexOf(name) + 1] ?? "";
-    assert.equal(flag("--permission-mode"), "auto", role);
+    assert.equal(flag("--permission-mode"), "dontAsk", role);
     assert.equal(flag("--permission-prompts"), "none", role);
     assert.ok(flag("--allowedTools").split(",").includes("Bash"), role);
     assert.match(flag("--disallowedTools"), /Bash\(git push \*\)/, role);

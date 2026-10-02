@@ -80,3 +80,13 @@
 - Inputs unchanged: brief `sha256:36143fc057b9a67594103baabb994f7b3c3b28a110c7d87b6baf39aa73796c7e`; Design Map `sha256:69548f440c3f54efbcf3c2cf621d5c75d5c7f951b75b397c4dbeb9c2b5ca5f3b`; evaluation requirements `sha256:33bc7a34dca20798c1d59e5c98aae2b9213aea8c06475f1069d282f6d4d9d2e2`
 - Result: structural integrity PASS; acceptance semantics preserved; no implementation-shaped seam adopted; candidate not executed
 - Measurements: provider calls 0; token usage unavailable
+
+## Protected Claude runtime recovery — deterministic permission mode
+
+- Scope: generic contained unattended protected-Claude launch behavior only; no 014i candidate, evaluator semantics, frozen input or historical attempt was changed.
+- Diagnosis: the retained repair diagnostic showed an authorized Bash operation was denied before execution because provider-side approval was required for a runtime-computed path while no approval surface existed. The operation was subsequently completed through an equivalent run-scratch script; revision `002` was independently re-audited and remains admissible.
+- Change: protected unattended launches now use the installed Claude CLI's supported `dontAsk` permission mode with the existing Harness-derived tool allow/deny rules. User, project and local settings remain excluded; admin-managed policy remains effective. `git push` stays explicitly denied; bypass modes stay forbidden; 014h bubblewrap containment and workspace visibility are unchanged.
+- Deterministic checks: protected verify and repair receive identical `dontAsk` treatment and Bash authority; ordinary unprotected launch mode is unchanged; explicit push denial, bypass rejection and mandatory no-fallback containment coverage pass.
+- Live preflight: one disposable protected execution (`943d7a82-2d90-4f1c-a8c8-6fdab0de91c0`) initialized in `dontAsk`; an authorized composed Bash command completed, a host-side `/tmp` sentinel remained invisible inside `bwrap`, and a separate `git push` was denied before execution. The preflight submitted `PASS` and exited cleanly; it was not an evaluator repair or verification attempt.
+- Revision `002` audit: retained 24/24 repair controls passed; a fresh repaired self-test passed; all seven frozen artifact identities and the archived bundle matched; deterministic integrity validation returned `PASS` with no diagnostics and reproduced both public readiness identities.
+- Checks: `npm run check` passed (typecheck, lint, format and 233 tests).
