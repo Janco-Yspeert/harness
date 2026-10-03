@@ -29,6 +29,16 @@
 - Coverage: 2 executable, 1 public regression and 4 manual-review procedures; absence of further hidden tests preserves Design Map implementation freedom
 - Measurements: provider calls 0; token usage unavailable
 
+## As-Built — execution dc061e12-5c7f-47ed-9541-2d384b183b9d
+
+- Skill: `as-built`, contract version 4, pinned identity `sha256:dc3c422691fb36a292b49db411ff9aefd5199f8602b73ef87428fd0a09ea534b`
+- Inspected candidate: `bb8d138d59c69e5af3f5b09b1a2fc5c6a4049f14`
+- Inputs: brief `sha256:36143fc057b9a67594103baabb994f7b3c3b28a110c7d87b6baf39aa73796c7e`; Design Map `sha256:69548f440c3f54efbcf3c2cf621d5c75d5c7f951b75b397c4dbeb9c2b5ca5f3b`; verification `sha256:6a4c4d725b437b9419ebda05e56c15452b82c1b43732ce623271d5605844fafb`; promotion `sha256:124ce984f7477aaff7be60ccee6cc74288c97dad7f16594ce80b388ef19d81a7`
+- Result: succeeded; reconstructed the exact implemented shape and found no Missing, Contradictory, or Extra discrepancies against the frozen contract
+- Output: `as-built.md` (`sha256:bf9257c4670b1f754ffe780624dc4a718fd00c9c456cc6ea0c076c67dad8183d`)
+- Promotion checkpoint: `8cb0dd8` (`evaluation/promotion.json` only)
+- Measurements: runtime-provided wall-clock time and token usage unavailable
+
 ## Implementation — execution 85bde5b1-ccaf-4422-869c-c2a1133e7288
 
 - Skill: `implementation`, contract version 5, pinned identity `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
