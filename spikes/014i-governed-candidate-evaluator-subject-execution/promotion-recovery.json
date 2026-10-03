@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "kind": "evaluator-complete-archive-recovery",
+  "classification": "PROMOTION_POLICY_DEFECT",
+  "archiveCompleteness": "complete",
+  "workflow": "014i-governed-candidate-evaluator-subject-execution",
+  "cycle": "001",
+  "candidate": "bb8d138d59c69e5af3f5b09b1a2fc5c6a4049f14",
+  "evaluatorRevision": "002",
+  "successfulExecution": "68ee4301-683c-45b1-a1a8-a95b3b595e80",
+  "successfulAttempt": 4,
+  "authoritativeVerification": {
+    "result": "PASS",
+    "event": "b28fed73-36d9-4d99-b8ad-c8acbe0e89ab",
+    "semanticResult": "db3e8529-8e4b-45ba-8a08-c84641ab741e",
+    "publicArtifactPath": "verification-result.json",
+    "publicArtifactIdentity": "sha256:6a4c4d725b437b9419ebda05e56c15452b82c1b43732ce623271d5605844fafb"
+  },
+  "promotionPlan": {
+    "path": ".eval/promotion-plan.json",
+    "identity": "sha256:17942e967916947bb365b6b7d740a25b495d413c8c6308c75911cfd8f01192da",
+    "ordinaryValidation": "INELIGIBLE",
+    "originalDecision": "INELIGIBLE"
+  },
+  "attemptLedger": {
+    "path": ".eval/attempt-ledger.json",
+    "identity": "sha256:2d844b4b7745620e05888d807cd4a2668b073330cacc83e0569fccc23abe08e7"
+  },
+  "revisionIdentities": {
+    "001": "sha256:dbaa99ca4e277226d1f214632cc5af6b0be7af757ddf96ad3007fd925508a9ed",
+    "002": "sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410"
+  },
+  "evidenceReconstructed": false,
+  "evidenceOmitted": false,
+  "runtimeCommit": "b079b6095d93c427c6bc415a38a05130b4da75e2"
+}
