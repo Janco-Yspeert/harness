@@ -128,3 +128,10 @@
 - Checks passed: `npm run typecheck`; full `npm run lint`; full `npm run format:check`; targeted ESLint and Prettier checks; `node --test test/candidate-subject.test.ts` (8/8 when run directly, including real `bubblewrap` fixture runs); `git diff --check`; frozen fixture tree remained `315593c0e9278f3df5b62e1806f5ea068144eac6`
 - Broader checks: `npm run check` and a serial full-suite retry were attempted. Static phases passed and the candidate-subject suite passed; unrelated suites failed or did not terminate cleanly because this managed host reports otherwise successful Node child Git operations as `EPERM` with status 0. Direct archive-manifest testing passed 5/6 before the sole `git ls-files` boundary failure, and all nine methodology-evolution cases stopped at fixture `git init`; no related assertion failure was observed.
 - Measurements: 3 implementation/test files changed before this entry (99 insertions, 63 deletions); provider calls 0; token usage unavailable
+
+## Verification — execution 68ee4301-683c-45b1-a1a8-a95b3b595e80 (attempt 004)
+
+- Skill: `evaluator`, contract version 14, mode `verify`
+- Candidate `bb8d138d59c69e5af3f5b09b1a2fc5c6a4049f14`; evaluator revision `002` (`sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410`); inputs matched their frozen identities
+- Result: PASS — all ten criteria satisfied; executable checks, regression (234/234) and manual reviews passed; promotion plan `sha256:17942e967916947bb365b6b7d740a25b495d413c8c6308c75911cfd8f01192da` is INELIGIBLE, so no archival is requested; see `verification-result.json`
+- Measurements: provider calls 0; token usage unavailable

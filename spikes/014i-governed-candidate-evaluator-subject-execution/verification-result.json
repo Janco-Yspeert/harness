@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
-  "attempt": "003",
-  "execution": "2490bada-07d4-4fcb-914a-1d3e861fb134",
-  "commit": "fcd6c399bc6b2983853498e378ecfe8d8c1edae3",
+  "attempt": "004",
+  "execution": "68ee4301-683c-45b1-a1a8-a95b3b595e80",
+  "roleGrant": "sha256:e18ecf474cb61fcdb9d7229afeba04f29b2938cd3af9cb5d589c9832e82d9420",
+  "commit": "bb8d138d59c69e5af3f5b09b1a2fc5c6a4049f14",
   "evaluatorRevision": "002",
   "evaluatorRevisionIdentity": "sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410",
   "inputs": {
@@ -11,40 +12,40 @@
     "evaluationRequirements": "sha256:33bc7a34dca20798c1d59e5c98aae2b9213aea8c06475f1069d282f6d4d9d2e2",
     "coverage": "sha256:6fdd13c2e733f1ac3cd9586dc3bdbb0f7754fd5ca702bc976f205f52d97e385e"
   },
-  "result": "FAIL",
-  "classification": "IMPLEMENTATION_FAILURE",
+  "result": "PASS",
   "coverageResults": {
-    "AC01": "NOT_SATISFIED",
-    "AC02": "NOT_ADJUDICATED",
-    "AC03": "NOT_ADJUDICATED",
-    "AC04": "NOT_ADJUDICATED",
-    "AC05": "NOT_ADJUDICATED",
-    "AC06": "NOT_ADJUDICATED",
-    "AC07": "NOT_ADJUDICATED",
-    "AC08": "NOT_ADJUDICATED",
-    "AC09": "NOT_ADJUDICATED",
-    "AC10": "NOT_ADJUDICATED"
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED"
   },
   "accounting": {
     "criteria": 10,
-    "satisfied": 0,
-    "notSatisfied": 1,
-    "notAdjudicated": 9,
+    "satisfied": 10,
+    "notSatisfied": 0,
+    "notAdjudicated": 0,
     "procedures": 7,
     "executableCases": 2,
     "executablePassed": 2,
-    "failedProcedures": [
-      "M1"
-    ],
+    "failedProcedures": [],
     "blockedProcedures": [],
     "partialProcedures": [],
-    "note": "Both executable checks passed, including the sealed-bundle check corrected since the previous attempt. The review of committed-revision reconstruction failed. Regression results were environmentally limited (one pre-existing failure that also occurs at the pre-candidate baseline). Remaining review procedures were not completed and no results are claimed for them."
+    "note": "Both executable checks pass against the exact committed candidate. Public regression and all four manual reviews pass, including committed-revision methodology reconstruction through the existing builder."
   },
-  "feedback": {
-    "requirement": "Design Map decision 2 and shared contract: reconstruction uses the existing committed-revision methodology builder and adds no second methodology loader.",
-    "expected": "The subject operation obtains the candidate methodology manifest and identity from the existing committed-revision methodology builder.",
-    "observed": "The operation reimplements manifest construction in its own module, with its validator set hard-coded empty. For the Harness repository's own methodology at the candidate commit it yields a methodology identity different from the existing builder's, so it cannot reproduce a real trusted identity. It happens to agree only for fixture methodologies that declare no validators.",
-    "safeDiagnostics": "Fixture-package and sealed-bundle checks pass. Remedy: call the existing builder (it already accepts a project prefix and an explicit validator-source set) instead of a parallel construction, and keep identity checks against its result."
+  "regression": {
+    "command": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "environment": "clean clone of the candidate outside the system temporary directory, installed dependencies",
+    "typecheck": "pass",
+    "lint": "pass",
+    "formatCheck": "pass",
+    "tests": 234,
+    "passed": 234
   },
   "evaluatorIntegrity": {
     "frozenEvaluationModified": false,
@@ -53,7 +54,10 @@
     "postImplementationCorrections": 1,
     "candidateEvaluationBegan": true
   },
+  "environmentNote": "A clone placed under the system temporary directory reproduces one existing 014e test failure caused by checkout placement; the same suite passes fully elsewhere. Not a candidate or evaluator defect.",
   "promotionPlan": {
-    "decision": "NOT_APPLICABLE"
-  }
+    "identity": "sha256:17942e967916947bb365b6b7d740a25b495d413c8c6308c75911cfd8f01192da",
+    "decision": "INELIGIBLE"
+  },
+  "humanAcceptance": "Not applicable: machine-verifiable PASS only. Archival is not requested because the plan is ineligible (frozen evaluator bundles carry private grader material with no disclosure decision)."
 }
