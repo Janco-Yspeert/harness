@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "request": {
+    "id": "79513e49-d69e-45f1-ae98-d5c2a5a3364a",
+    "execution": "68ee4301-683c-45b1-a1a8-a95b3b595e80",
+    "roleGrant": "sha256:e18ecf474cb61fcdb9d7229afeba04f29b2938cd3af9cb5d589c9832e82d9420",
+    "candidate": "bb8d138d59c69e5af3f5b09b1a2fc5c6a4049f14",
+    "evaluatorRevision": "002",
+    "attempt": 4,
+    "destination": "evaluation",
+    "artifacts": [
+      {
+        "source": ".eval/promotion-plan.json",
+        "destination": "promotion-plan.json",
+        "identity": "sha256:17942e967916947bb365b6b7d740a25b495d413c8c6308c75911cfd8f01192da"
+      },
+      {
+        "source": ".eval/attempt-ledger.json",
+        "destination": "attempt-ledger.json",
+        "identity": "sha256:2d844b4b7745620e05888d807cd4a2668b073330cacc83e0569fccc23abe08e7"
+      },
+      {
+        "source": ".eval/attempts/001/eval-result.md",
+        "destination": "attempts/001/eval-result.md",
+        "identity": "sha256:75cfbe9f46784c83c55f2b027d733a9b512cef90f8d64450acf7703b13852bd1"
+      },
+      {
+        "source": ".eval/attempts/002/eval-result.md",
+        "destination": "attempts/002/eval-result.md",
+        "identity": "sha256:2702004d4f8b9e45614a81d959464383b0c3a8188a0c6e4a3208971710e240e9"
+      },
+      {
+        "source": ".eval/attempts/003/eval-result.md",
+        "destination": "attempts/003/eval-result.md",
+        "identity": "sha256:4afacd9a5c4b150a96a1f1da1daf534aeedf6b37462f48483fca6e89333169d0"
+      },
+      {
+        "source": ".eval/attempts/004/eval-result.md",
+        "destination": "attempts/004/eval-result.md",
+        "identity": "sha256:903ecf90c6926a25160b31a0aeb7093bfda11541dc1f2238003059ccb99ca3e6"
+      },
+      {
+        "source": ".eval/revisions/001/freeze.json",
+        "destination": "revisions/001/freeze.json",
+        "identity": "sha256:dbaa99ca4e277226d1f214632cc5af6b0be7af757ddf96ad3007fd925508a9ed"
+      },
+      {
+        "source": ".eval/revisions/001/.hidden-test/bundle-selftest.test.ts",
+        "destination": "revisions/001/.hidden-test/bundle-selftest.test.ts",
+        "identity": "sha256:ca99c510e4e9672cb32e20a68f657be2f88c0e865183125876aa7ee3647c9426"
+      },
+      {
+        "source": ".eval/revisions/001/.hidden-test/bundle.test.ts",
+        "destination": "revisions/001/.hidden-test/bundle.test.ts",
+        "identity": "sha256:6f5e02ff5ebdda7df2516cb596884014cbb63248116f69041bd2266f0d141322"
+      },
+      {
+        "source": ".eval/revisions/001/.hidden-test/fixture.test.ts",
+        "destination": "revisions/001/.hidden-test/fixture.test.ts",
+        "identity": "sha256:31013c9566016e83b36bb4a7b09e7f325cf8d079031491fd4eb83ed119244864"
+      },
+      {
+        "source": ".eval/revisions/001/.hidden-test/manifest.json",
+        "destination": "revisions/001/.hidden-test/manifest.json",
+        "identity": "sha256:57bc7a6da5aa83b01672221d6a17936da03816b21cedcffeb8a3c819109fa398"
+      },
+      {
+        "source": ".eval/revisions/001/.hidden-test/support/bundle-check.ts",
+        "destination": "revisions/001/.hidden-test/support/bundle-check.ts",
+        "identity": "sha256:f7341f55b92e8c321386676788f8a80cb79356b1a80babea72dc17e2676d2477"
+      },
+      {
+        "source": ".eval/revisions/001/.hidden-test/support/make-bundle.ts",
+        "destination": "revisions/001/.hidden-test/support/make-bundle.ts",
+        "identity": "sha256:ba09cddb43fa3d05dba132d832a1f9ddbc7d28d9f6bdaab49f4413e2de1b50cf"
+      },
+      {
+        "source": ".eval/revisions/001/eval-spec.md",
+        "destination": "revisions/001/eval-spec.md",
+        "identity": "sha256:29416d16337e3140ec7e5091d2d7f5cf7f9bf7370651eb4a9e1a4ea4abe36477"
+      },
+      {
+        "source": ".eval/revisions/002/freeze.json",
+        "destination": "revisions/002/freeze.json",
+        "identity": "sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410"
+      },
+      {
+        "source": ".eval/revisions/002/.hidden-test/bundle-selftest.test.ts",
+        "destination": "revisions/002/.hidden-test/bundle-selftest.test.ts",
+        "identity": "sha256:e7bb7400b9bd3633d2bec871b8a0a8e8c2423641c74c5642d55e6eed376d2ee4"
+      },
+      {
+        "source": ".eval/revisions/002/.hidden-test/bundle.test.ts",
+        "destination": "revisions/002/.hidden-test/bundle.test.ts",
+        "identity": "sha256:6f5e02ff5ebdda7df2516cb596884014cbb63248116f69041bd2266f0d141322"
+      },
+      {
+        "source": ".eval/revisions/002/.hidden-test/fixture.test.ts",
+        "destination": "revisions/002/.hidden-test/fixture.test.ts",
+        "identity": "sha256:31013c9566016e83b36bb4a7b09e7f325cf8d079031491fd4eb83ed119244864"
+      },
+      {
+        "source": ".eval/revisions/002/.hidden-test/manifest.json",
+        "destination": "revisions/002/.hidden-test/manifest.json",
+        "identity": "sha256:57bc7a6da5aa83b01672221d6a17936da03816b21cedcffeb8a3c819109fa398"
+      },
+      {
+        "source": ".eval/revisions/002/.hidden-test/support/bundle-check.ts",
+        "destination": "revisions/002/.hidden-test/support/bundle-check.ts",
+        "identity": "sha256:bbe519af4fcf4a1f70e98a4f2c7edbe74620b9724e776ba6ab2ffe4f7ce28740"
+      },
+      {
+        "source": ".eval/revisions/002/.hidden-test/support/make-bundle.ts",
+        "destination": "revisions/002/.hidden-test/support/make-bundle.ts",
+        "identity": "sha256:ba09cddb43fa3d05dba132d832a1f9ddbc7d28d9f6bdaab49f4413e2de1b50cf"
+      },
+      {
+        "source": ".eval/revisions/002/eval-spec.md",
+        "destination": "revisions/002/eval-spec.md",
+        "identity": "sha256:bf173d0c77aca5d549c55e287f3523069c2f1e299045009fab9e639c64a88e14"
+      }
+    ],
+    "archiveRecovery": {
+      "archiveCompleteness": "complete",
+      "classification": "PROMOTION_POLICY_DEFECT",
+      "authority": "ba889866-4684-4900-8e91-1711491961be",
+      "declarationPath": "promotion-recovery.json",
+      "declarationIdentity": "sha256:3a639b3b1e668e9199a4a7307d021a5f216de4f85befea14ece84c9dcc6be02f",
+      "runtimeCommit": "6f75d3b1fec2e70a9379d61efa1bf124a1f1b5dd",
+      "hostRuntimeCommit": "d574a72132814a9cff40d42b45e95b728af26235",
+      "normalValidation": "INELIGIBLE",
+      "planIdentity": "sha256:17942e967916947bb365b6b7d740a25b495d413c8c6308c75911cfd8f01192da",
+      "evidenceReconstructed": false,
+      "evidenceOmitted": false
+    }
+  },
+  "result": {
+    "artifacts": {
+      "promotion-plan.json": "sha256:17942e967916947bb365b6b7d740a25b495d413c8c6308c75911cfd8f01192da",
+      "attempt-ledger.json": "sha256:2d844b4b7745620e05888d807cd4a2668b073330cacc83e0569fccc23abe08e7",
+      "attempts/001/eval-result.md": "sha256:75cfbe9f46784c83c55f2b027d733a9b512cef90f8d64450acf7703b13852bd1",
+      "attempts/002/eval-result.md": "sha256:2702004d4f8b9e45614a81d959464383b0c3a8188a0c6e4a3208971710e240e9",
+      "attempts/003/eval-result.md": "sha256:4afacd9a5c4b150a96a1f1da1daf534aeedf6b37462f48483fca6e89333169d0",
+      "attempts/004/eval-result.md": "sha256:903ecf90c6926a25160b31a0aeb7093bfda11541dc1f2238003059ccb99ca3e6",
+      "revisions/001/freeze.json": "sha256:dbaa99ca4e277226d1f214632cc5af6b0be7af757ddf96ad3007fd925508a9ed",
+      "revisions/001/.hidden-test/bundle-selftest.test.ts": "sha256:ca99c510e4e9672cb32e20a68f657be2f88c0e865183125876aa7ee3647c9426",
+      "revisions/001/.hidden-test/bundle.test.ts": "sha256:6f5e02ff5ebdda7df2516cb596884014cbb63248116f69041bd2266f0d141322",
+      "revisions/001/.hidden-test/fixture.test.ts": "sha256:31013c9566016e83b36bb4a7b09e7f325cf8d079031491fd4eb83ed119244864",
+      "revisions/001/.hidden-test/manifest.json": "sha256:57bc7a6da5aa83b01672221d6a17936da03816b21cedcffeb8a3c819109fa398",
+      "revisions/001/.hidden-test/support/bundle-check.ts": "sha256:f7341f55b92e8c321386676788f8a80cb79356b1a80babea72dc17e2676d2477",
+      "revisions/001/.hidden-test/support/make-bundle.ts": "sha256:ba09cddb43fa3d05dba132d832a1f9ddbc7d28d9f6bdaab49f4413e2de1b50cf",
+      "revisions/001/eval-spec.md": "sha256:29416d16337e3140ec7e5091d2d7f5cf7f9bf7370651eb4a9e1a4ea4abe36477",
+      "revisions/002/freeze.json": "sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410",
+      "revisions/002/.hidden-test/bundle-selftest.test.ts": "sha256:e7bb7400b9bd3633d2bec871b8a0a8e8c2423641c74c5642d55e6eed376d2ee4",
+      "revisions/002/.hidden-test/bundle.test.ts": "sha256:6f5e02ff5ebdda7df2516cb596884014cbb63248116f69041bd2266f0d141322",
+      "revisions/002/.hidden-test/fixture.test.ts": "sha256:31013c9566016e83b36bb4a7b09e7f325cf8d079031491fd4eb83ed119244864",
+      "revisions/002/.hidden-test/manifest.json": "sha256:57bc7a6da5aa83b01672221d6a17936da03816b21cedcffeb8a3c819109fa398",
+      "revisions/002/.hidden-test/support/bundle-check.ts": "sha256:bbe519af4fcf4a1f70e98a4f2c7edbe74620b9724e776ba6ab2ffe4f7ce28740",
+      "revisions/002/.hidden-test/support/make-bundle.ts": "sha256:ba09cddb43fa3d05dba132d832a1f9ddbc7d28d9f6bdaab49f4413e2de1b50cf",
+      "revisions/002/eval-spec.md": "sha256:bf173d0c77aca5d549c55e287f3523069c2f1e299045009fab9e639c64a88e14"
+    },
+    "integrityIdentity": "sha256:a9038b4e4b58cd99bae608819e843907bf13b670a3ae7ebde5e1dbc03b749db8"
+  }
+}
