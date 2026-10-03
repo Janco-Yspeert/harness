@@ -12,7 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test, { type TestContext } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { startHarnessHost } from "../src/index.ts";
@@ -2335,6 +2335,258 @@ void test("014a: host promotion validates exact evidence and keeps failure disti
   assert.equal(
     "remote" in required(allocation.grant.hostActions.promotion),
     false,
+  );
+});
+
+void test("root complete-evidence recovery records exactly one truthful promotion", (t) => {
+  const f = fixture(t, "complete-archive-recovery");
+  const candidate = "d".repeat(40);
+  const evaluatorRevision = "001";
+  const source = required(f.project.workspaces.evaluation).path;
+  const resultPath = ".eval/attempts/001/eval-result.md";
+  const resultIdentity = identity("# Attempt 001\n\nPASS\n");
+  const plan = `${JSON.stringify(
+    {
+      schemaVersion: 2,
+      kind: "evaluator-promotion-plan",
+      decision: "INELIGIBLE",
+      reason: "Legacy policy refused complete canonical evaluator evidence.",
+    },
+    null,
+    2,
+  )}\n`;
+  const planIdentity = identity(plan);
+  const specIdentity = identity("spec\n");
+  const graderIdentity = identity("grader\n");
+  const freeze = `${JSON.stringify(
+    {
+      schemaVersion: 1,
+      evaluatorRevision,
+      artifacts: {
+        ".hidden-test/grader.test.ts": graderIdentity,
+        "eval-spec.md": specIdentity,
+      },
+    },
+    null,
+    2,
+  )}\n`;
+  const freezeIdentity = identity(freeze);
+  const ledger = `${JSON.stringify(
+    {
+      schemaVersion: 2,
+      attempts: [
+        {
+          id: "001",
+          implementation: candidate,
+          evaluatorRevision,
+          status: "PASS",
+          result: resultIdentity,
+        },
+      ],
+    },
+    null,
+    2,
+  )}\n`;
+  const ledgerIdentity = identity(ledger);
+  for (const [path, bytes] of [
+    [resultPath, "# Attempt 001\n\nPASS\n"],
+    [".eval/promotion-plan.json", plan],
+    [".eval/attempt-ledger.json", ledger],
+    [".eval/freeze.json", freeze],
+    [".eval/revisions/001/freeze.json", freeze],
+    [".eval/revisions/001/eval-spec.md", "spec\n"],
+    [".eval/revisions/001/.hidden-test/grader.test.ts", "grader\n"],
+    ["eval-spec.md", "spec\n"],
+    [".hidden-test/grader.test.ts", "grader\n"],
+  ] as const) {
+    mkdirSync(dirname(join(source, path)), { recursive: true });
+    writeFileSync(join(source, path), bytes);
+  }
+
+  f.event("candidate", { commit: candidate, evaluatorRevision });
+  f.contract.workspaces.push("evaluation");
+  f.contract.inputs.push(
+    { name: "candidate", event: "candidate", field: "commit" },
+    {
+      name: "evaluatorRevision",
+      event: "candidate",
+      field: "evaluatorRevision",
+    },
+  );
+  f.contract.methodology = { result: ["PASS"] };
+  f.contract.promotion = {
+    sourceWorkspace: "evaluation",
+    destinationWorkspace: "repository",
+    destination: "evaluation",
+    candidateInput: "candidate",
+    revisionInput: "evaluatorRevision",
+    when: { result: "PASS" },
+    allocationEvent: "verification-allocated",
+    attemptField: "attempt",
+    transition: "promotion-recorded",
+    plan: ".eval/promotion-plan.json",
+  };
+  const role = required(f.policy.roles.produce);
+  role.onAllocate = {
+    transition: "verification-allocated",
+    fromInputs: {
+      commit: "candidate",
+      evaluatorRevision: "evaluatorRevision",
+    },
+    counterField: "attempt",
+  };
+  role.outcomes = [
+    {
+      disposition: "succeeded",
+      methodology: { result: "PASS" },
+      transition: "semantic-pass-recorded",
+    },
+  ];
+  f.policy.roles["evaluator-verify"] = role;
+  delete f.policy.roles.produce;
+  json(join(f.root, "contracts/produce.json"), f.contract);
+  json(join(f.root, "policy.json"), f.policy);
+  const publicResult = `${JSON.stringify(
+    {
+      schemaVersion: 1,
+      attempt: "001",
+      commit: candidate,
+      evaluatorRevision,
+      result: "PASS",
+      promotionPlan: { identity: planIdentity, decision: "INELIGIBLE" },
+    },
+    null,
+    2,
+  )}\n`;
+  writeFileSync(
+    join(f.root, "items/work-item/verification-result.json"),
+    publicResult,
+  );
+  git(f.root, ["init", "-b", "proof"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "canonical PASS"]);
+  const artifactCommit = git(f.root, ["rev-parse", "HEAD"]);
+
+  const parent = f.authorize();
+  const run = allocate(f, parent, "evaluator-verify");
+  f.kernel.process(f.workflow, run.execution.id, "running");
+  const semantic = f.kernel.result(f.workflow, run.execution.id, "succeeded", {
+    result: "PASS",
+  });
+  assert.equal(semantic.transition?.status, "recorded");
+  f.event("verification-finalized", {
+    result: "PASS",
+    execution: run.execution.id,
+    roleGrant: run.grant.id,
+    commit: candidate,
+    evaluatorRevision,
+    attempt: 1,
+    cycle: "001",
+    artifactCommit,
+    path: "verification-result.json",
+    identity: identity(publicResult),
+    semanticResult: semantic.result?.id,
+  });
+  const finalized = required(
+    f.kernel
+      .events(f.workflow)
+      .findLast((event) => event.transition === "verification-finalized"),
+  );
+  const runtimeCommit = "e".repeat(40);
+  const declarationPath = "promotion-recovery.json";
+  const declaration = `${JSON.stringify(
+    {
+      schemaVersion: 1,
+      kind: "evaluator-complete-archive-recovery",
+      classification: "PROMOTION_POLICY_DEFECT",
+      archiveCompleteness: "complete",
+      workflow: f.workflow,
+      cycle: "001",
+      candidate,
+      evaluatorRevision,
+      successfulExecution: run.execution.id,
+      successfulAttempt: 1,
+      authoritativeVerification: {
+        result: "PASS",
+        event: finalized.id,
+        semanticResult: semantic.result?.id,
+        publicArtifactPath: "verification-result.json",
+        publicArtifactIdentity: identity(publicResult),
+      },
+      promotionPlan: {
+        path: ".eval/promotion-plan.json",
+        identity: planIdentity,
+        ordinaryValidation: "INELIGIBLE",
+        originalDecision: "INELIGIBLE",
+      },
+      attemptLedger: {
+        path: ".eval/attempt-ledger.json",
+        identity: ledgerIdentity,
+      },
+      revisionIdentities: { "001": freezeIdentity },
+      evidenceReconstructed: false,
+      evidenceOmitted: false,
+      runtimeCommit,
+    },
+    null,
+    2,
+  )}\n`;
+  writeFileSync(join(f.root, "items/work-item", declarationPath), declaration);
+  git(f.root, ["add", `items/${f.workflow}/${declarationPath}`]);
+  git(f.root, ["commit", "-m", "authorize complete archive recovery"]);
+  const recovery = f.kernel.authorizeCompleteArchiveRecovery(f.workflow, {
+    execution: run.execution.id,
+    declarationPath,
+    declarationIdentity: identity(declaration),
+    runtimeCommit,
+  });
+  const promoted = f.kernel.promote(
+    f.workflow,
+    run.execution.id,
+    candidate,
+    evaluatorRevision,
+    1,
+    recovery.artifacts,
+    undefined,
+    {
+      archiveCompleteness: "complete",
+      classification: "PROMOTION_POLICY_DEFECT",
+      authority: recovery.authority,
+      declarationPath,
+      declarationIdentity: identity(declaration),
+      runtimeCommit,
+      normalValidation: "INELIGIBLE",
+      planIdentity,
+      evidenceReconstructed: false,
+      evidenceOmitted: false,
+    },
+  );
+  assert.equal(promoted.status, "succeeded");
+  const promotions = f.kernel
+    .events(f.workflow)
+    .filter((event) => event.transition === "promotion-recorded");
+  assert.equal(promotions.length, 1);
+  assert.deepEqual(promotions[0]?.evidence.archiveRecovery, {
+    archiveCompleteness: "complete",
+    classification: "PROMOTION_POLICY_DEFECT",
+    authority: recovery.authority,
+    declarationPath,
+    declarationIdentity: identity(declaration),
+    runtimeCommit,
+    normalValidation: "INELIGIBLE",
+    planIdentity,
+    evidenceReconstructed: false,
+    evidenceOmitted: false,
+  });
+  assert.throws(
+    () =>
+      f.kernel.authorizeCompleteArchiveRecovery(f.workflow, {
+        execution: run.execution.id,
+        declarationPath,
+        declarationIdentity: identity(declaration),
+        runtimeCommit,
+      }),
+    /already has a recorded promotion/,
   );
 });
 

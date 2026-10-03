@@ -511,6 +511,18 @@ export interface PromotionActionRequest {
     normalValidation: "INELIGIBLE";
     normalValidationReason: string;
   };
+  archiveRecovery?: {
+    archiveCompleteness: "complete";
+    classification: "PROMOTION_POLICY_DEFECT";
+    authority: string;
+    declarationPath: string;
+    declarationIdentity: string;
+    runtimeCommit: string;
+    normalValidation: "INELIGIBLE";
+    planIdentity: string;
+    evidenceReconstructed: false;
+    evidenceOmitted: false;
+  };
 }
 export interface EvidenceFileRecord {
   destination: string;

@@ -913,6 +913,47 @@ export class GovernedHost {
           );
           return;
         }
+        if (sub === "promote-complete-recovery") {
+          needRoot();
+          this.#assertRuntime();
+          const runtimeRoot =
+            this.#external?.runtimeRoot ?? installedRuntimeRoot();
+          const runtime = runtimeCommit(runtimeRoot);
+          const recovery = this.kernel.authorizeCompleteArchiveRecovery(
+            workflow,
+            {
+              execution: execution.id,
+              declarationPath: text(body.declarationPath),
+              declarationIdentity: text(body.declarationIdentity),
+              runtimeCommit: runtime.commit,
+            },
+          );
+          send(
+            200,
+            this.kernel.promote(
+              workflow,
+              execution.id,
+              recovery.declaration.candidate,
+              recovery.declaration.evaluatorRevision,
+              recovery.declaration.successfulAttempt,
+              recovery.artifacts,
+              undefined,
+              {
+                archiveCompleteness: "complete",
+                classification: "PROMOTION_POLICY_DEFECT",
+                authority: recovery.authority,
+                declarationPath: text(body.declarationPath),
+                declarationIdentity: text(body.declarationIdentity),
+                runtimeCommit: recovery.declaration.runtimeCommit,
+                normalValidation: "INELIGIBLE",
+                planIdentity: recovery.declaration.promotionPlan.identity,
+                evidenceReconstructed: false,
+                evidenceOmitted: false,
+              },
+            ),
+          );
+          return;
+        }
         if (sub === "cancel") {
           needRoot();
           // Record the terminal status first, then terminate the actual child.

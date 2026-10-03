@@ -38,6 +38,12 @@ import {
   type KnownAttempt,
 } from "./archive-loss.ts";
 import {
+  buildCompleteArchiveArtifacts,
+  parseCompleteArchiveRecoveryDeclaration,
+  type CompleteArchiveAttempt,
+  type CompleteArchiveRecoveryDeclaration,
+} from "./archive-recovery.ts";
+import {
   authorityBasis,
   recoveryScopedAuthorityBasis,
   resolveAuthority,
@@ -2400,6 +2406,234 @@ export class ExecutionKernel {
       return { authority, declaration, artifacts };
     });
   }
+  authorizeCompleteArchiveRecovery(
+    workflow: string,
+    request: {
+      execution: string;
+      declarationPath: string;
+      declarationIdentity: string;
+      runtimeCommit: string;
+    },
+  ): {
+    authority: string;
+    declaration: CompleteArchiveRecoveryDeclaration;
+    artifacts: PromotionArtifact[];
+  } {
+    return this.#transaction(workflow, () => {
+      const execution = this.execution(workflow, request.execution);
+      const grant = this.roleGrant(workflow, execution.roleGrant);
+      const allowed = grant.hostActions.promotion;
+      const definition = this.definition(workflow, grant.methodology);
+      const events = this.events(workflow);
+      const current = scopedEvents(events, definition.policy);
+      const finalized = current.findLast(
+        (event) => event.transition === "verification-finalized",
+      );
+      if (
+        grant.role !== "evaluator-verify" ||
+        !allowed ||
+        execution.result?.methodology.result !== "PASS" ||
+        finalized?.evidence.result !== "PASS" ||
+        finalized.evidence.execution !== execution.id ||
+        finalized.evidence.commit !== allowed.candidate ||
+        finalized.evidence.evaluatorRevision !== allowed.evaluatorRevision ||
+        finalized.evidence.semanticResult !== execution.result.id
+      )
+        throw new Error(
+          "complete-archive recovery requires the canonical current verification PASS",
+        );
+      if (
+        current.some(
+          (event) =>
+            event.transition === allowed.transition &&
+            event.evidence.semanticResult === finalized.evidence.semanticResult,
+        )
+      )
+        throw new Error("authoritative PASS already has a recorded promotion");
+
+      const repository = realpathSync(this.project.root);
+      const workflowRoot = realpathSync(
+        resolve(
+          repository,
+          required(this.project.workflows[workflow]).directory,
+        ),
+      );
+      const declarationPath = boundedPath(
+        workflowRoot,
+        request.declarationPath,
+      );
+      const declarationBytes = readFileSync(declarationPath);
+      if (identity(declarationBytes) !== request.declarationIdentity)
+        throw new Error("complete-archive declaration identity mismatch");
+      const relativeDeclaration = relative(repository, declarationPath);
+      const committed = execFileSync(
+        "git",
+        ["-C", repository, "show", `HEAD:${relativeDeclaration}`],
+        { stdio: "pipe" },
+      );
+      if (identity(committed) !== request.declarationIdentity)
+        throw new Error(
+          "complete-archive declaration lacks committed provenance",
+        );
+      const declaration = parseCompleteArchiveRecoveryDeclaration(
+        JSON.parse(declarationBytes.toString("utf8")),
+      );
+      if (declaration.runtimeCommit !== request.runtimeCommit)
+        throw new Error("complete-archive recovery runtime commit mismatch");
+
+      const sourceWorkspace = grant.workspaces.find((workspace) => {
+        const configured =
+          this.project.workflows[workflow]?.workspaces?.[
+            allowed.sourceWorkspace
+          ] ?? this.project.workspaces[allowed.sourceWorkspace];
+        return configured?.id === workspace.id;
+      });
+      if (!sourceWorkspace)
+        throw new Error(
+          "complete-archive recovery source workspace is unavailable",
+        );
+      const sourceRoot = realpathSync(sourceWorkspace.path);
+      const terminalAttempt = Number(finalized.evidence[allowed.attemptField]);
+      const allocations = current
+        .filter(
+          (event) =>
+            event.transition === allowed.allocationEvent &&
+            typeof event.evidence[allowed.attemptField] === "number" &&
+            Number(event.evidence[allowed.attemptField]) <= terminalAttempt,
+        )
+        .sort(
+          (a, b) =>
+            Number(a.evidence[allowed.attemptField]) -
+            Number(b.evidence[allowed.attemptField]),
+        );
+      const attempts: CompleteArchiveAttempt[] = allocations.map(
+        (allocation, index) => {
+          const number = Number(allocation.evidence[allowed.attemptField]);
+          if (number !== index + 1)
+            throw new Error(
+              "canonical verification attempts are incomplete or out of order",
+            );
+          const executionId = String(allocation.evidence.execution);
+          const terminals = current.filter(
+            (event) =>
+              event.transition === "verification-finalized" &&
+              event.evidence.execution === executionId,
+          );
+          if (terminals.length !== 1)
+            throw new Error(
+              "every canonical verification allocation requires exactly one terminal result",
+            );
+          const terminal = required(terminals[0]);
+          const result = terminal.evidence.result;
+          if (!["PASS", "FAIL", "BLOCKED"].includes(String(result)))
+            throw new Error("invalid canonical verification result");
+          if (
+            terminal.evidence.commit !== allocation.evidence.commit ||
+            terminal.evidence.evaluatorRevision !==
+              allocation.evidence.evaluatorRevision ||
+            terminal.evidence[allowed.attemptField] !== number
+          )
+            throw new Error(
+              "canonical verification allocation/result binding mismatch",
+            );
+          return {
+            attempt: number,
+            execution: executionId,
+            candidate: String(allocation.evidence.commit),
+            evaluatorRevision: String(allocation.evidence.evaluatorRevision),
+            result: result as CompleteArchiveAttempt["result"],
+          };
+        },
+      );
+
+      const publicArtifact = boundedPath(
+        workflowRoot,
+        String(finalized.evidence.path),
+      );
+      const publicBytes = readFileSync(publicArtifact);
+      if (
+        identity(publicBytes) !== finalized.evidence.identity ||
+        finalized.evidence.identity !==
+          identity(
+            execFileSync(
+              "git",
+              [
+                "-C",
+                repository,
+                "show",
+                `${String(finalized.evidence.artifactCommit)}:${relative(repository, publicArtifact)}`,
+              ],
+              { stdio: "pipe" },
+            ),
+          )
+      )
+        throw new Error(
+          "authoritative public verification evidence is not intact",
+        );
+      let publicResult: Record<string, unknown>;
+      try {
+        publicResult = object(JSON.parse(publicBytes.toString("utf8")));
+      } catch {
+        throw new Error("authoritative public verification result is invalid");
+      }
+      const publicPlan = object(publicResult.promotionPlan);
+      if (
+        publicResult.result !== "PASS" ||
+        publicResult.commit !== allowed.candidate ||
+        publicResult.evaluatorRevision !== allowed.evaluatorRevision ||
+        Number(publicResult.attempt) !== terminalAttempt ||
+        publicPlan.identity !== declaration.promotionPlan.identity ||
+        publicPlan.decision !== "INELIGIBLE"
+      )
+        throw new Error(
+          "authoritative public verification result does not bind the immutable refusal",
+        );
+
+      const scope = definition.policy.scopeEvent;
+      const cycleValue =
+        finalized.evidence[scope?.field ?? "cycle"] ?? scope?.initial ?? "001";
+      if (typeof cycleValue !== "string")
+        throw new Error("canonical verification cycle is invalid");
+      const cycle = cycleValue;
+      const artifacts = buildCompleteArchiveArtifacts(sourceRoot, declaration, {
+        workflow,
+        cycle,
+        candidate: allowed.candidate,
+        evaluatorRevision: allowed.evaluatorRevision,
+        successfulExecution: execution.id,
+        successfulAttempt: terminalAttempt,
+        verificationEvent: required(finalized.id),
+        semanticResult: finalized.evidence.semanticResult,
+        publicArtifactPath: String(finalized.evidence.path),
+        publicArtifactIdentity: finalized.evidence.identity,
+        attempts,
+        promotionRecorded: false,
+        runtimeCommit: request.runtimeCommit,
+      });
+      const authority = randomUUID();
+      this.#append(workflow, "kernel.complete-archive-recovery-authorized", {
+        schemaVersion: 1,
+        id: authority,
+        origin: "human",
+        execution: execution.id,
+        candidate: allowed.candidate,
+        evaluatorRevision: allowed.evaluatorRevision,
+        attempt: terminalAttempt,
+        verification: finalized.id,
+        semanticResult: finalized.evidence.semanticResult,
+        declarationPath: request.declarationPath,
+        declarationIdentity: request.declarationIdentity,
+        classification: "PROMOTION_POLICY_DEFECT",
+        archiveCompleteness: "complete",
+        planIdentity: declaration.promotionPlan.identity,
+        normalValidation: "INELIGIBLE",
+        runtimeCommit: request.runtimeCommit,
+        evidenceReconstructed: false,
+        evidenceOmitted: false,
+      });
+      return { authority, declaration, artifacts };
+    });
+  }
   promote(
     workflow: string,
     id: string,
@@ -2408,6 +2642,7 @@ export class ExecutionKernel {
     attempt: number,
     artifacts: PromotionArtifact[],
     archiveLoss?: NonNullable<PromotionActionRequest["archiveLoss"]>,
+    archiveRecovery?: NonNullable<PromotionActionRequest["archiveRecovery"]>,
   ): PromotionActionResult {
     return this.#transaction(workflow, () => {
       const execution = this.execution(workflow, id);
@@ -2423,6 +2658,7 @@ export class ExecutionKernel {
         attempt,
         artifacts,
         ...(archiveLoss ? { archiveLoss } : {}),
+        ...(archiveRecovery ? { archiveRecovery } : {}),
       };
       this.#append(workflow, "kernel.action-request", { ...request });
       const action: PromotionActionResult = {
@@ -2555,6 +2791,7 @@ export class ExecutionKernel {
                 destination: allowed.destination,
                 artifacts: request.artifacts,
                 ...(archiveLoss ? { archiveLoss } : {}),
+                ...(archiveRecovery ? { archiveRecovery } : {}),
               },
               result: {
                 artifacts: action.artifacts,
@@ -2603,6 +2840,7 @@ export class ExecutionKernel {
           semanticResult: required(execution.result).id,
           action: action.id,
           ...(archiveLoss ? { archiveLoss } : {}),
+          ...(archiveRecovery ? { archiveRecovery } : {}),
         });
       this.#transition(workflow, id);
       this.#telemetry("host-action", execution, action.id);
