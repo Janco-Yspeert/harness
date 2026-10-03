@@ -518,6 +518,7 @@ export interface PromotionActionRequest {
     declarationPath: string;
     declarationIdentity: string;
     runtimeCommit: string;
+    hostRuntimeCommit: string;
     normalValidation: "INELIGIBLE";
     planIdentity: string;
     evidenceReconstructed: false;

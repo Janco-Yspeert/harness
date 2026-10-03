@@ -925,7 +925,8 @@ export class GovernedHost {
               execution: execution.id,
               declarationPath: text(body.declarationPath),
               declarationIdentity: text(body.declarationIdentity),
-              runtimeCommit: runtime.commit,
+              hostRuntimeRepository: runtime.repository,
+              hostRuntimeCommit: runtime.commit,
             },
           );
           send(
@@ -945,6 +946,7 @@ export class GovernedHost {
                 declarationPath: text(body.declarationPath),
                 declarationIdentity: text(body.declarationIdentity),
                 runtimeCommit: recovery.declaration.runtimeCommit,
+                hostRuntimeCommit: runtime.commit,
                 normalValidation: "INELIGIBLE",
                 planIdentity: recovery.declaration.promotionPlan.identity,
                 evidenceReconstructed: false,

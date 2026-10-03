@@ -2492,7 +2492,7 @@ void test("root complete-evidence recovery records exactly one truthful promotio
       .events(f.workflow)
       .findLast((event) => event.transition === "verification-finalized"),
   );
-  const runtimeCommit = "e".repeat(40);
+  const runtimeCommit = artifactCommit;
   const declarationPath = "promotion-recovery.json";
   const declaration = `${JSON.stringify(
     {
@@ -2534,11 +2534,13 @@ void test("root complete-evidence recovery records exactly one truthful promotio
   writeFileSync(join(f.root, "items/work-item", declarationPath), declaration);
   git(f.root, ["add", `items/${f.workflow}/${declarationPath}`]);
   git(f.root, ["commit", "-m", "authorize complete archive recovery"]);
+  const hostRuntimeCommit = git(f.root, ["rev-parse", "HEAD"]);
   const recovery = f.kernel.authorizeCompleteArchiveRecovery(f.workflow, {
     execution: run.execution.id,
     declarationPath,
     declarationIdentity: identity(declaration),
-    runtimeCommit,
+    hostRuntimeRepository: f.root,
+    hostRuntimeCommit,
   });
   const promoted = f.kernel.promote(
     f.workflow,
@@ -2555,6 +2557,7 @@ void test("root complete-evidence recovery records exactly one truthful promotio
       declarationPath,
       declarationIdentity: identity(declaration),
       runtimeCommit,
+      hostRuntimeCommit,
       normalValidation: "INELIGIBLE",
       planIdentity,
       evidenceReconstructed: false,
@@ -2573,6 +2576,7 @@ void test("root complete-evidence recovery records exactly one truthful promotio
     declarationPath,
     declarationIdentity: identity(declaration),
     runtimeCommit,
+    hostRuntimeCommit,
     normalValidation: "INELIGIBLE",
     planIdentity,
     evidenceReconstructed: false,
@@ -2584,7 +2588,8 @@ void test("root complete-evidence recovery records exactly one truthful promotio
         execution: run.execution.id,
         declarationPath,
         declarationIdentity: identity(declaration),
-        runtimeCommit,
+        hostRuntimeRepository: f.root,
+        hostRuntimeCommit,
       }),
     /already has a recorded promotion/,
   );

@@ -2412,7 +2412,8 @@ export class ExecutionKernel {
       execution: string;
       declarationPath: string;
       declarationIdentity: string;
-      runtimeCommit: string;
+      hostRuntimeRepository: string;
+      hostRuntimeCommit: string;
     },
   ): {
     authority: string;
@@ -2478,8 +2479,24 @@ export class ExecutionKernel {
       const declaration = parseCompleteArchiveRecoveryDeclaration(
         JSON.parse(declarationBytes.toString("utf8")),
       );
-      if (declaration.runtimeCommit !== request.runtimeCommit)
-        throw new Error("complete-archive recovery runtime commit mismatch");
+      try {
+        execFileSync(
+          "git",
+          [
+            "-C",
+            request.hostRuntimeRepository,
+            "merge-base",
+            "--is-ancestor",
+            declaration.runtimeCommit,
+            request.hostRuntimeCommit,
+          ],
+          { stdio: "pipe" },
+        );
+      } catch {
+        throw new Error(
+          "complete-archive recovery implementation is not in the host runtime lineage",
+        );
+      }
 
       const sourceWorkspace = grant.workspaces.find((workspace) => {
         const configured =
@@ -2608,7 +2625,7 @@ export class ExecutionKernel {
         publicArtifactIdentity: finalized.evidence.identity,
         attempts,
         promotionRecorded: false,
-        runtimeCommit: request.runtimeCommit,
+        runtimeCommit: declaration.runtimeCommit,
       });
       const authority = randomUUID();
       this.#append(workflow, "kernel.complete-archive-recovery-authorized", {
@@ -2627,7 +2644,8 @@ export class ExecutionKernel {
         archiveCompleteness: "complete",
         planIdentity: declaration.promotionPlan.identity,
         normalValidation: "INELIGIBLE",
-        runtimeCommit: request.runtimeCommit,
+        runtimeCommit: declaration.runtimeCommit,
+        hostRuntimeCommit: request.hostRuntimeCommit,
         evidenceReconstructed: false,
         evidenceOmitted: false,
       });
