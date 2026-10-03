@@ -145,3 +145,14 @@
 - Candidate `bb8d138d59c69e5af3f5b09b1a2fc5c6a4049f14`; evaluator revision `002` (`sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410`); inputs matched their frozen identities
 - Result: PASS — all ten criteria satisfied; executable checks, regression (234/234) and manual reviews passed; promotion plan `sha256:17942e967916947bb365b6b7d740a25b495d413c8c6308c75911cfd8f01192da` is INELIGIBLE, so no archival is requested; see `verification-result.json`
 - Measurements: provider calls 0; token usage unavailable
+
+## Outcome — execution d9e62d35-1771-4f8a-8bd1-4e22e2fae21f
+
+- Skill: `outcome`, contract version 5, pinned identity `sha256:2ab64cee141d06a88ff04dc540ddfa7a15c364e07bb717b7fab70c15460b7e82`
+- Inputs: candidate `bb8d138d59c69e5af3f5b09b1a2fc5c6a4049f14`; brief `sha256:36143fc057b9a67594103baabb994f7b3c3b28a110c7d87b6baf39aa73796c7e`; Design Map `sha256:69548f440c3f54efbcf3c2cf621d5c75d5c7f951b75b397c4dbeb9c2b5ca5f3b`; promotion `sha256:124ce984f7477aaff7be60ccee6cc74288c97dad7f16594ce80b388ef19d81a7`; As-Built `sha256:bf9257c4670b1f754ffe780624dc4a718fd00c9c456cc6ea0c076c67dad8183d`; acceptance bound to candidate
+- Result: succeeded; completion mode `STANDARD`
+- Output: `outcome.md` (`sha256:4796a8fd5a36d4ce97cccc4e698fe51ec5d77f8aa90d5244d0ce8e8108a226f0`)
+- Synthesis: accepted independently evaluated PASS; records the exact candidate-subject capability, implementation and evaluator history, promotion-policy recovery limitation, deferred successor concerns, and next step
+- Checks: outcome content reviewed; no evaluator-private material inspected
+- Measurements: provider calls 0; runtime-provided wall-clock time and token usage unavailable
+- Closeout: this entry is the final repository-content change; pre-update repository tree `f269540b3dc8bf3af7d2770ac636182dcaa61dae`
