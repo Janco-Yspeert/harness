@@ -316,17 +316,16 @@ export function buildGovernedClaudeCommand(
     launch.workerOperations,
   );
   // A protected governed worker has no approval surface
-  // (`--permission-prompts none`). For that one contained launch shape, admit
-  // Claude's Bash tool family rather than trying to enumerate every harmless
-  // shell composition. `dontAsk` then applies these explicit Harness-derived
-  // rules deterministically instead of consulting auto mode's independent
-  // command classifier. Host-owned bubblewrap remains the filesystem boundary;
-  // explicit disallowed tool rules still win for operations such as `git push`,
-  // and unprotected launches keep their prefix-bounded mapping.
-  const allowedTools =
-    launch.unattendedProtected && permissions.commands
-      ? [...permissions.allowedTools, "Bash"]
-      : permissions.allowedTools;
+  // (`--permission-prompts none`). Admit every provider tool family selected by
+  // the reviewed Harness capability mapping so `dontAsk` can use each enabled
+  // family without consulting an independent provider classifier. The more
+  // specific rules remain in force: read-only workspace Edit/Write denials and
+  // the git-push denial override these broad family grants. Host-owned
+  // bubblewrap remains the filesystem boundary, while unprotected launches
+  // keep their prefix-bounded mapping.
+  const allowedTools = launch.unattendedProtected
+    ? [...new Set([...permissions.allowedTools, ...permissions.tools])]
+    : permissions.allowedTools;
   const paths = launch.workspaces.map((workspace) => workspace.path);
   const commandWorkspaces = [...paths, launch.scratch];
   const readOnly = launch.workspaces

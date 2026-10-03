@@ -106,3 +106,13 @@
 - Output: `verification-result.json`
 - Result: succeeded; BLOCKED / INFRASTRUCTURE_FAILURE (no executable case could be run in this sandbox; subject evidence lacks raw outputs)
 - Measurements: wall-clock time and token usage unavailable.
+
+## Implementation correction — execution 9663c881-367e-40c7-bcfb-5d6c37264d7b
+
+- Skill: `implementation`, contract version 5; branch `feat/spike-014`; Role Grant `sha256:91bc160137ff09313b38875e756f2393f5e2fd41f43e8a7cde8580cfb2148137`
+- Inputs: brief `sha256:c54324b00dd8fa4c54d8f567046e36fe2558cf2b5c14bc2b8edffe4ee2644759`, Design Map `sha256:2ef8d4ca3494945f1ad3f4abfaff18a398178fd9bae6e0fb2470997ec7aa7cd3`, requirements `sha256:8ede56f90b8d37cfbdf6840c650e56587fbe2d33005149378bc8b8730cf94551`; sanitized implementation feedback bound by the Role Grant: protected unattended Claude's explicit `dontAsk` allowlist did not consistently admit every enabled provider tool family
+- Result: succeeded (new candidate committed locally after this entry; independent verification not yet run)
+- Output: candidate patch (source and visible test paths, excluding this entry) `sha256:b3a6f72a324bd5098f0bb1331491146db9c8e3715f1262d9862d042928e2ec49`
+- Change: protected unattended Claude launches now derive their explicit allowlist from every provider tool family selected by the reviewed Harness capability mapping; narrower read-only workspace and git-push denials still override broad family grants; ordinary unprotected Claude launches are unchanged
+- Visible checks: `node --test --test-reporter=spec test/governed-executors.test.ts` (31 pass, 0 fail, 0 skipped); `npm run typecheck`; `npm run lint`; `npx prettier --check src test methodologies tools`; `npm test` (240 pass, 0 fail, 0 skipped); `git diff --check`
+- Measurements: wall-clock time and token usage unavailable.

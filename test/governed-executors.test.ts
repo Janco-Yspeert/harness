@@ -1227,6 +1227,11 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
     command[command.indexOf("--permission-mode") + 1],
     "acceptEdits",
   );
+  const ordinaryAllowed = new Set(
+    (command[command.indexOf("--allowedTools") + 1] ?? "").split(","),
+  );
+  for (const family of full.tools)
+    assert.equal(ordinaryAllowed.has(family), false);
   const unattended = buildGovernedClaudeCommand({
     workspaces: [
       { path: "/work/private", mode: "write" },
@@ -1248,21 +1253,27 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
     unattended[unattended.indexOf("--permission-prompts") + 1],
     "none",
   );
-  assert.match(
-    unattended[unattended.indexOf("--allowedTools") + 1] ?? "",
-    /Bash\(node \*\)/,
+  const unattendedAllowed = new Set(
+    (unattended[unattended.indexOf("--allowedTools") + 1] ?? "").split(","),
   );
-  // `dontAsk` with no approval UI receives the complete Bash tool family for
-  // protected roles: exact command-prefix allowlists deny normal evaluator
-  // shell composition before the already-required host containment can apply.
-  assert.ok(
-    (unattended[unattended.indexOf("--allowedTools") + 1] ?? "")
-      .split(",")
-      .includes("Bash"),
-  );
-  assert.match(
-    unattended[unattended.indexOf("--disallowedTools") + 1] ?? "",
-    /Bash\(git push \*\)/,
+  // `dontAsk` with no approval UI receives every tool family selected by the
+  // reviewed Harness mapping. Prefix grants remain present, but are no longer
+  // the accidental gate for an otherwise enabled family.
+  for (const family of full.tools) assert.ok(unattendedAllowed.has(family));
+  assert.ok(unattendedAllowed.has("Edit"));
+  assert.ok(unattendedAllowed.has("Write"));
+  assert.ok(unattendedAllowed.has("Bash"));
+  assert.ok(unattendedAllowed.has("Bash(node *)"));
+  const unattendedDenied =
+    unattended[unattended.indexOf("--disallowedTools") + 1] ?? "";
+  assert.match(unattendedDenied, /Edit\(\/\/work\/public\/\*\*\)/);
+  assert.match(unattendedDenied, /Write\(\/\/work\/public\/\*\*\)/);
+  assert.doesNotMatch(unattendedDenied, /Edit\(\/\/work\/private\/\*\*\)/);
+  assert.doesNotMatch(unattendedDenied, /Write\(\/\/work\/private\/\*\*\)/);
+  assert.match(unattendedDenied, /Bash\(git push \*\)/);
+  assert.equal(
+    [...unattendedAllowed].some((tool) => tool.includes("git push")),
+    false,
   );
   assert.throws(() => {
     assertBoundedExecutorCommand([
@@ -1273,8 +1284,9 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
   });
 
   // Verify and repair differ only in their frozen role contract. Both are
-  // protected launches and must therefore receive the same noninteractive
-  // contained Bash authority; neither gets an unrestricted-host bypass.
+  // protected launches and must therefore receive the same generic,
+  // noninteractive provider-family authority; neither gets an unrestricted-
+  // host bypass.
   for (const role of ["evaluator-verify", "evaluator-repair"]) {
     const protectedCommand = buildGovernedClaudeCommand({
       workspaces: [
@@ -1293,8 +1305,20 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
       protectedCommand[protectedCommand.indexOf(name) + 1] ?? "";
     assert.equal(flag("--permission-mode"), "dontAsk", role);
     assert.equal(flag("--permission-prompts"), "none", role);
-    assert.ok(flag("--allowedTools").split(",").includes("Bash"), role);
+    const protectedAllowed = new Set(flag("--allowedTools").split(","));
+    for (const family of full.tools)
+      assert.ok(protectedAllowed.has(family), `${role}: ${family}`);
     assert.match(flag("--disallowedTools"), /Bash\(git push \*\)/, role);
+    assert.match(
+      flag("--disallowedTools"),
+      /Edit\(\/\/work\/public\/\*\*\)/,
+      role,
+    );
+    assert.match(
+      flag("--disallowedTools"),
+      /Write\(\/\/work\/public\/\*\*\)/,
+      role,
+    );
     assert.doesNotThrow(() => {
       assertBoundedExecutorCommand(protectedCommand);
     });
