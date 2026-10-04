@@ -306,3 +306,17 @@
   candidate-subject observations (E2/E5) could not be launched by this session,
   so the criteria depending on them are not adjudicated.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator Verify (attempt 010, evaluator revision 003) — execution 404e879e-46c6-479b-958f-53dfd4e196c3
+
+- Skill: `evaluator`, mode `verify`, contract version 14
+- Candidate: `e8428205a58a1c12d6f17d9a80a160b78c754cb9`; evaluator revision
+  `003`
+- Result: BLOCKED, classification INFRASTRUCTURE_FAILURE
+- Outputs: `verification-result.json`
+- Summary: trusted-N regression, genericity, verifier-contract and public
+  regression checks passed. Subject evidence 08f6548c shows the revised
+  selection passing but its boundary observation does not follow the frozen
+  boundary/host-effects procedure, so it is not admitted; criteria depending on
+  it are not adjudicated.
+- Measurements: wall-clock time and token usage unavailable.

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "attempt": "009",
-  "execution": "66fc32a1-b56b-44f8-a68c-2303f2763343",
-  "roleGrant": "sha256:d5c8b5a7b8d0691a5a6e95b034510f7f946a80a58e9302a1b5ec8af30534ab82",
+  "attempt": "010",
+  "execution": "404e879e-46c6-479b-958f-53dfd4e196c3",
+  "roleGrant": "sha256:706fa63cd13c13f805773b671d1c862ea758b66b41409729e6f6e371580e06a9",
   "commit": "e8428205a58a1c12d6f17d9a80a160b78c754cb9",
   "evaluatorRevision": "003",
   "evaluatorRevisionIdentity": "sha256:a3e2c86bed00aa085b85eff106d581e26b0de107a6ed45c65025e221cb4c8920",
@@ -32,13 +32,13 @@
     "executableCases": 5,
     "executablePassed": 3,
     "failedProcedures": [],
-    "note": "Trusted-N executable checks E1 (revised frozen-regression), E3 and E4 passed, and typecheck, lint and format checks passed with only a 014e-titled test not adjudicated under trusted N. The bounded candidate-subject runs required by E2 and E5 (revised selection, host topology capture and host before/after snapshots) could not be launched by this verifier session, and earlier subject evidence for this candidate predates the revised selection and lacks those captures, so it is not admitted. Criteria depending on them are not adjudicated; no coverage was fabricated."
+    "note": "Trusted-N E1, E3 and E4 passed; typecheck, lint, format and the full suite excluding 014e titles passed. Subject evidence 08f6548c reports the 23 revised-SC1 titles passing, but its boundary observation was not produced by the frozen E5 procedure with host-supplied frozen-form topology and before/after inputs (and shows a real-home entry not in the topology capture), so E5 is not established and is not admitted. Dependent criteria are not adjudicated; no coverage was fabricated."
   },
   "regression": {
-    "command": "npm run typecheck; npm run lint; npm run format:check; npm test (014e-titled results not adjudicated)",
+    "command": "npm run typecheck; npm run lint; npm run format:check; npm test excluding 014e titles",
     "exit": 0,
-    "tests": 240,
-    "passed": 239
+    "tests": 223,
+    "passed": 223
   },
-  "humanAcceptance": "Not applicable. A bounded candidate-subject run for revised SC1 with topology and host before/after capture must be supplied by the host before this candidate can be adjudicated."
+  "humanAcceptance": "Not applicable. A bounded candidate-subject run executing the frozen boundary and host-effects procedure with host-supplied topology and before/after snapshots must be supplied before this candidate can be adjudicated."
 }
