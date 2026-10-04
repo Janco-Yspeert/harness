@@ -1,0 +1,55 @@
+✔ control: host-created topology (synthetic HOME, scratch, mount parents) is not exposure (6.337716ms)
+✔ control: real exposure is flagged as visible or writable, independently, and topology cannot whitelist a real location (4.075151ms)
+✔ control: boundary classification accepts the expected boundary and flags over-broad ones (0.105595ms)
+✖ AC01/AC02/SC3/SC5: the subject sees and writes exactly its granted workspaces; real home, sibling, Harness checkout, temporary and credential locations are neither visible nor writable beyond host-created topology (0.368951ms)
+✔ control: host-side comparison accepts an unchanged host and flags created, changed and removed paths (0.762572ms)
+✔ control: host-side coverage requires every protected class (0.121326ms)
+✖ AC01/SC5: host-side before/after evidence shows the subject changed nothing on the host (0.333019ms)
+✔ /tmp/harness-frozen-procedure-1sGATo/.hidden-test/support/boundary.ts (56.164994ms)
+✔ /tmp/harness-frozen-procedure-1sGATo/.hidden-test/support/oracles.ts (51.713294ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 7
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 74.993299
+
+✖ failing tests:
+
+test at ../../harness-frozen-procedure-1sGATo/.hidden-test/boundary-probe.test.ts:133:6
+✖ AC01/AC02/SC3/SC5: the subject sees and writes exactly its granted workspaces; real home, sibling, Harness checkout, temporary and credential locations are neither visible nor writable beyond host-created topology (0.368951ms)
+  AssertionError [ERR_ASSERTION]: repository path not provided
+      at TestContext.<anonymous> (file:///tmp/harness-frozen-procedure-1sGATo/.hidden-test/boundary-probe.test.ts:134:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: '',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at ../../harness-frozen-procedure-1sGATo/.hidden-test/host-effects.test.ts:42:6
+✖ AC01/SC5: host-side before/after evidence shows the subject changed nothing on the host (0.333019ms)
+  AssertionError [ERR_ASSERTION]: host-side before/after snapshots not provided
+      at TestContext.<anonymous> (file:///tmp/harness-frozen-procedure-1sGATo/.hidden-test/host-effects.test.ts:45:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

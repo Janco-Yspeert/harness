@@ -1,0 +1,1 @@
+{"after":{"evaluation/probe-evaluation-write.txt":{"state":"absent"},"forbidden/harness-sentinel.txt":{"state":"absent"},"repository/probe-repository-write.txt":{"state":"absent"}},"before":{"evaluation/probe-evaluation-write.txt":{"state":"absent"},"forbidden/harness-sentinel.txt":{"state":"absent"},"repository/probe-repository-write.txt":{"state":"absent"}}}

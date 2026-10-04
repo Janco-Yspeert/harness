@@ -1,0 +1,183 @@
+SUBJECT-METADATA-BEGIN
+{"node":"v22.23.3","platform":"linux","arch":"x64","execPath":"/usr/bin/node"}
+historical-014e-blob 4b361f81e307e129be6d106c9df9a4910e674be9
+accepted-014h-external-blob 74a51d545681532ac4c49ac9034712ee3217974d
+accepted-014h-isolation-blob b9c135790860a87e76afdfb458a7b0758d129704
+candidate-head e8428205a58a1c12d6f17d9a80a160b78c754cb9
+adapter-path /tmp/harness-subject-MDePSu/evaluation/bin/codex
+SUBJECT-METADATA-END
+REVISED-SC1-EXTERNAL-BEGIN
+TAP version 13
+# (node:30) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+# --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("/tmp/harness-subject-MDePSu/evaluation/subject-loader.mjs", pathToFileURL("./"));'
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: 014e AC01/TR1: the unchanged Harness config and an external config bind the same exact trusted N+1 from committed Harness history
+ok 1 - 014e AC01/TR1: the unchanged Harness config and an external config bind the same exact trusted N+1 from committed Harness history
+  ---
+  duration_ms: 437.264677
+  type: 'test'
+  ...
+# Subtest: 014e AC01/D3/TR3: an external grant records the methodology repository, trusted record and exact runtime commit, and stays pinned
+ok 2 - 014e AC01/D3/TR3: an external grant records the methodology repository, trusted record and exact runtime commit, and stays pinned
+  ---
+  duration_ms: 421.780608
+  type: 'test'
+  ...
+# Subtest: 014e D3: an external host reads trusted history only at its start commit; later methodology commits do not change new grants
+ok 3 - 014e D3: an external host reads trusted history only at its start commit; later methodology commits do not change new grants
+  ---
+  duration_ms: 358.663251
+  type: 'test'
+  ...
+# fatal: path 'spikes/smoke/marker.txt' exists on disk, but not in '0f9ae75afa1d9302be817be1c21644242a4c723a'
+# Subtest: 014e D2: an external project needs committed trusted history in the methodology repository
+ok 4 - 014e D2: an external project needs committed trusted history in the methodology repository
+  ---
+  duration_ms: 88.107553
+  type: 'test'
+  ...
+# Subtest: 014e AC02/AC03/AC04/D5: invalid roots, workspaces, remotes, origins and runtimes refuse host start
+ok 5 - 014e AC02/AC03/AC04/D5: invalid roots, workspaces, remotes, origins and runtimes refuse host start
+  ---
+  duration_ms: 870.11245
+  type: 'test'
+  ...
+# Subtest: 014e D5: only the recognized GitHub spellings normalize to an origin identity
+ok 6 - 014e D5: only the recognized GitHub spellings normalize to an origin identity
+  ---
+  duration_ms: 0.363193
+  type: 'test'
+  ...
+# Subtest: 014e AC02: committed-input provenance is checked in the project repository, never in the methodology repository
+ok 7 - 014e AC02: committed-input provenance is checked in the project repository, never in the methodology repository
+  ---
+  duration_ms: 73.470928
+  type: 'test'
+  ...
+# Subtest: 014h AC10: privateWorkspace metadata no longer decides forbidden-exposure launch eligibility
+ok 8 - 014h AC10: privateWorkspace metadata no longer decides forbidden-exposure launch eligibility
+  ---
+  duration_ms: 0.195837
+  type: 'test'
+  ...
+# Subtest: 014e AC03/AC04/D4: contained public and protected workers see only their granted workspaces, no Harness writes and no Git credentials
+ok 9 - 014e AC03/AC04/D4: contained public and protected workers see only their granted workspaces, no Harness writes and no Git credentials
+  ---
+  duration_ms: 521.612687
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H2): a Node runtime under the operator home exposes only the runtime, not its prefix siblings or the rest of home
+ok 10 - 014e D4 (H2): a Node runtime under the operator home exposes only the runtime, not its prefix siblings or the rest of home
+  ---
+  duration_ms: 72.616958
+  type: 'test'
+  ...
+# Subtest: 014e D4/TR4: a contained provider still reaches the Harness worker tools and its typed result is accepted
+ok 11 - 014e D4/TR4: a contained provider still reaches the Harness worker tools and its typed result is accepted
+  ---
+  duration_ms: 517.431565
+  type: 'test'
+  ...
+# Subtest: 014e D4: unavailable containment or an unwrapped fixture command is refused before any session or allocation
+ok 12 - 014e D4: unavailable containment or an unwrapped fixture command is refused before any session or allocation
+  ---
+  duration_ms: 356.964374
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H3): a nested provider sandbox that creates new mount points on its writable roots starts inside containment
+ok 13 - 014e D4 (H3): a nested provider sandbox that creates new mount points on its writable roots starts inside containment
+  ---
+  duration_ms: 17.161632
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H3): the nested-sandbox probe passes under real containment and refuses when the nested sandbox cannot start
+ok 14 - 014e D4 (H3): the nested-sandbox probe passes under real containment and refuses when the nested sandbox cannot start
+  ---
+  duration_ms: 25.558841
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H3): a Codex worker whose nested sandbox cannot start is refused before any session or allocation; Claude remains eligible
+ok 15 - 014e D4 (H3): a Codex worker whose nested sandbox cannot start is refused before any session or allocation; Claude remains eligible
+  ---
+  duration_ms: 432.006017
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H4): a Codex write grant selects a Git-writable permission profile for exactly its writable workspaces; read-only grants stay read-only
+ok 16 - 014e D4 (H4): a Codex write grant selects a Git-writable permission profile for exactly its writable workspaces; read-only grants stay read-only
+  ---
+  duration_ms: 0.372588
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H4): inside containment the real Codex sandbox lets a write grant commit, keeps hooks and config read-only, and still denies commits under plain workspace-write
+ok 17 - 014e D4 (H4): inside containment the real Codex sandbox lets a write grant commit, keeps hooks and config read-only, and still denies commits under plain workspace-write
+  ---
+  duration_ms: 117.623053
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4485.913404
+REVISED-SC1-EXTERNAL-EXIT 0
+REVISED-SC1-EXTERNAL-END
+REVISED-SC1-ISOLATION-BEGIN
+TAP version 13
+# (node:1583) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+# --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("/tmp/harness-subject-MDePSu/evaluation/subject-loader.mjs", pathToFileURL("./"));'
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: 014h AC02/AC04: a public worker uses its granted repository and scratch; private, sibling, checkout and real-home paths are unavailable
+ok 1 - 014h AC02/AC04: a public worker uses its granted repository and scratch; private, sibling, checkout and real-home paths are unavailable
+  ---
+  duration_ms: 30.683517
+  type: 'test'
+  ...
+# Subtest: 014h AC03/B2: a read-granted repository rejects create, edit, delete and Git commits at the process boundary
+ok 2 - 014h AC03/B2: a read-granted repository rejects create, edit, delete and Git commits at the process boundary
+  ---
+  duration_ms: 23.322565
+  type: 'test'
+  ...
+# Subtest: 014h AC07/B1/B3: repository read + evaluator-private write + scratch; other roots stay unavailable even by known path
+ok 3 - 014h AC07/B1/B3: repository read + evaluator-private write + scratch; other roots stay unavailable even by known path
+  ---
+  duration_ms: 20.850945
+  type: 'test'
+  ...
+# Subtest: 014h B1: a workspace granted through a symlink is resolved before binding
+ok 4 - 014h B1: a workspace granted through a symlink is resolved before binding
+  ---
+  duration_ms: 20.306699
+  type: 'test'
+  ...
+# Subtest: 014h AC11/B1: unresolvable, duplicate, conflicting and scratch-overlapping workspaces and exposed protected runtime roots are refused
+ok 5 - 014h AC11/B1: unresolvable, duplicate, conflicting and scratch-overlapping workspaces and exposed protected runtime roots are refused
+  ---
+  duration_ms: 26.402764
+  type: 'test'
+  ...
+# Subtest: 014h AC11: unavailable namespaces are reported as permission-denied and never fall back
+ok 6 - 014h AC11: unavailable namespaces are reported as permission-denied and never fall back
+  ---
+  duration_ms: 8.928368
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 223.37641
+REVISED-SC1-ISOLATION-EXIT 0
+REVISED-SC1-ISOLATION-END
+BOUNDARY-BEGIN
+{"hostCreatedTopology":{"subjectParent":{"visible":true,"entries":["evaluation","repository","scratch"]},"syntheticHome":{"path":"/tmp/harness-subject-MDePSu/scratch/home","visible":true,"entries":[".codex",".gitconfig"]},"scratch":{"path":"/tmp","visible":true,"entries":["harness-subject-MDePSu"]}},"subjectVisible":{"repository":{"visible":true,"exit":0},"evaluation":{"visible":true,"exit":0},"syntheticHome":{"visible":true,"exit":0},"subjectParent":{"visible":true,"exit":0},"forbiddenSiblingSentinel":{"visible":false,"exit":2},"realOperatorHomeTopology":{"visible":true,"entries":[".nvm"]},"realHarnessCheckout":{"visible":false,"exit":2},"realCredentialsSsh":{"visible":false,"exit":2},"realCredentialsAws":{"visible":false,"exit":2},"unrelatedHostTemporary":{"visible":false,"exit":2},"isolatedTmpfs":{"visible":true,"entries":["harness-subject-MDePSu"]}},"subjectWritable":{"repository":false,"repositoryGit":false,"repositorySpike":false,"evaluation":true,"syntheticHome":true,"subjectParent":true,"isolatedTmpfs":true}}
+BOUNDARY-EXIT 0
+BOUNDARY-END
