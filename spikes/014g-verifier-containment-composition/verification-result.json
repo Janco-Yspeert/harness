@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
-  "attempt": "008",
-  "execution": "4430e87a-041b-4a00-966f-d124d159a718",
-  "roleGrant": "sha256:6773202cd1bfb4ab8ea77beb2f990e7a4bdd6a4de27b10732fbe99602459f274",
+  "attempt": "009",
+  "execution": "66fc32a1-b56b-44f8-a68c-2303f2763343",
+  "roleGrant": "sha256:d5c8b5a7b8d0691a5a6e95b034510f7f946a80a58e9302a1b5ec8af30534ab82",
   "commit": "e8428205a58a1c12d6f17d9a80a160b78c754cb9",
-  "evaluatorRevision": "002",
-  "evaluatorRevisionIdentity": "sha256:6091eac3062c17711a9828fe813a71389ca83a9f5c30c99bfe92a42f659b0f82",
+  "evaluatorRevision": "003",
+  "evaluatorRevisionIdentity": "sha256:a3e2c86bed00aa085b85eff106d581e26b0de107a6ed45c65025e221cb4c8920",
   "inputs": {
-    "brief": "sha256:c54324b00dd8fa4c54d8f567046e36fe2558cf2b5c14bc2b8edffe4ee2644759",
-    "design": "sha256:2ef8d4ca3494945f1ad3f4abfaff18a398178fd9bae6e0fb2470997ec7aa7cd3",
-    "evaluationRequirements": "sha256:8ede56f90b8d37cfbdf6840c650e56587fbe2d33005149378bc8b8730cf94551",
-    "coverage": "sha256:6a8ff239d917ce31286bfa024e1fc7f1c157b8c1eed62e4c5a23180252c19afb"
+    "brief": "sha256:a0fbd91a0e41eed3c2e54e7450ab1e25400f71add68b0f02e10f54bc05629559",
+    "design": "sha256:32b38b26394b614dd9d293c056b67af75e9b89e0284c14eeba07c5d7e706813a",
+    "evaluationRequirements": "sha256:91d25c8bc3594a51a0767a426cbac6744fc2d206d9c869b64a6e5a7fee64175b",
+    "coverage": "sha256:112be8e3c1fbc8be8d67de29321256d9b9da00c3c1768b290bf4c1dd7a027073"
   },
-  "result": "FAIL",
-  "classification": "IMPLEMENTATION_FAILURE",
+  "result": "BLOCKED",
+  "classification": "INFRASTRUCTURE_FAILURE",
   "coverageResults": {
-    "AC01": "NOT_SATISFIED",
-    "AC02": "SATISFIED",
-    "AC03": "NOT_SATISFIED",
+    "AC01": "NOT_ADJUDICATED",
+    "AC02": "NOT_ADJUDICATED",
+    "AC03": "NOT_ADJUDICATED",
     "AC04": "SATISFIED",
     "AC05": "SATISFIED",
     "AC06": "NOT_ADJUDICATED",
@@ -26,25 +26,19 @@
   },
   "accounting": {
     "criteria": 8,
-    "satisfied": 3,
-    "notSatisfied": 2,
-    "notAdjudicated": 3,
+    "satisfied": 2,
+    "notSatisfied": 0,
+    "notAdjudicated": 6,
     "executableCases": 5,
-    "executablePassed": 2,
-    "failedProcedures": ["E1", "E2", "E5"],
-    "note": "The frozen 014e group must stay byte-identical. At the candidate one frozen block was replaced by a differently titled and differently asserting block, so the frozen group no longer runs unchanged (trusted-N byte comparison, and the bounded subject run of the frozen blob reports 16 of 17 titles passing). The subject boundary observation also reports home and sibling locations readable. A lineage sub-check of the verifier-contract procedure additionally reports a defect in the evaluator itself (it compares the legitimately revised brief and design map against the pre-recovery base); it is recorded for repair and did not decide this result. AC06, AC07 and AC08 are not adjudicated in this attempt."
+    "executablePassed": 3,
+    "failedProcedures": [],
+    "note": "Trusted-N executable checks E1 (revised frozen-regression), E3 and E4 passed, and typecheck, lint and format checks passed with only a 014e-titled test not adjudicated under trusted N. The bounded candidate-subject runs required by E2 and E5 (revised selection, host topology capture and host before/after snapshots) could not be launched by this verifier session, and earlier subject evidence for this candidate predates the revised selection and lacks those captures, so it is not admitted. Criteria depending on them are not adjudicated; no coverage was fabricated."
   },
   "regression": {
-    "command": "npm run typecheck; npm run lint; npm run format:check (full test suite not re-run in this attempt)",
+    "command": "npm run typecheck; npm run lint; npm run format:check; npm test (014e-titled results not adjudicated)",
     "exit": 0,
-    "tests": 0,
-    "passed": 0
+    "tests": 240,
+    "passed": 239
   },
-  "feedback": {
-    "requirement": "AC03 / required behavior 8: the frozen 014e test group must remain unchanged and pass unchanged under the candidate composition.",
-    "expected": "Every frozen 014e test block is byte-identical to the frozen blob and passes in the bounded verifier subject.",
-    "observed": "The block titled '014e D4: containment makes forbidden-exposure grants eligible for every adapter only when enforced' is missing from test/external-project.test.ts and replaced; running the frozen blob fails that title ('Missing expected exception') because launch planning no longer refuses a forbidden-exposure grant when containment is not enforced. The subject boundary observation also reports home and sibling locations readable (AC01).",
-    "safeDiagnostics": "Restore the frozen 014e block unchanged and keep the behavior it asserts, or reach the composition without changing that behavior; ensure the verifier sandbox does not expose home or sibling locations."
-  },
-  "humanAcceptance": "Not applicable. Retry the implementation against the unchanged frozen evaluator; the evaluator's lineage sub-check needs repair before a PASS can be reached."
+  "humanAcceptance": "Not applicable. A bounded candidate-subject run for revised SC1 with topology and host before/after capture must be supplied by the host before this candidate can be adjudicated."
 }
