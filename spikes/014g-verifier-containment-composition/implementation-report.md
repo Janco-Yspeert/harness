@@ -56,3 +56,23 @@ green, as do the repository's accepted 014h containment regressions.
 `npm run check` passes typecheck, lint, formatting, and all 241 visible tests.
 Independent evaluator verification has not been claimed by this implementation
 report.
+
+## C4 candidate-export correction
+
+The first required revision-003 E5 subject launch against exact C3 failed before
+the private procedure executed. Full-repository reconstruction used newline
+output from `git ls-tree`; with Git path quoting enabled, the repository's
+Unicode em-dash filename was returned as a quoted octal escape and then passed
+back to `git show` as a nonexistent literal path.
+
+The existing 014i exporter now requests NUL-delimited tree output and parses it
+as bytes before UTF-8 decoding. Its mode lookup also uses an explicit `--` path
+separator. No subject authority, evaluator semantics, private-material handling,
+or evidence format changed.
+
+A deterministic regression builds a complete candidate repository with
+`core.quotePath=true` and a Unicode path, then proves the ordinary 014i subject
+engine reconstructs the exact committed file and seals evidence. The regression
+failed as `infrastructure-failed` before the correction. `npm run typecheck`,
+`npm run lint`, and formatting passed; the complete suite passed 242/242 after
+the governed host was stopped to avoid unrelated concurrent test interference.

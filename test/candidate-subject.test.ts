@@ -481,6 +481,55 @@ void test("014i TR3f: a truncated capture is retained but never sealed", (t) => 
   assert.equal(result.manifest, undefined);
 });
 
+void test("014g: full candidate export preserves Git-quoted Unicode paths", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "candidate-unicode-export-"));
+  const output = mkdtempSync(join(tmpdir(), "candidate-unicode-output-"));
+  t.after(() => {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(output, { recursive: true, force: true });
+  });
+  cpSync(join(PACKAGE, "candidates", "contained"), root, { recursive: true });
+  const unicodePath = "spikes/001-pty/Spike 1 — Bidirectional PTY Control.md";
+  mkdirSync(join(root, "spikes", "001-pty"), { recursive: true });
+  writeFileSync(join(root, unicodePath), "unicode path\n");
+  git(root, ["init", "-q"]);
+  git(root, ["config", "user.name", "Candidate Subject Test"]);
+  git(root, ["config", "user.email", "candidate-subject@example.invalid"]);
+  git(root, ["config", "core.quotePath", "true"]);
+  git(root, ["add", "."]);
+  git(root, ["commit", "-qm", "fixture"]);
+  const commit = git(root, ["rev-parse", "HEAD"]);
+  const inspected = inspectCandidateMethodology({
+    repository: root,
+    commit,
+    validatorSources: {},
+  });
+  const role = inspected.roles["evaluator-verify"];
+  assert.ok(role);
+  const located = locateContainment([root, output]);
+  assert.ok(located.ok);
+  const result = runCandidateEvaluatorSubject({
+    candidateRepository: root,
+    candidateCommit: commit,
+    candidateValidatorSources: {},
+    candidateMethodology: inspected.methodology,
+    expectedSkillIdentity: role.skill.identity,
+    expectedContractIdentity: role.contractIdentity,
+    fixtureRoot: PACKAGE,
+    fixtureTreeIdentity: FIXTURE_TREE,
+    runnerBlobIdentity: RUNNER_BLOB,
+    runtimeCommit: git(process.cwd(), ["rev-parse", "HEAD"]),
+    bwrap: located.path,
+    outputRoot: output,
+    execution: "unicode-export",
+  });
+  assert.equal(result.record.status, "evidence-sealed");
+  assert.equal(
+    readFileSync(join(result.paths.repository, unicodePath), "utf8"),
+    "unicode path\n",
+  );
+});
+
 void test("014g C3: frozen evaluator procedures resolve by active identities and remain host-owned", (t) => {
   const root = mkdtempSync(join(tmpdir(), "frozen-procedure-"));
   const output = mkdtempSync(join(tmpdir(), "frozen-procedure-output-"));

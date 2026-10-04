@@ -434,3 +434,23 @@
 - Limitations: independent trusted-N verification and candidate-bound revision
   `003` subject evidence are later workflow steps, not claims of this
   implementation execution. Wall-clock time and token usage unavailable.
+
+## Implementation (C4 candidate-export correction) — execution 60ef9c7e-9330-42b9-a9ae-f067f4bf8736
+
+- Skill: `implementation`, contract version 5; branch `feat/spike-014`; attached
+  inline Role Grant
+  `sha256:5f82c8059ecbfe4a046b58fb945b682ca86e1bd82d354b2717f83fcfac65ee7a`
+- Trigger: the required host-owned E5 subject launch against exact C3 failed
+  before private procedure execution because full candidate export treated a
+  Git-quoted Unicode path as a literal filename.
+- Result: succeeded; the existing 014i exporter now uses binary-safe
+  NUL-delimited committed-tree enumeration and an unambiguous mode lookup. No
+  evaluator revision, private procedure, subject authority, evidence semantics,
+  or unrelated architecture changed.
+- Outputs: `src/candidate-subject.ts`, `test/candidate-subject.test.ts`, this
+  manifest entry, `implementation-report.md`, and `WORKLOG.md`.
+- Visible checks: the new reproducer failed against C3, then passed after the
+  correction. `npm run typecheck`, `npm run lint`, formatting, and the complete
+  visible suite passed; 242 tests passed with zero failures or skips.
+- Limitations: fresh candidate-bound revision-003 subject evidence and
+  independent trusted-N verification remain subsequent workflow steps.

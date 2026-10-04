@@ -773,15 +773,15 @@ function exportCommit(
   mkdirSync(destination, { recursive: true });
   const args = [
     "ls-tree",
-    "-r",
+    "-rz",
     "--name-only",
     commit,
     ...(prefix ? ["--", prefix] : []),
   ];
-  const files = String(git(repository, args))
-    .trim()
-    .split("\n")
-    .filter(Boolean);
+  const listing = git(repository, args, "buffer");
+  if (!Buffer.isBuffer(listing))
+    throw new Error("candidate tree listing was not binary-safe");
+  const files = listing.toString("utf8").split("\0").filter(Boolean);
   for (const source of files) {
     const file = prefix
       ? relative(prefix, source).split("\\").join("/")
@@ -792,9 +792,9 @@ function exportCommit(
       target,
       git(repository, ["show", `${commit}:${source}`], "buffer"),
     );
-    const mode = String(git(repository, ["ls-tree", commit, source])).split(
-      " ",
-    )[0];
+    const mode = String(
+      git(repository, ["ls-tree", commit, "--", source]),
+    ).split(" ")[0];
     if (mode === "100755") chmodSync(target, 0o755);
   }
 }
