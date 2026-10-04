@@ -407,3 +407,30 @@
 - Limitations: independent evaluation has not run; the shared dirty worktree
   contains unrelated restricted workflow ledgers, so full working-tree diff
   checks cannot run; wall-clock time and token usage unavailable.
+
+## Implementation (C3 evidence-path correction) — execution c37534c7-4f1c-49a0-8f8f-238e61462b44
+
+- Skill: `implementation`, contract version 5; branch `feat/spike-014`; attached
+  inline Role Grant
+  `sha256:efe93d516d130b958a9a6cd1adcde45b5b9991ff1abef4c430e1e9e532ed3a53`
+- Authority: committed human decision
+  `human-implementation-correction-authority.md` at `f2121a8`, identity
+  `sha256:dfb9a685215588c149f5733f5dd46dee5f76d0a8be0e6f5505d5ad0cc6d79ed4`.
+  The resolver cannot bind that decision as a Role Grant input; bounded root
+  authority permitted this one allocation under the explicitly authorized
+  process exception and supplied no substantive implementation authority.
+- Result: succeeded; extended the existing 014i candidate-subject/host boundary
+  with identity-only frozen-procedure resolution, host-owned topology and
+  before/after observations, exact provenance binding, and fail-closed sealed
+  evidence validation. No evaluator-private bytes were exposed to the worker or
+  public caller, and no arbitrary path/content injection or second subject
+  engine was added.
+- Outputs: `src/candidate-subject.ts`, `src/kernel/host.ts`,
+  `test/candidate-subject.test.ts`, `implementation-report.md`, and `WORKLOG.md`.
+- Visible checks: `npm run check` passed typecheck, lint, formatting, and all 241
+  tests; focused candidate-subject coverage passed 9/9, including the new C3
+  frozen-procedure and fail-closed regression. Existing 014h containment and
+  014i authority/containment regressions remained green.
+- Limitations: independent trusted-N verification and candidate-bound revision
+  `003` subject evidence are later workflow steps, not claims of this
+  implementation execution. Wall-clock time and token usage unavailable.

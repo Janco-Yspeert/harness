@@ -115,15 +115,35 @@ export interface RunSubjectInput {
   readonly candidateMethodology: string;
   readonly expectedSkillIdentity: string;
   readonly expectedContractIdentity: string;
-  readonly fixtureRoot: string;
-  readonly fixtureTreeIdentity: string;
-  readonly runnerBlobIdentity: string;
+  readonly fixtureRoot?: string;
+  readonly fixtureTreeIdentity?: string;
+  readonly runnerBlobIdentity?: string;
+  /** Resolved by the trusted host; never accepted from the public caller. */
+  readonly frozenProcedure?: ResolvedFrozenProcedure;
   readonly runtimeCommit: string;
   readonly bwrap: string;
   readonly outputRoot?: string;
   readonly execution?: string;
   readonly captureMaximum?: number;
   readonly placeholderExitCode?: number;
+}
+
+export interface FrozenProcedureReference {
+  readonly evaluatorRevision: string;
+  readonly evaluatorRevisionIdentity: string;
+  readonly privateInventoryIdentity: string;
+  readonly procedure: string;
+}
+
+export interface ResolvedFrozenProcedure {
+  readonly reference: FrozenProcedureReference;
+  readonly procedureIdentity: string;
+  readonly tests: readonly string[];
+  readonly materials: ReadonlyArray<{
+    readonly path: string;
+    readonly identity: string;
+    readonly bytes: Buffer;
+  }>;
 }
 
 interface EvidenceArtifact {
@@ -148,7 +168,23 @@ export interface SubjectManifest {
     readonly workspaces: CandidateComposition["workspaces"];
   };
   readonly runtimeCommit: string;
-  readonly fixture: { readonly tree: string; readonly runner: string };
+  readonly fixture?: { readonly tree: string; readonly runner: string };
+  readonly frozenProcedure?: {
+    readonly evaluatorRevision: string;
+    readonly evaluatorRevisionIdentity: string;
+    readonly privateInventoryIdentity: string;
+    readonly procedure: string;
+    readonly procedureIdentity: string;
+    readonly materials: ReadonlyArray<{
+      readonly path: string;
+      readonly identity: string;
+    }>;
+  };
+  readonly hostInputs?: {
+    readonly topology: string;
+    readonly before: string;
+    readonly after: string;
+  };
   readonly provider: {
     readonly id: "placeholder";
     readonly profile: "deterministic";
@@ -159,6 +195,124 @@ export interface SubjectManifest {
     readonly stderr: StreamEvidence;
   };
   readonly artifacts: readonly EvidenceArtifact[];
+}
+
+function exactKeys(
+  value: object,
+  allowed: readonly string[],
+  name: string,
+): void {
+  const extra = Object.keys(value).find((key) => !allowed.includes(key));
+  if (extra) throw new Error(`${name} contains unsupported field ${extra}`);
+}
+
+/** Host-only resolution boundary. Callers provide identities, never bytes or paths. */
+export function resolveFrozenEvaluatorProcedure(
+  privateRoot: string,
+  reference: FrozenProcedureReference,
+): ResolvedFrozenProcedure {
+  exactKeys(
+    reference,
+    [
+      "evaluatorRevision",
+      "evaluatorRevisionIdentity",
+      "privateInventoryIdentity",
+      "procedure",
+    ],
+    "frozen procedure reference",
+  );
+  if (!/^\d{3}$/.test(reference.evaluatorRevision))
+    throw new Error("invalid evaluator revision");
+  if (
+    !/^sha256:[a-f0-9]{64}$/.test(reference.evaluatorRevisionIdentity) ||
+    !/^sha256:[a-f0-9]{64}$/.test(reference.privateInventoryIdentity)
+  )
+    throw new Error("invalid frozen evaluator identity");
+  if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(reference.procedure))
+    throw new Error("invalid frozen procedure id");
+  const root = realpathSync(privateRoot);
+  const freezePath = existsSync(join(root, ".eval", "freeze.json"))
+    ? join(root, ".eval", "freeze.json")
+    : join(root, "freeze.json");
+  const freezeBytes = readFileSync(freezePath);
+  if (identity(freezeBytes) !== reference.evaluatorRevisionIdentity)
+    throw new Error("evaluator revision identity mismatch");
+  const freeze = object(JSON.parse(freezeBytes.toString("utf8")));
+  if (freeze.evaluatorRevision !== reference.evaluatorRevision)
+    throw new Error("evaluator revision mismatch");
+  const inventory = object(freeze.artifacts);
+  const inventoryPaths = Object.keys(inventory).sort();
+  if (
+    identity(JSON.stringify(inventoryPaths)) !==
+    reference.privateInventoryIdentity
+  )
+    throw new Error("private inventory identity mismatch");
+  const manifestPath = ".hidden-test/manifest.json";
+  const manifestIdentity = inventory[manifestPath];
+  if (typeof manifestIdentity !== "string")
+    throw new Error("frozen procedure inventory has no manifest");
+  const readFrozen = (path: string): Buffer => {
+    const safe = safeRelative(path);
+    const expected = inventory[safe];
+    if (typeof expected !== "string")
+      throw new Error(
+        `frozen procedure material is outside inventory: ${safe}`,
+      );
+    const target = inside(root, safe);
+    if (!lstatSync(target).isFile())
+      throw new Error(`frozen procedure material is not a file: ${safe}`);
+    const bytes = readFileSync(target);
+    if (identity(bytes) !== expected)
+      throw new Error(`frozen procedure material identity mismatch: ${safe}`);
+    return bytes;
+  };
+  const manifestBytes = readFrozen(manifestPath);
+  if (identity(manifestBytes) !== manifestIdentity)
+    throw new Error("frozen procedure manifest identity mismatch");
+  const manifest = object(JSON.parse(manifestBytes.toString("utf8")));
+  if (!Array.isArray(manifest.cases))
+    throw new Error("frozen procedure manifest is malformed");
+  const matches = manifest.cases.filter(
+    (entry) =>
+      entry !== null &&
+      typeof entry === "object" &&
+      (entry as { id?: unknown }).id === reference.procedure,
+  ) as Array<{ id: string; tests?: unknown; support?: unknown }>;
+  if (matches.length !== 1) throw new Error("unknown frozen procedure");
+  const selected = matches[0];
+  if (
+    !selected ||
+    !Array.isArray(selected.tests) ||
+    selected.tests.length === 0 ||
+    !selected.tests.every((path) => typeof path === "string") ||
+    (selected.support !== undefined &&
+      (!Array.isArray(selected.support) ||
+        !selected.support.every((path) => typeof path === "string")))
+  )
+    throw new Error("frozen procedure material declaration is malformed");
+  const paths = [...selected.tests, ...(selected.support ?? [])] as string[];
+  const unique = [...new Set(paths)];
+  if (unique.length !== paths.length)
+    throw new Error("duplicate frozen procedure material");
+  const materials = unique.map((path) => {
+    const bytes = readFrozen(path);
+    return { path: safeRelative(path), identity: identity(bytes), bytes };
+  });
+  const tests = selected.tests.map((path) => safeRelative(path));
+  return {
+    reference: { ...reference },
+    procedureIdentity: identity(
+      canonical({
+        id: reference.procedure,
+        materials: materials.map(({ path, identity: materialIdentity }) => ({
+          path,
+          identity: materialIdentity,
+        })),
+      }),
+    ),
+    tests,
+    materials,
+  };
 }
 
 interface StreamEvidence extends EvidenceArtifact {
@@ -738,6 +892,33 @@ export function validateSubjectBundle(root: string): SubjectManifest {
   if (shape.schemaVersion !== 1 || shape.authority !== "non-authoritative")
     throw new Error("invalid subject manifest");
   const manifest = raw as SubjectManifest;
+  if (manifest.frozenProcedure) {
+    if (!manifest.hostInputs)
+      throw new Error("frozen subject host input binding is missing");
+    if (
+      !/^sha256:[a-f0-9]{64}$/.test(
+        manifest.frozenProcedure.evaluatorRevisionIdentity,
+      ) ||
+      !/^sha256:[a-f0-9]{64}$/.test(
+        manifest.frozenProcedure.privateInventoryIdentity,
+      ) ||
+      !/^sha256:[a-f0-9]{64}$/.test(
+        manifest.frozenProcedure.procedureIdentity,
+      ) ||
+      manifest.frozenProcedure.materials.length === 0 ||
+      !manifest.frozenProcedure.materials.every(
+        (material) =>
+          typeof material.path === "string" &&
+          /^sha256:[a-f0-9]{64}$/.test(material.identity),
+      ) ||
+      !Object.values(manifest.hostInputs).every((value) =>
+        /^sha256:[a-f0-9]{64}$/.test(value),
+      )
+    )
+      throw new Error("invalid frozen subject identity binding");
+  } else if (manifest.hostInputs) {
+    throw new Error("host input binding has no frozen procedure");
+  }
   const bound = new Set(["manifest.json"]);
   for (const artifact of manifest.artifacts) {
     const path = safeRelative(artifact.path);
@@ -781,6 +962,11 @@ export function validateSubjectBundle(root: string): SubjectManifest {
     )
       throw new Error("subject stream binding mismatch");
   }
+  if (manifest.frozenProcedure) {
+    for (const required of ["boundary-host.json", "observations.json"])
+      if (!manifest.artifacts.some((artifact) => artifact.path === required))
+        throw new Error(`frozen subject artifact missing: ${required}`);
+  }
   return manifest;
 }
 
@@ -821,6 +1007,31 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
   const execution = input.execution ?? randomUUID();
   const lifecycle = new SubjectLifecycle(execution, composition);
   const paths = createPaths(input.outputRoot);
+  const frozen = input.frozenProcedure;
+  if (
+    !frozen &&
+    (!input.fixtureRoot ||
+      !input.fixtureTreeIdentity ||
+      !input.runnerBlobIdentity)
+  )
+    throw new Error("public fixture identities are required");
+  const publicFixture = frozen
+    ? undefined
+    : {
+        root: text(input.fixtureRoot),
+        tree: text(input.fixtureTreeIdentity),
+        runner: text(input.runnerBlobIdentity),
+      };
+  const procedureRoot = frozen
+    ? realpathSync(mkdtempSync(join(tmpdir(), "harness-frozen-procedure-")))
+    : undefined;
+  const inputRoot = frozen
+    ? realpathSync(mkdtempSync(join(tmpdir(), "harness-subject-inputs-")))
+    : undefined;
+  const cleanupFrozen = (): void => {
+    if (procedureRoot) rmSync(procedureRoot, { recursive: true, force: true });
+    if (inputRoot) rmSync(inputRoot, { recursive: true, force: true });
+  };
   try {
     exportCommit(
       input.candidateRepository,
@@ -828,54 +1039,131 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
       paths.repository,
       composition.projectPrefix,
     );
-    mkdirSync(join(paths.repository, "runner"), { recursive: true });
-    mkdirSync(join(paths.repository, "inputs"), { recursive: true });
-    copyFileSync(
-      join(input.fixtureRoot, "runner", "run-probes.sh"),
-      join(paths.repository, "runner", "run-probes.sh"),
-    );
-    copyFileSync(
-      join(input.fixtureRoot, "inputs", "subject-input.txt"),
-      join(paths.repository, "inputs", "subject-input.txt"),
-    );
-    copyFileSync(
-      join(input.fixtureRoot, "forbidden", "harness-sentinel.txt"),
-      join(paths.forbidden, "harness-sentinel.txt"),
-    );
+    if (frozen && procedureRoot && inputRoot) {
+      for (const material of frozen.materials) {
+        const target = inside(procedureRoot, material.path);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, material.bytes, { mode: 0o444 });
+      }
+    } else {
+      mkdirSync(join(paths.repository, "runner"), { recursive: true });
+      mkdirSync(join(paths.repository, "inputs"), { recursive: true });
+      copyFileSync(
+        join(text(publicFixture?.root), "runner", "run-probes.sh"),
+        join(paths.repository, "runner", "run-probes.sh"),
+      );
+      copyFileSync(
+        join(text(publicFixture?.root), "inputs", "subject-input.txt"),
+        join(paths.repository, "inputs", "subject-input.txt"),
+      );
+      copyFileSync(
+        join(text(publicFixture?.root), "forbidden", "harness-sentinel.txt"),
+        join(paths.forbidden, "harness-sentinel.txt"),
+      );
+    }
   } catch (error) {
+    cleanupFrozen();
     lifecycle.infrastructureFailed((error as Error).message);
     return { record: lifecycle.record, paths };
   }
   const before = snapshot(paths);
+  const topology = {
+    hostCreated: [
+      "repository",
+      "evaluation",
+      "scratch",
+      "forbidden",
+      ...(frozen ? ["procedure", "inputs"] : []),
+    ],
+    subjectVisible: [
+      "repository",
+      "evaluation",
+      ...(frozen ? ["procedure", "inputs"] : []),
+    ],
+    subjectWritable: [
+      ...(composition.workspaces.find(
+        (workspace) => workspace.id === "repository",
+      )?.mode === "write"
+        ? ["repository"]
+        : []),
+      "evaluation",
+      "scratch",
+    ],
+    hostObserved: ["before", "after"],
+    evidenceVisible: false,
+  };
+  const beforeIdentity = identity(`${canonical(before)}\n`);
+  let topologyIdentity: string | undefined;
+  if (inputRoot) {
+    const topologyBytes = `${canonical(topology)}\n`;
+    writeFileSync(join(inputRoot, "topology.json"), topologyBytes, {
+      mode: 0o444,
+    });
+    writeFileSync(join(inputRoot, "before.json"), `${canonical(before)}\n`, {
+      mode: 0o444,
+    });
+    topologyIdentity = identity(topologyBytes);
+  }
   const relay = new CandidateSubjectRelay(
     execution,
     composition,
     { repository: paths.repository, evaluation: paths.evaluation },
     {
-      fixtureTree: input.fixtureTreeIdentity,
-      runner: input.runnerBlobIdentity,
+      ...(frozen
+        ? {
+            evaluatorRevision: frozen.reference.evaluatorRevision,
+            procedure: frozen.reference.procedure,
+            procedureIdentity: frozen.procedureIdentity,
+          }
+        : {
+            fixtureTree: text(publicFixture?.tree),
+            runner: text(publicFixture?.runner),
+          }),
     },
   );
   relay.handle("assignment", {});
   let run;
   try {
+    const program = frozen ? process.execPath : "/bin/sh";
+    const args =
+      frozen && procedureRoot
+        ? ["--test", ...frozen.tests.map((path) => join(procedureRoot, path))]
+        : [join(paths.repository, "runner", "run-probes.sh"), paths.parent];
     const launch = containedLaunch({
       bwrap: input.bwrap,
       provider: "codex",
-      program: "/bin/sh",
-      args: [join(paths.repository, "runner", "run-probes.sh"), paths.parent],
+      program,
+      args,
       cwd: paths.repository,
-      workspaces: composition.workspaces.map((workspace) => ({
-        path:
-          workspace.id === "repository" ? paths.repository : paths.evaluation,
-        mode: workspace.mode,
-      })),
+      workspaces: [
+        ...composition.workspaces.map((workspace) => ({
+          path:
+            workspace.id === "repository" ? paths.repository : paths.evaluation,
+          mode: workspace.mode,
+        })),
+        ...(procedureRoot
+          ? [{ path: procedureRoot, mode: "read" as const }]
+          : []),
+        ...(inputRoot ? [{ path: inputRoot, mode: "read" as const }] : []),
+      ],
       scratch: paths.scratch,
       nodePath: process.execPath,
       toolFiles: [],
       masked: [],
       protectedRoots: [paths.evidence],
-      env: { PATH: "/usr/bin:/bin", SUBJECT_PARENT: paths.parent },
+      env: {
+        PATH: "/usr/bin:/bin",
+        SUBJECT_PARENT: paths.parent,
+        ...(procedureRoot
+          ? { HARNESS_FROZEN_PROCEDURE_ROOT: procedureRoot }
+          : {}),
+        ...(inputRoot
+          ? {
+              HARNESS_HOST_TOPOLOGY_INPUT: join(inputRoot, "topology.json"),
+              HARNESS_HOST_BEFORE_INPUT: join(inputRoot, "before.json"),
+            }
+          : {}),
+      },
       sourceEnv: { HOME: paths.scratch, PATH: process.env.PATH ?? "" },
     });
     lifecycle.running();
@@ -884,6 +1172,7 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
       encoding: null,
     });
   } catch (error) {
+    cleanupFrozen();
     lifecycle.infrastructureFailed((error as Error).message);
     return { record: lifecycle.record, paths };
   }
@@ -898,6 +1187,7 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
   const stdout = capped(run.stdout, maximum);
   const stderr = capped(run.stderr, maximum);
   const after = snapshot(paths);
+  const afterIdentity = identity(canonical(after));
   const artifacts: EvidenceArtifact[] = [];
   artifacts.push(writeEvidence(paths.evidence, "stdout.bin", stdout.bytes));
   artifacts.push(writeEvidence(paths.evidence, "stderr.bin", stderr.bytes));
@@ -906,6 +1196,13 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
       paths.evidence,
       "worker-tools.jsonl",
       `${relay.exchanges.map((entry) => canonical(entry)).join("\n")}\n`,
+    ),
+  );
+  artifacts.push(
+    writeEvidence(
+      paths.evidence,
+      "boundary-host.json",
+      `${canonical(topology)}\n`,
     ),
   );
   artifacts.push(
@@ -955,10 +1252,34 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
       workspaces: composition.workspaces,
     },
     runtimeCommit: input.runtimeCommit,
-    fixture: {
-      tree: input.fixtureTreeIdentity,
-      runner: input.runnerBlobIdentity,
-    },
+    ...(frozen
+      ? {
+          frozenProcedure: {
+            evaluatorRevision: frozen.reference.evaluatorRevision,
+            evaluatorRevisionIdentity:
+              frozen.reference.evaluatorRevisionIdentity,
+            privateInventoryIdentity: frozen.reference.privateInventoryIdentity,
+            procedure: frozen.reference.procedure,
+            procedureIdentity: frozen.procedureIdentity,
+            materials: frozen.materials.map(
+              ({ path, identity: materialIdentity }) => ({
+                path,
+                identity: materialIdentity,
+              }),
+            ),
+          },
+          hostInputs: {
+            topology: text(topologyIdentity),
+            before: beforeIdentity,
+            after: afterIdentity,
+          },
+        }
+      : {
+          fixture: {
+            tree: text(publicFixture?.tree),
+            runner: text(publicFixture?.runner),
+          },
+        }),
     provider: { id: "placeholder", profile: "deterministic" },
     providerAttestation: { status: "unavailable" },
     streams: {
@@ -984,6 +1305,7 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
   try {
     validateSubjectBundle(paths.evidence);
   } catch (error) {
+    cleanupFrozen();
     lifecycle.evidenceIncomplete((error as Error).message);
     return { record: lifecycle.record, paths };
   }
@@ -993,6 +1315,7 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
   lifecycle.sealed(
     identity(readFileSync(join(paths.evidence, "manifest.json"))),
   );
+  cleanupFrozen();
   return { record: lifecycle.record, paths, manifest };
 }
 

@@ -21,12 +21,14 @@ import {
   inspectCandidateMethodology,
   publishSubjectEvidence,
   reconstructCandidateEvaluator,
+  resolveFrozenEvaluatorProcedure,
   runCandidateEvaluatorSubject,
   SubjectLifecycle,
   validateSubjectBundle,
   type CandidateComposition,
 } from "../src/candidate-subject.ts";
 import { locateContainment } from "../src/executors/containment.ts";
+import { canonical, identity } from "../src/kernel/ledger.ts";
 import { buildMethodologyManifest } from "../src/methodology-evolution.ts";
 
 const PACKAGE = join(
@@ -477,4 +479,167 @@ void test("014i TR3f: a truncated capture is retained but never sealed", (t) => 
   const result = run(t, "contained", { captureMaximum: 8 });
   assert.equal(result.record.status, "evidence-incomplete");
   assert.equal(result.manifest, undefined);
+});
+
+void test("014g C3: frozen evaluator procedures resolve by active identities and remain host-owned", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "frozen-procedure-"));
+  const output = mkdtempSync(join(tmpdir(), "frozen-procedure-output-"));
+  t.after(() => {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(output, { recursive: true, force: true });
+  });
+  const procedurePath = ".hidden-test/e5.test.mjs";
+  const manifestPath = ".hidden-test/manifest.json";
+  const unrelatedPath = ".hidden-test/not-authorized.txt";
+  mkdirSync(join(root, ".hidden-test"));
+  mkdirSync(join(root, ".eval"));
+  const procedureBytes = Buffer.from(
+    `import assert from "node:assert/strict";\n` +
+      `import { existsSync, readFileSync, writeFileSync } from "node:fs";\n` +
+      `import test from "node:test";\n` +
+      `test("frozen E5", () => {\n` +
+      `  const topology = JSON.parse(readFileSync(process.env.HARNESS_HOST_TOPOLOGY_INPUT, "utf8"));\n` +
+      `  const before = JSON.parse(readFileSync(process.env.HARNESS_HOST_BEFORE_INPUT, "utf8"));\n` +
+      `  assert.notDeepEqual(topology.hostCreated, topology.subjectWritable);\n` +
+      `  assert.ok(before["forbidden/harness-sentinel.txt"]);\n` +
+      `  assert.equal(existsSync(process.env.HARNESS_FROZEN_PROCEDURE_ROOT + "/${unrelatedPath}"), false);\n` +
+      `  writeFileSync(process.env.SUBJECT_PARENT + "/evaluation/frozen-e5.txt", "observed\\n");\n` +
+      `});\n`,
+  );
+  const manifestBytes = Buffer.from(
+    `${canonical({
+      schemaVersion: 1,
+      cases: [{ id: "E5", tests: [procedurePath], support: [] }],
+    })}\n`,
+  );
+  writeFileSync(join(root, procedurePath), procedureBytes);
+  writeFileSync(join(root, manifestPath), manifestBytes);
+  const unrelatedBytes = Buffer.from("not for E5\n");
+  writeFileSync(join(root, unrelatedPath), unrelatedBytes);
+  const artifacts = {
+    [manifestPath]: identity(manifestBytes),
+    [procedurePath]: identity(procedureBytes),
+    [unrelatedPath]: identity(unrelatedBytes),
+  };
+  const inventoryIdentity = identity(
+    JSON.stringify(Object.keys(artifacts).sort()),
+  );
+  const freezeBytes = Buffer.from(
+    `${canonical({
+      schemaVersion: 1,
+      evaluatorRevision: "003",
+      artifacts,
+    })}\n`,
+  );
+  writeFileSync(join(root, ".eval", "freeze.json"), freezeBytes);
+  const reference = {
+    evaluatorRevision: "003",
+    evaluatorRevisionIdentity: identity(freezeBytes),
+    privateInventoryIdentity: inventoryIdentity,
+    procedure: "E5",
+  };
+  const resolved = resolveFrozenEvaluatorProcedure(root, reference);
+  assert.equal(resolved.tests[0], procedurePath);
+  assert.equal(resolved.materials[0]?.identity, identity(procedureBytes));
+  assert.throws(
+    () =>
+      resolveFrozenEvaluatorProcedure(root, {
+        ...reference,
+        evaluatorRevisionIdentity: `sha256:${"0".repeat(64)}`,
+      }),
+    /revision identity mismatch/,
+  );
+  assert.throws(
+    () =>
+      resolveFrozenEvaluatorProcedure(root, {
+        ...reference,
+        privateInventoryIdentity: `sha256:${"0".repeat(64)}`,
+      }),
+    /inventory identity mismatch/,
+  );
+  assert.throws(
+    () =>
+      resolveFrozenEvaluatorProcedure(root, {
+        ...reference,
+        procedure: "UNKNOWN",
+      }),
+    /unknown frozen procedure/,
+  );
+  assert.throws(
+    () =>
+      resolveFrozenEvaluatorProcedure(root, {
+        ...reference,
+        privatePath: root,
+      } as typeof reference),
+    /unsupported field privatePath/,
+  );
+  assert.throws(
+    () =>
+      resolveFrozenEvaluatorProcedure(root, {
+        ...reference,
+        contents: "secret",
+      } as typeof reference),
+    /unsupported field contents/,
+  );
+
+  const f = candidate(t, "contained");
+  const located = locateContainment([f.root, root, output]);
+  assert.ok(located.ok);
+  const result = runCandidateEvaluatorSubject({
+    candidateRepository: f.root,
+    candidateCommit: f.commit,
+    candidateProjectPrefix: f.prefix,
+    candidateValidatorSources: {},
+    candidateMethodology: f.methodology,
+    expectedSkillIdentity: f.skill,
+    expectedContractIdentity: f.contract,
+    frozenProcedure: resolved,
+    runtimeCommit: git(process.cwd(), ["rev-parse", "HEAD"]),
+    bwrap: located.path,
+    outputRoot: output,
+    execution: "frozen-e5",
+  });
+  assert.equal(result.record.status, "evidence-sealed");
+  const sealed = validateSubjectBundle(result.paths.evidence);
+  assert.equal(sealed.frozenProcedure?.procedure, "E5");
+  assert.equal(JSON.stringify(sealed).includes("not for E5"), false);
+  assert.equal(
+    sealed.hostInputs?.topology,
+    identity(
+      `${canonical({
+        hostCreated: [
+          "repository",
+          "evaluation",
+          "scratch",
+          "forbidden",
+          "procedure",
+          "inputs",
+        ],
+        subjectVisible: ["repository", "evaluation", "procedure", "inputs"],
+        subjectWritable: ["evaluation", "scratch"],
+        hostObserved: ["before", "after"],
+        evidenceVisible: false,
+      })}\n`,
+    ),
+  );
+  assert.equal(existsSync(join(result.paths.parent, "procedure")), false);
+  assert.equal(
+    readFileSync(join(result.paths.evaluation, "frozen-e5.txt"), "utf8"),
+    "observed\n",
+  );
+  const omitted = join(output, "omitted-host-input-binding");
+  cpSync(result.paths.evidence, omitted, { recursive: true });
+  chmodSync(join(omitted, "manifest.json"), 0o644);
+  const omittedManifest = JSON.parse(
+    readFileSync(join(omitted, "manifest.json"), "utf8"),
+  ) as Record<string, unknown>;
+  delete omittedManifest.hostInputs;
+  writeFileSync(
+    join(omitted, "manifest.json"),
+    `${canonical(omittedManifest)}\n`,
+  );
+  assert.throws(
+    () => validateSubjectBundle(omitted),
+    /host input binding is missing/,
+  );
 });

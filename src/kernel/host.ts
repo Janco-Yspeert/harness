@@ -1,7 +1,14 @@
 import { execFileSync, spawn } from "node:child_process";
 import { timingSafeEqual } from "node:crypto";
-import { existsSync, realpathSync } from "node:fs";
-import { homedir } from "node:os";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+} from "node:fs";
+import { homedir, tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import {
   AdapterRefusal,
@@ -11,6 +18,9 @@ import {
   type ProviderAdapter,
 } from "../executors/adapters.ts";
 import {
+  inspectCandidateMethodology,
+  publishSubjectEvidence,
+  resolveFrozenEvaluatorProcedure,
   runCandidateEvaluatorSubject,
   type RunSubjectInput,
   type SubjectManifest,
@@ -160,7 +170,7 @@ export class GovernedHost {
     const excluded = [
       ...this.#excludedProviderRoots(),
       input.candidateRepository,
-      input.fixtureRoot,
+      ...(input.fixtureRoot ? [input.fixtureRoot] : []),
       ...(input.outputRoot ? [input.outputRoot] : []),
     ];
     const located = this.#runtime.bwrap
@@ -174,6 +184,101 @@ export class GovernedHost {
       bwrap: located.path,
       runtimeCommit: runtime.commit,
     });
+  }
+  candidateEvaluatorFrozenSubject(input: {
+    readonly workflow: string;
+    readonly candidate: string;
+    readonly evaluatorRevision: string;
+    readonly evaluatorRevisionIdentity: string;
+    readonly privateInventoryIdentity: string;
+    readonly procedure: string;
+    readonly execution: string;
+  }): {
+    readonly record: SubjectRecord;
+    readonly paths: SubjectPaths;
+    readonly manifest?: SubjectManifest;
+  } {
+    const allowed = [
+      "workflow",
+      "candidate",
+      "evaluatorRevision",
+      "evaluatorRevisionIdentity",
+      "privateInventoryIdentity",
+      "procedure",
+      "execution",
+    ];
+    const extra = Object.keys(input).find((key) => !allowed.includes(key));
+    if (extra)
+      throw new Error(
+        `frozen subject request contains unsupported field ${extra}`,
+      );
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(input.execution))
+      throw new Error("invalid frozen subject execution id");
+    this.kernel.path(input.workflow);
+    const handoff = this.kernel
+      .events(input.workflow)
+      .findLast((event) => event.transition === "implementation-handoff");
+    if (handoff?.evidence.commit !== input.candidate)
+      throw new Error(
+        "frozen subject candidate is not the active implementation handoff",
+      );
+    const workflow = required(this.kernel.project.workflows[input.workflow]);
+    const coveragePath = resolve(
+      this.kernel.project.root,
+      workflow.directory,
+      "coverage-map.json",
+    );
+    const coverage = object(JSON.parse(readFileSync(coveragePath, "utf8")));
+    const readiness = object(coverage.readiness);
+    if (
+      readiness.evaluatorRevision !== input.evaluatorRevision ||
+      readiness.evaluatorRevisionIdentity !== input.evaluatorRevisionIdentity ||
+      readiness.privateInventoryIdentity !== input.privateInventoryIdentity
+    )
+      throw new Error(
+        "frozen subject request does not match active evaluator readiness",
+      );
+    const privateWorkspace =
+      workflow.workspaces?.evaluation ??
+      this.kernel.project.workspaces.evaluation;
+    if (!privateWorkspace || privateWorkspace.exposure !== "evaluator-private")
+      throw new Error("active evaluator-private workspace is unavailable");
+    const configuredRoot = realpathSync(privateWorkspace.path);
+    const frozenProcedure = resolveFrozenEvaluatorProcedure(configuredRoot, {
+      evaluatorRevision: input.evaluatorRevision,
+      evaluatorRevisionIdentity: input.evaluatorRevisionIdentity,
+      privateInventoryIdentity: input.privateInventoryIdentity,
+      procedure: input.procedure,
+    });
+    const inspected = inspectCandidateMethodology({
+      repository: this.kernel.project.root,
+      commit: input.candidate,
+    });
+    const role = required(inspected.roles["evaluator-verify"]);
+    const temporary = realpathSync(
+      mkdtempSync(join(tmpdir(), "harness-frozen-subject-evidence-")),
+    );
+    const result = this.candidateEvaluatorSubject({
+      candidateRepository: this.kernel.project.root,
+      candidateCommit: input.candidate,
+      candidateMethodology: inspected.methodology,
+      expectedSkillIdentity: role.skill.identity,
+      expectedContractIdentity: role.contractIdentity,
+      frozenProcedure,
+      outputRoot: temporary,
+      execution: input.execution,
+    });
+    if (!result.manifest) return result;
+    const destination = resolve(
+      this.kernel.project.root,
+      workflow.directory,
+      "evidence",
+      "candidate-subject",
+      input.execution,
+    );
+    publishSubjectEvidence(result.paths.evidence, destination);
+    rmSync(temporary, { recursive: true, force: true });
+    return { ...result, paths: { ...result.paths, evidence: destination } };
   }
   // An external-project host never runs a Stockdif workflow on an uncommitted
   // or subsequently changed Harness runtime.
