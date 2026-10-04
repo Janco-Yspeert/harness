@@ -320,3 +320,31 @@
   boundary/host-effects procedure, so it is not admitted; criteria depending on
   it are not adjudicated.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Implementation (forward specification recovery) — execution 035cc497-fec8-4da5-8259-08a92b52947e
+
+- Skill: `implementation`, contract version 5; branch `feat/spike-014`; Role
+  Grant
+  `sha256:c99c81a0c8fd6ec4c4287229a11e0d3eb655eda3c261502d249c3cd98c1aee36`
+- Inputs: brief
+  `sha256:a0fbd91a0e41eed3c2e54e7450ab1e25400f71add68b0f02e10f54bc05629559`,
+  Design Map
+  `sha256:32b38b26394b614dd9d293c056b67af75e9b89e0284c14eeba07c5d7e706813a`,
+  coverage
+  `sha256:112be8e3c1fbc8be8d67de29321256d9b9da00c3c1768b290bf4c1dd7a027073`,
+  requirements
+  `sha256:91d25c8bc3594a51a0767a426cbac6744fc2d206d9c869b64a6e5a7fee64175b`; no
+  implementation feedback bound
+- Result: succeeded; no product change. The brief says to preserve C2 unless
+  independent evaluation establishes a genuine defect, and none is established.
+  Candidate `e8428205a58a1c12d6f17d9a80a160b78c754cb9` is an ancestor of `HEAD`,
+  and no non-spike path differs between it and the pre-entry `HEAD`
+  `84d26813d794f2fefa89df024b7bd1b10b52dcae`.
+- Output: this entry only; the candidate content is unchanged.
+- Visible checks: `npm test` gave 240 tests, 231 pass, 9 fail, 0 skipped. All 9
+  failures are in workflow/authority tests that read other spikes'
+  `workflow.jsonl` ledgers, which this sandbox denies (`EACCES`). They are
+  environmental and not product defects. Typecheck, lint and format were not
+  run, because the tool policy blocked the compound shell commands.
+- Limitations: independent evaluation has not run; wall-clock time and token
+  usage unavailable.
