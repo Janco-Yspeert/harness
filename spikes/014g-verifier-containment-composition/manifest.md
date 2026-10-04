@@ -116,3 +116,11 @@
 - Change: protected unattended Claude launches now derive their explicit allowlist from every provider tool family selected by the reviewed Harness capability mapping; narrower read-only workspace and git-push denials still override broad family grants; ordinary unprotected Claude launches are unchanged
 - Visible checks: `node --test --test-reporter=spec test/governed-executors.test.ts` (31 pass, 0 fail, 0 skipped); `npm run typecheck`; `npm run lint`; `npx prettier --check src test methodologies tools`; `npm test` (240 pass, 0 fail, 0 skipped); `git diff --check`
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator Verify attempt 008 — execution 4430e87a-041b-4a00-966f-d124d159a718
+
+- Skill: `evaluator`, contract version 14, mode `verify`; evaluator revision `002`
+- Candidate: `e8428205a58a1c12d6f17d9a80a160b78c754cb9`
+- Output: `verification-result.json`, `verification-feedback.md`
+- Result: succeeded; FAIL / IMPLEMENTATION_FAILURE (frozen 014e block altered; subject run 16 of 17; evaluator lineage sub-check defect noted for repair)
+- Measurements: wall-clock time and token usage unavailable.
