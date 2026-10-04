@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "attempt": "010",
-  "execution": "404e879e-46c6-479b-958f-53dfd4e196c3",
-  "roleGrant": "sha256:706fa63cd13c13f805773b671d1c862ea758b66b41409729e6f6e371580e06a9",
-  "commit": "e8428205a58a1c12d6f17d9a80a160b78c754cb9",
+  "attempt": "011",
+  "execution": "a1dd366e-c749-40ee-8d6a-2499e74ff35e",
+  "roleGrant": "sha256:35a0a79deb605289dc4fbcd691f486daadbb5674379beb181e841942049a3e6f",
+  "commit": "edecf012a9b97ebb915c7f31f309c4811b6e927e",
   "evaluatorRevision": "003",
   "evaluatorRevisionIdentity": "sha256:a3e2c86bed00aa085b85eff106d581e26b0de107a6ed45c65025e221cb4c8920",
   "inputs": {
@@ -13,32 +13,26 @@
     "coverage": "sha256:112be8e3c1fbc8be8d67de29321256d9b9da00c3c1768b290bf4c1dd7a027073"
   },
   "result": "BLOCKED",
-  "classification": "INFRASTRUCTURE_FAILURE",
+  "classification": "EVALUATOR_DEFECT",
   "coverageResults": {
     "AC01": "NOT_ADJUDICATED",
     "AC02": "NOT_ADJUDICATED",
     "AC03": "NOT_ADJUDICATED",
     "AC04": "SATISFIED",
-    "AC05": "SATISFIED",
+    "AC05": "NOT_ADJUDICATED",
     "AC06": "NOT_ADJUDICATED",
     "AC07": "NOT_ADJUDICATED",
     "AC08": "NOT_ADJUDICATED"
   },
   "accounting": {
     "criteria": 8,
-    "satisfied": 2,
+    "satisfied": 1,
     "notSatisfied": 0,
-    "notAdjudicated": 6,
+    "notAdjudicated": 7,
     "executableCases": 5,
     "executablePassed": 3,
     "failedProcedures": [],
-    "note": "Trusted-N E1, E3 and E4 passed; typecheck, lint, format and the full suite excluding 014e titles passed. Subject evidence 08f6548c reports the 23 revised-SC1 titles passing, but its boundary observation was not produced by the frozen E5 procedure with host-supplied frozen-form topology and before/after inputs (and shows a real-home entry not in the topology capture), so E5 is not established and is not admitted. Dependent criteria are not adjudicated; no coverage was fabricated."
+    "note": "Trusted-N E1, E3 and E4 passed at the candidate. The frozen boundary and host-effects procedure ran inside the candidate subject but its required host-supplied inputs were not provided in frozen form, so E5 is not established and is not admitted. The frozen procedure depends on an input seam not exposed in the public contract; this is classified as an evaluator defect and, with two prior post-implementation evaluator revisions, requires a successor/methodology path rather than in-cycle correction. No coverage was fabricated."
   },
-  "regression": {
-    "command": "npm run typecheck; npm run lint; npm run format:check; npm test excluding 014e titles",
-    "exit": 0,
-    "tests": 223,
-    "passed": 223
-  },
-  "humanAcceptance": "Not applicable. A bounded candidate-subject run executing the frozen boundary and host-effects procedure with host-supplied topology and before/after snapshots must be supplied before this candidate can be adjudicated."
+  "humanAcceptance": "Not applicable."
 }

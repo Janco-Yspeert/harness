@@ -454,3 +454,14 @@
   visible suite passed; 242 tests passed with zero failures or skips.
 - Limitations: fresh candidate-bound revision-003 subject evidence and
   independent trusted-N verification remain subsequent workflow steps.
+
+## Verification attempt 011 — execution a1dd366e-c749-40ee-8d6a-2499e74ff35e
+
+- Skill: `evaluator`, contract version 14, mode `verify`; evaluator revision `003`
+  (`sha256:a3e2c86bed00aa085b85eff106d581e26b0de107a6ed45c65025e221cb4c8920`);
+  candidate `edecf012a9b97ebb915c7f31f309c4811b6e927e`.
+- Result: BLOCKED, classification EVALUATOR_DEFECT. Trusted-N frozen regression,
+  genericity and verifier-contract cases passed (12/12). The frozen boundary
+  procedure could not be established because its host-supplied inputs are an
+  input seam not exposed publicly; evidence not admitted, nothing fabricated.
+  A successor/methodology path is required. See `verification-result.json`.
