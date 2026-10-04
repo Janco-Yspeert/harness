@@ -154,3 +154,14 @@
 - Checks: bound brief identity and committed ancestry; referenced 014e/014h commit and blob identities; public accepted 014h/014i Outcomes; current containment, governed-execution and candidate-subject surfaces; `git diff --check`; Prettier check of `design-map.md`.
 - Limitations: product tests not run because this role changed only the shared design artifact and manifest; evaluator-private material and workflow ledgers not inspected.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator Prepare (forward specification recovery) — execution 4bcef6cd-ac0e-4cc3-b89e-a34d61ad6cef
+
+- Skill: `evaluator`, mode `prepare`, contract version 14
+- Inputs: brief `sha256:a0fbd91a0e41eed3c2e54e7450ab1e25400f71add68b0f02e10f54bc05629559`; Design Map `sha256:32b38b26394b614dd9d293c056b67af75e9b89e0284c14eeba07c5d7e706813a`
+- Result: succeeded; successor evaluator revision `003` frozen (prior revisions `001` and `002` and all attempts preserved unchanged)
+- Outputs: `eval-requirements.md` (`sha256:91d25c8bc3594a51a0767a426cbac6744fc2d206d9c869b64a6e5a7fee64175b`); `coverage-map.json`; evaluator revision identity `sha256:a3e2c86bed00aa085b85eff106d581e26b0de107a6ed45c65025e221cb4c8920`; private inventory identity `sha256:c587da3ae882b36808dc7791ffacbfe54a84a17517eaf2a72f6aef798c677be3`
+- Changes from revision `002`: executable regression composition follows revised SC1; boundary observation distinguishes host-created topology, subject-visible paths, subject-writable paths and host-side before/after evidence without loosening the containment oracle; lineage binds the current recovery brief and Design Map
+- Checks: structural pre-freeze integrity validation PASS (8 criterion records); controlled positive and negative exercise of every evaluator oracle on synthetic and accepted-014h baseline conditions; public coverage map validated against the private bundle; candidate implementation not executed
+- Limitations: manual procedures resolved from the frozen checklist; candidate evidence is produced only in an allocated verification
+- Measurements: wall-clock time and token usage unavailable.

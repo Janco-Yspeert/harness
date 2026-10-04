@@ -1,6 +1,11 @@
 # Evaluation Requirements
 
-Recovery revision for brief `sha256:c54324b0…` and Design Map `sha256:2ef8d4ca…`.
+Forward specification-recovery revision for brief
+`sha256:a0fbd91a0e41eed3c2e54e7450ab1e25400f71add68b0f02e10f54bc05629559` and Design Map
+`sha256:32b38b26394b614dd9d293c056b67af75e9b89e0284c14eeba07c5d7e706813a`. It supersedes
+the earlier public requirements only where the human decision in
+`specification-revision-authority.md` supersedes the obsolete mechanism-specific
+assertion; prior evaluator revisions and attempts are preserved unchanged.
 
 ## Testability Requirements
 
@@ -37,26 +42,40 @@ Recovery revision for brief `sha256:c54324b0…` and Design Map `sha256:2ef8d4ca
   runtime, and the raw observed output of the commands it ran. Its packaging is
   implementation freedom provided these facts are stated.
   - Reason: trusted N must independently establish the binding before using it.
-  - Source: design-map.md SC6; spike.md required behavior 9.
+  - Source: design-map.md SC2; spike.md required behavior 9.
   - Impact: evidence that does not state them is not admitted and the affected
     criteria are not satisfied.
+- **TR5 — Distinguishable boundary observations.** Candidate-subject evidence
+  states, separately: the host-created topology (synthetic HOME, scratch, mount
+  parents) captured on the host before launch; the paths actually visible to the
+  subject; the paths actually writable to the subject; and host-side
+  before/after snapshots of the real home, sibling, Harness checkout and
+  temporary locations.
+  - Reason: host-created topology is not exposure, and exposure must be
+    distinguishable from it (spike.md AC01; design-map.md SC5).
+  - Impact: observations that do not make these distinctions are not admitted.
 
 ## Evaluator Assumptions
 
 - **EA1 — Baseline.** Pre-implementation base is commit
   `502727dbfe4860d9f60f1a1e994b3ae84a07a59b`. Changes to other governed roles
   and the 014e and 014f spike directories are measured against it.
-- **EA2 — Frozen regression bytes.** The frozen 014e tests are the blocks at git
-  blob `4b361f81e307e129be6d106c9df9a4910e674be9` of
-  `test/external-project.test.ts`. Edits to shared helpers outside those blocks
-  are permitted; their effect is judged by the frozen tests passing.
+- **EA2 — Revised SC1 regression bytes.** The selected tests are those defined
+  by design-map.md SC1: every test block of git blob
+  `4b361f81e307e129be6d106c9df9a4910e674be9` (`test/external-project.test.ts`,
+  commit `a36fd6e`) whose title begins `014e` except the single superseded D4
+  block; the `014h AC10` block of blob
+  `74a51d545681532ac4c49ac9034712ee3217974d`; and every `014h` block of blob
+  `b9c135790860a87e76afdfb458a7b0758d129704` (`test/host-fs-isolation.test.ts`).
+  Edits to shared helpers outside those blocks are permitted; their effect is
+  judged by the selected tests passing.
 - **EA3 — Two evidence classes.** The authoritative verdict is produced by the
-  allocated verifier under unchanged trusted methodology N. The frozen 014e
-  group and a live observation of the effective verifier boundary are run
+  allocated verifier under unchanged trusted methodology N. The revised SC1
+  selection and a live observation of the effective verifier boundary are run
   inside a bounded candidate-subject verifier under the candidate's proposed
   composition; trusted N launches it, captures its output and judges it. The
   subject cannot author the authoritative result or advance the workflow.
-- **EA4 — 014e under trusted N.** A 014e result observed under trusted N's own
+- **EA4 — Revised SC1 under trusted N.** A revised-SC1 result observed under trusted N's own
   broader authority is recorded as not adjudicated: neither a pass nor an
   implementation failure, and never a substitute for the subject run. The rest
   of the repository regression suite is run and adjudicated by trusted N.
@@ -65,7 +84,7 @@ Recovery revision for brief `sha256:c54324b0…` and Design Map `sha256:2ef8d4ca
   contain spike, workflow, candidate or Stockdif identifiers.
 - **EA6 — Reuse of earlier subject evidence.** Fixture evidence at commit
   `27af3a8` may support only launch-composition and evidence-action
-  observations; it never satisfies the 014e requirement.
+  observations; it satisfies the revised SC1 requirement only if independently established valid for it (candidate, composition, runtime, fixture and observations).
 
 ## Blocking Questions
 

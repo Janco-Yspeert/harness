@@ -1,48 +1,62 @@
 {
   "schemaVersion": 1,
   "spike": "014g-verifier-containment-composition",
-  "evaluationRequirements": "sha256:8ede56f90b8d37cfbdf6840c650e56587fbe2d33005149378bc8b8730cf94551",
+  "evaluationRequirements": "sha256:91d25c8bc3594a51a0767a426cbac6744fc2d206d9c869b64a6e5a7fee64175b",
   "readiness": {
     "skill": "evaluator",
     "skillVersion": 14,
-    "evaluatorRevision": "002",
-    "evaluatorRevisionIdentity": "sha256:6091eac3062c17711a9828fe813a71389ca83a9f5c30c99bfe92a42f659b0f82",
-    "privateInventoryIdentity": "sha256:a3ff74def9d04150f6ea26ad0d6e76cdb002406ee765333be670d02bc5a1b60d",
-    "validatorResultBinding": "sha256:c39249457ddb38b5e96d2b0baaea27eae9e14de957ddbcccdd7276d579bc0d55",
+    "evaluatorRevision": "003",
+    "evaluatorRevisionIdentity": "sha256:a3e2c86bed00aa085b85eff106d581e26b0de107a6ed45c65025e221cb4c8920",
+    "privateInventoryIdentity": "sha256:c587da3ae882b36808dc7791ffacbfe54a84a17517eaf2a72f6aef798c677be3",
+    "validatorResultBinding": "sha256:ac43a254380269336084f5743dc3d639f974dead2a6fc7fa60047c23051e4e72",
     "integrityValidation": "PASS",
     "criterionRecordCount": 8
   },
   "criteria": [
     {
       "id": "AC01",
-      "frozenAuthority": "spike.md AC01, required behavior 1; design-map.md SC2, SC3, SC6 and invariants",
+      "frozenAuthority": "spike.md AC01, required behavior 1; design-map.md SC2, SC3, SC5 and invariants",
       "mode": "COMPOSITE",
       "required": true,
-      "procedures": ["E2", "E5", "S1"],
-      "sufficiency": "E5 observes, from inside the bounded candidate-subject verifier, that the granted public and evaluator-private workspaces are readable while home, sibling, temporary and credential locations expose nothing beyond granted paths. E2 runs the frozen protected-worker exposure regression as a command of that subject. S1 has trusted N independently bind the observations to the exact candidate, composition and runtime before they are used."
+      "procedures": [
+        "E2",
+        "E5",
+        "S1"
+      ],
+      "sufficiency": "E5 observes, from the bounded candidate-subject verifier and from host-side before/after evidence, which paths are visible and which are writable, separately from host-created topology, for the real home, sibling, Harness checkout, temporary and credential locations while the granted workspaces keep their modes. E2 runs the revised SC1 isolation regressions as a command of that subject. S1 has trusted N independently bind the observations to the exact candidate, composition and runtime before they are used."
     },
     {
       "id": "AC02",
       "frozenAuthority": "spike.md AC02, required behavior 2 and 3; design-map.md SC3, SC4",
       "mode": "COMPOSITE",
       "required": true,
-      "procedures": ["E4", "E5", "P1"],
+      "procedures": [
+        "E4",
+        "E5",
+        "P1"
+      ],
       "sufficiency": "E4 shows the verifier contract no longer carries repository-write or git-commit while keeping its exact workspaces. E5 shows, from inside the subject, that it cannot write the repository tree yet writes its private workspace. P1 reviews the mediated evidence action for an allowlist derived from contract data, requester-supplied bytes, attribution, ledger recording and no arbitrary-path mutation."
     },
     {
       "id": "AC03",
-      "frozenAuthority": "spike.md AC03, required behavior 4 and 8; design-map.md SC1, SC2, SC6",
+      "frozenAuthority": "spike.md AC03, required behavior 4 and 8; design-map.md SC1, SC2",
       "mode": "COMPOSITE",
       "required": true,
-      "procedures": ["E1", "E2", "S1"],
-      "sufficiency": "E1 proves every frozen 014e test block is byte-identical to the recorded blob, so nothing was weakened or rewritten. E2 runs the whole frozen group as a command inside the bounded candidate-subject verifier and requires each title to pass exactly once with no skip. S1 has trusted N independently establish the exact candidate, composition, runtime, executed test bytes and result before admitting the subject evidence."
+      "procedures": [
+        "E1",
+        "E2",
+        "S1"
+      ],
+      "sufficiency": "E1 proves every retained 014e block and every accepted 014h replacement block of the revised SC1 composition is byte-identical to its recorded blob, so nothing was weakened or rewritten and only the superseded block is excluded. E2 runs the whole revised selection as a command inside the bounded candidate-subject verifier and requires each title to pass exactly once with no skip. S1 has trusted N independently establish the exact candidate, composition, runtime, executed test bytes and result before admitting the subject evidence."
     },
     {
       "id": "AC04",
       "frozenAuthority": "spike.md AC04, required behavior 5; design-map.md generic mechanism",
       "mode": "EXECUTABLE",
       "required": true,
-      "procedures": ["E3"],
+      "procedures": [
+        "E3"
+      ],
       "sufficiency": "E3 scans the added non-comment code and data under the implementation paths against the frozen base and fails on any workflow, spike, candidate or Stockdif identifier."
     },
     {
@@ -50,15 +64,21 @@
       "frozenAuthority": "spike.md AC05, required behavior 6; design-map.md invariants and SC6",
       "mode": "COMPOSITE",
       "required": true,
-      "procedures": ["E4", "R1"],
-      "sufficiency": "R1 requires trusted N to pass the repository's typecheck, lint, format check and the full test suite other than the frozen 014e group, which hold the governed-execution, exposure, promotion, containment and executor-selection regressions, and to record any 014e result under its own authority as not adjudicated. E4 confirms every other governed role contract and policy entry is byte-identical to base."
+      "procedures": [
+        "E4",
+        "R1"
+      ],
+      "sufficiency": "R1 requires trusted N to pass the repository's typecheck, lint, format check and the full test suite other than the revised SC1 composition, which hold the governed-execution, exposure, promotion, containment and executor-selection regressions, and to record any revised-SC1 result under its own authority as not adjudicated. E4 confirms every other governed role contract and policy entry is byte-identical to base."
     },
     {
       "id": "AC06",
       "frozenAuthority": "spike.md AC06; design-map.md SC3, SC5",
       "mode": "COMPOSITE",
       "required": true,
-      "procedures": ["E4", "P1"],
+      "procedures": [
+        "E4",
+        "P1"
+      ],
       "sufficiency": "E4 confirms the effective capabilities and workspaces in the resolved role contract. P1 confirms they are visible in the subject verifier's own Role Grant and that the candidate ships passing tests for refusal before session and allocation with no fallback."
     },
     {
@@ -66,16 +86,23 @@
       "frozenAuthority": "spike.md AC07, required behavior 7; design-map.md invariants",
       "mode": "COMPOSITE",
       "required": true,
-      "procedures": ["E4", "R1"],
+      "procedures": [
+        "E4",
+        "R1"
+      ],
       "sufficiency": "E4 shows the 014f candidate commit remains in history and that the 014e and 014f spike directories, including prior attempts and evaluator revision, are unchanged from base. R1 shows the kernel and allocation regressions that a later 014f allocation relies on still pass."
     },
     {
       "id": "AC08",
-      "frozenAuthority": "spike.md AC08, authority model clarification, required behavior 9; design-map.md SC6 and invariants",
+      "frozenAuthority": "spike.md AC08, authority model clarification, required behavior 9; design-map.md SC2 and invariants",
       "mode": "MANUAL_REVIEW",
       "required": true,
-      "procedures": ["A1", "S1"],
-      "sufficiency": "A1 checks from the verifier's own Role Grant and the workflow ledger that verification ran under unchanged trusted N authority, that no subject execution or result entered the real workflow, and that nothing is promoted or backdated. S1 keeps subject evidence a separate, independently bound evidence class that cannot author the verdict."
+      "procedures": [
+        "A1",
+        "E4",
+        "S1"
+      ],
+      "sufficiency": "A1 checks from the verifier's own Role Grant and the workflow ledger that verification ran under unchanged trusted N authority, that no subject execution or result entered the real workflow, and that nothing is promoted or backdated. E4 binds the legitimate current recovery brief and Design Map identities. S1 keeps subject evidence a separate, independently bound evidence class that cannot author the verdict."
     }
   ]
 }
