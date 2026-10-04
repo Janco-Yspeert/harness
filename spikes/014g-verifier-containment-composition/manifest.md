@@ -348,3 +348,33 @@
   run, because the tool policy blocked the compound shell commands.
 - Limitations: independent evaluation has not run; wall-clock time and token
   usage unavailable.
+
+## Implementation (forward recovery checkpoint) — execution ad74544a-758c-4081-a28b-da818485e9db
+
+- Skill: `implementation`, contract version 5; branch `feat/spike-014`; Role
+  Grant
+  `sha256:5344f30109b8f1a99112352f878933092385994675911b3476b13288b6ab851e`
+- Inputs: brief
+  `sha256:a0fbd91a0e41eed3c2e54e7450ab1e25400f71add68b0f02e10f54bc05629559`,
+  Design Map
+  `sha256:32b38b26394b614dd9d293c056b67af75e9b89e0284c14eeba07c5d7e706813a`,
+  coverage
+  `sha256:112be8e3c1fbc8be8d67de29321256d9b9da00c3c1768b290bf4c1dd7a027073`,
+  requirements
+  `sha256:91d25c8bc3594a51a0767a426cbac6744fc2d206d9c869b64a6e5a7fee64175b`; no
+  implementation feedback bound
+- Result: succeeded; no product change. The frozen forward-recovery brief
+  requires preserving C2 unless independent evaluation establishes a genuine
+  implementation defect, and no such feedback is bound to this execution.
+- Output: candidate identity remains
+  `e8428205a58a1c12d6f17d9a80a160b78c754cb9`; it is an ancestor of the
+  pre-entry `HEAD`, with no non-014g paths changed since that candidate.
+- Visible checks: `npm run typecheck`, `npm run lint`, and
+  `npm run format:check` passed. `npm test` could not complete: 6 test files
+  passed and 13 failed because this worker sandbox denies nested `git` fixture
+  creation (`spawnSync git EPERM`); direct execution of
+  `test/evidence-action.test.ts` confirms the 9 affected 014g cases fail at
+  that environmental setup boundary, while its 2 non-fixture cases pass.
+- Limitations: independent evaluation has not run; `git diff --check` against
+  the shared dirty worktree could not hash unrelated restricted workflow
+  ledgers; wall-clock time and token usage unavailable.
