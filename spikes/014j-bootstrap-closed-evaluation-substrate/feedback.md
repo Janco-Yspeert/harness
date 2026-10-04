@@ -2,7 +2,7 @@
 
 ## Review basis
 
-Reviewed the exact revised draft
+This execution reviewed the exact revised draft
 `spikes/014j-bootstrap-closed-evaluation-substrate/spike.md` at
 `sha256:6b616066fa2a616e9c649fad3d96bcd0a684a5d674cb430ebb7f74c1a55f994d`
 against `AGENTS.md`, `GOALS.md`, the accepted public Outcomes and As-Built
