@@ -132,3 +132,14 @@
 - Preserved invariant: containment remains mandatory; the decision authorizes a forward specification revision replacing only the obsolete mechanism-specific assertion with accepted 014h behavior and corresponding regressions
 - Unchanged: every other frozen 014g requirement, artifact, candidate identity, evaluator revision, and historical attempt
 - No role execution or frozen-artifact revision was performed by this record.
+
+## Brief Readiness (forward specification recovery) — execution 96c595d3-9b04-4039-a74a-60c9eb8e19ca
+
+- Skill: `brief-readiness`, contract version 5
+- Input: brief `sha256:a0fbd91a0e41eed3c2e54e7450ab1e25400f71add68b0f02e10f54bc05629559`
+- Result: succeeded, verdict READY (Ready to freeze)
+- Outputs: `feedback.md`; no preliminary snapshot (passing verdict)
+- Findings: 0 blockers, 0 material clarifications
+- Checks: bound brief identity; public authority and accepted 014h/014i Outcomes; current containment, candidate-subject and evaluator-contract surfaces; referenced commits, ancestry and blob identities; exact 014e-to-014h test diff
+- Limitations: product tests not run; evaluator-private material and workflow ledgers not inspected
+- Measurements: wall-clock time and token usage unavailable.
