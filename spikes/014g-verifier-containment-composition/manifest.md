@@ -143,3 +143,14 @@
 - Checks: bound brief identity; public authority and accepted 014h/014i Outcomes; current containment, candidate-subject and evaluator-contract surfaces; referenced commits, ancestry and blob identities; exact 014e-to-014h test diff
 - Limitations: product tests not run; evaluator-private material and workflow ledgers not inspected
 - Measurements: wall-clock time and token usage unavailable.
+
+## Design Map (forward specification recovery) — execution f98a8c70-52fc-4ce6-82d2-9b8607b600d9
+
+- Skill: `design-map`, contract version 4
+- Input: `spike.md` (`sha256:a0fbd91a0e41eed3c2e54e7450ab1e25400f71add68b0f02e10f54bc05629559`)
+- Result: succeeded
+- Output: `design-map.md` (`sha256:32b38b26394b614dd9d293c056b67af75e9b89e0284c14eeba07c5d7e706813a`)
+- Decisions: bounded host-mediated evidence mutation remains the selected shape; accepted 014h universal host containment supplies the launch boundary; accepted 014i candidate-subject execution supplies the non-authoritative N+1 observation boundary; revised SC1 preserves every still-valid 014e test block, excludes only the named obsolete D4 block, and adds the exact accepted 014h replacements from blobs `74a51d545681532ac4c49ac9034712ee3217974d` and `b9c135790860a87e76afdfb458a7b0758d129704`.
+- Checks: bound brief identity and committed ancestry; referenced 014e/014h commit and blob identities; public accepted 014h/014i Outcomes; current containment, governed-execution and candidate-subject surfaces; `git diff --check`; Prettier check of `design-map.md`.
+- Limitations: product tests not run because this role changed only the shared design artifact and manifest; evaluator-private material and workflow ledgers not inspected.
+- Measurements: wall-clock time and token usage unavailable.

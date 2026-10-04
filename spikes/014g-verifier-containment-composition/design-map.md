@@ -1,61 +1,141 @@
 # Design Map — 014g Verifier Containment Composition
 
-Brief: `spike.md` (`sha256:c54324b00dd8fa4c54d8f567046e36fe2558cf2b5c14bc2b8edffe4ee2644759`), the recovery revision that adds the authority model clarification. It supersedes the map bound to `sha256:52f1c9fc…` and its design decisions carry forward unless stated below.
+Bound brief: `spike.md`
+(`sha256:a0fbd91a0e41eed3c2e54e7450ab1e25400f71add68b0f02e10f54bc05629559`).
+This map supersedes the maps bound to the two prior frozen brief revisions; it
+does not revise their artifacts or results.
 
 ## Shared contracts
 
-**SC1 — Frozen regression set (brief requirement 8, readiness M1).** AC03 refers to every test whose title begins `014e` in `test/external-project.test.ts`, at git blob `4b361f81e307e129be6d106c9df9a4910e674be9` (commit `a36fd6e`). Their bytes and assertions must be unchanged by the repair. The set is the whole 014e group, not only the test seen failing in 014f. The two known parent-boundary-sensitive tests are:
-- `014e AC03/AC04/D4: contained public and protected workers see only their granted workspaces, no Harness writes and no Git credentials`
-- `014e D4 (H4): inside containment the real Codex sandbox lets a write grant commit, keeps hooks and config read-only, and still denies commits under plain workspace-write`
+**SC1 — Revised regression composition.** The candidate-subject SC1 corpus is
+defined by these committed blobs:
 
-A test reported as skipped counts as not passing.
+- From `test/external-project.test.ts` blob
+  `4b361f81e307e129be6d106c9df9a4910e674be9` at commit `a36fd6e`, include
+  byte-for-byte every test block whose title begins `014e` except the single
+  block titled `014e D4: containment makes forbidden-exposure grants eligible
+  for every adapter only when enforced`.
+- From `test/external-project.test.ts` blob
+  `74a51d545681532ac4c49ac9034712ee3217974d` at accepted 014h candidate
+  `dee86d2314bffa7cc2da0d8ac72004250a06debb`, include the test block titled
+  `014h AC10: privateWorkspace metadata no longer decides forbidden-exposure
+  launch eligibility` byte-for-byte.
+- From `test/host-fs-isolation.test.ts` blob
+  `b9c135790860a87e76afdfb458a7b0758d129704` at that same accepted candidate,
+  include byte-for-byte every test block whose title begins `014h`.
 
-**SC2 — Regressions run as a verifier command (readiness M2).** The regression must run as a command of a verifier under the candidate-defined effective sandbox (see SC6). A host-run result that a verifier merely binds does not satisfy AC03. The candidate-subject run launches through the registered adapter path and runs the frozen set from inside it.
+The excluded block is the whole and only superseded assertion: it makes
+adapter/provider metadata and a special `planLaunch(...contained...)` condition
+the security authority. The added blocks replace it with accepted 014h behavior:
+host-owned containment is mandatory for every spawned registered-adapter
+launch, preserves each granted workspace mode, denies real home, sibling,
+Harness checkout, credential and unrelated temporary access, and refuses launch
+when containment is unavailable or cannot safely represent the grant. The
+candidate-subject fixture must bind the complete two accepted-014h source blobs
+above as well as the historical 014e blob, so trusted N can recompute both the
+selection and the unchanged-block claim. Every selected block must execute; a
+skip, omission, rewrite or duplicate execution does not satisfy SC1.
 
-**SC3 — Effective verifier permissions after the repair.**
-- The verifier's public repository workspace is read-only, and the evaluator-private workspace keeps the access the verifier needs to work.
-- The verifier's role grant no longer carries repository-write or git-commit. Nothing in the launch grants write access to the repository tree, to the Harness checkout or to any host path beyond what the grant lists.
-- A nested-containment check therefore starts from a parent boundary that does not already grant the repository write access the check tries to observe.
-- These effective permissions are recorded in the execution grant and stay inspectable (AC06).
+**SC2 — Candidate-subject evidence boundary.** Revised SC1 runs as a command
+inside a bounded, non-authoritative candidate subject reconstructed from the
+exact committed N+1 candidate. Its effective N+1 role contract, skill,
+capabilities, host actions and workspace modes are part of the captured subject
+evidence. Host-side capture binds the exact candidate, candidate methodology,
+runtime, three SC1 blobs, command, raw streams, worker-tool exchanges, process
+result and before/after filesystem observations. The subject may report only an
+observation; it cannot create the authoritative 014g result, establish trust,
+promote a methodology or advance the real workflow.
 
-**SC4 — Host-mediated evidence write and commit.** The verifier publishes its public evidence through a bounded host action requested with the existing `requestAction` mechanism. It declares the action in its role contract and grant `hostActions`.
-- The verifier supplies the exact destination paths and exact content bytes, or a bound identity of files it authored.
-- The host validates the destinations against an allowlist that comes from the role contract and grant, not from provider prose.
-- The host writes and commits only those bytes, attributed to the allocated role and execution.
-- The host records the request, the destination and the content identity in the ledger.
-- The host neither infers nor generates verification content, and exposes no arbitrary-path mutation.
-- A request outside the allowlist is denied and leaves nothing written.
+Trusted N independently validates that binding and adjudicates the subject
+evidence. Trusted N runs the rest of the required regression suite under its
+unchanged authority. If its broader parent permissions also encounter revised
+SC1, that environmental result is explicitly not adjudicated and counts as
+neither pass nor implementation failure.
 
-**SC5 — Fail closed before session (readiness M3).** If the host cannot enforce the selected composition (read-only repository, no repository-write or git-commit, mediated action available), the launch is refused before any session or allocation exists. This is the existing 014e D4 behavior. There is no fallback to the previous repository-write grant.
+**SC3 — Proposed verifier composition under test.** N+1's
+`evaluator-verify` composition has a read-only public repository workspace, the
+required writable evaluator-private workspace, and only
+`repository-read`, `local-computation` and `git-inspect` repository
+capabilities. It has neither `repository-write` nor `git-commit`. Its only
+public mutation authority is an explicitly granted evidence host action whose
+destination allowlist is contract data. The Role Grant remains the inspectable
+record of these effective permissions.
 
-**SC6 — Two evidence classes (brief authority model, requirements 4, 6, 9).**
-- *Authoritative (trusted N):* verification runs under the exact trusted N role, skill, contract and methodology. Its launch composition is not altered by the candidate. Trusted N runs the required regression suite except the 014e group. A 014e result it observes under its broader parent authority is recorded as not adjudicated, neither pass nor failure. Where that record lives, and how the existing result vocabulary carries it, is evaluator design (readiness C1).
-- *Candidate-subject (N+1):* a separate bounded execution under N+1's proposed workspace, capability and host-action composition, running the unchanged frozen 014e set (SC1) as a command from inside it. It is an observation, not a verdict. It cannot emit the authoritative result, establish trust, replace the evaluator or advance the workflow. Its evidence-action allowlist must not include the authoritative verification-result path or any workflow-state path.
-- Subject evidence is public evidence stored apart from the authoritative verification result, and states the exact candidate, candidate composition, runtime and observed outputs. Trusted N must independently establish that binding before using it. Evidence at `27af3a8` may be reused only for launch composition and host-evidence-action observations, never for AC03.
-- The subject fixture is the smallest one that runs the unchanged 014e blob bytes under the candidate composition without modifying the candidate. Other provider work is not repeated (readiness C2).
+**SC4 — Host-mediated evidence mutation.** For an evidence action, the allocated
+worker supplies every complete destination path and exact content byte. The
+host validates the request against the Role Grant and contract allowlist, writes
+and commits only those bytes, and records attribution and content identities.
+Provider prose and ambient filesystem access grant nothing. A denied or failed
+request writes and commits nothing. The host does not infer, complete or
+manufacture evaluator content, and the action is not a general file-mutation
+surface. A candidate subject receives only disposable evidence destinations and
+never an authoritative result, workflow-state or trust destination.
+
+**SC5 — Universal launch containment.** Every spawned registered-adapter worker,
+including trusted N and the candidate subject, crosses the accepted 014h
+host-owned containment boundary derived from its own Role Grant. Workspace
+mount modes are enforced independently of adapter `privateWorkspace` metadata
+or provider sandbox claims. An unrepresentable grant, unavailable containment,
+or unenforceable nested sandbox is refused before provider launch, with no
+uncontained fallback. Host-created scratch, synthetic HOME and mount topology
+are not exposure; observations must distinguish their existence from paths
+visible or writable to the subject and from host-side before/after evidence.
 
 ## Design decisions
 
-- **Selected shape: host-mediated mutation (brief shape 2), with the verifier's repository write and commit authority removed.** The role/capability change is a consequence of it, not a separate role split.
-- **Shape 1 rejected.** A second recording role would need new workflow transitions and would still give some role an LLM-driven commit authority.
-- **Shape 3 rejected.** Claude's permission model has no per-command parent boundary. A verifier that holds repository write cannot run a nested check under a parent that does not, so the composition could not be met.
-- **Generic mechanism.** The mechanism is driven only by role contract and grant data. No workflow, spike, candidate, evaluator revision or project is named anywhere in it (AC04). Applying it to other governed roles is allowed. Roles that keep repository-write and git-commit keep their current behavior.
-- **Attribution.** The commit author and the ledger entry identify the allocated execution. Provider prose confers no authority.
+- **Selected mutation shape: bounded host-mediated mutation (shape 2).** It lets
+  the verifier author attributable public evidence while its repository remains
+  read-only. Accepted 014h universal host containment supplies the uncontaminated
+  parent boundary, and accepted 014i candidate-subject execution supplies the
+  non-authoritative N+1 observation boundary. These are one composition, not
+  alternative sources of authority.
+- **No narrower recording role (shape 1).** A second role adds a transition and
+  another authority handoff without improving byte authorship, destination
+  validation or containment.
+- **No additional conditional sandbox mode (shape 3).** Universal host-owned
+  containment already enforces exact workspace access for every registered
+  adapter. Making it conditional on the role, adapter metadata or this spike
+  would restore the superseded mechanism. Containment alone also cannot commit
+  verifier-authored public evidence from a read-only repository, so it does not
+  replace shape 2.
+- **Generic composition.** Contracts and Role Grants determine workspaces,
+  capabilities, host-action destinations and containment. No workflow, spike,
+  candidate, fixture provider or Stockdif identity participates in the product
+  decision.
 
 ## Invariants
 
-- Reads stay confined to the exact granted public and evaluator-private workspaces. Home, sibling, credential and unrelated temporary paths stay denied (AC01).
-- Writes are limited to explicitly granted paths. No global broadening of Claude's filesystem access, and no read or write access to all of `/tmp` (AC02).
-- The frozen 014e tests, 014f authority, candidate `a2ed538330ace7a51b9585dcba404035c72c973f`, evaluator revision `001` and attempts 001 and 002 are not edited (AC07). 014f can allocate a new verification attempt afterwards.
-- Candidate-subject execution never governs, certifies or gates its own verification, and trusted N never receives N+1 capabilities while evaluating it (AC08). Cutover to N+1's composition happens only after human acceptance and ordinary promotion, and is not backdated.
-- Existing governed execution, private exposure, promotion, containment, nested-sandbox and executor-selection behavior stays unchanged for roles that do not use the mediated action (AC05).
-- Effective permissions are visible in the grant and ledger. An unsupported composition is refused, never silently downgraded (AC06).
+- Trusted N remains the sole authority for the 014g verdict. N+1 never governs
+  the decision to trust itself, and later acceptance or methodology promotion
+  is not backdated into verification.
+- Filesystem visibility and mutation never exceed exact granted workspaces,
+  scratch and bounded host actions. The operator home, arbitrary siblings,
+  Harness checkout, credentials and unrelated temporary paths remain outside
+  the subject boundary.
+- Public evidence remains attributable to the allocated execution and exact
+  bytes. Candidate-subject evidence remains visibly non-authoritative and
+  separate from the trusted-N result.
+- Every still-valid historical 014e test block is preserved byte-for-byte;
+  only the SC1-named obsolete block is excluded, and the exact accepted 014h
+  replacements are added.
+- Existing governed execution, private-workspace isolation, promotion,
+  containment, nested-sandbox and executor-selection behavior remains intact.
+  Effective permissions stay explicit, inspectable and fail closed.
+- Candidate `e8428205a58a1c12d6f17d9a80a160b78c754cb9`, all prior 014g attempts and
+  evaluator revisions, and the 014f candidate, evaluator revision and attempts
+  remain immutable. The 014f rerun is a non-gating post-acceptance handoff.
 
 ## Implementation freedom
 
-- The form of the subject fixture and how the subject evidence is packaged, provided SC6 holds.
-- The wire shape and name of the host action, and whether it reuses the publication path or adds a new action kind.
-- How the allowlist is expressed in the contract, provided it is data and not a provider-controlled value.
-- How the host validates, writes and commits (staging, hooks, author identity), and how the ledger record is laid out.
-- How the read-only repository is enforced: Claude permission rules, bind mode, or both.
-- Test structure for the new behavior, provided evaluation exercises the real launch path (SC2).
+- The fixture packaging and runner mechanics, provided the three SC1 blob
+  identities, exact block selection, execution completeness and raw evidence
+  are independently checkable.
+- The internal representation of evidence-action allowlists and host records,
+  provided the contract and Role Grant remain the authority and denial is
+  atomic.
+- The host's staging, commit-author and commit-message mechanics, provided only
+  the worker-authored allowlisted bytes are committed and attribution is
+  preserved.
+- The internal containment construction and provider invocation details,
+  provided the universal host boundary, exact workspace modes, visibility
+  denials and pre-launch refusal remain externally demonstrable.
