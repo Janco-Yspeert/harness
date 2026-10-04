@@ -124,3 +124,11 @@
 - Output: `verification-result.json`, `verification-feedback.md`
 - Result: succeeded; FAIL / IMPLEMENTATION_FAILURE (frozen 014e block altered; subject run 16 of 17; evaluator lineage sub-check defect noted for repair)
 - Measurements: wall-clock time and token usage unavailable.
+
+## Human specification decision — 2026-10-04
+
+- Authority: explicit human decision recorded in `specification-revision-authority.md` (`sha256:e5ac26e3619768732e7ca6632eb9ec4d94b4c111fe4fb0309e917944f6c235c7`)
+- Decision: frozen 014g SC1/AC03 is partially superseded only where its original 014e D4 regression requires adapter/provider metadata to cause `planLaunch` refusal; accepted Spike 014h moved that mechanism into mandatory host-owned containment for every spawned registered-adapter launch
+- Preserved invariant: containment remains mandatory; the decision authorizes a forward specification revision replacing only the obsolete mechanism-specific assertion with accepted 014h behavior and corresponding regressions
+- Unchanged: every other frozen 014g requirement, artifact, candidate identity, evaluator revision, and historical attempt
+- No role execution or frozen-artifact revision was performed by this record.
