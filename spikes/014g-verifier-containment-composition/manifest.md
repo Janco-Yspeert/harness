@@ -378,3 +378,32 @@
 - Limitations: independent evaluation has not run; `git diff --check` against
   the shared dirty worktree could not hash unrelated restricted workflow
   ledgers; wall-clock time and token usage unavailable.
+
+## Implementation (forward recovery checkpoint) — execution fa84c54d-51ff-4c78-89c2-da3b38aa6819
+
+- Skill: `implementation`, contract version 5; branch `feat/spike-014`; Role
+  Grant
+  `sha256:a2b70f424003fdf6dbeadadd9d078e44980734c5839c44c087f67152e3223060`
+- Inputs: brief
+  `sha256:a0fbd91a0e41eed3c2e54e7450ab1e25400f71add68b0f02e10f54bc05629559`,
+  Design Map
+  `sha256:32b38b26394b614dd9d293c056b67af75e9b89e0284c14eeba07c5d7e706813a`,
+  coverage
+  `sha256:112be8e3c1fbc8be8d67de29321256d9b9da00c3c1768b290bf4c1dd7a027073`,
+  requirements
+  `sha256:91d25c8bc3594a51a0767a426cbac6744fc2d206d9c869b64a6e5a7fee64175b`; no
+  implementation feedback bound
+- Result: succeeded; no product change. Candidate
+  `e8428205a58a1c12d6f17d9a80a160b78c754cb9` remains an ancestor of the
+  pre-entry checkpoint, with no non-014g path changed since that candidate.
+- Output: this entry only; the candidate content remains unchanged.
+- Visible checks: `npm run typecheck`, `npm run lint`, and
+  `npm run format:check` passed. `test/candidate-subject.test.ts` passed.
+  `npm test` could not complete: 6 test files passed and 13 failed because
+  this worker sandbox denies nested Git fixture creation (`spawnSync git
+  EPERM`); direct execution of `test/evidence-action.test.ts` confirms the 9
+  affected 014g cases fail at that environmental setup boundary, while its 2
+  non-fixture cases pass.
+- Limitations: independent evaluation has not run; the shared dirty worktree
+  contains unrelated restricted workflow ledgers, so full working-tree diff
+  checks cannot run; wall-clock time and token usage unavailable.
