@@ -1,6 +1,6 @@
 # Spike 014j - Bootstrap-Closed Evaluation Substrate
 
-**Status:** Draft for Brief Readiness and human review; not frozen
+**Status:** Revised draft after Brief Readiness; not frozen
 
 **Trusted methodology:** sequence `5`, methodology `sha256:47296d5c73c7833002c482ed7ed75d67ecf21c7aec6fa62a5c84aeeab954effb`, revision `9169ccf7d4543c214e7b7890ee29e428a5f8c01a`
 
@@ -239,12 +239,27 @@ Seal evidence outside every subject-writable workspace.
 
 Tampering, omission, truncation or substitution must fail closed.
 
+Before a successful consuming evaluator result, the sealed bundle resides only
+in host-controlled evaluator-private storage available to the predecessor
+trusted evaluator under its existing workspace authority. Exact private
+procedure material, host-owned private inputs, raw subject output derived from
+those inputs and other evaluator-private evidence must not be copied into the
+public repository or public workflow ledger merely because preparation
+succeeded.
+
 The host must append one durable canonical preparation record or equivalent
 inspectable lifecycle fact binding the exact evidence bundle to its authority
-and identities.
+and identities. That record may be public only as a safe projection containing
+identities, authority provenance, lifecycle state and the private bundle's
+sealed identity. It must not contain evaluator-private procedure/input bytes,
+raw private output or other private mechanics.
 
-The evidence may be committed/published into the public repository only through
-the existing host-owned publication boundary.
+Eligible private evidence may be committed or published into the public
+repository only through the existing host-owned successful-result promotion
+boundary for the later consuming evaluator attempt. Preparation alone never
+authorizes release. Private bundles and safe public preparation records are
+retained as immutable history and are not rewritten when a later attempt
+passes, fails or is blocked.
 
 The prepared observation is evidence, not a verdict.
 
@@ -261,8 +276,11 @@ It must not:
 ## 1.5 Consumption by later trusted evaluation
 
 The prepared evidence must be self-describing and identity-bound enough that a
-later trusted evaluator can inspect it using authority already available to the
-current trusted evaluator, such as repository read and git inspection.
+later trusted evaluator can resolve the public-safe preparation identity to the
+exact sealed private bundle and inspect that bundle using authority already
+available to the current trusted evaluator: its configured evaluator-private
+workspace plus repository read, local computation and Git inspection. No new
+worker permission, host action or candidate-methodology authority is required.
 
 014j does not require changing the current trusted evaluator contract merely to
 consume the evidence.
@@ -281,9 +299,9 @@ current trusted host/human authority
 candidate behavior under test
         |
         v
-host-owned sealed prepared evidence
+host-owned evaluator-private sealed evidence
         |
-        | committed identity / canonical record
+        | sealed identity / public-safe canonical record
         v
 current trusted evaluator can inspect it
 without acquiring candidate authority
@@ -322,13 +340,30 @@ The mandatory invariant is:
 A profile may launch with selector `sonnet` and legitimately attest
 `claude-sonnet-5-5` without failing solely because the strings differ.
 
-Provider attestation remains recorded as provenance.
+The existing executor-profile `model` value and workflow-grant executor
+`model` value are provider launch selectors, not exact concrete-model
+constraints. When both are present, the grant selector overrides the profile
+selector for that launch, preserving the existing selection precedence.
+
+In the absence of an explicit exact-model constraint, Harness does not infer
+family membership or compare the selector string with the provider-attested
+concrete identity. Provider acceptance of the launch selector determines
+whether the requested launch is available; the concrete attestation is
+recorded as provenance. This deliberately avoids a generic alias-membership
+oracle that Harness cannot define without provider-specific equivalence data.
+
+An exact concrete-model requirement is represented separately from those
+selector fields. The exact field name is a Design Map decision, but it must not
+overload either existing selector field.
 
 If an exact concrete model is explicitly required:
 
-- the adapter must be capable of enforcing that constraint;
+- the exact constraint takes precedence over a non-exact selector for
+  eligibility and launch planning;
+- the adapter must be capable of enforcing that constraint at launch;
 - required attestation must be available where policy requires confirmation;
-- concrete mismatch fails closed;
+- the provider-attested concrete identity is compared literally with the exact
+  constraint and mismatch fails closed;
 - unavailable required attestation is not confirmation.
 
 Do not introduce a hard-coded alias table such as:
@@ -375,10 +410,10 @@ The abstraction must be generic across registered providers.
 | **AC03 - Exact reconstruction and reuse** | The operation reconstructs the exact candidate evaluator composition from committed identities and reuses the accepted 014h/014i containment and candidate-subject machinery. No second candidate-subject engine or hand-written approximation is introduced. |
 | **AC04 - Host-input integrity** | Host-owned procedure/input material is selected by bounded identity-bearing references. Wrong candidate, revision, inventory, procedure, material or input identity fails closed. Caller-supplied arbitrary private paths, host paths or replacement private contents are rejected. |
 | **AC05 - Evidence separation** | Sealed evidence separately records host-created topology, subject-visible paths, subject-writable paths, host-owned input identities, subject-authored output and host-side before/after observations. Host-created topology is not itself treated as subject exposure. |
-| **AC06 - Evidence authority** | Prepared evidence is sealed outside every subject-writable workspace, bound to the exact candidate/composition/runtime/procedure/input identities and represented by a canonical inspectable preparation record. The record cannot finalize verification, establish trust, promote methodology or advance the real verification workflow. |
-| **AC07 - Later inspectability** | Prepared observation evidence can be named by exact identity and inspected by the predecessor trusted evaluator using authority it already possesses. Demonstrating this property must not require adding a new permission to the predecessor evaluator contract. |
+| **AC06 - Evidence authority** | Prepared evidence is sealed in host-controlled evaluator-private storage outside every subject-writable workspace, bound to the exact candidate/composition/runtime/procedure/input identities and represented by a canonical inspectable preparation record. Any public record is a safe identity/provenance/lifecycle projection and contains no evaluator-private procedure/input bytes or derived raw private output. Preparation alone cannot release private evidence, finalize verification, establish trust, promote methodology or advance the real verification workflow. Eligible private evidence can become public only through the existing successful-result promotion boundary of a later consuming evaluator attempt. |
+| **AC07 - Later inspectability** | Prepared observation evidence can be named by the safe record's exact identity, resolved to the exact sealed private bundle and inspected by the predecessor trusted evaluator using its already-configured evaluator-private workspace, repository read, local-computation and Git-inspect authority. Demonstrating this property must not require adding a new permission, worker action or host action to the predecessor evaluator contract. |
 | **AC08 - Model semantic separation** | Executor profile identity, provider launch selector/model family, provider-attested concrete model identity and explicit exact-model constraint are distinct in the runtime model and observable execution provenance. |
-| **AC09 - Alias-safe protected execution** | A protected evaluator-style launch using a family/selector such as `sonnet` may accept and record a different concrete provider attestation such as `claude-sonnet-5-5` when no exact concrete identity was required. No hard-coded alias equivalence table is used. |
+| **AC09 - Alias-safe protected execution** | Existing profile/grant `model` values are launch selectors, with the grant selector retaining override precedence. When no separate exact concrete identity is required, Harness does not compare selector and attestation strings or infer family membership: a protected evaluator-style launch using `sonnet` may accept and record `claude-sonnet-5-5`. No hard-coded alias equivalence table is used. |
 | **AC10 - Exact-model fail closed** | When an exact concrete model is explicitly required, mismatch fails closed. If required attestation cannot be obtained, Harness does not mark the constraint confirmed. |
 | **AC11 - Provider neutrality** | Deterministic coverage exercises the model-semantics abstraction across at least two registered-provider/profile shapes or equivalent generic fixtures, proving the implementation does not encode a Claude-only exception. |
 | **AC12 - Regression preservation** | Existing trusted-methodology reconstruction, 014h containment, 014i candidate-subject, evaluator-private, governed execution, evidence integrity and executor-selection regressions remain green except for assertions explicitly superseded by the corrected model semantics. |
@@ -399,18 +434,26 @@ At minimum deterministic coverage must establish:
 6. wrong private inventory identity fails;
 7. unknown or mismatched procedure identity fails;
 8. caller-supplied arbitrary private path/content fields fail;
-9. unrelated evaluator-private inventory material is not exposed;
+9. unrelated evaluator-private inventory material is not exposed, and neither
+   private procedure/input bytes nor raw private output enter the public
+   repository or public ledger before an existing successful-result promotion;
 10. host-owned inputs are read-only to the subject where required;
 11. sealed evidence distinguishes host-created, visible, writable and externally
     observed state;
 12. omission/tampering of required evidence bindings invalidates the bundle;
-13. the canonical preparation record is bound to the exact evidence identity;
+13. the canonical preparation record is bound to the exact private evidence
+    identity, and any public projection contains only safe identity,
+    provenance and lifecycle facts;
 14. preparation does not enter an authoritative verification result or trusted
     methodology transition;
-15. existing trusted evaluator read/git-inspect authority is sufficient to
-    inspect a committed prepared bundle and its bindings;
-16. family/alias launch selection accepts a different concrete attestation when
-    no exact concrete model was required;
+15. the predecessor trusted evaluator's existing evaluator-private workspace,
+    repository-read, local-computation and git-inspect authority is sufficient
+    to resolve and inspect the sealed bundle and its bindings without a new
+    capability; successful-result promotion is the only route by which
+    eligible bundle bytes become public;
+16. profile and grant selectors retain their precedence, and a non-exact
+    selector launch records a different concrete attestation without comparing
+    the strings when no exact concrete model was required;
 17. exact-model mismatch fails;
 18. required-but-unavailable exact attestation is not treated as confirmation;
 19. generic model semantics are exercised beyond one Claude-specific fixture;
