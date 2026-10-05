@@ -43,3 +43,17 @@ Append-only execution history. This manifest records runs; it is not canonical f
 - Output: `feedback.md`, `sha256:3728747504aa52a95f20cee3098cd6e87c025f2ed7b5c804c74d8b8d9094abf0`
 - Checks: bound input identity verified; complete 570-line brief read; referenced predecessor, successor-authority, and trusted-methodology Git objects resolved; relevant public contracts, implementation, visible tests, accepted Outcomes, and As-Built evidence inspected; revised draft and prior readiness evidence cross-checked.
 - Limitations: evaluator-private material and workflow ledgers were not inspected; product tests were not run because this review changed no product code.
+
+## 2026-10-05T11:52:10+02:00 — Design Map
+
+- Execution: `f8c21182-49a5-4e3c-a461-432607b271d3`
+- Skill: `design-map` contract version `4`, `sha256:238af12bbee012a784f234f2aaab9d4e783a58ec1b7c0257937bc54a16010136`
+- Role contract: `sha256:d81228bf85698e12d6409e6ccf51b48ca94102eebe0be76bd162fadac557b60b`
+- Role Grant: `sha256:b55d6927ef1ffaae6e7ab4da32b5cf2c85bf59b583b8a9d330eb7bb5cc74f010`
+- Input: `spike.md`, `sha256:6b616066fa2a616e9c649fad3d96bcd0a684a5d674cb430ebb7f74c1a55f994d`, committed at `96c218f`
+- Result: succeeded
+- Output: `design-map.md`, `sha256:79c77b7924414cd2290068b9376c2ae423be8546a4f448e348e9756fe87ae910`
+- Shared contract: one root-authorized prepared-observation operation with evaluator-private sealed evidence and a public-safe canonical record; distinct executor profile, launch-selector, exact-model and provider-attestation semantics
+- Checks: bound brief identity and committed bytes matched; complete brief, relevant public contracts, accepted 014h/014i As-Built and Outcome records, implementation surfaces and visible tests inspected; Design Map passed Prettier and `git diff --check`
+- Limitations: evaluator-private material and workflow ledgers were not inspected; product tests were not run because this change establishes a Markdown design contract and changes no product code
+- Measurements: 46 Design Map lines; provider calls 0; runtime token and wall-clock measurements unavailable
