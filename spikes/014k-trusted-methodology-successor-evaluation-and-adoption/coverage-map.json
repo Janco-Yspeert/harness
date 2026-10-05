@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "spike": "014k-trusted-methodology-successor-evaluation-and-adoption",
+  "evaluationRequirements": "sha256:9b83a28e40660a34ed778033b494efbc3723424378a6bcb929b5b7365af5b06a",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 14,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:1db3e721c2416b7045983626b4bbd47af5b12703780acf42083e012328e9dad2",
+    "privateInventoryIdentity": "sha256:aadeff9c7d9304fc1351bdf50710e72f573274e3b0e70e80b8a8d79680bf59cf",
+    "validatorResultBinding": "sha256:d09e2bfaa4e9650d568cc2f8d8c060788a1ec7073f12fa262aeb19d88a7886e1",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 15
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; bootstrap-closure invariant",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "M1"
+      ],
+      "sufficiency": "E1 shows the candidate does not change trusted history, so nothing the candidate introduces became authoritative before the PASS; M1 reviews that every AC01 procedure is executable under trusted N plus accepted pre-K substrate."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; design-map.md shared contract 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E3",
+        "R1",
+        "M2"
+      ],
+      "sufficiency": "E3 shows no accepted regression test was removed; R1 runs the full suite including the accepted 014h/014i/014j tests; M2 reviews that the 014j guards are only extended, never weakened or replaced."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03; design-map.md shared contract 4",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M2"
+      ],
+      "sufficiency": "R1 requires and runs tests that the future declaration is closed, canonical, identity-bound and rejects unknown fields, paths and inline content; M2 reviews the declaration facts against the Design Map."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; design-map.md shared contract 4 and invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M2"
+      ],
+      "sufficiency": "R1 requires and runs tests that candidate-subject results cannot finalize verification, mutate trusted state, alter methodology trust or adopt; M2 reviews the structural non-authority."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; design-map.md shared contract 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M2"
+      ],
+      "sufficiency": "R1 requires and runs tests that sealed prepared evidence is recomputed by trusted N and mismatched or tampered evidence is rejected; M2 reviews that the candidate has no role in the admission decision."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; design-map.md shared contract 6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M3"
+      ],
+      "sufficiency": "R1 requires and runs a controlled archive-failure test that leaves the PASS unchanged and blocks closeout and adoption by policy; M3 reviews that evaluation fact and archive record are separate and the evaluator emits no archive eligibility."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07; design-map.md shared contract 7",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M3"
+      ],
+      "sufficiency": "R1 requires and runs tests that an allocated attempt ending without a result is NONTERMINAL with no terminal artifact and that a later PASS archives despite it; M3 reviews the attempt lifecycle against the Design Map."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08; design-map.md shared contract 7",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M3"
+      ],
+      "sufficiency": "R1 requires and runs tests that TERMINAL needs exact result evidence, LOST needs a durable prior record, and a never-produced artifact is not LOST; M3 reviews the state definitions."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09; design-map.md shared contract 8",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M3"
+      ],
+      "sufficiency": "R1 requires and runs tests that an identity-valid active revision archives directly without a historical copy and with preserved identity, freeze metadata, inventory, bytes and lineage; M3 reviews the archive source."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10; design-map.md shared contract 8",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M3"
+      ],
+      "sufficiency": "R1 requires and runs tests that changed or missing bytes fail closed with no partial archive reported complete and that provenance is recorded; M3 reviews that the host derives the plan from policy and exact identities."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11; design-map.md shared contract 1 and invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "E2",
+        "M4"
+      ],
+      "sufficiency": "E1 and E2 show the candidate leaves trusted history unchanged and exposes no worker route to adoption; M4 reviews that the verdict is produced only by trusted N and binds commit, methodology identity, predecessor and admitted evidence."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12; design-map.md shared contract 2",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2",
+        "R1",
+        "M4"
+      ],
+      "sufficiency": "E2 shows adoption is not a worker route; R1 requires and runs tests refusing every drift, stale and replay case; M4 reviews that adoption is a distinct human/root authority artifact bound to the exact identities."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; design-map.md shared contract 2 and invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "R1",
+        "M4"
+      ],
+      "sufficiency": "E1 shows the evaluated candidate does not append to trusted history; R1 requires and runs tests that the append is forward-only from sequence 5 with earlier records unchanged; M4 reviews the trust-transition ordering."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md AC14; design-map.md shared contract 3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M5"
+      ],
+      "sufficiency": "R1 requires and runs a fixture test that a fresh ordinary allocation after an adoption binds the adopted methodology through trust equivalence while earlier grants stay bound to theirs; M5 reviews that cutover evidence is distinct from the PASS."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md AC15; design-map.md design decisions",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E3",
+        "R1",
+        "M5"
+      ],
+      "sufficiency": "E3 shows no accepted regression test was removed; R1 runs the full suite; M5 reviews that any changed assertion is traceable to a frozen requirement superseding old evaluator or archive semantics."
+    }
+  ]
+}
