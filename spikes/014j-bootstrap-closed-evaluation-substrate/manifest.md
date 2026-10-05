@@ -86,3 +86,13 @@ Append-only execution history. This manifest records runs; it is not canonical f
 - Limitations: the broader `npm test` run was attempted but the managed environment denied test-created Git subprocesses and loopback listeners with `EPERM`, denied unrelated workflow-ledger reads with `EACCES`, and left one integration test process without progress until interrupted. The same run's environment-independent tests and all focused 014j tests passed. No live provider or credentials were used.
 - Restricted evaluator material inspected: none. Workflow ledgers were not inspected.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-05 — Evaluator Verify attempt 002
+
+- Execution: `b8742fa5-ce30-4ad6-a59e-6e4953bdde97`
+- Skill: `evaluator` contract version `14`, `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`; mode `verify`
+- Role Grant: `sha256:4ab6c048561141357c42daafd3ff4e886f9c2fa51b9614a404fb55eed21118a9`
+- Inputs: candidate `b1e505d48c6dfe7f40f3525093b65cdf9fa2a8ee`; evaluator revision `001`; coverage `sha256:52e39e2a374fa9e3002b379bb5535b9830b8fcd66fa9338f066e425451c622ea`
+- Result: FAIL — IMPLEMENTATION_FAILURE (see `verification-result.json`, `feedback.md`)
+- Checks: frozen identities matched; static executable cases passed; typecheck, lint, format passed; full suite failures were environmental and reproduce at baseline; required test coverage of the host operation is missing
+- Measurements: provider calls 0; runtime token and wall-clock measurements unavailable
