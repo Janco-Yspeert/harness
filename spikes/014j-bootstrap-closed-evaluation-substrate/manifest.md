@@ -146,3 +146,17 @@ Append-only execution history. This manifest records runs; it is not canonical f
 - Result: PASS (see `verification-result.json`); promotion plan INELIGIBLE (incomplete prior attempt history), no archival requested
 - Checks: frozen identities matched; static executable cases passed; typecheck, lint, format passed; `npm test` 244/245 in a clean candidate checkout, the one failure also occurring at the pre-implementation baseline (environmental)
 - Measurements: provider calls 0; runtime token and wall-clock measurements unavailable
+
+## 2026-10-05T15:18:10+02:00 — As-Built
+
+- Execution: `d51234aa-8376-4e4c-83fc-27d8193712fb`
+- Skill: `as-built` contract version `4`, `sha256:dc3c422691fb36a292b49db411ff9aefd5199f8602b73ef87428fd0a09ea534b`
+- Role contract: `sha256:68fe500c291ea8c3a2419c9176d87152e4fc774d2396ba1873b6e299fb2ac926`
+- Role Grant: `sha256:c867fcd3e9b42cc47137a3d3ff6ac8c76292837e57bd5ce27a1300173ff6c13b`
+- Inputs: candidate `93ade31b1dcb6487798b27e812dc443fce30af43`; frozen brief `sha256:6b616066fa2a616e9c649fad3d96bcd0a684a5d674cb430ebb7f74c1a55f994d`; Design Map `sha256:79c77b7924414cd2290068b9376c2ae423be8546a4f448e348e9756fe87ae910`; final verification `sha256:c1517668c877eb920e4cc8ef2b2cf0343342642542a1af55fd0abf4b46c7a668`; promotion `sha256:b929bd89f8b46ad6f068d02dae59279e8847c1bbc2696eccff0c17ee4651ddc7`
+- Promotion checkpoint: `69cd431dfcab48b48d576ee93acef3384db000cf`
+- Result: succeeded — no Missing, Contradictory, or Extra discrepancies
+- Output: `as-built.md`, `sha256:3cbd46d2d64756a3b3954ce353475bdc3feed9c7065c389d32e9b9b823290dac`
+- Checks: all bound input identities matched; promotion record identity matched and was committed separately; exact candidate diff, relevant source and visible tests, accepted verification result, and promoted target-spike evidence inspected; artifact passed `git diff --check`; evaluation was not rerun
+- Measurements: candidate delta from Design Map baseline `32bdc94b65c08e3677f32c5baee8d277f2fc2830` comprised 16 files, 1,412 insertions and 117 deletions; As-Built artifact 23 lines; provider calls 0
+- Measurement cutoff: immediately before this manifest update
