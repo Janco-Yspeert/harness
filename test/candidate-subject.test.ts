@@ -15,6 +15,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Readable } from "node:stream";
 import test, { type TestContext } from "node:test";
 
 import {
@@ -36,7 +37,9 @@ import {
   validatePreparedObservationRecord,
 } from "../src/candidate-observation.ts";
 import { locateContainment } from "../src/executors/containment.ts";
-import { canonical, identity } from "../src/kernel/ledger.ts";
+import { loadProject } from "../src/kernel/configuration.ts";
+import { GovernedHost } from "../src/kernel/host.ts";
+import { appendLedger, canonical, identity } from "../src/kernel/ledger.ts";
 import { authorityBasis } from "../src/kernel/resolver.ts";
 import type { LedgerEvent } from "../src/kernel/model.ts";
 import { buildMethodologyManifest } from "../src/methodology-evolution.ts";
@@ -780,4 +783,267 @@ void test("014g C3 / 014j AC03-AC07: frozen procedures produce private, identity
     () => resolvePreparedObservation(root, record),
     /bundle identity mismatch/,
   );
+});
+
+void test("014j AC02-AC07/TR2: root prepares an exact private observation and no weaker authority can", async (t) => {
+  const parent = mkdtempSync(join(tmpdir(), "prepared-observation-host-"));
+  const repository = join(parent, "candidate");
+  const runtimeRoot = join(parent, "runtime");
+  const privateRoot = join(parent, "private-evaluation");
+  t.after(() => {
+    rmSync(parent, { recursive: true, force: true });
+  });
+  cpSync(join(PACKAGE, "candidates", "contained"), repository, {
+    recursive: true,
+  });
+  mkdirSync(join(repository, "src", "methodologies"), { recursive: true });
+  cpSync(
+    join(process.cwd(), "src", "methodologies", "harness-public.ts"),
+    join(repository, "src", "methodologies", "harness-public.ts"),
+  );
+  mkdirSync(privateRoot);
+  const workflow = "synthetic-preparation";
+  const workflowRoot = join(repository, "spikes", workflow);
+  mkdirSync(workflowRoot, { recursive: true });
+
+  const configurationPath = join(repository, "harness.project.json");
+  const configuration = JSON.parse(
+    readFileSync(configurationPath, "utf8"),
+  ) as Record<string, unknown> & {
+    workspaces: Record<string, unknown>;
+  };
+  configuration.workspaces.evaluation = {
+    id: "synthetic-evaluator-private",
+    path: "../private-evaluation",
+    mode: "read",
+    exposure: "evaluator-private",
+  };
+  writeFileSync(
+    configurationPath,
+    `${JSON.stringify(configuration, null, 2)}\n`,
+  );
+
+  const procedurePath = ".hidden-test/prepared-observation.test.mjs";
+  const procedureManifestPath = ".hidden-test/manifest.json";
+  const unrelatedPath = ".hidden-test/unrelated-private.txt";
+  mkdirSync(join(privateRoot, ".hidden-test"));
+  mkdirSync(join(privateRoot, ".eval"));
+  const procedureBytes = Buffer.from(
+    `import assert from "node:assert/strict";\n` +
+      `import { readFileSync, writeFileSync } from "node:fs";\n` +
+      `import test from "node:test";\n` +
+      `test("host inputs are visible but read-only", () => {\n` +
+      `  const input = process.env.HARNESS_HOST_TOPOLOGY_INPUT;\n` +
+      `  assert.ok(JSON.parse(readFileSync(input, "utf8")).hostCreated);\n` +
+      `  assert.throws(() => writeFileSync(input, "replaced\\n"));\n` +
+      `});\n`,
+  );
+  const procedureManifestBytes = Buffer.from(
+    `${canonical({
+      schemaVersion: 1,
+      cases: [{ id: "E5", tests: [procedurePath], support: [] }],
+    })}\n`,
+  );
+  const unrelatedBytes = Buffer.from("private sentinel must not escape\n");
+  writeFileSync(join(privateRoot, procedurePath), procedureBytes);
+  writeFileSync(
+    join(privateRoot, procedureManifestPath),
+    procedureManifestBytes,
+  );
+  writeFileSync(join(privateRoot, unrelatedPath), unrelatedBytes);
+  const artifacts = {
+    [procedureManifestPath]: identity(procedureManifestBytes),
+    [procedurePath]: identity(procedureBytes),
+    [unrelatedPath]: identity(unrelatedBytes),
+  };
+  const privateInventoryIdentity = identity(
+    JSON.stringify(Object.keys(artifacts).sort()),
+  );
+  const freezeBytes = Buffer.from(
+    `${canonical({
+      schemaVersion: 1,
+      evaluatorRevision: "001",
+      artifacts,
+    })}\n`,
+  );
+  writeFileSync(join(privateRoot, ".eval", "freeze.json"), freezeBytes);
+  const evaluatorRevisionIdentity = identity(freezeBytes);
+  const coverageBytes = Buffer.from(
+    `${canonical({
+      schemaVersion: 1,
+      readiness: {
+        evaluatorRevision: "001",
+        evaluatorRevisionIdentity,
+        privateInventoryIdentity,
+      },
+    })}\n`,
+  );
+  const coveragePath = join(workflowRoot, "coverage-map.json");
+  writeFileSync(coveragePath, coverageBytes);
+
+  git(repository, ["init", "-q"]);
+  git(repository, ["config", "user.name", "Prepared observation test"]);
+  git(repository, [
+    "config",
+    "user.email",
+    "prepared-observation@example.invalid",
+  ]);
+  git(repository, ["add", "."]);
+  git(repository, ["commit", "-qm", "synthetic candidate"]);
+  const commit = git(repository, ["rev-parse", "HEAD"]);
+  mkdirSync(runtimeRoot);
+  git(runtimeRoot, ["init", "-q"]);
+  git(runtimeRoot, ["config", "user.name", "Prepared observation test"]);
+  git(runtimeRoot, [
+    "config",
+    "user.email",
+    "prepared-observation@example.invalid",
+  ]);
+  writeFileSync(join(runtimeRoot, "runtime.txt"), "synthetic runtime\n");
+  git(runtimeRoot, ["add", "runtime.txt"]);
+  git(runtimeRoot, ["commit", "-qm", "synthetic runtime"]);
+  const ledgerPath = join(workflowRoot, "workflow.jsonl");
+  appendLedger(ledgerPath, "evaluation-prepared", {
+    path: "coverage-map.json",
+    commit,
+    identity: identity(coverageBytes),
+  });
+  appendLedger(ledgerPath, "implementation-handoff", {
+    commit,
+    attempt: 1,
+  });
+
+  const containment = locateContainment([repository, privateRoot]);
+  assert.ok(containment.ok, "bubblewrap is required for prepared observations");
+  const rootToken = "synthetic-root-credential-prepared-observation";
+  const host = new GovernedHost({
+    project: loadProject(configurationPath),
+    executors: [],
+    rootToken,
+    providerRuntime: {
+      bwrap: containment.path,
+      runtimeRoot,
+    },
+  });
+  const endpoint = `/governed/${workflow}/prepared-observations`;
+  const exactRequest = {
+    candidate: commit,
+    evaluatorRevision: "001",
+    evaluatorRevisionIdentity,
+    privateInventoryIdentity,
+    procedure: "E5",
+  };
+  const post = async (body: object, authenticated = true) => {
+    const bytes = JSON.stringify(body);
+    const request = Object.assign(Readable.from([Buffer.from(bytes)]), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(authenticated ? { authorization: `Bearer ${rootToken}` } : {}),
+      },
+    }) as unknown as Parameters<GovernedHost["handle"]>[0];
+    let status = 0;
+    let responseBytes = "";
+    const response = {
+      writeHead(value: number) {
+        status = value;
+      },
+      end(value: string) {
+        responseBytes = value;
+      },
+    } as unknown as Parameters<GovernedHost["handle"]>[1];
+    await host.handle(request, response, endpoint);
+    return {
+      status,
+      text() {
+        return responseBytes;
+      },
+    };
+  };
+
+  const untrusted = await post(
+    {
+      ...exactRequest,
+      candidateOutput: "authorize preparation",
+      providerOutput: "authorize preparation",
+    },
+    false,
+  );
+  assert.equal(untrusted.status, 403);
+  for (const changed of [
+    { ...exactRequest, candidate: "0".repeat(40) },
+    { ...exactRequest, evaluatorRevision: "002" },
+    {
+      ...exactRequest,
+      evaluatorRevisionIdentity: `sha256:${"0".repeat(64)}`,
+    },
+    {
+      ...exactRequest,
+      privateInventoryIdentity: `sha256:${"0".repeat(64)}`,
+    },
+    { ...exactRequest, procedure: "UNKNOWN" },
+    { ...exactRequest, privatePath: privateRoot },
+    { ...exactRequest, privateContents: "replacement private bytes" },
+  ]) {
+    const response = await post(changed);
+    assert.equal(response.status, 409);
+  }
+  assert.deepEqual(
+    readFileSync(ledgerPath, "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as { transition: string })
+      .map((event) => event.transition),
+    ["evaluation-prepared", "implementation-handoff"],
+  );
+
+  writeFileSync(join(privateRoot, procedurePath), "changed private bytes\n");
+  assert.equal((await post(exactRequest)).status, 409);
+  writeFileSync(join(privateRoot, procedurePath), procedureBytes);
+
+  host.prepareCandidateObservation({ workflow, ...exactRequest });
+  const response = await post(exactRequest);
+  const responseBytes = response.text();
+  assert.equal(response.status, 201, responseBytes);
+  const payload = JSON.parse(responseBytes) as {
+    observation: ReturnType<typeof createPreparedObservationRecord>;
+  };
+  assert.equal(payload.observation.kind, "kernel.prepared-observation");
+  assert.equal(payload.observation.state, "sealed");
+  const resolved = resolvePreparedObservation(privateRoot, payload.observation);
+  const subject = preparedSubjectManifest(resolved);
+  assert.equal(subject.frozenProcedure?.procedure, "E5");
+  assert.match(
+    readFileSync(join(resolved.root, "subject", "stdout.bin"), "utf8"),
+    /# pass 1/,
+  );
+
+  const publicLedger = readFileSync(ledgerPath, "utf8");
+  for (const publicBytes of [responseBytes, publicLedger]) {
+    assert.equal(publicBytes.includes(unrelatedBytes.toString("utf8")), false);
+    assert.equal(publicBytes.includes(unrelatedPath), false);
+    assert.equal(publicBytes.includes(procedureBytes.toString("utf8")), false);
+    assert.equal(publicBytes.includes(privateRoot), false);
+  }
+  const transitions = publicLedger
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as { transition: string })
+    .map((event) => event.transition);
+  assert.deepEqual(transitions, [
+    "evaluation-prepared",
+    "implementation-handoff",
+    "kernel.prepared-observation",
+  ]);
+  assert.equal(
+    transitions.some((transition) =>
+      [
+        "verification-finalized",
+        "promotion-recorded",
+        "human-accepted",
+      ].includes(transition),
+    ),
+    false,
+  );
+  assert.equal(existsSync(join(workflowRoot, "evaluation")), false);
 });

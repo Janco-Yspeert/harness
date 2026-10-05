@@ -13,6 +13,21 @@ function refuse(reason: string): never {
   throw new Error(`external project refused: ${reason}`);
 }
 
+function git(root: string, args: readonly string[]): string {
+  try {
+    return execFileSync("git", [...args], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
+  } catch (error) {
+    const completed = error as { status?: unknown; stdout?: unknown };
+    if (completed.status === 0 && typeof completed.stdout === "string")
+      return completed.stdout;
+    throw error;
+  }
+}
+
 export function external(project: Project): boolean {
   return project.methodologyRoot !== undefined;
 }
@@ -23,13 +38,7 @@ export function methodologyRoot(project: Project): string {
 }
 
 export function gitTopLevel(path: string): string {
-  return realpathSync(
-    execFileSync("git", ["rev-parse", "--show-toplevel"], {
-      cwd: path,
-      encoding: "utf8",
-      stdio: "pipe",
-    }).trim(),
-  );
+  return realpathSync(git(path, ["rev-parse", "--show-toplevel"]).trim());
 }
 
 // `a` equals or contains `b` (both real paths).
@@ -89,16 +98,12 @@ export function runtimeCommit(root: string): {
   let dirty: string;
   try {
     repository = gitTopLevel(root);
-    commit = execFileSync("git", ["rev-parse", "HEAD"], {
-      cwd: repository,
-      encoding: "utf8",
-      stdio: "pipe",
-    }).trim();
-    dirty = execFileSync(
-      "git",
-      ["status", "--porcelain", "--untracked-files=no"],
-      { cwd: repository, encoding: "utf8", stdio: "pipe" },
-    ).trim();
+    commit = git(repository, ["rev-parse", "HEAD"]).trim();
+    dirty = git(repository, [
+      "status",
+      "--porcelain",
+      "--untracked-files=no",
+    ]).trim();
   } catch {
     refuse("Harness runtime is not a Git checkout");
   }

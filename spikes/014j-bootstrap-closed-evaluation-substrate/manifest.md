@@ -96,3 +96,18 @@ Append-only execution history. This manifest records runs; it is not canonical f
 - Result: FAIL — IMPLEMENTATION_FAILURE (see `verification-result.json`, `feedback.md`)
 - Checks: frozen identities matched; static executable cases passed; typecheck, lint, format passed; full suite failures were environmental and reproduce at baseline; required test coverage of the host operation is missing
 - Measurements: provider calls 0; runtime token and wall-clock measurements unavailable
+
+## 2026-10-05T14:25:43+02:00 — Implementation attempt 2
+
+- Execution: `bbce620a-c3af-40b6-86c8-757cda55c395`
+- Skill: `implementation` contract version `5`, `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+- Role contract: `sha256:2bef8564c17485cd478ca8e72b0d45406d4e90684a82b5a8faace8e9523b0305`
+- Role Grant: `sha256:eb931703bf8a6e5a177b020446054911852c6e9d3605ca65ffb343c2dce7c8bd`
+- Inputs: frozen brief `sha256:6b616066fa2a616e9c649fad3d96bcd0a684a5d674cb430ebb7f74c1a55f994d`; frozen Design Map `sha256:79c77b7924414cd2290068b9376c2ae423be8546a4f448e348e9756fe87ae910`; prepared coverage `sha256:52e39e2a374fa9e3002b379bb5535b9830b8fcd66fa9338f066e425451c622ea`; public evaluation requirements `sha256:64f5c7f773c19d8fbd4e6dc842ef49a3d1ceab30b251eb250c6d3a46a574c658`; committed implementation-failure feedback `sha256:2c8475d5c60402e6d58e1bd8f004f9db9c101f82450abc921b04ae414fdfa698`. All bound bytes and committed provenance matched.
+- Result: succeeded — corrected candidate ready for independent verification; no claim of evaluator PASS.
+- Outputs: deterministic host-operation coverage for root-only authorization, closed identity-bound requests, private material isolation, read-only host inputs, sealed resolution and absence of workflow-finalization or promotion effects; injectable exact runtime identity for deterministic host tests; successful nested Git results remain usable when the managed sandbox reports `EPERM` with exit status 0.
+- Output content identity before this manifest entry: `sha256:58e2cd2dfc602112aff2a98d3889bbb9c84f51dd1d17c6fc238fac4a138ba9f1` over the staged `git diff --cached --binary` against Design Map baseline `32bdc94b65c08e3677f32c5baee8d277f2fc2830`, limited to candidate source and tests. This excludes this manifest update.
+- Checks: `npm run typecheck`, `npm run lint`, `npm run format:check` and scoped staged `git diff --check` passed. The complete candidate-subject test file passed 10 tests and reached the new real host-operation path; its new test was then refused only because this managed sandbox denies unprivileged namespaces. The broader `npm test` run was attempted and interrupted after approximately 90 seconds without further progress; reported failures were the known managed-environment `EPERM`, containment and loopback/permission failures also documented at the baseline. The external-project file separately reported 4 passes and 13 environment-dependent failures.
+- Limitations: the prepared-observation success path requires working unprivileged namespaces and therefore could not complete in this managed sandbox. No live provider or credentials were used.
+- Restricted evaluator material inspected: none. Workflow ledgers were not inspected.
+- Measurement cutoff: immediately before this manifest update.

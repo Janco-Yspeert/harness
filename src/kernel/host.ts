@@ -96,6 +96,20 @@ class HostRefusal extends Error {
     this.category = category;
   }
 }
+function gitBytes(root: string, args: readonly string[]): Buffer {
+  try {
+    return execFileSync("git", [...args], {
+      cwd: root,
+      encoding: null,
+      stdio: "pipe",
+    });
+  } catch (error) {
+    const completed = error as { status?: unknown; stdout?: unknown };
+    if (completed.status === 0 && Buffer.isBuffer(completed.stdout))
+      return completed.stdout;
+    throw error;
+  }
+}
 export class GovernedHost {
   readonly kernel: ExecutionKernel;
   readonly #rootToken: string;
@@ -174,7 +188,10 @@ export class GovernedHost {
     readonly manifest?: SubjectManifest;
   } {
     this.#assertRuntime();
-    const runtimeRoot = this.#external?.runtimeRoot ?? installedRuntimeRoot();
+    const runtimeRoot =
+      this.#runtime.runtimeRoot ??
+      this.#external?.runtimeRoot ??
+      installedRuntimeRoot();
     const runtime = runtimeCommit(runtimeRoot);
     const excluded = [
       ...this.#excludedProviderRoots(),
@@ -337,18 +354,10 @@ export class GovernedHost {
       typeof preparation.evidence.identity !== "string"
     )
       throw new Error("active evaluator readiness has no committed provenance");
-    const coverageBytes = execFileSync(
-      "git",
-      [
-        "show",
-        `${preparation.evidence.commit}:${workflow.directory}/coverage-map.json`,
-      ],
-      {
-        cwd: this.kernel.project.root,
-        encoding: null,
-        stdio: "pipe",
-      },
-    );
+    const coverageBytes = gitBytes(this.kernel.project.root, [
+      "show",
+      `${preparation.evidence.commit}:${workflow.directory}/coverage-map.json`,
+    ]);
     if (identity(coverageBytes) !== preparation.evidence.identity)
       throw new Error("active evaluator readiness identity mismatch");
     const coverage = object(JSON.parse(coverageBytes.toString("utf8")));
@@ -378,7 +387,10 @@ export class GovernedHost {
       commit: input.candidate,
     });
     const role = required(inspected.roles["evaluator-verify"]);
-    const runtimeRoot = this.#external?.runtimeRoot ?? installedRuntimeRoot();
+    const runtimeRoot =
+      this.#runtime.runtimeRoot ??
+      this.#external?.runtimeRoot ??
+      installedRuntimeRoot();
     const runtime = runtimeCommit(runtimeRoot);
     const bindings: PreparedObservationBindings = {
       workflow: input.workflow,
