@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "attempt": "002",
-  "commit": "b1e505d48c6dfe7f40f3525093b65cdf9fa2a8ee",
+  "attempt": "004",
+  "commit": "09da7b866dbd1a0a8c68f44efb42985feb897c49",
   "evaluatorRevision": "001",
   "result": "FAIL",
   "classification": "IMPLEMENTATION_FAILURE",
@@ -21,9 +21,9 @@
     "AC13": "SATISFIED"
   },
   "feedback": {
-    "requirement": "eval-requirements TR2 (b)-(g): the ordinary deterministic suite must fail on regression of the root-authenticated prepareCandidateObservation operation.",
-    "expected": "Tests exercising the host operation: valid root/host authority succeeds; candidate or provider output alone cannot authorize; wrong candidate, evaluator revision, private inventory and procedure identities fail closed; caller-supplied paths or contents are rejected; unrelated evaluator-private material is not exposed; host inputs are read-only to the subject; the operation does not finalize, promote or advance a workflow.",
-    "observed": "No committed test references the prepareCandidateObservation operation. Existing new tests cover only the sealing/record/resolve library functions, record and bundle tamper, public-record privacy, and model-selector semantics.",
-    "safeDiagnostics": "Executable static checks (preservation, static surface, closure) passed. typecheck, lint and format passed. Full test suite failures observed were environmental and reproduce at the baseline."
+    "requirement": "eval-requirements TR2 (b)-(g) and the regression suite: the ordinary repository suite must pass, including deterministic tests of the root-authenticated prepareCandidateObservation operation.",
+    "expected": "The candidate's host-operation test passes: after root-authorized preparations the public ledger contains exactly the records the test's own sequence should produce, with no private bytes, and the full suite passes apart from known baseline environmental failures.",
+    "observed": "The candidate test 'root prepares an exact private observation and no weaker authority can' fails deterministically: it asserts one kernel.prepared-observation event in the public ledger but two are present after its direct operation call plus the request-path call. Reproduced in isolation. Other suite failure (014e containment) also occurs at baseline.",
+    "safeDiagnostics": "Static preservation, surface and closure checks pass; typecheck, lint, format pass; npm test 243/245 in a clean candidate checkout."
   }
 }

@@ -111,3 +111,13 @@ Append-only execution history. This manifest records runs; it is not canonical f
 - Limitations: the prepared-observation success path requires working unprivileged namespaces and therefore could not complete in this managed sandbox. No live provider or credentials were used.
 - Restricted evaluator material inspected: none. Workflow ledgers were not inspected.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-05 — Evaluator Verify attempt 004
+
+- Execution: `284b9c6e-0613-4ac5-84ae-f591ddce239f`
+- Skill: `evaluator` contract version `14`, `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`; mode `verify`
+- Role Grant: `sha256:995a4594a2a7f12e29720d3cc7738f5f5ce142f953e88ab12063c9704614713c`
+- Inputs: candidate `09da7b866dbd1a0a8c68f44efb42985feb897c49`; evaluator revision `001`; coverage `sha256:52e39e2a374fa9e3002b379bb5535b9830b8fcd66fa9338f066e425451c622ea`
+- Result: FAIL — IMPLEMENTATION_FAILURE (see `verification-result.json`, `feedback.md`)
+- Checks: frozen identities matched; static executable cases passed; typecheck, lint, format passed; `npm test` 243/245 in a clean candidate checkout, one failure being a deterministic candidate host-operation test failure
+- Measurements: provider calls 0; runtime token and wall-clock measurements unavailable
