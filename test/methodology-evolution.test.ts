@@ -87,6 +87,12 @@ function fixture(t: TestContext): {
   return { root, history, baseline, baselineIdentity };
 }
 
+const adoptionBinding = {
+  predecessorSequence: 1,
+  resultIdentity: `sha256:${"1".repeat(64)}`,
+  closeout: `sha256:${"2".repeat(64)}`,
+};
+
 function validCandidate(
   f: ReturnType<typeof fixture>,
 ): ReturnType<typeof candidateMethodology> {
@@ -314,6 +320,7 @@ void test("promotion requires human and prior-trusted authority and affects only
       evidence: "evaluation:test",
       candidate: candidate.revision,
       candidateMethodology: candidate.manifest.id,
+      ...adoptionBinding,
     },
   });
   const future = bindFutureWorkflow(f.history, "future");
@@ -336,6 +343,7 @@ function trustedAuthority(
       methodology: f.baselineIdentity,
       result: "PASS",
       evidence: "evaluation:test",
+      ...adoptionBinding,
       ...evaluation,
     },
   };
@@ -438,6 +446,7 @@ void test("014d C5: promotion binds the exact N-verified candidate commit and ma
     methodology: f.baselineIdentity,
     result: "PASS",
     evidence: "evaluation:test",
+    ...adoptionBinding,
     candidate: candidateB.revision,
     candidateMethodology: candidateB.manifest.id,
   });

@@ -141,6 +141,12 @@ export interface TrustedMethodologyEvent {
           // verified. Required for new promotions; absent in older records.
           readonly candidate?: string;
           readonly candidateMethodology?: string;
+          // Required for new promotions: the trusted head sequence this
+          // authority was issued against, the exact verification result
+          // identity and the exact archive/closeout record identity.
+          readonly predecessorSequence?: number;
+          readonly resultIdentity?: string;
+          readonly closeout?: string;
         }
       | {
           readonly kind: "human-bootstrap";
@@ -326,7 +332,15 @@ export function parseTrustedHistory(text: string): TrustedMethodologyEvent[] {
                 /^[a-f0-9]{40,64}$/.test(evaluation.candidate))) &&
             (evaluation.candidateMethodology === undefined ||
               (typeof evaluation.candidateMethodology === "string" &&
-                evaluation.candidateMethodology.startsWith("sha256:")));
+                evaluation.candidateMethodology.startsWith("sha256:"))) &&
+            (evaluation.predecessorSequence === undefined ||
+              Number.isSafeInteger(evaluation.predecessorSequence)) &&
+            [evaluation.resultIdentity, evaluation.closeout].every(
+              (value) =>
+                value === undefined ||
+                (typeof value === "string" &&
+                  /^sha256:[a-f0-9]{64}$/.test(value)),
+            );
       if (
         raw.schemaVersion !== 1 ||
         raw.sequence !== index + 1 ||
@@ -1078,6 +1092,23 @@ export function promoteMethodology(
       throw new Error(
         "trusted evaluation must bind the exact candidate commit and methodology",
       );
+    // Adoption authority also binds the exact PASS, the closeout provenance
+    // and the trusted head it was issued against. Authority naming a
+    // superseded head (stale) is refused.
+    const { predecessorSequence, resultIdentity, closeout } =
+      authority.evaluation;
+    if (
+      !Number.isSafeInteger(predecessorSequence) ||
+      typeof resultIdentity !== "string" ||
+      typeof closeout !== "string" ||
+      !/^sha256:[a-f0-9]{64}$/.test(resultIdentity) ||
+      !/^sha256:[a-f0-9]{64}$/.test(closeout)
+    )
+      throw new Error(
+        "adoption authority must bind the trusted predecessor sequence, PASS identity and closeout identity",
+      );
+    if (predecessorSequence !== history.length)
+      throw new Error("adoption authority is stale: trusted head moved");
     if (authority.evaluation.candidate !== reconstructed.revision)
       throw new Error("trusted evaluation verified a different candidate");
     if (authority.evaluation.candidateMethodology !== reconstructed.manifest.id)

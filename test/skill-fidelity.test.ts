@@ -1508,8 +1508,13 @@ void test("014d TR6: evidence skill identities and contract versions recompute f
       ]),
     ].sort(),
   );
+  // The record names the skill bytes of trusted methodology N (committed at
+  // its exact revision); successor methodologies may evolve the working tree.
+  const trustedRevision = "9169ccf7d4543c214e7b7890ee29e428a5f8c01a";
   for (const [, path = "", version, sha] of rows) {
-    const bytes = readFileSync(path);
+    const bytes = execFileSync("git", ["show", `${trustedRevision}:${path}`], {
+      maxBuffer: 16 * 1024 * 1024,
+    });
     assert.equal(identity(bytes), `sha256:${String(sha)}`, path);
     assert.match(
       bytes.toString("utf8"),

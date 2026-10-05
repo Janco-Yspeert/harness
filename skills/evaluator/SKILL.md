@@ -588,6 +588,33 @@ For Spike 012 itself, never use this v12 repair mode as bootstrap recovery or
 grading authority before human acceptance: its pinned v10 evaluator authority
 governs that exceptional cycle.
 
+## Verdict, attempt and archive facts
+
+Three facts stay separate; none may rewrite another.
+
+- **Evaluation fact.** `PASS`, `FAIL` or `BLOCKED`, with exact evidence
+  identities and candidate/revision provenance. The evaluator owns it. A valid
+  `PASS` stays `PASS` if later evidence archival fails; archival failure blocks
+  As-Built, adoption and promotion, never the verdict, and never requires
+  rerunning evaluation to recreate the same `PASS`.
+- **Attempt state.** Every allocated verification attempt is `NONTERMINAL` (no
+  finalized result; provenance only, no terminal artifact is required or
+  invented), `TERMINAL` (bound to its exact terminal artifact and result
+  identity) or `LOST` (durable authoritative history proves the artifact existed
+  and it is now unavailable). An artifact that was never produced is never
+  `LOST`.
+- **Archive state.** The host alone derives and performs the deterministic
+  post-`PASS` archive from policy and exact identities, and records `complete`,
+  `incomplete` or `failed` separately. An intact active frozen revision is
+  archived directly from its canonical active location; no redundant historical
+  copy is required for it to count as evidence.
+
+A procedure that needs a prepared candidate observation declares it as a closed
+identity-bearing request (purpose, candidate commit, evaluator revision and
+identity, host input class names, consuming procedure). A declaration carries no
+paths, bytes or authority; the host fulfils it, and the resulting sealed
+observation is evidence only.
+
 ## Final execution record
 
 This is the final repository-content step for `prepare`, `repair`, and each
