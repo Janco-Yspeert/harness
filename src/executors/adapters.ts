@@ -592,15 +592,23 @@ export function planLaunch(
       );
   }
   const plan: { model?: string; reasoning?: string } = {};
+  const exactModel = grant.executorConstraints.exactModel;
+  if (exactModel !== undefined && !adapter.model.attest)
+    throw new AdapterRefusal(
+      "provider-config-invalid",
+      `${adapter.id} adapter cannot attest an exact model constraint`,
+    );
   for (const key of ["model", "reasoning"] as const) {
-    const exact = grant.executorConstraints[key];
-    const requested = exact ?? profile[key];
+    const requested =
+      key === "model"
+        ? (exactModel ?? grant.executorConstraints.model ?? profile.model)
+        : (grant.executorConstraints.reasoning ?? profile.reasoning);
     if (requested === undefined) continue;
     const support = adapter[key];
     if (!support.enforce)
       throw new AdapterRefusal(
         "provider-config-invalid",
-        `${adapter.id} adapter cannot enforce the exact ${key} constraint`,
+        `${adapter.id} adapter cannot enforce the ${key} launch setting`,
       );
     plan[key] = requested;
   }

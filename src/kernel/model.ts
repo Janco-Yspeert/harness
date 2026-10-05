@@ -223,7 +223,7 @@ export interface WorkflowGrant {
   recovery?: string;
   supersedes?: string;
   inline?: boolean;
-  executor?: { model?: string; reasoning?: string };
+  executor?: { model?: string; reasoning?: string; exactModel?: string };
   // Host-written methodology source binding (never caller configuration).
   source?: MethodologySourceBinding;
 }
@@ -380,7 +380,10 @@ export interface RoleGrant {
   executorConstraints: {
     forbiddenExposure: string[];
     protected: boolean;
+    // `model` is a provider launch selector. Only `exactModel` requires
+    // literal provider attestation.
     model?: string;
+    exactModel?: string;
     reasoning?: string;
   };
   predecessor: string | null;
@@ -432,7 +435,9 @@ export interface Execution {
   actions: HostActionResult[];
   requests: HumanRequest[];
   executor?: {
+    profile: string;
     requested: { model?: string; reasoning?: string };
+    required: { exactModel?: string };
     enforced: { model: boolean; reasoning: boolean };
     confirmed: { model: string | null; reasoning: string | null };
     attestation: {

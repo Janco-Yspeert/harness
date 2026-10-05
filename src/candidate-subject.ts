@@ -162,6 +162,7 @@ export interface SubjectManifest {
   readonly composition: {
     readonly role: typeof SUBJECT_ROLE;
     readonly skill: string;
+    readonly contractIdentity: string;
     readonly contract: string;
     readonly capabilities: readonly string[];
     readonly hostActions: readonly string[];
@@ -1246,6 +1247,7 @@ export function runCandidateEvaluatorSubject(input: RunSubjectInput): {
     composition: {
       role: composition.role,
       skill: composition.skill.identity,
+      contractIdentity: composition.contractIdentity,
       contract: composition.contractSourceIdentity,
       capabilities: composition.capabilities,
       hostActions: composition.hostActions,

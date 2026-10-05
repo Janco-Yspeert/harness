@@ -246,7 +246,9 @@ async function run(
   t: TestContext,
   role: string,
   scenario: Scenario,
-  extra: { executor?: { model?: string; reasoning?: string } } = {},
+  extra: {
+    executor?: { model?: string; reasoning?: string; exactModel?: string };
+  } = {},
   executors?: ExecutorProfile[],
 ) {
   const f = smoke(t, { scenario, ...(executors ? { executors } : {}) });
@@ -969,7 +971,9 @@ void test("Codex launch configuration and provider attestation are separate prov
   assert.equal(started.status, 201, JSON.stringify(started.value));
   const execution = await settled(host.url, started.value.execution?.id ?? "");
   assert.deepEqual(execution.executor, {
+    profile: "codex",
     requested: { model: "gpt-5.6-sol", reasoning: "medium" },
+    required: {},
     enforced: { model: true, reasoning: true },
     confirmed: { model: null, reasoning: null },
     attestation: { model: "unavailable", reasoning: "unavailable" },
@@ -1079,8 +1083,8 @@ void test("014e: public execution selects Codex, protected execution selects Son
   assert.equal(kernel.select(grant(true), "spawned")?.id, "claude-sonnet");
   assert.equal(kernel.select(grant(false), "spawned")?.id, "codex-sol-medium");
   assert.equal(
-    kernel.select(grant(true, "claude-opus-5-5"), "spawned"),
-    undefined,
+    kernel.select(grant(true, "claude-opus-5-5"), "spawned")?.id,
+    "claude-sonnet",
   );
 });
 
@@ -1351,9 +1355,76 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
     planLaunch(ADAPTERS.claude, protectedGrant, claudeProfile),
     {},
   );
+  const selectorGrant = {
+    ...protectedGrant,
+    executorConstraints: {
+      ...protectedGrant.executorConstraints,
+      model: "grant-selector",
+    },
+  } as RoleGrant;
+  assert.deepEqual(
+    planLaunch(ADAPTERS.claude, selectorGrant, {
+      ...claudeProfile,
+      model: "profile-selector",
+    }),
+    { model: "grant-selector" },
+  );
+  assert.deepEqual(
+    planLaunch(ADAPTERS.codex, selectorGrant, {
+      ...codexProfile,
+      model: "profile-selector",
+    }),
+    { model: "grant-selector" },
+  );
+  const exactGrant = {
+    ...selectorGrant,
+    executorConstraints: {
+      ...selectorGrant.executorConstraints,
+      exactModel: "provider-concrete-model",
+    },
+  } as RoleGrant;
+  assert.deepEqual(planLaunch(ADAPTERS.claude, exactGrant, claudeProfile), {
+    model: "provider-concrete-model",
+  });
+  assert.throws(
+    () => planLaunch(ADAPTERS.codex, exactGrant, codexProfile),
+    /cannot attest an exact model/,
+  );
 });
 
-void test("AC07: an exact model is requested and must be confirmed by the provider before a result is accepted", async (t) => {
+void test("014j AC09: a launch selector may differ from provider-attested concrete model identity", async (t) => {
+  const selected = await run(
+    t,
+    PROMOTION,
+    {
+      model: "claude-sonnet-5-5",
+      steps: [
+        {
+          tool: "submitResult",
+          args: { disposition: "succeeded", methodology: { smoke: "PASS" } },
+        },
+        { tool: "requestAction", promotion: {} },
+      ],
+    },
+    { executor: { model: "sonnet" } },
+    [{ ...claudeProfile, model: "opus" }],
+  );
+  const execution = await settled(
+    selected.host.url,
+    selected.started.value.execution?.id ?? "",
+  );
+  assert.equal(execution.process, "exited");
+  assert.equal(execution.result?.disposition, "succeeded");
+  assert.ok(execution.executor);
+  assert.equal(execution.executor.profile, "claude");
+  assert.deepEqual(execution.executor.requested, { model: "sonnet" });
+  assert.deepEqual(execution.executor.required, {});
+  assert.equal(execution.executor.confirmed.model, "claude-sonnet-5-5");
+  const argv = providerEvidence(selected.f.evidence).argv;
+  assert.equal(argv[argv.indexOf("--model") + 1], "sonnet");
+});
+
+void test("014j AC10: an exact model is requested and must be confirmed by the provider before a result is accepted", async (t) => {
   const exact = "claude-exact-model";
   const confirmed = await run(
     t,
@@ -1368,14 +1439,16 @@ void test("AC07: an exact model is requested and must be confirmed by the provid
         { tool: "requestAction", promotion: {} },
       ],
     },
-    { executor: { model: exact } },
-    [{ ...claudeProfile, model: exact }],
+    { executor: { model: "sonnet", exactModel: exact } },
+    [{ ...claudeProfile, model: "opus" }],
   );
   const good = await settled(
     confirmed.host.url,
     confirmed.started.value.execution?.id ?? "",
   );
-  assert.deepEqual(good.executor?.requested, { model: exact });
+  assert.ok(good.executor);
+  assert.deepEqual(good.executor.requested, { model: exact });
+  assert.deepEqual(good.executor.required, { exactModel: exact });
   assert.equal(good.executor.confirmed.model, exact);
   assert.equal(good.result?.disposition, "succeeded");
   const argv = providerEvidence(confirmed.f.evidence).argv;
@@ -1392,8 +1465,8 @@ void test("AC07: an exact model is requested and must be confirmed by the provid
         },
       ],
     },
-    { executor: { model: exact } },
-    [{ ...claudeProfile, model: exact }],
+    { executor: { model: "sonnet", exactModel: exact } },
+    [{ ...claudeProfile, model: "opus" }],
   );
   const bad = await settled(
     mismatch.host.url,
@@ -1403,6 +1476,29 @@ void test("AC07: an exact model is requested and must be confirmed by the provid
   assert.equal(bad.category, "provider-config-invalid");
   assert.equal(bad.result, null);
   assert.equal(bad.executor?.confirmed.model, "some-other-model");
+});
+
+void test("014j AC10/AC11: exact constraints fail before launch when a generic adapter cannot attest", async (t) => {
+  const f = smoke(t, { executors: [codexProfile] });
+  const host = await startHarnessHost(0, { governed: f.options });
+  t.after(() => host.close());
+  const grant = await call<{ grant: WorkflowGrant }>(host.url, "grants", {
+    continuation: false,
+    delegation: ["spawned"],
+    maxAllocations: 1,
+    roles: [CODEX],
+    executor: { model: "gpt", exactModel: "gpt-concrete" },
+  });
+  assert.equal(grant.status, 201);
+  const started = await call<{ category: string; error: string }>(
+    host.url,
+    "continue",
+    { workflowGrant: grant.value.grant.id, mode: "spawned", role: CODEX },
+  );
+  assert.equal(started.status, 409);
+  assert.equal(started.value.category, "provider-config-invalid");
+  assert.match(started.value.error, /cannot attest an exact model/);
+  assert.deepEqual(f.launched, []);
 });
 
 void test("AC08: the versioned worker protocol is typed, provider-neutral and cannot carry binding or credentials", async () => {

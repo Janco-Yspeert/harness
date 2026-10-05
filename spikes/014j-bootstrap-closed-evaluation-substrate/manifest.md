@@ -71,3 +71,18 @@ Append-only execution history. This manifest records runs; it is not canonical f
 - Checks: pre-freeze structural integrity validation PASS (13 criterion records); public coverage map passes the repository prepared-coverage validator; evaluator self-checks passed against synthetic repositories only; no candidate executed
 - Limitations: workflow ledgers were not inspected; behavioral coverage relies on implementer-owned tests and review because the Design Map leaves those seams as implementation freedom
 - Measurements: provider calls 0; runtime token and wall-clock measurements unavailable
+
+## 2026-10-05T12:27:02+02:00 — Implementation attempt 1
+
+- Execution: `c79cb71b-a1d9-438c-ad55-3d34df7adaf5`
+- Skill: `implementation` contract version `5`, `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+- Role contract: `sha256:2bef8564c17485cd478ca8e72b0d45406d4e90684a82b5a8faace8e9523b0305`
+- Role Grant: `sha256:8dd92212240d80c0336834e8fb6dd6662c3714a1a3b84e531bea2273b3d776f7`
+- Inputs: frozen brief `sha256:6b616066fa2a616e9c649fad3d96bcd0a684a5d674cb430ebb7f74c1a55f994d`; frozen Design Map `sha256:79c77b7924414cd2290068b9376c2ae423be8546a4f448e348e9756fe87ae910`; prepared coverage `sha256:52e39e2a374fa9e3002b379bb5535b9830b8fcd66fa9338f066e425451c622ea`; public evaluation requirements `sha256:64f5c7f773c19d8fbd4e6dc842ef49a3d1ceab30b251eb250c6d3a46a574c658`. All bound bytes matched; no retry feedback was bound.
+- Result: succeeded — candidate ready for independent verification; no claim of evaluator PASS.
+- Outputs: one root-authenticated `prepareCandidateObservation` operation; evaluator-private sealed prepared bundles and public-safe `kernel.prepared-observation` lifecycle records; trusted-N resolution with independent identity validation; generic launch-selector, `exactModel`, provider-attestation and executor-profile provenance separation.
+- Output content identity before this manifest entry: `sha256:874f5d01e6b667d731b4bdb9d5238aa2e90449e84b8f4d6c65fbf7f79ea9b359` over the staged `git diff --cached --binary` against Design Map baseline `32bdc94b65c08e3677f32c5baee8d277f2fc2830`. This excludes this manifest update.
+- Checks: `npm run typecheck`, `npm run lint`, `npm run format:check`, scoped `git diff --check`, the complete candidate-subject test file, and two implementation-independent executor-selection/model-planning tests passed. Stable public names are present under `src/` and absent from the worker protocol/tool surface. Baseline diff review found no non-ledger change to `spikes/014g-verifier-containment-composition/`, `skills/`, or `methodologies/`.
+- Limitations: the broader `npm test` run was attempted but the managed environment denied test-created Git subprocesses and loopback listeners with `EPERM`, denied unrelated workflow-ledger reads with `EACCES`, and left one integration test process without progress until interrupted. The same run's environment-independent tests and all focused 014j tests passed. No live provider or credentials were used.
+- Restricted evaluator material inspected: none. Workflow ledgers were not inspected.
+- Measurement cutoff: immediately before this manifest update.

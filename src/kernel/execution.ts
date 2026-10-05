@@ -14,6 +14,7 @@ import {
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import {
   appendLedger,
+  canonical,
   contentId,
   identity,
   matches,
@@ -23,6 +24,10 @@ import {
   required,
   scopedEvents,
 } from "./ledger.ts";
+import {
+  validatePreparedObservationRecord,
+  type PreparedObservationRecord,
+} from "../candidate-observation.ts";
 import {
   MAX_ACTION_ARTIFACTS,
   MAX_EVIDENCE_BYTES,
@@ -143,6 +148,41 @@ export class ExecutionKernel {
   events(workflow: string): LedgerEvent[] {
     return readLedger(this.path(workflow));
   }
+  preparedObservation(
+    workflow: string,
+    observation: string,
+  ): PreparedObservationRecord {
+    const record = this.events(workflow).find(
+      (event) =>
+        event.transition === "kernel.prepared-observation" &&
+        event.evidence.observation === observation,
+    )?.evidence as unknown as PreparedObservationRecord | undefined;
+    if (!record) throw new Error("unknown prepared observation");
+    validatePreparedObservationRecord(record);
+    return record;
+  }
+  recordPreparedObservation(
+    workflow: string,
+    record: PreparedObservationRecord,
+  ): PreparedObservationRecord {
+    return this.#transaction(workflow, () => {
+      validatePreparedObservationRecord(record);
+      if (record.workflow !== workflow)
+        throw new Error("prepared observation workflow mismatch");
+      const existing = this.events(workflow).find(
+        (event) =>
+          event.transition === "kernel.prepared-observation" &&
+          event.evidence.observation === record.observation,
+      );
+      if (existing) {
+        if (canonical(existing.evidence) !== canonical(record))
+          throw new Error("prepared observation identity collision");
+        return existing.evidence as unknown as PreparedObservationRecord;
+      }
+      this.#append(workflow, "kernel.prepared-observation", record);
+      return record;
+    });
+  }
   #append(workflow: string, type: string, evidence: object): void {
     appendLedger(this.path(workflow), type, evidence);
   }
@@ -261,7 +301,7 @@ export class ExecutionKernel {
       maxAutomaticWork?: number;
       supersedes?: string;
       inline?: boolean;
-      executor?: { model?: string; reasoning?: string };
+      executor?: { model?: string; reasoning?: string; exactModel?: string };
     },
   ): WorkflowGrant {
     return this.#transaction(workflow, () => {
@@ -286,7 +326,8 @@ export class ExecutionKernel {
             (value) => typeof value === "string" && value.length > 0,
           ) ||
             Object.keys(request.executor).some(
-              (key) => key !== "model" && key !== "reasoning",
+              (key) =>
+                key !== "model" && key !== "reasoning" && key !== "exactModel",
             )))
       )
         throw new Error("invalid execution authorization");
@@ -1022,7 +1063,8 @@ export class ExecutionKernel {
         grant.capabilities.every((c) => p.capabilities.includes(c)) &&
         (!grant.executorConstraints.protected ||
           p.isolation.includes("private-workspace")) &&
-        (!grant.executorConstraints.model ||
+        (mode !== "attached" ||
+          !grant.executorConstraints.model ||
           p.model === grant.executorConstraints.model) &&
         (!grant.executorConstraints.reasoning ||
           p.reasoning === grant.executorConstraints.reasoning),
@@ -1171,8 +1213,11 @@ export class ExecutionKernel {
         ) ||
         (grant.executorConstraints.protected &&
           !session.profile.isolation.includes("private-workspace")) ||
-        (grant.executorConstraints.model !== undefined &&
+        (request.mode === "attached" &&
+          grant.executorConstraints.model !== undefined &&
           session.profile.model !== grant.executorConstraints.model) ||
+        (request.mode === "attached" &&
+          grant.executorConstraints.exactModel !== undefined) ||
         (grant.executorConstraints.reasoning !== undefined &&
           session.profile.reasoning !== grant.executorConstraints.reasoning)
       )
@@ -1193,12 +1238,18 @@ export class ExecutionKernel {
         actions: [],
         requests: [],
         executor: {
+          profile: session.profile.id,
           requested: {
             ...(request.executorPlan?.model
               ? { model: request.executorPlan.model }
               : {}),
             ...(request.executorPlan?.reasoning
               ? { reasoning: request.executorPlan.reasoning }
+              : {}),
+          },
+          required: {
+            ...(grant.executorConstraints.exactModel
+              ? { exactModel: grant.executorConstraints.exactModel }
               : {}),
           },
           enforced: {

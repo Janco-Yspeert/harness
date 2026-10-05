@@ -390,7 +390,7 @@ export class GovernedProviderRun {
     }
     const assignment = this.#assignment;
     this.#confirmed =
-      assignment.roleGrant.executorConstraints.model === undefined ||
+      assignment.roleGrant.executorConstraints.exactModel === undefined ||
       !launch.adapter.model.attest;
     try {
       this.#preparePrivateLog();
@@ -560,7 +560,7 @@ export class GovernedProviderRun {
       } catch {
         return;
       }
-      const exact = this.#assignment?.roleGrant.executorConstraints.model;
+      const exact = this.#assignment?.roleGrant.executorConstraints.exactModel;
       if (
         launch.adapter.model.attest &&
         exact !== undefined &&

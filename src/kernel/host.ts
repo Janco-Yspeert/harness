@@ -2,9 +2,11 @@ import { execFileSync, spawn } from "node:child_process";
 import { timingSafeEqual } from "node:crypto";
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
+  renameSync,
   rmSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -28,6 +30,13 @@ import {
   type SubjectRecord,
 } from "../candidate-subject.ts";
 import {
+  createPreparedObservationRecord,
+  resolvePreparedObservation,
+  sealPreparedObservationBundle,
+  type PreparedObservationBindings,
+  type PreparedObservationRecord,
+} from "../candidate-observation.ts";
+import {
   assertWorkspaces,
   locateContainment,
   probeContainment,
@@ -38,7 +47,7 @@ import {
   launchWorkspaces,
 } from "../executors/governed.ts";
 import { ExecutionKernel, type KernelOptions } from "./execution.ts";
-import { object, required, text } from "./ledger.ts";
+import { identity, object, required, text } from "./ledger.ts";
 import type {
   Data,
   DiagnosticCategory,
@@ -280,6 +289,156 @@ export class GovernedHost {
     rmSync(temporary, { recursive: true, force: true });
     return { ...result, paths: { ...result.paths, evidence: destination } };
   }
+  // Root-authenticated lifecycle operation. Its deliberately closed request
+  // contains identities and selectors only; private paths and bytes are
+  // resolved by the host from the active prepared evaluator inventory.
+  prepareCandidateObservation(input: {
+    readonly workflow: string;
+    readonly candidate: string;
+    readonly evaluatorRevision: string;
+    readonly evaluatorRevisionIdentity: string;
+    readonly privateInventoryIdentity: string;
+    readonly procedure: string;
+  }): PreparedObservationRecord {
+    const allowed = [
+      "workflow",
+      "candidate",
+      "evaluatorRevision",
+      "evaluatorRevisionIdentity",
+      "privateInventoryIdentity",
+      "procedure",
+    ];
+    const extra = Object.keys(input).find((key) => !allowed.includes(key));
+    if (extra)
+      throw new Error(
+        `prepared observation request contains unsupported field ${extra}`,
+      );
+    this.#assertRuntime();
+    this.kernel.path(input.workflow);
+    const handoff = this.kernel
+      .events(input.workflow)
+      .findLast((event) => event.transition === "implementation-handoff");
+    if (handoff?.evidence.commit !== input.candidate)
+      throw new Error(
+        "prepared observation candidate is not the active implementation handoff",
+      );
+    const workflow = required(this.kernel.project.workflows[input.workflow]);
+    const preparation = this.kernel
+      .events(input.workflow)
+      .filter((event) =>
+        ["evaluation-prepared", "evaluator-repair-recorded"].includes(
+          event.transition,
+        ),
+      )
+      .at(-1);
+    if (
+      preparation?.evidence.path !== "coverage-map.json" ||
+      typeof preparation.evidence.commit !== "string" ||
+      typeof preparation.evidence.identity !== "string"
+    )
+      throw new Error("active evaluator readiness has no committed provenance");
+    const coverageBytes = execFileSync(
+      "git",
+      [
+        "show",
+        `${preparation.evidence.commit}:${workflow.directory}/coverage-map.json`,
+      ],
+      {
+        cwd: this.kernel.project.root,
+        encoding: null,
+        stdio: "pipe",
+      },
+    );
+    if (identity(coverageBytes) !== preparation.evidence.identity)
+      throw new Error("active evaluator readiness identity mismatch");
+    const coverage = object(JSON.parse(coverageBytes.toString("utf8")));
+    const readiness = object(coverage.readiness);
+    if (
+      readiness.evaluatorRevision !== input.evaluatorRevision ||
+      readiness.evaluatorRevisionIdentity !== input.evaluatorRevisionIdentity ||
+      readiness.privateInventoryIdentity !== input.privateInventoryIdentity
+    )
+      throw new Error(
+        "prepared observation request does not match active evaluator readiness",
+      );
+    const privateWorkspace =
+      workflow.workspaces?.evaluation ??
+      this.kernel.project.workspaces.evaluation;
+    if (!privateWorkspace || privateWorkspace.exposure !== "evaluator-private")
+      throw new Error("active evaluator-private workspace is unavailable");
+    const privateRoot = realpathSync(privateWorkspace.path);
+    const frozenProcedure = resolveFrozenEvaluatorProcedure(privateRoot, {
+      evaluatorRevision: input.evaluatorRevision,
+      evaluatorRevisionIdentity: input.evaluatorRevisionIdentity,
+      privateInventoryIdentity: input.privateInventoryIdentity,
+      procedure: input.procedure,
+    });
+    const inspected = inspectCandidateMethodology({
+      repository: this.kernel.project.root,
+      commit: input.candidate,
+    });
+    const role = required(inspected.roles["evaluator-verify"]);
+    const runtimeRoot = this.#external?.runtimeRoot ?? installedRuntimeRoot();
+    const runtime = runtimeCommit(runtimeRoot);
+    const bindings: PreparedObservationBindings = {
+      workflow: input.workflow,
+      candidate: {
+        commit: input.candidate,
+        methodology: inspected.methodology,
+        skill: role.skill.identity,
+        contract: role.contractIdentity,
+        contractSource: role.contractSourceIdentity,
+      },
+      runtime: runtime.commit,
+      evaluator: {
+        revision: input.evaluatorRevision,
+        revisionIdentity: input.evaluatorRevisionIdentity,
+        privateInventoryIdentity: input.privateInventoryIdentity,
+        procedure: input.procedure,
+        procedureIdentity: frozenProcedure.procedureIdentity,
+      },
+    };
+    const preparedRoot = resolve(privateRoot, ".eval", "prepared-observations");
+    mkdirSync(preparedRoot, { recursive: true, mode: 0o700 });
+    const staging = realpathSync(mkdtempSync(join(preparedRoot, ".staging-")));
+    try {
+      const result = this.candidateEvaluatorSubject({
+        candidateRepository: this.kernel.project.root,
+        candidateCommit: input.candidate,
+        candidateMethodology: inspected.methodology,
+        expectedSkillIdentity: role.skill.identity,
+        expectedContractIdentity: role.contractIdentity,
+        frozenProcedure,
+        outputRoot: staging,
+      });
+      if (!result.manifest) {
+        const record = createPreparedObservationRecord({
+          bindings,
+          failure: `candidate observation ended ${result.record.status}`,
+        });
+        return this.kernel.recordPreparedObservation(input.workflow, record);
+      }
+      const prepared = sealPreparedObservationBundle(
+        result.paths.evidence,
+        join(staging, "prepared-bundle"),
+        bindings,
+      );
+      const record = createPreparedObservationRecord({
+        bindings,
+        bundleManifestIdentity: prepared.identity,
+      });
+      const destinationRoot = join(preparedRoot, record.observation);
+      const destination = join(destinationRoot, "bundle");
+      if (!existsSync(destination)) {
+        mkdirSync(destinationRoot, { recursive: true, mode: 0o700 });
+        renameSync(join(staging, "prepared-bundle"), destination);
+      }
+      resolvePreparedObservation(privateRoot, record);
+      return this.kernel.recordPreparedObservation(input.workflow, record);
+    } finally {
+      rmSync(staging, { recursive: true, force: true });
+    }
+  }
   // An external-project host never runs a Stockdif workflow on an uncommitted
   // or subsequently changed Harness runtime.
   #assertRuntime(): void {
@@ -391,6 +550,38 @@ export class GovernedHost {
         if (!root && execution.session !== sessionId)
           throw new Error("execution belongs to another session");
       };
+      if (operation === "prepared-observations") {
+        needRoot();
+        if (get) {
+          send(200, {
+            observation: this.kernel.preparedObservation(workflow, text(id)),
+          });
+          return;
+        }
+        const allowed = new Set([
+          "candidate",
+          "evaluatorRevision",
+          "evaluatorRevisionIdentity",
+          "privateInventoryIdentity",
+          "procedure",
+        ]);
+        const extra = Object.keys(body).find((key) => !allowed.has(key));
+        if (extra)
+          throw new Error(
+            `prepared observation request contains unsupported field ${extra}`,
+          );
+        send(201, {
+          observation: this.prepareCandidateObservation({
+            workflow,
+            candidate: text(body.candidate),
+            evaluatorRevision: text(body.evaluatorRevision),
+            evaluatorRevisionIdentity: text(body.evaluatorRevisionIdentity),
+            privateInventoryIdentity: text(body.privateInventoryIdentity),
+            procedure: text(body.procedure),
+          }),
+        });
+        return;
+      }
       if (operation === "grants") {
         needRoot();
         if (get && id) {
@@ -439,7 +630,11 @@ export class GovernedHost {
             : {}),
           ...(body.supersedes ? { supersedes: body.supersedes } : {}),
           ...(body.inline ? { inline: true } : {}),
-          ...(body.executor ? { executor: object(body.executor) } : {}),
+          ...(body.executor
+            ? {
+                executor: object(body.executor),
+              }
+            : {}),
         });
         if (grant.supersedes) this.#stop(grant.supersedes);
         send(201, { grant });

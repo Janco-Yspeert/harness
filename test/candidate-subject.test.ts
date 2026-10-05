@@ -8,6 +8,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  renameSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -27,8 +28,17 @@ import {
   validateSubjectBundle,
   type CandidateComposition,
 } from "../src/candidate-subject.ts";
+import {
+  createPreparedObservationRecord,
+  preparedSubjectManifest,
+  resolvePreparedObservation,
+  sealPreparedObservationBundle,
+  validatePreparedObservationRecord,
+} from "../src/candidate-observation.ts";
 import { locateContainment } from "../src/executors/containment.ts";
 import { canonical, identity } from "../src/kernel/ledger.ts";
+import { authorityBasis } from "../src/kernel/resolver.ts";
+import type { LedgerEvent } from "../src/kernel/model.ts";
 import { buildMethodologyManifest } from "../src/methodology-evolution.ts";
 
 const PACKAGE = join(
@@ -530,7 +540,7 @@ void test("014g: full candidate export preserves Git-quoted Unicode paths", (t) 
   );
 });
 
-void test("014g C3: frozen evaluator procedures resolve by active identities and remain host-owned", (t) => {
+void test("014g C3 / 014j AC03-AC07: frozen procedures produce private, identity-bound prepared observations", (t) => {
   const root = mkdtempSync(join(tmpdir(), "frozen-procedure-"));
   const output = mkdtempSync(join(tmpdir(), "frozen-procedure-output-"));
   t.after(() => {
@@ -690,5 +700,84 @@ void test("014g C3: frozen evaluator procedures resolve by active identities and
   assert.throws(
     () => validateSubjectBundle(omitted),
     /host input binding is missing/,
+  );
+
+  const subject = result.manifest;
+  assert.ok(subject);
+  const bindings = {
+    workflow: "synthetic-preparation",
+    candidate: {
+      commit: f.commit,
+      methodology: f.methodology,
+      skill: f.skill,
+      contract: subject.composition.contractIdentity,
+      contractSource: subject.composition.contract,
+    },
+    runtime: subject.runtimeCommit,
+    evaluator: {
+      revision: reference.evaluatorRevision,
+      revisionIdentity: reference.evaluatorRevisionIdentity,
+      privateInventoryIdentity: reference.privateInventoryIdentity,
+      procedure: reference.procedure,
+      procedureIdentity: resolved.procedureIdentity,
+    },
+  } as const;
+  const staging = join(root, ".eval", "prepared-staging");
+  const preparedSealed = sealPreparedObservationBundle(
+    result.paths.evidence,
+    staging,
+    bindings,
+  );
+  const record = createPreparedObservationRecord({
+    bindings,
+    bundleManifestIdentity: preparedSealed.identity,
+  });
+  validatePreparedObservationRecord(record);
+  const authoritative: LedgerEvent = {
+    transition: "implementation-handoff",
+    evidence: { commit: f.commit },
+  };
+  assert.equal(
+    authorityBasis([
+      authoritative,
+      {
+        transition: "kernel.prepared-observation",
+        evidence: record as unknown as Record<string, unknown>,
+      },
+    ]),
+    authorityBasis([authoritative]),
+  );
+  const destination = join(
+    root,
+    ".eval",
+    "prepared-observations",
+    record.observation,
+    "bundle",
+  );
+  mkdirSync(join(destination, ".."), { recursive: true });
+  renameSync(staging, destination);
+  const prepared = resolvePreparedObservation(root, record);
+  assert.equal(prepared.manifest.bindings.workflow, "synthetic-preparation");
+  assert.equal(
+    preparedSubjectManifest(prepared).hostInputs?.before,
+    subject.hostInputs?.before,
+  );
+  const publicRecord = JSON.stringify(record);
+  assert.equal(publicRecord.includes(procedureBytes.toString("utf8")), false);
+  assert.equal(publicRecord.includes("frozen-e5.txt"), false);
+  assert.equal(publicRecord.includes(root), false);
+
+  const changedRecord = {
+    ...record,
+    candidate: { ...record.candidate, commit: "0".repeat(40) },
+  };
+  assert.throws(() => {
+    validatePreparedObservationRecord(changedRecord);
+  }, /identity mismatch/);
+  chmodSync(join(destination, "manifest.json"), 0o644);
+  writeFileSync(join(destination, "manifest.json"), "{}\n");
+  assert.throws(
+    () => resolvePreparedObservation(root, record),
+    /bundle identity mismatch/,
   );
 });

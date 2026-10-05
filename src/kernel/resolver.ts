@@ -70,6 +70,7 @@ const MECHANICS = new Set([
   "kernel.continuation-stopped",
   "kernel.diagnostic",
   "kernel.executor-confirmed",
+  "kernel.prepared-observation",
 ]);
 export function authorityBasis(events: LedgerEvent[]): string {
   return contentId(
