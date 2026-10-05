@@ -1,18 +1,17 @@
 {
   "schemaVersion": 1,
-  "attempt": "004",
-  "commit": "09da7b866dbd1a0a8c68f44efb42985feb897c49",
+  "attempt": "005",
+  "commit": "93ade31b1dcb6487798b27e812dc443fce30af43",
   "evaluatorRevision": "001",
-  "result": "FAIL",
-  "classification": "IMPLEMENTATION_FAILURE",
+  "result": "PASS",
   "coverageResults": {
     "AC01": "SATISFIED",
-    "AC02": "UNSATISFIED",
+    "AC02": "SATISFIED",
     "AC03": "SATISFIED",
-    "AC04": "UNSATISFIED",
-    "AC05": "UNSATISFIED",
-    "AC06": "UNSATISFIED",
-    "AC07": "UNSATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
     "AC08": "SATISFIED",
     "AC09": "SATISFIED",
     "AC10": "SATISFIED",
@@ -20,10 +19,8 @@
     "AC12": "SATISFIED",
     "AC13": "SATISFIED"
   },
-  "feedback": {
-    "requirement": "eval-requirements TR2 (b)-(g) and the regression suite: the ordinary repository suite must pass, including deterministic tests of the root-authenticated prepareCandidateObservation operation.",
-    "expected": "The candidate's host-operation test passes: after root-authorized preparations the public ledger contains exactly the records the test's own sequence should produce, with no private bytes, and the full suite passes apart from known baseline environmental failures.",
-    "observed": "The candidate test 'root prepares an exact private observation and no weaker authority can' fails deterministically: it asserts one kernel.prepared-observation event in the public ledger but two are present after its direct operation call plus the request-path call. Reproduced in isolation. Other suite failure (014e containment) also occurs at baseline.",
-    "safeDiagnostics": "Static preservation, surface and closure checks pass; typecheck, lint, format pass; npm test 243/245 in a clean candidate checkout."
+  "promotionPlan": {
+    "identity": "sha256:ea3f37867ec169e12f9466bc19f77dd21b223af8cd9c9eb28e5996545adbca0d",
+    "decision": "INELIGIBLE"
   }
 }
