@@ -62,15 +62,13 @@ the project directory name (`<project>-hidden/<spike>/`).
 <private>/.eval/attempt-ledger.json
 <private>/.eval/attempts/001/eval-result.md
 <private>/.eval/revisions/001/**
-<private>/.eval/promotion-plan.json
 ```
 
-After a passing cycle, eligible artifacts are promoted canonically under:
+After a passing cycle, the host archives the derived evidence canonically under:
 
 ```text
 <project>/<spike>/evaluation/promotion.json
-<project>/<spike>/evaluation/promotion-plan.json
-<project>/<spike>/evaluation/attempt-ledger.json
+<project>/<spike>/evaluation/evaluation-fact.json
 <project>/<spike>/evaluation/attempts/001/eval-result.md
 <project>/<spike>/evaluation/freeze/001.json
 <project>/<spike>/evaluation/revisions/001/**
@@ -427,118 +425,42 @@ attempt and all failure evidence, follow the correction/revision or
 implementation-retry rules above, and follow **Final execution record**. Do not
 proceed as though the evaluator cycle passed.
 
-### 5. Complete `PASS` and request promotion
+### 5. Complete `PASS` and request archival
 
 `PASS` means that the implementation satisfies the frozen machine-verifiable
 evaluation contract. Human product acceptance is a separate, later gate. The
-evaluator determines promotion eligibility and reports the exact source
-identities, attempt history, revision lineage, all-or-nothing eligibility of
-each frozen revision, and destination mapping required for archival. It does not
-copy public artifacts, publish commits, or declare host promotion complete.
+evaluator does not decide promotion eligibility, author a promotion plan, or
+choose what is archived. It does not copy public artifacts, publish commits, or
+declare host promotion complete.
 
-Eligible evidence is the immutable attempt ledger, every immutable terminal
-result in the successful cycle, and each complete frozen evaluator revision
-whose full bundle is safe and suitable for durable public regression. A revision
-is eligible as one unit with its freeze metadata; never expose a partial bundle.
-Secrets, credentials, unrelated sensitive material, evaluator mechanisms that
-must remain private, diagnostics, and discarded exploration are ineligible. A
-passing attempt may therefore be eligible while its evaluator revision is not.
+The host alone derives the archive from trusted policy and the exact identities
+of the immutable attempt ledger, every terminal attempt result, and each frozen
+evaluator revision used by the history. Secrets, credentials, private evaluator
+mechanisms and discarded exploration are never selected by the evaluator and
+never become public by evaluator choice.
 
-#### Promotion plan
+#### Required sequence for a `PASS`
 
-Record the eligibility decision as one immutable private file,
-`<private>/.eval/promotion-plan.json`, **before** `submitResult`. Its schema is
-defined once, by `tools/archive-manifest.ts` (`PROMOTION_PLAN_PATH`,
-`PROMOTION_PLAN_SCHEMA_VERSION`, `parsePromotionPlan`), and the
-`evaluator-verify` contract names the same path as `promotion.plan`. Schema
-version 2:
-
-```json
-{
-  "schemaVersion": 2,
-  "kind": "evaluator-promotion-plan",
-  "decision": "ELIGIBLE",
-  "candidate": "<40-hex candidate commit>",
-  "evaluatorRevision": "002",
-  "attempt": 2,
-  "attempts": [
-    { "attempt": 1, "evaluatorRevision": "001", "result": "FAIL" },
-    { "attempt": 2, "evaluatorRevision": "002", "result": "PASS" }
-  ],
-  "revisions": [
-    { "evaluatorRevision": "001", "eligible": true },
-    { "evaluatorRevision": "002", "eligible": false, "reason": "<safe reason>" }
-  ],
-  "artifacts": [
-    {
-      "kind": "attempt-ledger",
-      "eligible": true,
-      "source": ".eval/attempt-ledger.json",
-      "destination": "attempt-ledger.json",
-      "identity": "sha256:<bytes>"
-    },
-    {
-      "kind": "terminal-attempt",
-      "eligible": true,
-      "attempt": 1,
-      "source": ".eval/attempts/001/eval-result.md",
-      "destination": "attempts/001/eval-result.md",
-      "identity": "sha256:<bytes>"
-    },
-    {
-      "kind": "evaluator-revision",
-      "eligible": true,
-      "evaluatorRevision": "001",
-      "source": ".eval/revisions/001",
-      "destination": "revisions/001",
-      "inventory": { "freeze.json": "sha256:<bytes>" }
-    }
-  ]
-}
-```
-
-The history lists every attempt of the cycle in order and ends with the passing
-attempt. Every attempt has a `terminal-attempt` entry, and the attempt ledger's
-`attempts[].id`/`status` must agree with the history. Each evaluator revision
-used by the history has exactly one explicit decision; an eligible revision has
-exactly one complete bundle whose `inventory` lists every file with its
-identity. An ineligible PASS is still recorded explicitly:
-`{ "schemaVersion": 2, "kind": "evaluator-promotion-plan", "decision": "INELIGIBLE", "reason": "<safe reason>" }`.
-
-#### Required sequence for an eligible PASS
-
-1. Persist the plan.
-2. Build and validate the archive manifest from the real file with
-   `node tools/archive-manifest.ts --source-root <private> --output <path outside <private>>`.
-   It refuses missing or changed files, partial bundles, incomplete history,
-   unsafe or duplicate paths, and a manifest above the one action artifact bound
-   B (`MAX_ACTION_ARTIFACTS` in `src/executors/protocol.ts`). It adds the plan
-   itself as `promotion-plan.json`.
-3. Publish the sanitized checkpoint: public `verification-result.json` carries
-   `"promotionPlan": { "identity": "<decisionIdentity>", "decision": "ELIGIBLE" }`,
-   where the identity is the manifest's `decisionIdentity` (the plan bytes),
-   never a request digest or public summary hash.
-4. Submit the typed `PASS` with `submitResult`.
-5. Call `requestAction` exactly once with `kind: "promotion"` and the manifest's
-   `candidate`, `evaluatorRevision`, `attempt` and `artifacts`, unchanged.
-6. Inspect the returned action. Archival is complete only when its `status` is
+1. Keep `.eval/attempt-ledger.json`, every terminal result and every frozen
+   revision intact; do not write any promotion plan or `ELIGIBLE`/`INELIGIBLE`
+   decision.
+2. Publish the sanitized checkpoint: public `verification-result.json`.
+3. Submit the typed `PASS` with `submitResult`.
+4. Call `requestAction` exactly once with `kind: "promotion"` and the exact
+   `candidate`, `evaluatorRevision` and `attempt`. Supply no artifact list; the
+   host derives it and ignores nothing it did not derive.
+5. Inspect the returned action. Archival is complete only when its `status` is
    `succeeded`; the host then copies the bytes into `evaluation/`, writes
    `promotion.json` and records `promotion-recorded`. Report any `denied` or
-   `failed` status and its reason truthfully; do not repeat the request, edit
-   the plan to force it through, or describe the evidence as archived.
+   `failed` status and its reason truthfully; do not repeat the request or
+   describe the evidence as archived.
 
-When the plan is `INELIGIBLE`, or the utility refuses it (including bound B),
-keep the plan, publish `promotionPlan` with that decision, submit the genuine
-`PASS`, and do not call `requestAction`. The PASS stays authentic and archival
-stays truthfully incomplete for the human or recovery path. Never make hidden
-material public to satisfy promotion.
-
-Harness performs byte-preserving archival, identity validation and
-`promotion.json` creation. The host action must preserve every prior terminal
-attempt and superseded eligible revision; an unchanged suite is stored once and
-referenced by each attempt. The action result is separate from evaluator `PASS`.
-A failed or denied action neither fabricates promoted evidence nor rewrites the
-semantic verification result.
+An archive failure leaves the `PASS` authentic and archival truthfully
+incomplete for the human or recovery path. Never make hidden material public to
+satisfy promotion. The action result is separate from evaluator `PASS`; a failed
+or denied action neither fabricates promoted evidence nor rewrites the semantic
+verification result. The host preserves every prior terminal attempt and
+superseded revision; an unchanged suite is stored once.
 
 #### Public regression recommendations
 

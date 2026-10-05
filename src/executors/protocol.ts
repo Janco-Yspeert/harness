@@ -140,7 +140,7 @@ export const WORKER_PROTOCOL_SCHEMAS = {
     },
     requestAction: {
       description:
-        "Request one host-configured action for this execution. kind=promotion needs candidate, evaluatorRevision, attempt and artifacts; kind=publication needs workspace, commit and ref; kind=evidence needs files, each the exact destination and UTF-8 content bytes you authored, which the host writes and commits only when the destinations are allowed by your contract. The host validates and may deny it.",
+        "Request one host-configured action for this execution. kind=promotion needs candidate, evaluatorRevision and attempt (the host derives the archive; supply no artifacts unless your contract names an explicit list); kind=publication needs workspace, commit and ref; kind=evidence needs files, each the exact destination and UTF-8 content bytes you authored, which the host writes and commits only when the destinations are allowed by your contract. The host validates and may deny it.",
       request: {
         type: "object",
         additionalProperties: false,
@@ -152,7 +152,6 @@ export const WORKER_PROTOCOL_SCHEMAS = {
           attempt: { type: "integer", minimum: 1 },
           artifacts: {
             type: "array",
-            minItems: 1,
             maxItems: MAX_ACTION_ARTIFACTS,
             items: {
               type: "object",
@@ -344,14 +343,11 @@ export function parseWorkerRequest(
     attempt < 1
   )
     fail(`${op}: attempt must be a positive integer`);
-  const artifacts = args.artifacts;
-  if (
-    !Array.isArray(artifacts) ||
-    artifacts.length < 1 ||
-    artifacts.length > MAX_ACTION_ARTIFACTS
-  )
+  // Host-derived archival sends no artifacts; the host derives them.
+  const artifacts = args.artifacts ?? [];
+  if (!Array.isArray(artifacts) || artifacts.length > MAX_ACTION_ARTIFACTS)
     fail(
-      `${op}: artifacts must be a nonempty array of at most ${String(MAX_ACTION_ARTIFACTS)} mappings`,
+      `${op}: artifacts must be an array of at most ${String(MAX_ACTION_ARTIFACTS)} mappings`,
     );
   return {
     operation: op,

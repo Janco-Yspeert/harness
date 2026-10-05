@@ -82,6 +82,9 @@ export interface RoleContract {
     // Optional recorded eligibility plan, relative to the source workspace.
     // When declared, the request must archive that exact plan file.
     plan?: string;
+    // The host derives the archive from policy and exact identities; the
+    // request carries no evaluator-authored artifacts or eligibility plan.
+    derive?: "host-archive";
   };
 }
 export interface RolePolicy {
@@ -365,6 +368,7 @@ export interface RoleGrant {
       attemptField: string;
       transition: string;
       plan?: string;
+      derive?: "host-archive";
     };
   };
   // Explicit, root-authorized transport compatibility for a legacy protected

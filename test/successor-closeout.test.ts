@@ -27,6 +27,7 @@ import {
   buildArchivePlan,
   classifyAttempts,
   closeoutPermitted,
+  deriveHostArchive,
   evaluationFactIdentity,
   executeArchive,
   type EvaluationFact,
@@ -711,5 +712,44 @@ void test("014k AC14/TR2h: a fresh allocation after adoption binds the adopted m
     buildMethodologyManifest(f.root, f.baseline).manifest.roles[
       "evaluator-verify"
     ]?.skill.identity,
+  );
+});
+
+void test("014k AC06/AC10: the host derives the archive from the attempt ledger and allocations with no evaluator plan", (t) => {
+  const root = scratch(t);
+  const spec = put(root, ".eval/eval-spec.md", "spec\n");
+  const freeze = put(
+    root,
+    ".eval/freeze.json",
+    `${JSON.stringify({ evaluatorRevision: "001", artifacts: { "eval-spec.md": spec } })}\n`,
+  );
+  const result = put(root, ".eval/attempts/001/eval-result.md", "pass\n");
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({ attempts: [{ id: "001", status: "PASS", resultIdentity: result }] })}\n`,
+  );
+  const allocations = [
+    { attempt: 1, execution: "e1", evaluatorRevision: "001" },
+  ];
+  const plan = deriveHostArchive(root, COMMIT, allocations);
+  assert.deepEqual(plan.items.map((item) => item.destination).sort(), [
+    "attempts/001/eval-result.md",
+    "evaluation-fact.json",
+    "freeze/001.json",
+    "revisions/001/eval-spec.md",
+  ]);
+  assert.equal(
+    plan.items.find((item) => item.destination === "freeze/001.json")?.identity,
+    freeze,
+  );
+  put(root, ".eval/attempts/001/eval-result.md", "changed\n");
+  assert.throws(
+    () => deriveHostArchive(root, COMMIT, allocations),
+    /changed since it was recorded/,
+  );
+  assert.throws(
+    () => deriveHostArchive(root, COMMIT, []),
+    /disagrees with host allocations/,
   );
 });

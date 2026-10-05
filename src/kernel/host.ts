@@ -1172,9 +1172,9 @@ export class GovernedHost {
           return;
         }
         if (sub === "promote") {
-          const artifacts = body.artifacts;
+          const artifacts = body.artifacts ?? [];
           if (!Array.isArray(artifacts))
-            throw new Error("promotion artifacts are required");
+            throw new Error("promotion artifacts must be a list");
           const parsed = artifacts.map((entry): PromotionArtifact => {
             const artifact = object(entry);
             return {

@@ -14,8 +14,6 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { createInterface } from "node:readline";
 
-import { buildArchiveManifest } from "../archive-manifest.ts";
-
 interface Step {
   tool?: string;
   args?: Record<string, unknown>;
@@ -256,41 +254,38 @@ if (scenario.hang) {
       continue;
     }
     if (step.promotion?.fromPlan) {
-      let manifest: ReturnType<typeof buildArchiveManifest>;
-      try {
-        manifest = buildArchiveManifest(workspaceRoot("private"));
-      } catch (error) {
-        // A refused plan is never requested: the PASS stays genuine and
-        // archival stays truthfully incomplete.
-        results.push({ refused: (error as Error).message });
-        continue;
+      // Host-derived archive: request the exact identities only; the host
+      // derives every artifact. No evaluator plan or artifact list is sent.
+      if (!assignment) {
+        const read = (await rpc("tools/call", {
+          name: "assignment",
+          arguments: {},
+        })) as { structuredContent?: unknown };
+        assignment = read.structuredContent as Record<string, unknown>;
       }
-      let artifacts = manifest.artifacts;
-      if (step.promotion.omitPlan)
-        artifacts = artifacts.filter(
-          (artifact) => artifact.destination !== "promotion-plan.json",
-        );
-      if (step.promotion.padTo !== undefined) {
-        const paddingArtifact = manifest.artifacts[1];
-        if (!paddingArtifact)
-          throw new Error("fixture promotion archive lacks a padding artifact");
-        for (let index = 0; artifacts.length < step.promotion.padTo; index += 1)
-          artifacts = [
-            ...artifacts,
-            { ...paddingArtifact, destination: `pad/${String(index)}` },
-          ];
-      }
+      const allowed = (
+        assignment.roleGrant as {
+          hostActions: {
+            promotion?: { candidate: string; evaluatorRevision: string };
+          };
+        }
+      ).hostActions.promotion;
+      const ledger = JSON.parse(
+        readFileSync(
+          join(workspaceRoot("private"), ".eval/attempt-ledger.json"),
+          "utf8",
+        ),
+      ) as { attempts: unknown[] };
       const response = (await rpc("tools/call", {
         name: "requestAction",
         arguments: {
           kind: "promotion",
-          candidate: step.promotion.candidate ?? manifest.candidate,
-          evaluatorRevision: manifest.evaluatorRevision,
-          attempt: step.promotion.attempt ?? manifest.attempt,
-          artifacts,
+          candidate: step.promotion.candidate ?? allowed?.candidate,
+          evaluatorRevision: allowed?.evaluatorRevision,
+          attempt: step.promotion.attempt ?? ledger.attempts.length,
         },
       })) as { structuredContent?: unknown; isError?: boolean };
-      results.push({ manifest, response });
+      results.push({ response });
       continue;
     }
     let input = step.args ?? {};

@@ -373,6 +373,7 @@ export function resolveAuthority(
         attemptField: promotion.attemptField,
         transition: promotion.transition,
         ...(promotion.plan ? { plan: promotion.plan } : {}),
+        ...(promotion.derive ? { derive: promotion.derive } : {}),
       }
     : undefined;
   if (

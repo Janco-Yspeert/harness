@@ -28,6 +28,7 @@ import {
   validatePreparedObservationRecord,
   type PreparedObservationRecord,
 } from "../candidate-observation.ts";
+import { deriveHostArchive, type ArchiveItem } from "../evaluation-closeout.ts";
 import {
   MAX_ACTION_ARTIFACTS,
   MAX_EVIDENCE_BYTES,
@@ -2709,13 +2710,58 @@ export class ExecutionKernel {
     candidate: string,
     evaluatorRevision: string,
     attempt: number,
-    artifacts: PromotionArtifact[],
+    suppliedArtifacts: PromotionArtifact[],
     archiveLoss?: NonNullable<PromotionActionRequest["archiveLoss"]>,
     archiveRecovery?: NonNullable<PromotionActionRequest["archiveRecovery"]>,
   ): PromotionActionResult {
     return this.#transaction(workflow, () => {
+      let artifacts = suppliedArtifacts;
       const execution = this.execution(workflow, id);
       const grant = this.roleGrant(workflow, execution.roleGrant);
+      // Host-derived archive: the request carries no evaluator-authored
+      // artifacts; the host derives them from policy and exact identities.
+      let derivedError: string | undefined;
+      const derive = grant.hostActions.promotion?.derive === "host-archive";
+      let items: ArchiveItem[] | undefined;
+      if (derive) {
+        try {
+          const sourceWorkspace = required(
+            this.project.workflows[workflow]?.workspaces?.[
+              required(grant.hostActions.promotion).sourceWorkspace
+            ] ??
+              this.project.workspaces[
+                required(grant.hostActions.promotion).sourceWorkspace
+              ],
+          );
+          items = [
+            ...deriveHostArchive(
+              realpathSync(sourceWorkspace.path),
+              candidate,
+              this.events(workflow)
+                .filter(
+                  (event) =>
+                    event.transition ===
+                    grant.hostActions.promotion?.allocationEvent,
+                )
+                .map((event) => ({
+                  attempt: Number(event.evidence.attempt),
+                  execution: String(event.evidence.execution),
+                  evaluatorRevision: String(event.evidence.evaluatorRevision),
+                })),
+            ).items,
+          ];
+          artifacts = items.map((item) => ({
+            source: item.source ?? `host:${item.destination}`,
+            destination: item.destination,
+            identity: item.identity,
+          }));
+        } catch (error) {
+          derivedError =
+            (error as Error).message.split("\n")[0] ??
+            "archive derivation failed";
+          artifacts = [];
+        }
+      }
       const request: PromotionActionRequest = {
         schemaVersion: 1,
         id: randomUUID(),
@@ -2743,6 +2789,7 @@ export class ExecutionKernel {
       };
       let staging: string | undefined;
       try {
+        if (derivedError !== undefined) throw new Error(derivedError);
         const allowed = grant.hostActions.promotion;
         const allocation = allowed
           ? this.events(workflow).findLast(
@@ -2827,11 +2874,17 @@ export class ExecutionKernel {
         for (const artifact of artifacts) {
           if (!artifact.source || !artifact.destination)
             throw new Error("invalid promotion artifact mapping");
-          const sourcePath = inside(
-            sourceRoot,
-            boundedPath(sourceRoot, artifact.source),
+          const generated = items?.find(
+            (item) =>
+              item.content !== undefined &&
+              item.destination === artifact.destination,
           );
-          const bytes = readFileSync(sourcePath);
+          const bytes =
+            generated?.content !== undefined
+              ? Buffer.from(generated.content)
+              : readFileSync(
+                  inside(sourceRoot, boundedPath(sourceRoot, artifact.source)),
+                );
           if (identity(bytes) !== artifact.identity)
             throw new Error("promotion source identity mismatch");
           const output = boundedPath(staging, artifact.destination);

@@ -42,11 +42,7 @@ import type {
 } from "../src/kernel/model.ts";
 import { harnessValidators } from "../src/methodologies/harness-public.ts";
 import { buildMethodologyManifest } from "../src/methodology-evolution.ts";
-import {
-  MAX_ACTION_ARTIFACTS,
-  WORKER_OPERATIONS,
-} from "../src/executors/protocol.ts";
-import { PROMOTION_PLAN_PATH } from "../tools/archive-manifest.ts";
+import { WORKER_OPERATIONS } from "../src/executors/protocol.ts";
 import { trustFixtureMethodology } from "./support/trusted-fixture.ts";
 
 const repository = resolve(".");
@@ -119,13 +115,7 @@ const MATRIX: Record<
   },
   "evaluator-verify": {
     operations: ["assignment", "submitResult", "requestAction"],
-    artifacts: [
-      "verification-result.json",
-      "manifest.md",
-      PROMOTION_PLAN_PATH,
-      "tools/archive-manifest.ts",
-      "promotionPlan",
-    ],
+    artifacts: ["verification-result.json", "manifest.md"],
     vocabulary: [
       "succeeded",
       "PASS",
@@ -224,30 +214,24 @@ function coverage(revision: string): string {
 }
 
 function revisionBundle(revision: string): Step[] {
-  return [
-    priv(`.eval/revisions/${revision}/freeze.json`, `freeze ${revision}\n`),
-    priv(`.eval/revisions/${revision}/eval-spec.md`, `spec ${revision}\n`),
+  const freeze = (spec: string, freezePath: string): Step[] => [
+    priv(spec, `spec ${revision}\n`),
+    priv(
+      freezePath,
+      json({
+        evaluatorRevision: revision,
+        artifacts: { "eval-spec.md": ident("private", spec) },
+      }),
+    ),
   ];
-}
-
-function revisionArtifact(revision: string): Record<string, unknown> {
-  return {
-    kind: "evaluator-revision",
-    eligible: true,
-    evaluatorRevision: revision,
-    source: `.eval/revisions/${revision}`,
-    destination: `revisions/${revision}`,
-    inventory: {
-      "freeze.json": ident(
-        "private",
-        `.eval/revisions/${revision}/freeze.json`,
-      ),
-      "eval-spec.md": ident(
-        "private",
-        `.eval/revisions/${revision}/eval-spec.md`,
-      ),
-    },
-  };
+  return [
+    ...freeze(
+      `.eval/revisions/${revision}/eval-spec.md`,
+      `.eval/revisions/${revision}/freeze.json`,
+    ),
+    // The active revision is archived directly from its canonical location.
+    ...freeze(".eval/eval-spec.md", ".eval/freeze.json"),
+  ];
 }
 
 // Attempts: [evaluatorRevision, result] in order; the last one is terminal.
@@ -255,14 +239,15 @@ function verifySteps(
   attempts: Array<[string, "PASS" | "FAIL" | "BLOCKED"]>,
   options: {
     classification?: string;
-    plan?: "eligible" | "ineligible" | "none";
     promotion?: Step["promotion"] | false;
     requestTwice?: boolean;
   } = {},
 ): Step[] {
   const last = attempts.length;
-  const [revision, result] = attempts[last - 1] ?? ["001", "PASS"];
+  const [, result] = attempts[last - 1] ?? ["001", "PASS"];
+  const resultPath = `.eval/attempts/${String(last).padStart(3, "0")}/eval-result.md`;
   const steps: Step[] = [
+    priv(resultPath, `attempt ${String(last)} ${result}\n`),
     priv(
       ".eval/attempt-ledger.json",
       json({
@@ -270,75 +255,13 @@ function verifySteps(
         attempts: attempts.map(([, status], index) => ({
           id: String(index + 1).padStart(3, "0"),
           status,
+          ...(index === last - 1
+            ? { resultIdentity: ident("private", resultPath) }
+            : {}),
         })),
       }),
     ),
-    priv(
-      `.eval/attempts/${String(last).padStart(3, "0")}/eval-result.md`,
-      `attempt ${String(last)} ${result}\n`,
-    ),
   ];
-  const plan = options.plan ?? (result === "PASS" ? "eligible" : "none");
-  if (plan === "eligible") {
-    const revisions = [...new Set(attempts.map(([value]) => value))];
-    steps.push(
-      priv(
-        PROMOTION_PLAN_PATH,
-        json({
-          schemaVersion: 2,
-          kind: "evaluator-promotion-plan",
-          decision: "ELIGIBLE",
-          candidate: "{{input:candidate}}",
-          evaluatorRevision: revision,
-          attempt: last,
-          attempts: attempts.map(([value, status], index) => ({
-            attempt: index + 1,
-            evaluatorRevision: value,
-            result: status,
-          })),
-          revisions: revisions.map((value) => ({
-            evaluatorRevision: value,
-            eligible: true,
-          })),
-          artifacts: [
-            {
-              kind: "attempt-ledger",
-              eligible: true,
-              source: ".eval/attempt-ledger.json",
-              destination: "attempt-ledger.json",
-              identity: ident("private", ".eval/attempt-ledger.json"),
-            },
-            ...attempts.map((_, index) => {
-              const id = String(index + 1).padStart(3, "0");
-              return {
-                kind: "terminal-attempt",
-                eligible: true,
-                attempt: index + 1,
-                source: `.eval/attempts/${id}/eval-result.md`,
-                destination: `attempts/${id}/eval-result.md`,
-                identity: ident(
-                  "private",
-                  `.eval/attempts/${id}/eval-result.md`,
-                ),
-              };
-            }),
-            ...revisions.map(revisionArtifact),
-          ],
-        }),
-      ),
-    );
-  } else if (plan === "ineligible")
-    steps.push(
-      priv(
-        PROMOTION_PLAN_PATH,
-        json({
-          schemaVersion: 2,
-          kind: "evaluator-promotion-plan",
-          decision: "INELIGIBLE",
-          reason: "fixture revision keeps private mechanics",
-        }),
-      ),
-    );
   const methodology: Record<string, string> =
     result === "PASS"
       ? { result }
@@ -352,14 +275,6 @@ function verifySteps(
         evaluatorRevision: "{{input:evaluatorRevision}}",
         ...methodology,
         coverageResults: { AC1: result === "PASS" ? "SATISFIED" : "BLOCKED" },
-        ...(plan === "none"
-          ? {}
-          : {
-              promotionPlan: {
-                identity: ident("private", PROMOTION_PLAN_PATH),
-                decision: plan === "eligible" ? "ELIGIBLE" : "INELIGIBLE",
-              },
-            }),
       }),
     ),
     pub("manifest.md", `# Manifest\n\nverify attempt ${String(last)}\n`),
@@ -370,7 +285,7 @@ function verifySteps(
     ),
     submit(methodology),
   );
-  if (result === "PASS" && plan === "eligible" && options.promotion !== false) {
+  if (result === "PASS" && options.promotion !== false) {
     steps.push({ promotion: { fromPlan: true, ...options.promotion } });
     if (options.requestTwice) steps.push({ promotion: { fromPlan: true } });
   }
@@ -746,14 +661,15 @@ void test("014d AC01 (c): every real skill names its matrix operations, artifact
       role,
     );
   }
-  // One plan path and schema for skill, contract and utility.
+  // The host derives the archive: no evaluator-authored plan path remains.
   const verify = JSON.parse(
     readFileSync(
       "methodologies/harness/contracts/evaluator-verify.json",
       "utf8",
     ),
   ) as RoleContract;
-  assert.equal(verify.promotion?.plan, PROMOTION_PLAN_PATH);
+  assert.equal(verify.promotion?.plan, undefined);
+  assert.equal(verify.promotion?.derive, "host-archive");
 });
 
 void test("014d AC01/AC03/AC05-scripted: one bounded grant carries all eight real roles through the production host; the human gate stops with its pending decision", async (t) => {
@@ -868,21 +784,16 @@ void test("014d AC01/AC03/AC05-scripted: one bounded grant carries all eight rea
   );
   // Real evaluator archival: plan -> manifest -> PASS -> one requestAction.
   const [verify] = h.providerRecords("evaluator-verify");
-  const requested = verify?.results?.find((result) => result.manifest);
+  const requested = verify?.results?.find((result) => result.response);
   assert.equal(
     requested?.response?.structuredContent?.action?.status,
     "succeeded",
   );
   const promotion = last(events, "promotion-recorded");
-  const planBytes = readFileSync(join(h.privateDir, PROMOTION_PLAN_PATH));
-  assert.equal(promotion.evidence.planIdentity, identity(planBytes));
-  assert.ok(requested.manifest, "evaluator must request a promotion plan");
-  assert.equal(requested.manifest.decisionIdentity, identity(planBytes));
+  assert.equal(promotion.evidence.planIdentity, undefined);
   const evaluation = join(h.root, DIR, "evaluation");
-  assert.deepEqual(
-    readFileSync(join(evaluation, "promotion-plan.json")),
-    planBytes,
-  );
+  assert.ok(!existsSync(join(evaluation, "promotion-plan.json")));
+  assert.ok(existsSync(join(evaluation, "evaluation-fact.json")));
   for (const [destination, id] of Object.entries(
     promotion.evidence.artifacts as Record<string, string>,
   ))
@@ -891,13 +802,6 @@ void test("014d AC01/AC03/AC05-scripted: one bounded grant carries all eight rea
     identity(readFileSync(join(evaluation, "promotion.json"))),
     promotion.evidence.promotionIdentity,
   );
-  const result = JSON.parse(
-    readFileSync(join(h.root, DIR, "verification-result.json"), "utf8"),
-  ) as { promotionPlan: { identity: string; decision: string } };
-  assert.deepEqual(result.promotionPlan, {
-    identity: identity(planBytes),
-    decision: "ELIGIBLE",
-  });
   // As-Built committed the host's promotion record alone, byte-identical to
   // the bound promotion identity, before its own checkpoint. The other
   // promoted files stay as the host left them.
@@ -1060,12 +964,10 @@ async function assertIncompleteArchival(
   });
 }
 
-void test("014d AC06: omitted, ineligible and refused-oversized promotion leave an authentic PASS with truthfully incomplete archival", async (t) => {
+void test("014d AC06: omitted promotion leave an authentic PASS with truthfully incomplete archival", async (t) => {
   for (const verify of [
     // Omitted request (or premature exit before it).
     verifySteps([["001", "PASS"]], { promotion: false }),
-    // Explicit ineligible decision: never requested.
-    verifySteps([["001", "PASS"]], { plan: "ineligible" }),
   ]) {
     const { h, grant } = await throughVerify(t, verify);
     await assertIncompleteArchival(h, grant);
@@ -1077,12 +979,10 @@ void test("014d AC06: omitted, ineligible and refused-oversized promotion leave 
   }
 });
 
-void test("014d AC06: wrong candidate, wrong attempt, omitted plan artifact and an over-bound request are denied without archival", async (t) => {
-  for (const [promotion, expected] of [
-    [{ candidate: "f".repeat(40) }, "denied"],
-    [{ attempt: 7 }, "denied"],
-    [{ omitPlan: true }, "denied"],
-    [{ padTo: MAX_ACTION_ARTIFACTS + 1 }, "rejected"],
+void test("014d AC06: wrong candidate and wrong attempt are denied without archival", async (t) => {
+  for (const promotion of [
+    { candidate: "f".repeat(40) },
+    { attempt: 7 },
   ] as const) {
     const { h, grant } = await throughVerify(
       t,
@@ -1091,19 +991,9 @@ void test("014d AC06: wrong candidate, wrong attempt, omitted plan artifact and 
     await assertIncompleteArchival(h, grant);
     const [record] = h.providerRecords("evaluator-verify");
     const response = record?.results?.find(
-      (result) => result.manifest,
+      (result) => result.response,
     )?.response;
-    if (expected === "rejected") {
-      // The worker protocol schema bound refuses it before the host acts.
-      assert.equal(response?.isError, true);
-      assert.equal(
-        h
-          .ledger()
-          .filter((event) => event.transition === "kernel.action-request")
-          .length,
-        0,
-      );
-    } else {
+    {
       assert.equal(response?.structuredContent?.action?.status, "denied");
       assert.ok(
         h
@@ -1158,9 +1048,19 @@ void test("014d AC06: a mutated source fails, and duplicate delivery never creat
   await mutated.start(mutatedGrant.id);
   await assertIncompleteArchival(mutated, mutatedGrant);
   const [record] = mutated.providerRecords("evaluator-verify");
+  assert.equal(
+    record?.results?.find((result) => result.response)?.response
+      ?.structuredContent?.action?.status,
+    "denied",
+  );
   assert.match(
-    String(record?.results?.find((result) => result.refused)?.refused),
-    /changed after planning/,
+    JSON.stringify(
+      mutated
+        .ledger()
+        .findLast((event) => event.transition === "kernel.action-result")
+        ?.evidence.reason,
+    ),
+    /changed since it was recorded/,
   );
 });
 
@@ -1364,8 +1264,15 @@ void test("014d AC07: evaluator repair needs its exact trigger, preserves revisi
   );
   // Revision 001 is preserved unchanged and both revisions are archived.
   assert.equal(
-    readFileSync(join(h.privateDir, ".eval/revisions/001/freeze.json"), "utf8"),
-    "freeze 001\n",
+    (
+      JSON.parse(
+        readFileSync(
+          join(h.privateDir, ".eval/revisions/001/freeze.json"),
+          "utf8",
+        ),
+      ) as { evaluatorRevision: string }
+    ).evaluatorRevision,
+    "001",
   );
   const promoted = Object.keys(
     last(events, "promotion-recorded").evidence.artifacts as Record<
@@ -1374,14 +1281,13 @@ void test("014d AC07: evaluator repair needs its exact trigger, preserves revisi
     >,
   ).sort();
   assert.deepEqual(promoted, [
-    "attempt-ledger.json",
     "attempts/001/eval-result.md",
     "attempts/002/eval-result.md",
-    "promotion-plan.json",
+    "evaluation-fact.json",
+    "freeze/001.json",
+    "freeze/002.json",
     "revisions/001/eval-spec.md",
-    "revisions/001/freeze.json",
     "revisions/002/eval-spec.md",
-    "revisions/002/freeze.json",
   ]);
   // The first finalized verification is never rewritten.
   const finals = events.filter(

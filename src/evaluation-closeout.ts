@@ -330,3 +330,67 @@ export function closeoutPermitted(
     record.evaluationFact === evaluationFactIdentity(fact)
   );
 }
+
+export interface AllocatedAttempt {
+  readonly attempt: number;
+  readonly execution: string;
+  readonly evaluatorRevision: string;
+}
+
+// Host derivation of the post-PASS archive from the private attempt ledger and
+// the host's own allocation records. No evaluator-authored plan or eligibility
+// decision is read.
+export function deriveHostArchive(
+  evaluatorRoot: string,
+  candidate: string,
+  allocations: readonly AllocatedAttempt[],
+): ArchivePlan {
+  const ledgerBytes = readRegular(evaluatorRoot, ".eval/attempt-ledger.json");
+  if (ledgerBytes === null) throw new Error("attempt ledger is missing");
+  const ledger = JSON.parse(ledgerBytes.toString("utf8")) as {
+    attempts?: unknown;
+  };
+  if (!Array.isArray(ledger.attempts) || ledger.attempts.length === 0)
+    throw new Error("attempt ledger has no attempts");
+  const observed: ObservedAttempt[] = (
+    ledger.attempts as Record<string, unknown>[]
+  ).map((entry, index) => {
+    const allocation = allocations.find((item) => item.attempt === index + 1);
+    if (!allocation || Number(entry.id) !== index + 1)
+      throw new Error("attempt ledger disagrees with host allocations");
+    const base = {
+      execution: allocation.execution,
+      evaluatorRevision: allocation.evaluatorRevision,
+    };
+    if (!VERDICTS.includes(String(entry.status))) return base;
+    const path = `.eval/attempts/${String(index + 1).padStart(3, "0")}/eval-result.md`;
+    const bytes = readRegular(evaluatorRoot, path);
+    const recorded =
+      typeof entry.resultIdentity === "string"
+        ? entry.resultIdentity
+        : bytes === null
+          ? undefined
+          : identity(bytes);
+    if (recorded === undefined) throw new Error("terminal artifact missing");
+    return {
+      ...base,
+      result: entry.status as Verdict,
+      recorded: { path, identity: recorded },
+    };
+  });
+  const attempts = classifyAttempts(evaluatorRoot, observed);
+  const last = attempts.at(-1);
+  const freeze = readRegular(evaluatorRoot, ".eval/freeze.json");
+  if (!last || last.state !== "TERMINAL" || freeze === null)
+    throw new Error("archive requires a terminal PASS and frozen revision");
+  return buildArchivePlan(evaluatorRoot, {
+    schemaVersion: 1,
+    kind: "evaluation-fact",
+    result: last.result,
+    candidate,
+    evaluatorRevision: last.evaluatorRevision,
+    evaluatorRevisionIdentity: identity(freeze),
+    resultIdentity: last.artifact.identity,
+    attempts,
+  });
+}

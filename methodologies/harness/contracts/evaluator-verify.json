@@ -64,6 +64,6 @@
     "allocationEvent": "verification-allocated",
     "attemptField": "attempt",
     "transition": "promotion-recorded",
-    "plan": ".eval/promotion-plan.json"
+    "derive": "host-archive"
   }
 }

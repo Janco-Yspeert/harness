@@ -123,7 +123,9 @@ export function definitionFrom(
           !contract.promotion.transition ||
           (contract.promotion.plan !== undefined &&
             (typeof contract.promotion.plan !== "string" ||
-              !contract.promotion.plan))))
+              !contract.promotion.plan)) ||
+          (contract.promotion.derive !== undefined &&
+            contract.promotion.plan !== undefined)))
     )
       throw new Error(`invalid contract for ${name}`);
     if (
