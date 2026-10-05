@@ -57,3 +57,17 @@ Append-only execution history. This manifest records runs; it is not canonical f
 - Checks: bound brief identity and committed bytes matched; complete brief, relevant public contracts, accepted 014h/014i As-Built and Outcome records, implementation surfaces and visible tests inspected; Design Map passed Prettier and `git diff --check`
 - Limitations: evaluator-private material and workflow ledgers were not inspected; product tests were not run because this change establishes a Markdown design contract and changes no product code
 - Measurements: 46 Design Map lines; provider calls 0; runtime token and wall-clock measurements unavailable
+
+## 2026-10-05 — Evaluator Prepare
+
+- Execution: `809faadb-3981-4675-a993-ba9cd3d3bd92`
+- Skill: `evaluator` contract version `14`, `sha256:7a0e65316e5f55393f66049709d86f7d848979e5a5aefb9c9e72e4f3187e8aaa`; mode `prepare`
+- Role contract: `sha256:a65ddd80eea69fae4e43b50f44864d21ad7c16c364a00244052fa29a39173e50`
+- Role Grant: `sha256:09e141eac8d3a382bbdcccfec6c61fbc730bb5160eb706845d5b3c53ade861ce`
+- Inputs: brief `sha256:6b616066fa2a616e9c649fad3d96bcd0a684a5d674cb430ebb7f74c1a55f994d`; Design Map `sha256:79c77b7924414cd2290068b9376c2ae423be8546a4f448e348e9756fe87ae910`
+- Result: succeeded — evaluator revision `001` frozen
+- Evaluator revision identity: `sha256:0fc74dfc962243b48b5e048960857bb22299d9fa37d8ca74c91ed7737042d16e`
+- Output: `eval-requirements.md` `sha256:64f5c7f773c19d8fbd4e6dc842ef49a3d1ceab30b251eb250c6d3a46a574c658`; `coverage-map.json` `sha256:52e39e2a374fa9e3002b379bb5535b9830b8fcd66fa9338f066e425451c622ea`
+- Checks: pre-freeze structural integrity validation PASS (13 criterion records); public coverage map passes the repository prepared-coverage validator; evaluator self-checks passed against synthetic repositories only; no candidate executed
+- Limitations: workflow ledgers were not inspected; behavioral coverage relies on implementer-owned tests and review because the Design Map leaves those seams as implementation freedom
+- Measurements: provider calls 0; runtime token and wall-clock measurements unavailable
