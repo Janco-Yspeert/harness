@@ -160,3 +160,17 @@ Append-only execution history. This manifest records runs; it is not canonical f
 - Checks: all bound input identities matched; promotion record identity matched and was committed separately; exact candidate diff, relevant source and visible tests, accepted verification result, and promoted target-spike evidence inspected; artifact passed `git diff --check`; evaluation was not rerun
 - Measurements: candidate delta from Design Map baseline `32bdc94b65c08e3677f32c5baee8d277f2fc2830` comprised 16 files, 1,412 insertions and 117 deletions; As-Built artifact 23 lines; provider calls 0
 - Measurement cutoff: immediately before this manifest update
+
+## 2026-10-05 — Outcome
+
+- Execution: `583670e5-d7b6-4749-9fc5-7d38318dcffa`
+- Skill: `outcome` contract version `5`, `sha256:2ab64cee141d06a88ff04dc540ddfa7a15c364e07bb717b7fab70c15460b7e82`
+- Role contract: `sha256:1c6b6cef21d75044ccac3b125f07f216ed1b5e655078b4707d4fd5af6bd04eab`
+- Role Grant: `sha256:111a36e36ddb0f1d23fd22824ffcc0a93e54c90af71f542400be006d8aeb2bbb`
+- Inputs: candidate and human acceptance `93ade31b1dcb6487798b27e812dc443fce30af43`; brief `sha256:6b616066fa2a616e9c649fad3d96bcd0a684a5d674cb430ebb7f74c1a55f994d`; Design Map `sha256:79c77b7924414cd2290068b9376c2ae423be8546a4f448e348e9756fe87ae910`; promotion `sha256:b929bd89f8b46ad6f068d02dae59279e8847c1bbc2696eccff0c17ee4651ddc7`; As-Built `sha256:3cbd46d2d64756a3b3954ce353475bdc3feed9c7065c389d32e9b9b823290dac`. All bound identities and committed provenance matched.
+- Result: succeeded — `STANDARD`; the Outcome preserves the bounded archive-loss compatibility qualification and does not describe it as a process exception or methodology transition.
+- Output: `outcome.md`, `sha256:af7c897e1db149c40dd4a18946c725c5a4cb78d20bbf72887c184b4a1d8d9e32`
+- Checks: exact candidate, frozen contracts, manifest history, accepted attempt-005 PASS, committed promotion record, As-Built, and human acceptance cross-checked; Outcome passed Prettier and `git diff --check`; evaluation and product tests were not rerun because this synthesis changes documentation only.
+- Limitations: evaluator-v14 promotion required the recorded human-authorized loss-aware compatibility path because two allocated executions had no terminal semantic results; no missing evidence was reconstructed. Runtime token, wall-clock, and provider-call measurements were unavailable and are omitted.
+- Retrospective: no.
+- Measurement cutoff: immediately before this manifest update.
