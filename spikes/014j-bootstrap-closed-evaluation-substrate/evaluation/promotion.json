@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "request": {
+    "id": "32296c28-567a-4452-aa93-1eb4073bdbe2",
+    "execution": "3a077861-616c-44eb-a2c2-bb85b1d89ccd",
+    "roleGrant": "sha256:00a3d2277a9c75f8c88c63489f97bc8e29781506337de0c8daa20c4f41c13ca7",
+    "candidate": "93ade31b1dcb6487798b27e812dc443fce30af43",
+    "evaluatorRevision": "001",
+    "attempt": 5,
+    "destination": "evaluation",
+    "artifacts": [
+      {
+        "source": ".eval/promotion-plan.json",
+        "destination": "promotion-plan.json",
+        "identity": "sha256:ea3f37867ec169e12f9466bc19f77dd21b223af8cd9c9eb28e5996545adbca0d"
+      },
+      {
+        "source": ".eval/attempts/005/eval-result.md",
+        "destination": "attempts/005/eval-result.md",
+        "identity": "sha256:e358327af15fcd2dd56f8534194b1ee8d5c3b13e001a63d826b26f5c09ee93bd"
+      },
+      {
+        "source": ".eval/freeze.json",
+        "destination": "freeze/001.json",
+        "identity": "sha256:0fc74dfc962243b48b5e048960857bb22299d9fa37d8ca74c91ed7737042d16e"
+      },
+      {
+        "source": ".hidden-test/e1-preservation.test.ts",
+        "destination": "revisions/001/.hidden-test/e1-preservation.test.ts",
+        "identity": "sha256:6b1a1a3a7af186f8acd808a491ecfb39074f0129b474b61f92dc80761eef336e"
+      },
+      {
+        "source": ".hidden-test/e2-static-surface.test.ts",
+        "destination": "revisions/001/.hidden-test/e2-static-surface.test.ts",
+        "identity": "sha256:24dc869f5f00728b01abbfa0383b757912f9ed822d83e2517a508a5869861ac0"
+      },
+      {
+        "source": ".hidden-test/e3-closure.test.ts",
+        "destination": "revisions/001/.hidden-test/e3-closure.test.ts",
+        "identity": "sha256:88ef4e3702c4deaa7ec4cb5f6044e38b7c41bb7aefd0eb3d785d3eb7a1a9b1f8"
+      },
+      {
+        "source": ".hidden-test/manifest.json",
+        "destination": "revisions/001/.hidden-test/manifest.json",
+        "identity": "sha256:387379589a9cfff201476a494e6711c6aea4a7b12578030fb2b0af3e8c061987"
+      },
+      {
+        "source": ".hidden-test/selfcheck.test.ts",
+        "destination": "revisions/001/.hidden-test/selfcheck.test.ts",
+        "identity": "sha256:248a8e5a7c78dba9f59ab5920f8ca1b3d250acb2c29b83f303e7da82ac02b9d1"
+      },
+      {
+        "source": ".hidden-test/support/scan.ts",
+        "destination": "revisions/001/.hidden-test/support/scan.ts",
+        "identity": "sha256:71386262b57136cd59afe822699cd926709215334c7e5f636c5c5176fa9fc1a8"
+      },
+      {
+        "source": ".hidden-test/support/synthetic.ts",
+        "destination": "revisions/001/.hidden-test/support/synthetic.ts",
+        "identity": "sha256:6912e134e8e02e5dbe6d211347557a34c6fa8c0cf3436083f141c31c8e58d17a"
+      },
+      {
+        "source": "case-manifest.json",
+        "destination": "revisions/001/case-manifest.json",
+        "identity": "sha256:7f1514d663e409973f38cc5154c519193ea1a6d9df65457c70085707757fc148"
+      },
+      {
+        "source": "eval-spec.md",
+        "destination": "revisions/001/eval-spec.md",
+        "identity": "sha256:47cc909cb02e3df0f1b085321953478db2f977af77426d5b887810be56607afb"
+      }
+    ],
+    "archiveLoss": {
+      "archiveCompleteness": "incomplete-known-loss",
+      "authority": "0d3fb852-5512-4d15-adcb-568714283c5c",
+      "declarationPath": "archive-loss.json",
+      "declarationIdentity": "sha256:28496ffcb945b9c9066e26bec157fdb5e3637c04eceab93e98a8e8c41b4f6db8",
+      "normalValidation": "INELIGIBLE",
+      "normalValidationReason": "Attempt history is incomplete: an earlier allocated attempt has no terminal result, so the cycle cannot be archived as a complete terminal history."
+    }
+  },
+  "result": {
+    "artifacts": {
+      "promotion-plan.json": "sha256:ea3f37867ec169e12f9466bc19f77dd21b223af8cd9c9eb28e5996545adbca0d",
+      "attempts/005/eval-result.md": "sha256:e358327af15fcd2dd56f8534194b1ee8d5c3b13e001a63d826b26f5c09ee93bd",
+      "freeze/001.json": "sha256:0fc74dfc962243b48b5e048960857bb22299d9fa37d8ca74c91ed7737042d16e",
+      "revisions/001/.hidden-test/e1-preservation.test.ts": "sha256:6b1a1a3a7af186f8acd808a491ecfb39074f0129b474b61f92dc80761eef336e",
+      "revisions/001/.hidden-test/e2-static-surface.test.ts": "sha256:24dc869f5f00728b01abbfa0383b757912f9ed822d83e2517a508a5869861ac0",
+      "revisions/001/.hidden-test/e3-closure.test.ts": "sha256:88ef4e3702c4deaa7ec4cb5f6044e38b7c41bb7aefd0eb3d785d3eb7a1a9b1f8",
+      "revisions/001/.hidden-test/manifest.json": "sha256:387379589a9cfff201476a494e6711c6aea4a7b12578030fb2b0af3e8c061987",
+      "revisions/001/.hidden-test/selfcheck.test.ts": "sha256:248a8e5a7c78dba9f59ab5920f8ca1b3d250acb2c29b83f303e7da82ac02b9d1",
+      "revisions/001/.hidden-test/support/scan.ts": "sha256:71386262b57136cd59afe822699cd926709215334c7e5f636c5c5176fa9fc1a8",
+      "revisions/001/.hidden-test/support/synthetic.ts": "sha256:6912e134e8e02e5dbe6d211347557a34c6fa8c0cf3436083f141c31c8e58d17a",
+      "revisions/001/case-manifest.json": "sha256:7f1514d663e409973f38cc5154c519193ea1a6d9df65457c70085707757fc148",
+      "revisions/001/eval-spec.md": "sha256:47cc909cb02e3df0f1b085321953478db2f977af77426d5b887810be56607afb"
+    },
+    "integrityIdentity": "sha256:f804147e5a96e7c6360f3b5a9f9b15cc358bce1925be5b079bcce80678467389"
+  }
+}
