@@ -121,3 +121,18 @@ Append-only execution history. This manifest records runs; it is not canonical f
 - Result: FAIL — IMPLEMENTATION_FAILURE (see `verification-result.json`, `feedback.md`)
 - Checks: frozen identities matched; static executable cases passed; typecheck, lint, format passed; `npm test` 243/245 in a clean candidate checkout, one failure being a deterministic candidate host-operation test failure
 - Measurements: provider calls 0; runtime token and wall-clock measurements unavailable
+
+## 2026-10-05T14:39:32+02:00 — Implementation attempt 3
+
+- Execution: `a08de64d-e235-44cc-9800-530745eb02b2`
+- Skill: `implementation` contract version `5`, `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+- Role contract: `sha256:2bef8564c17485cd478ca8e72b0d45406d4e90684a82b5a8faace8e9523b0305`
+- Role Grant: `sha256:055e97ac1484eba91ec76c84a198d0adcc5b2c86651f38210e87488c38e2f8be`
+- Inputs: frozen brief `sha256:6b616066fa2a616e9c649fad3d96bcd0a684a5d674cb430ebb7f74c1a55f994d`; frozen Design Map `sha256:79c77b7924414cd2290068b9376c2ae423be8546a4f448e348e9756fe87ae910`; prepared coverage `sha256:52e39e2a374fa9e3002b379bb5535b9830b8fcd66fa9338f066e425451c622ea`; public evaluation requirements `sha256:64f5c7f773c19d8fbd4e6dc842ef49a3d1ceab30b251eb250c6d3a46a574c658`; committed implementation-failure feedback `sha256:63830c515225b1b94db71e98d3ed589114add3d8fd7144c0ed82790cde877727`. All bound bytes and committed provenance matched.
+- Result: succeeded — corrected candidate ready for independent verification; no claim of evaluator PASS.
+- Output: removed the unintended direct preparation from the root-boundary regression so its successful path performs exactly one authenticated preparation and expects exactly one `kernel.prepared-observation` record.
+- Output content identity before this manifest entry: `sha256:f3ecd704573044ef4e26d059bfcb4f7a89768a10777d5249a41b27c01bc50e91` over the staged `git diff --cached --binary` from prior candidate `42008aabc2b242a779b1625addcffeaba7e6d5b3` limited to candidate tests. This excludes this manifest update.
+- Checks: `npm run typecheck`, `npm run lint`, `npm run format:check`, scoped `git diff --check` and staged `git diff --cached --check` passed. Running `node test/candidate-subject.test.ts` passed all 10 tests not requiring the prepared-observation containment success path; the corrected test reached that path and was refused only because this managed environment denies unprivileged namespaces. The broader suite was attempted but interrupted after its known managed-environment permission and containment failures made no further progress.
+- Limitations: the corrected success path requires working unprivileged namespaces and could not complete in this managed sandbox. No live provider or credentials were used.
+- Restricted evaluator material inspected: none. Workflow ledgers were not inspected.
+- Measurement cutoff: immediately before this manifest update.

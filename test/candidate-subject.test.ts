@@ -1001,7 +1001,6 @@ void test("014j AC02-AC07/TR2: root prepares an exact private observation and no
   assert.equal((await post(exactRequest)).status, 409);
   writeFileSync(join(privateRoot, procedurePath), procedureBytes);
 
-  host.prepareCandidateObservation({ workflow, ...exactRequest });
   const response = await post(exactRequest);
   const responseBytes = response.text();
   assert.equal(response.status, 201, responseBytes);
