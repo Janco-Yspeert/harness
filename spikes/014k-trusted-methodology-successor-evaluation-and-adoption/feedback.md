@@ -76,3 +76,12 @@ The 014j implementation was not re-audited.
 ## Verdict
 
 **Ready after minor clarification**
+
+# Verification Feedback - attempt 001 (FAIL, IMPLEMENTATION_FAILURE)
+
+Candidate `75e350ac8e875965565a5fd8fabbc3789cad82ac`, evaluator revision 001.
+
+- **Violated requirement:** Design Map shared contract 6 and AC06/AC10 - the evaluator never emits `ELIGIBLE`/`INELIGIBLE`; the host derives and performs the archive with no evaluator eligibility decision.
+- **Expected:** the candidate methodology no longer has the evaluator author an eligibility decision, and the host archive derivation is how a PASS is archived.
+- **Observed:** the candidate evaluator skill still tells the evaluator to determine promotion eligibility and record an `ELIGIBLE`/`INELIGIBLE` plan, contradicting its own new section. The evaluator-verify contract still declares that evaluator-authored plan. The new archive derivation module is used only by its own tests.
+- **Safe diagnostics:** static checks, typecheck, lint, format passed; the one full-suite failure is identical at the baseline (environmental). All other reviewed areas passed.

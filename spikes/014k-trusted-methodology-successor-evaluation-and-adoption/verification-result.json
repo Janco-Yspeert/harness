@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "attempt": "001",
+  "commit": "75e350ac8e875965565a5fd8fabbc3789cad82ac",
+  "evaluatorRevision": "001",
+  "evaluatorRevisionIdentity": "sha256:1db3e721c2416b7045983626b4bbd47af5b12703780acf42083e012328e9dad2",
+  "result": "FAIL",
+  "classification": "IMPLEMENTATION_FAILURE",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "UNSATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "UNSATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "SATISFIED",
+    "AC14": "SATISFIED",
+    "AC15": "SATISFIED"
+  },
+  "feedback": {
+    "requirement": "Design Map shared contract 6 and AC06/AC10: the evaluator never emits ELIGIBLE/INELIGIBLE and the host derives and performs the post-PASS archive from policy and exact identities without an evaluator eligibility decision.",
+    "expected": "The candidate methodology (evaluator skill, evaluator-verify contract and host-action declarations) no longer asks the evaluator to author an ELIGIBLE/INELIGIBLE promotion decision, and the host archive derivation is the path by which a PASS is archived.",
+    "observed": "The candidate evaluator skill still instructs the evaluator to determine promotion eligibility and to record an ELIGIBLE/INELIGIBLE promotion plan before submitting its result, contradicting the newly added section that makes the host the sole archive planner. The evaluator-verify contract still declares the evaluator-authored promotion plan, and the new archive derivation module is referenced only by its own tests, not by any host or methodology path.",
+    "safeDiagnostics": "Static preservation, worker-surface and test-retention checks passed. typecheck, lint and format passed. The only full-suite failure reproduces unchanged at the pre-implementation baseline (environmental). Other review areas (observation declaration, attempt states, adoption binding, cutover fixture) found no violation."
+  }
+}
