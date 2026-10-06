@@ -77,3 +77,11 @@
 - Result: PASS (all 15 criteria SATISFIED); mandatory executable cases and reviews passed; full suite 258/259 with the single failure environmental (sandbox write access in a contained-worker test unchanged from baseline)
 - Promotion plan: ELIGIBLE, decision identity `sha256:326a5fb02f6d09bbf8631976988ab2782fd06108b1418e480c7387a7384280ea`
 - Measurements: provider calls 0
+
+## evaluator-repair (evaluator contract version 14) - execution e976e75e-0fe5-4350-bf16-bd18b6218157
+
+- Inputs: `spike.md` sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c; `design-map.md` sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de; `eval-requirements.md` sha256:9b83a28e40660a34ed778033b494efbc3723424378a6bcb929b5b7365af5b06a (unchanged); source evaluator revision 002 (sha256:1d5aad9a5ec9601e9691699ca5b696d60e6acc1531ca6752c325f1f0b6860b3f); repair trigger sha256:01417d242ea3a6d71ef2b162e19e78187b96d5f79336721504ea4a0a45f3a9d6
+- Result: succeeded; evaluator revision 003 frozen, identity sha256:0128bd895b7e5f0b6e47e6a2d081eac4203c98adaf18202c35b985afbdceb144; revisions 001 and 002 preserved; both earlier PASS results untouched
+- Outputs: `coverage-map.json` (readiness for revision 003 and repair lineage); `manifest.md`
+- Checks: full structural integrity validation PASS (15 criterion records, 11 procedures); acceptance semantics preserved; affected criteria AC06, AC10, AC15; no new seam adopted
+- Measurements: provider calls 0

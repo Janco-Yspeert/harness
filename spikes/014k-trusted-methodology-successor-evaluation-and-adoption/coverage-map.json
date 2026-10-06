@@ -5,10 +5,10 @@
   "readiness": {
     "skill": "evaluator",
     "skillVersion": 14,
-    "evaluatorRevision": "002",
-    "evaluatorRevisionIdentity": "sha256:1d5aad9a5ec9601e9691699ca5b696d60e6acc1531ca6752c325f1f0b6860b3f",
+    "evaluatorRevision": "003",
+    "evaluatorRevisionIdentity": "sha256:0128bd895b7e5f0b6e47e6a2d081eac4203c98adaf18202c35b985afbdceb144",
     "privateInventoryIdentity": "sha256:aadeff9c7d9304fc1351bdf50710e72f573274e3b0e70e80b8a8d79680bf59cf",
-    "validatorResultBinding": "sha256:076677cda1ccea01b409082f6e57f20d3be2175eed70afaa9ba1235a1d5b05f5",
+    "validatorResultBinding": "sha256:d87655c00236d15e14cd8f01a9f7bbe6415d946263e9e5b5e58371cf36ac429a",
     "integrityValidation": "PASS",
     "criterionRecordCount": 15
   },
@@ -77,9 +77,10 @@
       "procedures": [
         "R1",
         "M3",
-        "M6"
+        "M6",
+        "M7"
       ],
-      "sufficiency": "R1 requires and runs a controlled archive-failure test that leaves the PASS unchanged and blocks closeout and adoption by policy; M3 reviews that evaluation fact and archive record are separate and the evaluator emits no archive eligibility; M6 reviews that the archive path and evaluator construction resolve the same workflow-private root through the real configuration and Role Grant chain."
+      "sufficiency": "R1 requires and runs a controlled archive-failure test that leaves the PASS unchanged and blocks closeout and adoption by policy; M3 reviews that evaluation fact and archive record are separate and the evaluator emits no archive eligibility; M6 reviews that the archive path and evaluator construction resolve the same workflow-private root through the real configuration and Role Grant chain; M7 reviews that, under a non-initial correction cycle, the real host promotion action emits the host-derived active cycle so a current-cycle successful archive clears the gate while a stale earlier-cycle promotion does not."
     },
     {
       "id": "AC07",
@@ -125,9 +126,10 @@
       "procedures": [
         "R1",
         "M3",
-        "M6"
+        "M6",
+        "M7"
       ],
-      "sufficiency": "R1 requires and runs tests that changed or missing bytes fail closed with no partial archive reported complete and that provenance is recorded; M3 reviews that the host derives the plan from policy and exact identities; M6 reviews that missing B evidence fails closed without fallback, changed B bytes fail identity validation, and N+1 host-derived archival uses the same binding."
+      "sufficiency": "R1 requires and runs tests that changed or missing bytes fail closed with no partial archive reported complete and that provenance is recorded; M3 reviews that the host derives the plan from policy and exact identities; M6 reviews that missing B evidence fails closed without fallback, changed B bytes fail identity validation, and N+1 host-derived archival uses the same binding; M7 reviews that the exact provenance recorded by a successful host archive carries the host-derived active correction cycle, which a caller or provider cannot forge, with cycle 001 behavior preserved."
     },
     {
       "id": "AC11",
@@ -184,22 +186,21 @@
       "procedures": [
         "E3",
         "R1",
-        "M5"
+        "M5",
+        "M7"
       ],
-      "sufficiency": "E3 shows no accepted regression test was removed; R1 runs the full suite; M5 reviews that any changed assertion is traceable to a frozen requirement superseding old evaluator or archive semantics."
+      "sufficiency": "E3 shows no accepted regression test was removed; R1 runs the full suite; M5 reviews that any changed assertion is traceable to a frozen requirement superseding old evaluator or archive semantics; M7 reviews that the complete accepted regression suite is preserved while correction-cycle provenance coverage is added."
     }
   ],
   "repair": {
-    "sourceEvaluatorRevision": "001",
-    "sourceEvaluatorRevisionIdentity": "sha256:1db3e721c2416b7045983626b4bbd47af5b12703780acf42083e012328e9dad2",
-    "resultingEvaluatorRevision": "002",
-    "trigger": "sha256:e06c860947027f1ad71cdea7669ea3f61ebdbcde7caff82d10c65442636374b3",
+    "sourceEvaluatorRevision": "002",
+    "sourceEvaluatorRevisionIdentity": "sha256:1d5aad9a5ec9601e9691699ca5b696d60e6acc1531ca6752c325f1f0b6860b3f",
+    "resultingEvaluatorRevision": "003",
+    "trigger": "sha256:01417d242ea3a6d71ef2b162e19e78187b96d5f79336721504ea4a0a45f3a9d6",
     "affectedCriteria": [
       "AC06",
-      "AC07",
-      "AC08",
-      "AC09",
-      "AC10"
+      "AC10",
+      "AC15"
     ],
     "briefIdentity": "sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c",
     "designMapIdentity": "sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de",
