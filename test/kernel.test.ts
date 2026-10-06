@@ -2338,6 +2338,142 @@ void test("014a: host promotion validates exact evidence and keeps failure disti
   );
 });
 
+async function hostArchiveFixture(
+  t: TestContext,
+  name: string,
+  scoped: { result: string; present: boolean },
+) {
+  const f = fixture(t, name);
+  const candidate = "a".repeat(40);
+  const evaluatorRevision = "001";
+  const tree = (root: string, result: string, ledger = true) => {
+    const spec = "spec\n";
+    const attemptPath = join(root, ".eval/attempts/001/eval-result.md");
+    mkdirSync(dirname(attemptPath), { recursive: true });
+    writeFileSync(attemptPath, result);
+    writeFileSync(join(root, ".eval/eval-spec.md"), spec);
+    writeFileSync(
+      join(root, ".eval/freeze.json"),
+      `${JSON.stringify({ evaluatorRevision, artifacts: { "eval-spec.md": identity(spec) } })}\n`,
+    );
+    if (ledger)
+      writeFileSync(
+        join(root, ".eval/attempt-ledger.json"),
+        `${JSON.stringify({ attempts: [{ id: "001", status: "PASS", resultIdentity: identity(result) }] })}\n`,
+      );
+  };
+  const parent = required(f.project.workspaces.evaluation).path;
+  const scopedRoot = join(f.dir, "workflow-private");
+  mkdirSync(scopedRoot, { recursive: true });
+  tree(parent, "stale parent root result\n");
+  if (scoped.present) tree(scopedRoot, scoped.result);
+  f.project.workflows[f.workflow] = {
+    ...required(f.project.workflows[f.workflow]),
+    workspaces: {
+      evaluation: {
+        id: "workflow-private",
+        path: scopedRoot,
+        mode: "read",
+        exposure: "evaluator-private",
+      },
+    },
+  };
+  f.event("candidate", { commit: candidate, evaluatorRevision });
+  f.contract.workspaces.push("evaluation");
+  f.contract.inputs.push(
+    { name: "candidate", event: "candidate", field: "commit" },
+    {
+      name: "evaluatorRevision",
+      event: "candidate",
+      field: "evaluatorRevision",
+    },
+  );
+  f.contract.promotion = {
+    sourceWorkspace: "evaluation",
+    destinationWorkspace: "repository",
+    destination: "evaluation",
+    candidateInput: "candidate",
+    revisionInput: "evaluatorRevision",
+    when: { verification: "PASS" },
+    allocationEvent: "verification-allocated",
+    attemptField: "attempt",
+    transition: "promotion-recorded",
+    derive: "host-archive",
+  };
+  required(f.policy.roles.produce).onAllocate = {
+    transition: "verification-allocated",
+    fromInputs: {
+      commit: "candidate",
+      evaluatorRevision: "evaluatorRevision",
+    },
+    counterField: "attempt",
+  };
+  json(join(f.root, "contracts/produce.json"), f.contract);
+  json(join(f.root, "policy.json"), f.policy);
+  const host = await startHarnessHost(0, {
+    governed: { project: f.project, executors: profiles, rootToken },
+  });
+  t.after(() => host.close());
+  const registration = await api<{ session: Session }>(host.url, "sessions", {
+    profile: "fixture",
+  });
+  f.trust();
+  const { grant } = await api<{ grant: WorkflowGrant }>(host.url, "grants", {
+    continuation: false,
+    delegation: ["attached"],
+    roles: ["produce"],
+    maxAllocations: 1,
+    inline: true,
+  });
+  const allocation = await api<{ execution: Execution }>(host.url, "continue", {
+    workflowGrant: grant.id,
+    role: "produce",
+    mode: "attached",
+    session: registration.session.id,
+    inline: true,
+  });
+  await api(host.url, `executions/${allocation.execution.id}/started`, {});
+  await api(host.url, `executions/${allocation.execution.id}/result`, {
+    disposition: "succeeded",
+    methodology: { verification: "PASS" },
+  });
+  const promoted = await api<{ status: string; reason: string | null }>(
+    host.url,
+    `executions/${allocation.execution.id}/promote`,
+    { candidate, evaluatorRevision, attempt: 1 },
+  );
+  return { f, promoted };
+}
+
+void test("014k AC06/AC09/AC10: host archive derives from the workflow's own private root, never the parent root", async (t) => {
+  const result = "workflow B result\n";
+  const { f, promoted } = await hostArchiveFixture(t, "host-archive", {
+    result,
+    present: true,
+  });
+  assert.equal(promoted.status, "succeeded", String(promoted.reason));
+  assert.equal(
+    readFileSync(
+      join(f.root, "items/work-item/evaluation/attempts/001/eval-result.md"),
+      "utf8",
+    ),
+    result,
+  );
+});
+
+void test("014k AC10: missing workflow evidence fails closed without parent-root fallback", async (t) => {
+  const { f, promoted } = await hostArchiveFixture(t, "host-archive-missing", {
+    result: "",
+    present: false,
+  });
+  assert.notEqual(promoted.status, "succeeded");
+  assert.match(String(promoted.reason), /attempt ledger is missing/);
+  assert.equal(
+    existsSync(join(f.root, "items/work-item/evaluation/promotion.json")),
+    false,
+  );
+});
+
 void test("root complete-evidence recovery records exactly one truthful promotion", (t) => {
   const f = fixture(t, "complete-archive-recovery");
   const candidate = "d".repeat(40);

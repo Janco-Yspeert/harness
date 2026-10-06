@@ -62,3 +62,11 @@
 - Outputs: `coverage-map.json` (readiness for revision 002 and repair lineage); `manifest.md`
 - Checks: full structural integrity validation PASS (15 criterion records); acceptance semantics preserved; affected criteria AC06-AC10; no new seam adopted
 - Measurements: 15 criteria, 10 procedures; provider calls 0
+
+## implementation retry 003 (contract version 5) - execution 5342c4fc-2d31-4cae-8796-d5563c70d8fa
+
+- Inputs: `spike.md` sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c; `design-map.md` sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de; `eval-requirements.md` sha256:9b83a28e40660a34ed778033b494efbc3723424378a6bcb929b5b7365af5b06a; coverage (evaluator revision 002 repair) sha256:6c8ce5e578f172048f4d19bc925ccb8e79b51537bc69245b4b0db142432f4c93; no current implementation feedback (attempt 001 feedback already addressed; attempt 002 PASS under revision 001); base commit 8c73b6b622883257e0c7cb8472ebc63c75c35f43
+- Result: succeeded (candidate checkpoint; independent evaluation not yet run). Addresses the revision-002 workflow-scoped private-root coverage (AC06-AC10, M6): host archive derivation now binds its source workspace through the Role Grant for the workflow, refusing a workspace outside the grant, with no parent-root or other-workflow fallback
+- Outputs (content identities): `src/kernel/execution.ts` sha256:cd518b5a6033bbcb8d4781391aea84ddbd093e6b7646534fedc95bc2ebe2826f; `test/kernel.test.ts` sha256:5a9b8470abec87bb24fd4a630d03eb4ee194a7abdc49497daf18b3a5ce20dfd9 (+2 real-chain tests: archive from workflow-scoped root despite stale parent root; missing workflow evidence fails closed); `manifest.md`
+- Checks: `tsc --noEmit` PASS; `eslint src test` PASS; prettier PASS on edited files; kernel, successor-closeout, skill-fidelity, methodology-evolution tests 71/71 PASS; full suite 250 pass / 9 fail (environmental sandbox failures: pinned bootstrap provenance/authority and ledger EACCES; not re-measured at baseline here)
+- Measurements: 2 new tests; provider calls 0

@@ -2725,14 +2725,22 @@ export class ExecutionKernel {
       let items: ArchiveItem[] | undefined;
       if (derive) {
         try {
-          const sourceWorkspace = required(
-            this.project.workflows[workflow]?.workspaces?.[
-              required(grant.hostActions.promotion).sourceWorkspace
-            ] ??
-              this.project.workspaces[
-                required(grant.hostActions.promotion).sourceWorkspace
-              ],
+          // The archive source is the exact workspace the Role Grant bound
+          // for this workflow, never a parent-root or other-workflow lookup.
+          const sourceName = required(
+            grant.hostActions.promotion,
+          ).sourceWorkspace;
+          const configured =
+            this.project.workflows[workflow]?.workspaces?.[sourceName] ??
+            this.project.workspaces[sourceName];
+          const sourceWorkspace = grant.workspaces.find(
+            (item) =>
+              configured !== undefined &&
+              item.id === configured.id &&
+              item.path === configured.path,
           );
+          if (!sourceWorkspace)
+            throw new Error("archive source workspace is outside role grant");
           items = [
             ...deriveHostArchive(
               realpathSync(sourceWorkspace.path),
