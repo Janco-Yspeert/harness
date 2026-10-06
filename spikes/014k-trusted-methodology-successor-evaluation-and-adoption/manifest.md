@@ -353,3 +353,21 @@
 - Visible verification: two new tests through the real host promotion path pass;
   typecheck, eslint, prettier pass; `npm test` 253 pass / 9 fail, the same 9
   failures occur without this change (sandbox EACCES on protected paths)
+
+## evaluator-verify attempt 002 (cycle 4, evaluator contract version 14) - execution b005763e-b408-4bb4-8429-13f89ec88e10
+
+- Inputs: candidate `f64b55286e2d2c06d4bd1fd1f815b1b9d09a5330`; evaluator
+  revision 004
+  (sha256:dd9e3a8a646f2fe862da843b36c2d7cff63f4ea01a9b0786230ddbf23f251c11);
+  `spike.md`
+  sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c;
+  `design-map.md`
+  sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de
+- Result: succeeded; attempt 002 PASS (all 15 criteria satisfied); promotion
+  plan ELIGIBLE (ledger and terminal results; evaluator revision bundle kept
+  private), decision identity
+  sha256:b15a9ba9d51b3887ba7a0868e9f79c7ff10993da050289a730c6a61c44b991f1
+- Outputs: `verification-result.json`; `manifest.md`
+- Checks: frozen identities matched; executable procedures 3/3 PASS; full suite
+  261/262, the one failure reproduces at baseline; reviews M1-M8 done
+- Measurements: provider calls 0
