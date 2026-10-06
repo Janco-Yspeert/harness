@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 2,
+  "attempts": [
+    {
+      "id": "001",
+      "execution": "5c02b191-4a20-4a47-b6f2-847dfd0ce135",
+      "candidate": "2e1cf0e2ee3facc2742dade252ac970b03f38a26",
+      "evaluatorRevision": "003",
+      "status": "PASS",
+      "result": "sha256:d34f79b0bdf5b904f5e943fa54ea5e64f65d17f75b6d90e791d92f49ee130204"
+    }
+  ]
+}
