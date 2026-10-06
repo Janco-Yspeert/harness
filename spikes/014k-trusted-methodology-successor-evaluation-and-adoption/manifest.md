@@ -311,3 +311,14 @@
   validation PASS (15 criterion records, 12 procedures); no candidate executed
 - Public artifacts: `coverage-map.json` (readiness, repair lineage)
 - Measurements: provider calls 0
+
+## Verification attempt 001 — evaluator revision 004
+
+- Skill: evaluator v14; mode: verify; candidate
+  `6e2cec8dfa61b34c2ac2e5063139108381826b15`; evaluator revision 004
+  (`sha256:dd9e3a8a646f2fe862da843b36c2d7cff63f4ea01a9b0786230ddbf23f251c11`)
+- Result: FAIL; classification IMPLEMENTATION_FAILURE (AC06, AC10, AC15:
+  earlier-cycle archive preservation not implemented or tested); mandatory
+  executable cases pass; no promotion requested
+- Public artifacts: `verification-result.json`, `feedback.md`
+- Measurements: provider calls 0
