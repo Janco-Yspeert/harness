@@ -85,3 +85,11 @@
 - Outputs: `coverage-map.json` (readiness for revision 003 and repair lineage); `manifest.md`
 - Checks: full structural integrity validation PASS (15 criterion records, 11 procedures); acceptance semantics preserved; affected criteria AC06, AC10, AC15; no new seam adopted
 - Measurements: provider calls 0
+
+## implementation retry 004 (contract version 5) - execution 4d49caec-9ece-4486-bd46-5dbd0cc15350
+
+- Inputs: `spike.md` sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c; `design-map.md` sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de; `eval-requirements.md` sha256:9b83a28e40660a34ed778033b494efbc3723424378a6bcb929b5b7365af5b06a; coverage (evaluator revision 003 repair) sha256:9d6f6c4d95e7d01f2808fdb4f0d73c4a1431b61a6b52d7079f498703f1d57469; no current implementation feedback (latest verification PASS under revision 002); base commit ace3335f01efdea87b7d00f3b2fd70509db2cd76
+- Result: succeeded (candidate checkpoint; independent evaluation not yet run). Addresses revision-003 M7 (AC06/AC10/AC15): under a non-initial correction cycle the host promotion action derives archive allocations from the current cycle only (earlier-cycle allocations with the same attempt number no longer shadow the current one) and records the host-derived active cycle on `promotion-recorded`, so a current-cycle archive clears the gate; cycle 001 behavior is unchanged
+- Outputs (content identities): `src/kernel/execution.ts` sha256:80deabca7f3b8f6c900ca637483bf3e3e0a973c01cb82c1d1b7be33a76928523; `test/kernel.test.ts` sha256:5d4d8aa59386cc760d8ba3d42ceea26cba87678bb77339e68382e9986339f71d (+1 cycle-002 test); `manifest.md`
+- Checks: `tsc --noEmit` PASS; `eslint src test` PASS; prettier PASS on edited files; kernel, successor-closeout, skill-fidelity, methodology-evolution tests 72/72 PASS; full suite not run in this sandbox (known environmental failures)
+- Measurements: 1 new test; provider calls 0

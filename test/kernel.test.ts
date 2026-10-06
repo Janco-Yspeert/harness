@@ -2342,6 +2342,7 @@ async function hostArchiveFixture(
   t: TestContext,
   name: string,
   scoped: { result: string; present: boolean },
+  cycle?: string,
 ) {
   const f = fixture(t, name);
   const candidate = "a".repeat(40);
@@ -2379,6 +2380,20 @@ async function hostArchiveFixture(
     },
   };
   f.event("candidate", { commit: candidate, evaluatorRevision });
+  if (cycle !== undefined) {
+    f.policy.scopeEvent = {
+      transition: "correction-cycle-opened",
+      field: "cycle",
+      initial: "001",
+    };
+    // A stale earlier-cycle allocation with the same attempt number.
+    f.event("verification-allocated", {
+      attempt: 1,
+      execution: "earlier-cycle-execution",
+      evaluatorRevision: "000",
+    });
+    f.event("correction-cycle-opened", { cycle });
+  }
   f.contract.workspaces.push("evaluation");
   f.contract.inputs.push(
     { name: "candidate", event: "candidate", field: "commit" },
@@ -2444,6 +2459,23 @@ async function hostArchiveFixture(
   );
   return { f, promoted };
 }
+
+void test("014k AC06/AC10: host archive records the host-derived active correction cycle", async (t) => {
+  const { f, promoted } = await hostArchiveFixture(
+    t,
+    "host-archive-cycle",
+    { result: "cycle 002 result\n", present: true },
+    "002",
+  );
+  assert.equal(promoted.status, "succeeded", String(promoted.reason));
+  assert.equal(
+    f.kernel
+      .events(f.workflow)
+      .findLast((event) => event.transition === "promotion-recorded")?.evidence
+      .cycle,
+    "002",
+  );
+});
 
 void test("014k AC06/AC09/AC10: host archive derives from the workflow's own private root, never the parent root", async (t) => {
   const result = "workflow B result\n";

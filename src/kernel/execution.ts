@@ -2745,7 +2745,10 @@ export class ExecutionKernel {
             ...deriveHostArchive(
               realpathSync(sourceWorkspace.path),
               candidate,
-              this.events(workflow)
+              scopedEvents(
+                this.events(workflow),
+                this.definition(workflow, grant.methodology).policy,
+              )
                 .filter(
                   (event) =>
                     event.transition ===
@@ -2948,8 +2951,19 @@ export class ExecutionKernel {
       });
       this.#actionDiagnostic(workflow, id, action);
       const allowed = grant.hostActions.promotion;
+      const scope = this.definition(workflow, grant.methodology).policy
+        .scopeEvent;
       if (action.status === "succeeded" && allowed)
         this.#append(workflow, allowed.transition, {
+          // Host-derived active correction cycle; never caller-supplied.
+          ...(scope
+            ? {
+                [scope.field]:
+                  this.events(workflow).findLast(
+                    (e) => e.transition === scope.transition,
+                  )?.evidence[scope.field] ?? scope.initial,
+              }
+            : {}),
           candidate,
           evaluatorRevision,
           attempt,
