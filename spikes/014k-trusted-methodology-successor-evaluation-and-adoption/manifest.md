@@ -277,3 +277,23 @@
 - Promotion plan: ELIGIBLE, decision identity
   `sha256:1a926934a5a263b98fd46b7595c6ca5c16c688c5d4407c97f810532eff84f8a4`
 - Measurements: provider calls 0
+
+## As-Built
+
+- Skill: as-built, contract version 4; inspected revision
+  `2e1cf0e2ee3facc2742dade252ac970b03f38a26`
+- Input identities: brief
+  `sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c`;
+  design
+  `sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de`;
+  verification
+  `sha256:8dbb7f45a302efa63a3d03a3d632f994913fd0036a8cf337f878ef2bdf538b4a`;
+  promotion
+  `sha256:ad348dd072464c67bc406a38c0f634525fa7309efb186d67b84833da66323a1e`
+  (verified against `evaluation/promotion.json`, committed separately as
+  `8565c08`)
+- Result: succeeded; artifact `as-built.md`; Missing: post-As-Built adoption and
+  cutover steps not yet present, no host call site for
+  `executeArchive`/`closeoutPermitted`; Contradictory: none; Extra: cycle scope
+  field on `promotion-recorded`, optional promotion artifacts schema
+- Measurements: provider calls 0
