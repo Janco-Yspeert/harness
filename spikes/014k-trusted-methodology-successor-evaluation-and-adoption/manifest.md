@@ -54,3 +54,11 @@
 - Outputs: `verification-result.json`; `manifest.md`
 - Checks: frozen identities matched; executable procedures 3/3 PASS; typecheck, lint, format PASS; full suite 256/257, the one failure reproduces at baseline; reviews M1-M5 done
 - Measurements: provider calls 0
+
+## evaluator-repair (evaluator contract version 14) - execution 666ef22e-4211-4ecd-b902-7f5f20275b00
+
+- Inputs: `spike.md` sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c; `design-map.md` sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de; `eval-requirements.md` sha256:9b83a28e40660a34ed778033b494efbc3723424378a6bcb929b5b7365af5b06a (unchanged); source evaluator revision 001 (sha256:1db3e721c2416b7045983626b4bbd47af5b12703780acf42083e012328e9dad2); repair trigger sha256:e06c860947027f1ad71cdea7669ea3f61ebdbcde7caff82d10c65442636374b3
+- Result: succeeded; evaluator revision 002 frozen, identity sha256:1d5aad9a5ec9601e9691699ca5b696d60e6acc1531ca6752c325f1f0b6860b3f; revision 001 preserved; attempt 002 PASS untouched
+- Outputs: `coverage-map.json` (readiness for revision 002 and repair lineage); `manifest.md`
+- Checks: full structural integrity validation PASS (15 criterion records); acceptance semantics preserved; affected criteria AC06-AC10; no new seam adopted
+- Measurements: 15 criteria, 10 procedures; provider calls 0

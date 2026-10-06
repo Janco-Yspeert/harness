@@ -5,10 +5,10 @@
   "readiness": {
     "skill": "evaluator",
     "skillVersion": 14,
-    "evaluatorRevision": "001",
-    "evaluatorRevisionIdentity": "sha256:1db3e721c2416b7045983626b4bbd47af5b12703780acf42083e012328e9dad2",
+    "evaluatorRevision": "002",
+    "evaluatorRevisionIdentity": "sha256:1d5aad9a5ec9601e9691699ca5b696d60e6acc1531ca6752c325f1f0b6860b3f",
     "privateInventoryIdentity": "sha256:aadeff9c7d9304fc1351bdf50710e72f573274e3b0e70e80b8a8d79680bf59cf",
-    "validatorResultBinding": "sha256:d09e2bfaa4e9650d568cc2f8d8c060788a1ec7073f12fa262aeb19d88a7886e1",
+    "validatorResultBinding": "sha256:076677cda1ccea01b409082f6e57f20d3be2175eed70afaa9ba1235a1d5b05f5",
     "integrityValidation": "PASS",
     "criterionRecordCount": 15
   },
@@ -76,9 +76,10 @@
       "required": true,
       "procedures": [
         "R1",
-        "M3"
+        "M3",
+        "M6"
       ],
-      "sufficiency": "R1 requires and runs a controlled archive-failure test that leaves the PASS unchanged and blocks closeout and adoption by policy; M3 reviews that evaluation fact and archive record are separate and the evaluator emits no archive eligibility."
+      "sufficiency": "R1 requires and runs a controlled archive-failure test that leaves the PASS unchanged and blocks closeout and adoption by policy; M3 reviews that evaluation fact and archive record are separate and the evaluator emits no archive eligibility; M6 reviews that the archive path and evaluator construction resolve the same workflow-private root through the real configuration and Role Grant chain."
     },
     {
       "id": "AC07",
@@ -87,9 +88,10 @@
       "required": true,
       "procedures": [
         "R1",
-        "M3"
+        "M3",
+        "M6"
       ],
-      "sufficiency": "R1 requires and runs tests that an allocated attempt ending without a result is NONTERMINAL with no terminal artifact and that a later PASS archives despite it; M3 reviews the attempt lifecycle against the Design Map."
+      "sufficiency": "R1 requires and runs tests that an allocated attempt ending without a result is NONTERMINAL with no terminal artifact and that a later PASS archives despite it; M3 reviews the attempt lifecycle against the Design Map; M6 reviews that these states hold under the real workflow-scoped chain with stale parent-root and other-workflow evidence unable to satisfy the attempt."
     },
     {
       "id": "AC08",
@@ -98,9 +100,10 @@
       "required": true,
       "procedures": [
         "R1",
-        "M3"
+        "M3",
+        "M6"
       ],
-      "sufficiency": "R1 requires and runs tests that TERMINAL needs exact result evidence, LOST needs a durable prior record, and a never-produced artifact is not LOST; M3 reviews the state definitions."
+      "sufficiency": "R1 requires and runs tests that TERMINAL needs exact result evidence, LOST needs a durable prior record, and a never-produced artifact is not LOST; M3 reviews the state definitions; M6 reviews that TERMINAL, LOST and never-produced decisions cannot be satisfied by stale parent-root or other-workflow evidence."
     },
     {
       "id": "AC09",
@@ -109,9 +112,10 @@
       "required": true,
       "procedures": [
         "R1",
-        "M3"
+        "M3",
+        "M6"
       ],
-      "sufficiency": "R1 requires and runs tests that an identity-valid active revision archives directly without a historical copy and with preserved identity, freeze metadata, inventory, bytes and lineage; M3 reviews the archive source."
+      "sufficiency": "R1 requires and runs tests that an identity-valid active revision archives directly without a historical copy and with preserved identity, freeze metadata, inventory, bytes and lineage; M3 reviews the archive source; M6 reviews that the active revision archived is the one at workflow B's canonical private root, not stale parent or workflow-A bytes."
     },
     {
       "id": "AC10",
@@ -120,9 +124,10 @@
       "required": true,
       "procedures": [
         "R1",
-        "M3"
+        "M3",
+        "M6"
       ],
-      "sufficiency": "R1 requires and runs tests that changed or missing bytes fail closed with no partial archive reported complete and that provenance is recorded; M3 reviews that the host derives the plan from policy and exact identities."
+      "sufficiency": "R1 requires and runs tests that changed or missing bytes fail closed with no partial archive reported complete and that provenance is recorded; M3 reviews that the host derives the plan from policy and exact identities; M6 reviews that missing B evidence fails closed without fallback, changed B bytes fail identity validation, and N+1 host-derived archival uses the same binding."
     },
     {
       "id": "AC11",
@@ -183,5 +188,23 @@
       ],
       "sufficiency": "E3 shows no accepted regression test was removed; R1 runs the full suite; M5 reviews that any changed assertion is traceable to a frozen requirement superseding old evaluator or archive semantics."
     }
-  ]
+  ],
+  "repair": {
+    "sourceEvaluatorRevision": "001",
+    "sourceEvaluatorRevisionIdentity": "sha256:1db3e721c2416b7045983626b4bbd47af5b12703780acf42083e012328e9dad2",
+    "resultingEvaluatorRevision": "002",
+    "trigger": "sha256:e06c860947027f1ad71cdea7669ea3f61ebdbcde7caff82d10c65442636374b3",
+    "affectedCriteria": [
+      "AC06",
+      "AC07",
+      "AC08",
+      "AC09",
+      "AC10"
+    ],
+    "briefIdentity": "sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c",
+    "designMapIdentity": "sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de",
+    "evaluationRequirementsIdentity": "sha256:9b83a28e40660a34ed778033b494efbc3723424378a6bcb929b5b7365af5b06a",
+    "integrityValidation": "PASS",
+    "acceptanceSemanticsPreserved": true
+  }
 }
