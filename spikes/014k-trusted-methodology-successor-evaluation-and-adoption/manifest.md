@@ -70,3 +70,10 @@
 - Outputs (content identities): `src/kernel/execution.ts` sha256:cd518b5a6033bbcb8d4781391aea84ddbd093e6b7646534fedc95bc2ebe2826f; `test/kernel.test.ts` sha256:5a9b8470abec87bb24fd4a630d03eb4ee194a7abdc49497daf18b3a5ce20dfd9 (+2 real-chain tests: archive from workflow-scoped root despite stale parent root; missing workflow evidence fails closed); `manifest.md`
 - Checks: `tsc --noEmit` PASS; `eslint src test` PASS; prettier PASS on edited files; kernel, successor-closeout, skill-fidelity, methodology-evolution tests 71/71 PASS; full suite 250 pass / 9 fail (environmental sandbox failures: pinned bootstrap provenance/authority and ledger EACCES; not re-measured at baseline here)
 - Measurements: 2 new tests; provider calls 0
+
+## Evaluator verify — attempt 001 (cycle 2), evaluator revision 002
+
+- Skill: evaluator v14; mode: verify; candidate `7a4aa3eeeae595ab0cfc56ce76a492328d4fce01`; evaluator revision 002 (`sha256:1d5aad9a5ec9601e9691699ca5b696d60e6acc1531ca6752c325f1f0b6860b3f`)
+- Result: PASS (all 15 criteria SATISFIED); mandatory executable cases and reviews passed; full suite 258/259 with the single failure environmental (sandbox write access in a contained-worker test unchanged from baseline)
+- Promotion plan: ELIGIBLE, decision identity `sha256:326a5fb02f6d09bbf8631976988ab2782fd06108b1418e480c7387a7384280ea`
+- Measurements: provider calls 0

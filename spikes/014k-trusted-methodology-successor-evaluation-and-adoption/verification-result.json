@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "attempt": "002",
-  "commit": "4455fd884e4ae4396149a277b5e0a79a57506aff",
-  "evaluatorRevision": "001",
-  "evaluatorRevisionIdentity": "sha256:1db3e721c2416b7045983626b4bbd47af5b12703780acf42083e012328e9dad2",
+  "attempt": "001",
+  "commit": "7a4aa3eeeae595ab0cfc56ce76a492328d4fce01",
+  "evaluatorRevision": "002",
+  "evaluatorRevisionIdentity": "sha256:1d5aad9a5ec9601e9691699ca5b696d60e6acc1531ca6752c325f1f0b6860b3f",
   "result": "PASS",
   "coverageResults": {
     "AC01": "SATISFIED",
@@ -23,7 +23,7 @@
     "AC15": "SATISFIED"
   },
   "promotionPlan": {
-    "identity": "sha256:1246563ebb350a107e71743424575c199b77a95c87bdcd3a0c38df9159d9e243",
+    "identity": "sha256:326a5fb02f6d09bbf8631976988ab2782fd06108b1418e480c7387a7384280ea",
     "decision": "ELIGIBLE"
   }
 }
