@@ -297,3 +297,17 @@
   `executeArchive`/`closeoutPermitted`; Contradictory: none; Extra: cycle scope
   field on `promotion-recorded`, optional promotion artifacts schema
 - Measurements: provider calls 0
+
+## Evaluator repair — revision 004
+
+- Skill: evaluator v14; mode: repair; source evaluator revision 003
+  (`sha256:0128bd895b7e5f0b6e47e6a2d081eac4203c98adaf18202c35b985afbdceb144`);
+  resulting evaluator revision 004
+  (`sha256:dd9e3a8a646f2fe862da843b36c2d7cff63f4ea01a9b0786230ddbf23f251c11`)
+- Trigger: `sha256:db0834d08b4a9de90288ffb3b9c3f70400ab00ac634abeb6a57b4e65020be283`
+  (evaluator coverage defect: archival of a later authoritative PASS when an
+  earlier-cycle canonical archive already exists)
+- Affected criteria: AC06, AC10, AC15; acceptance semantics preserved; integrity
+  validation PASS (15 criterion records, 12 procedures); no candidate executed
+- Public artifacts: `coverage-map.json` (readiness, repair lineage)
+- Measurements: provider calls 0

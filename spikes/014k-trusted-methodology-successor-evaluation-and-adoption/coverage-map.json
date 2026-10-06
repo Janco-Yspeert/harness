@@ -5,10 +5,10 @@
   "readiness": {
     "skill": "evaluator",
     "skillVersion": 14,
-    "evaluatorRevision": "003",
-    "evaluatorRevisionIdentity": "sha256:0128bd895b7e5f0b6e47e6a2d081eac4203c98adaf18202c35b985afbdceb144",
+    "evaluatorRevision": "004",
+    "evaluatorRevisionIdentity": "sha256:dd9e3a8a646f2fe862da843b36c2d7cff63f4ea01a9b0786230ddbf23f251c11",
     "privateInventoryIdentity": "sha256:aadeff9c7d9304fc1351bdf50710e72f573274e3b0e70e80b8a8d79680bf59cf",
-    "validatorResultBinding": "sha256:d87655c00236d15e14cd8f01a9f7bbe6415d946263e9e5b5e58371cf36ac429a",
+    "validatorResultBinding": "sha256:92a50b69cdca23afd5dafd9567be3a08073d7221c9ee2600ca5059880647dc0f",
     "integrityValidation": "PASS",
     "criterionRecordCount": 15
   },
@@ -78,9 +78,10 @@
         "R1",
         "M3",
         "M6",
-        "M7"
+        "M7",
+        "M8"
       ],
-      "sufficiency": "R1 requires and runs a controlled archive-failure test that leaves the PASS unchanged and blocks closeout and adoption by policy; M3 reviews that evaluation fact and archive record are separate and the evaluator emits no archive eligibility; M6 reviews that the archive path and evaluator construction resolve the same workflow-private root through the real configuration and Role Grant chain; M7 reviews that, under a non-initial correction cycle, the real host promotion action emits the host-derived active cycle so a current-cycle successful archive clears the gate while a stale earlier-cycle promotion does not."
+      "sufficiency": "R1 requires and runs a controlled archive-failure test that leaves the PASS unchanged and blocks closeout and adoption by policy; M3 reviews that evaluation fact and archive record are separate and the evaluator emits no archive eligibility; M6 reviews that the archive path and evaluator construction resolve the same workflow-private root through the real configuration and Role Grant chain; M7 reviews that, under a non-initial correction cycle, the real host promotion action emits the host-derived active cycle so a current-cycle successful archive clears the gate while a stale earlier-cycle promotion does not; M8 reviews that a valid earlier-cycle archive in the singleton canonical destination no longer blocks a later authoritative PASS because it is preserved first, so archive state stays separate and recoverable without manual relocation."
     },
     {
       "id": "AC07",
@@ -127,9 +128,10 @@
         "R1",
         "M3",
         "M6",
-        "M7"
+        "M7",
+        "M8"
       ],
-      "sufficiency": "R1 requires and runs tests that changed or missing bytes fail closed with no partial archive reported complete and that provenance is recorded; M3 reviews that the host derives the plan from policy and exact identities; M6 reviews that missing B evidence fails closed without fallback, changed B bytes fail identity validation, and N+1 host-derived archival uses the same binding; M7 reviews that the exact provenance recorded by a successful host archive carries the host-derived active correction cycle, which a caller or provider cannot forge, with cycle 001 behavior preserved."
+      "sufficiency": "R1 requires and runs tests that changed or missing bytes fail closed with no partial archive reported complete and that provenance is recorded; M3 reviews that the host derives the plan from policy and exact identities; M6 reviews that missing B evidence fails closed without fallback, changed B bytes fail identity validation, and N+1 host-derived archival uses the same binding; M7 reviews that the exact provenance recorded by a successful host archive carries the host-derived active correction cycle, which a caller or provider cannot forge, with cycle 001 behavior preserved; M8 reviews that, when a valid earlier-cycle canonical archive exists, the host identity-validates and atomically preserves it at its historical cycle location with identical bytes before the later current-cycle promotion, derives destination and cycle only from canonical host history, fails closed on changed, unbound or occupied destinations, and leaves the new promotion canonical and current-cycle visible while a stale earlier-cycle promotion does not satisfy it."
     },
     {
       "id": "AC11",
@@ -187,16 +189,17 @@
         "E3",
         "R1",
         "M5",
-        "M7"
+        "M7",
+        "M8"
       ],
-      "sufficiency": "E3 shows no accepted regression test was removed; R1 runs the full suite; M5 reviews that any changed assertion is traceable to a frozen requirement superseding old evaluator or archive semantics; M7 reviews that the complete accepted regression suite is preserved while correction-cycle provenance coverage is added."
+      "sufficiency": "E3 shows no accepted regression test was removed; R1 runs the full suite; M5 reviews that any changed assertion is traceable to a frozen requirement superseding old evaluator or archive semantics; M7 reviews that the complete accepted regression suite is preserved while correction-cycle provenance coverage is added; M8 reviews that the complete accepted regression suite, including the revision-002 and revision-003 regressions, is preserved while earlier-cycle archive preservation coverage is added."
     }
   ],
   "repair": {
-    "sourceEvaluatorRevision": "002",
-    "sourceEvaluatorRevisionIdentity": "sha256:1d5aad9a5ec9601e9691699ca5b696d60e6acc1531ca6752c325f1f0b6860b3f",
-    "resultingEvaluatorRevision": "003",
-    "trigger": "sha256:01417d242ea3a6d71ef2b162e19e78187b96d5f79336721504ea4a0a45f3a9d6",
+    "sourceEvaluatorRevision": "003",
+    "sourceEvaluatorRevisionIdentity": "sha256:0128bd895b7e5f0b6e47e6a2d081eac4203c98adaf18202c35b985afbdceb144",
+    "resultingEvaluatorRevision": "004",
+    "trigger": "sha256:db0834d08b4a9de90288ffb3b9c3f70400ab00ac634abeb6a57b4e65020be283",
     "affectedCriteria": [
       "AC06",
       "AC10",
