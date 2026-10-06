@@ -392,3 +392,27 @@
   field on `promotion-recorded`, optional promotion artifacts schema,
   earlier-cycle archive preservation
 - Measurements: provider calls 0
+
+## Outcome (contract version 5) - execution 8b16f4c1-1c47-4540-a270-a586e8ce9986
+
+- Inputs: candidate `f64b55286e2d2c06d4bd1fd1f815b1b9d09a5330`;
+  brief
+  `sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c`;
+  design
+  `sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de`;
+  promotion
+  `sha256:2965c3f2264fade33941a7efae52ac21e552e319ffb0bdedab514fd057b67cf6`;
+  As-Built
+  `sha256:a69839d86b4e337f7667456e5a94416ed0ff1804cbee2f3098920bf83393d6e0`;
+  human acceptance of candidate
+  `f64b55286e2d2c06d4bd1fd1f815b1b9d09a5330`
+- Result: succeeded; completion mode `STANDARD`
+- Output: `outcome.md`
+  `sha256:fd80ceb980d428f8e6adad8e4c69610d3cdf2c46c30e27df20848da63a30c824`
+- Checks: bound input identities matched repository bytes; candidate commit and
+  ancestry verified; promoted artifact identities matched the committed
+  promotion record; exact candidate PASS, completed As-Built, human acceptance,
+  trusted sequence-6 adoption and fresh ordinary post-cutover allocation
+  verified from committed public evidence; `git diff --check` passed for Outcome
+- Measurements: 4 evaluator revisions, 6 verification attempts, 5
+  implementation runs including retries; entry recorded contemporaneously
