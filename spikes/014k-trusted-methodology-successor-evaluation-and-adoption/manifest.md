@@ -322,3 +322,34 @@
   executable cases pass; no promotion requested
 - Public artifacts: `verification-result.json`, `feedback.md`
 - Measurements: provider calls 0
+
+## implementation retry 005 (contract version 5) - execution fafe4c4a-3982-49eb-bcae-1f5e2652c08b
+
+- Skill: implementation v5; branch `feat/spike-014`; base `f3fed8026c6d8db0759d2747736b28f9667b2971`
+- Inputs: brief
+  `sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c`;
+  design
+  `sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de`;
+  coverage
+  `sha256:124701113b66cd2c30f415df08ec498fe6bceefa5a0887aea102a8985098f001`;
+  requirements
+  `sha256:9b83a28e40660a34ed778033b494efbc3723424378a6bcb929b5b7365af5b06a`;
+  implementation feedback
+  `sha256:cc880fd4f2c07ab63dce23f033f44a5b6304d85c939e23e1902ddf244a7469d9`
+  (attempt 001, evaluator revision 004, IMPLEMENTATION_FAILURE: AC06, AC10,
+  AC15)
+- Output: host promotion now identity-validates and atomically preserves a valid
+  earlier-cycle canonical archive at `<destination>-history/cycle-NNN/` (cycle
+  and expected identities from host workflow history only) before promoting the
+  current cycle; changed, extra, unbound or occupied-history cases fail closed
+  with nothing overwritten. Content identities:
+  `src/kernel/archive-preservation.ts`
+  `sha256:138c176be8a1b1ae35eee1206dd83cb34fdca2af991c4fdfb097563e517ccb1a`;
+  `src/kernel/execution.ts`
+  `sha256:c83a37d36bb05ea667aed4ef99fb02b8634fce9a065dbd0aaac43e82842b2c05`;
+  `test/governed-executors.test.ts`
+  `sha256:a744280900e65fdec0412988442ff9e94b89ea1f91770620409f34bed3bca332`
+- Status: succeeded (candidate committed locally; not independently evaluated)
+- Visible verification: two new tests through the real host promotion path pass;
+  typecheck, eslint, prettier pass; `npm test` 253 pass / 9 fail, the same 9
+  failures occur without this change (sandbox EACCES on protected paths)

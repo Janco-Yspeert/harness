@@ -45,7 +45,7 @@ import { handleMessage } from "../src/executors/worker-tools.ts";
 import { startHarnessHost } from "../src/index.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
 import { ExecutionKernel } from "../src/kernel/execution.ts";
-import { identity, readLedger } from "../src/kernel/ledger.ts";
+import { appendLedger, identity, readLedger } from "../src/kernel/ledger.ts";
 import { loadDefinition } from "../src/kernel/methodology.ts";
 import type {
   Execution,
@@ -118,6 +118,7 @@ function smoke(
     scenario?: Scenario;
     executors?: ExecutorProfile[];
     locate?: boolean;
+    policy?: (policy: Record<string, unknown>) => void;
   } = {},
 ) {
   const dir = mkdtempSync(join(tmpdir(), "governed-exec-"));
@@ -127,6 +128,15 @@ function smoke(
   const root = join(dir, "project");
   cpSync(fixtureSource, root, { recursive: true });
   rmSync(join(root, "methodology", "trusted.jsonl"), { force: true });
+  if (options.policy) {
+    const policyPath = join(root, "methodology", "policy.json");
+    const policy = JSON.parse(readFileSync(policyPath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    options.policy(policy);
+    writeFileSync(policyPath, `${JSON.stringify(policy, null, 2)}\n`);
+  }
   const trusted = trustFixtureMethodology(root, {
     policy: "methodology/policy.json",
     methodologyPaths: ["methodology/contracts", "methodology/skills"],
@@ -424,6 +434,121 @@ void test("AC10: denied and failed promotions keep the PASS and never record pro
     const transitions = readLedger(f.ledger).map((event) => event.transition);
     assert.ok(!transitions.includes("smoke-promotion-recorded"));
     assert.ok(!existsSync(join(f.workflowDir, "promoted")));
+  }
+});
+
+// 014k AC06/AC10/AC15: a later cycle's promotion preserves a valid earlier
+// cycle's canonical archive through the real host promotion path.
+async function laterCyclePromotion(
+  t: TestContext,
+  tamper: (workflowDir: string) => void,
+) {
+  const f = smoke(t, {
+    scenario: {
+      steps: [
+        {
+          tool: "submitResult",
+          args: { disposition: "succeeded", methodology: { smoke: "PASS" } },
+        },
+        { tool: "requestAction", promotion: {} },
+      ],
+    },
+    policy: (policy) => {
+      policy.scopeEvent = {
+        transition: "correction-cycle-opened",
+        field: "cycle",
+        initial: "001",
+      };
+    },
+  });
+  const earlier = join(f.workflowDir, "promoted");
+  mkdirSync(earlier);
+  const bytes = "earlier cycle evidence\n";
+  const manifest = "earlier cycle manifest\n";
+  writeFileSync(join(earlier, "a.txt"), bytes);
+  writeFileSync(join(earlier, "promotion.json"), manifest);
+  appendLedger(f.ledger, "smoke-promotion-recorded", {
+    cycle: "001",
+    destination: "promoted",
+    artifacts: { "a.txt": identity(bytes) },
+    promotionIdentity: identity(manifest),
+  });
+  appendLedger(f.ledger, "correction-cycle-opened", { cycle: "002" });
+  tamper(f.workflowDir);
+  const host = await startHarnessHost(0, { governed: f.options });
+  t.after(() => host.close());
+  const grant = await call<{ grant: WorkflowGrant }>(host.url, "grants", {
+    continuation: false,
+    delegation: ["spawned"],
+    maxAllocations: 2,
+    roles: [PROMOTION],
+  });
+  const started = await call<{ execution?: Execution }>(host.url, "continue", {
+    workflowGrant: grant.value.grant.id,
+    mode: "spawned",
+    role: PROMOTION,
+  });
+  const execution = await settled(host.url, started.value.execution?.id ?? "");
+  return { f, execution, bytes, manifest };
+}
+
+void test("014k AC06/AC10/AC15: a later-cycle promotion preserves the valid earlier archive atomically", async (t) => {
+  const { f, execution, bytes, manifest } = await laterCyclePromotion(
+    t,
+    () => undefined,
+  );
+  assert.equal(execution.actions[0]?.status, "succeeded");
+  const history = join(f.workflowDir, "promoted-history", "cycle-001");
+  assert.equal(readFileSync(join(history, "a.txt"), "utf8"), bytes);
+  assert.equal(readFileSync(join(history, "promotion.json"), "utf8"), manifest);
+  assert.ok(existsSync(join(f.workflowDir, "promoted", "promotion-bytes.txt")));
+  assert.ok(!existsSync(join(f.workflowDir, "promoted", "a.txt")));
+  const recorded = readLedger(f.ledger).findLast(
+    (event) => event.transition === "smoke-promotion-recorded",
+  );
+  assert.equal(recorded?.evidence.cycle, "002");
+});
+
+void test("014k AC06/AC10/AC15: changed, extra or occupied-history earlier archives fail closed", async (t) => {
+  for (const [name, tamper] of [
+    [
+      "changed",
+      (dir: string) => {
+        writeFileSync(join(dir, "promoted", "a.txt"), "changed\n");
+      },
+    ],
+    [
+      "extra",
+      (dir: string) => {
+        writeFileSync(join(dir, "promoted", "extra.txt"), "x\n");
+      },
+    ],
+    [
+      "occupied",
+      (dir: string) => {
+        mkdirSync(join(dir, "promoted-history", "cycle-001"), {
+          recursive: true,
+        });
+      },
+    ],
+  ] as const) {
+    const { f, execution } = await laterCyclePromotion(t, tamper);
+    assert.equal(execution.actions[0]?.status, "failed", name);
+    assert.ok(
+      existsSync(join(f.workflowDir, "promoted", "promotion.json")),
+      name,
+    );
+    assert.ok(
+      !existsSync(join(f.workflowDir, "promoted", "promotion-bytes.txt")),
+      name,
+    );
+    assert.equal(
+      readLedger(f.ledger).filter(
+        (event) => event.transition === "smoke-promotion-recorded",
+      ).length,
+      1,
+      name,
+    );
   }
 });
 

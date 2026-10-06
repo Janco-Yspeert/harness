@@ -35,6 +35,11 @@ import {
   MAX_EVIDENCE_FILE_BYTES,
   MAX_EVIDENCE_FILES,
 } from "../executors/protocol.ts";
+import {
+  planPreservation,
+  preserve,
+  type PreservationPlan,
+} from "./archive-preservation.ts";
 import { evidencePath, inside, loadDefinition } from "./methodology.ts";
 import {
   buildKnownLossArtifacts,
@@ -2878,8 +2883,35 @@ export class ExecutionKernel {
           isAbsolute(parentDelta)
         )
           throw new Error("promotion destination escapes configured workspace");
-        if (existsSync(destinationRoot))
-          throw new Error("promotion destination already exists");
+        let preservation: PreservationPlan | undefined;
+        if (existsSync(destinationRoot)) {
+          const scope = this.definition(workflow, grant.methodology).policy
+            .scopeEvent;
+          if (!scope) throw new Error("promotion destination already exists");
+          const historyRoot = resolve(
+            workflowRoot,
+            `${allowed.destination}-history`,
+          );
+          if (
+            existsSync(historyRoot) &&
+            (lstatSync(historyRoot).isSymbolicLink() ||
+              !lstatSync(historyRoot).isDirectory())
+          )
+            throw new Error("earlier-cycle archive history root is invalid");
+          const opened = this.events(workflow).findLast(
+            (e) => e.transition === scope.transition,
+          )?.evidence[scope.field];
+          const currentCycle =
+            typeof opened === "string" ? opened : scope.initial;
+          preservation = planPreservation(
+            destinationRoot,
+            historyRoot,
+            allowed.destination,
+            allowed.transition,
+            currentCycle,
+            this.events(workflow),
+          );
+        }
         staging = mkdtempSync(resolve(workflowRoot, ".promotion-"));
         const sourceRoot = realpathSync(source.path);
         for (const artifact of artifacts) {
@@ -2937,7 +2969,16 @@ export class ExecutionKernel {
         );
         action.promotionIdentity = identity(manifest);
         writeFileSync(resolve(staging, "promotion.json"), manifest);
-        renameSync(staging, destinationRoot);
+        if (preservation) {
+          mkdirSync(dirname(preservation.to), { recursive: true });
+          preserve(preservation);
+          try {
+            renameSync(staging, destinationRoot);
+          } catch (error) {
+            renameSync(preservation.to, preservation.from);
+            throw error;
+          }
+        } else renameSync(staging, destinationRoot);
         staging = undefined;
         action.status = "succeeded";
       } catch (error) {
