@@ -371,3 +371,24 @@
 - Checks: frozen identities matched; executable procedures 3/3 PASS; full suite
   261/262, the one failure reproduces at baseline; reviews M1-M8 done
 - Measurements: provider calls 0
+
+## As-Built (cycle 4)
+
+- Skill: as-built, contract version 4; inspected revision
+  `f64b55286e2d2c06d4bd1fd1f815b1b9d09a5330`
+- Input identities: brief
+  `sha256:5e618dae8b741c143cb8c94145fe614e0ca1d730b9621e56c361a1d8ee0ff08c`;
+  design
+  `sha256:2a991865fb00047af1019ad0e6cb69afac2f5955c69f312c9ad7953dc558b2de`;
+  verification
+  `sha256:001af4733cedac7a70613b86d0bc54cb1c0824f4b05f2e033385a671fb0b3c36`;
+  promotion
+  `sha256:2965c3f2264fade33941a7efae52ac21e552e319ffb0bdedab514fd057b67cf6`
+  (verified against `evaluation/promotion.json`, committed separately as
+  `ed99cd3`)
+- Result: succeeded; artifact `as-built.md`; Missing: post-As-Built adoption and
+  cutover steps not yet present, no host call site for
+  `executeArchive`/`closeoutPermitted`; Contradictory: none; Extra: cycle scope
+  field on `promotion-recorded`, optional promotion artifacts schema,
+  earlier-cycle archive preservation
+- Measurements: provider calls 0
