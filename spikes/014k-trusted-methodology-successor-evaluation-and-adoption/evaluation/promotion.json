@@ -1,37 +1,43 @@
 {
   "schemaVersion": 1,
   "request": {
-    "id": "d3118e28-df66-4908-be42-9aceb0789c90",
-    "execution": "5c02b191-4a20-4a47-b6f2-847dfd0ce135",
-    "roleGrant": "sha256:41a7592ebd49de9522ecebeda4ded7852387cd3b7da06d0de1a94be0113c3c3e",
-    "candidate": "2e1cf0e2ee3facc2742dade252ac970b03f38a26",
-    "evaluatorRevision": "003",
-    "attempt": 1,
+    "id": "7bfefd6a-74a7-4ef4-bf18-a2e40e47cd49",
+    "execution": "b005763e-b408-4bb4-8429-13f89ec88e10",
+    "roleGrant": "sha256:f14626b94580cc76b4d7bda4d2d2e80570eded6635046a4a0bd3c68bc75b4ef5",
+    "candidate": "f64b55286e2d2c06d4bd1fd1f815b1b9d09a5330",
+    "evaluatorRevision": "004",
+    "attempt": 2,
     "destination": "evaluation",
     "artifacts": [
       {
         "source": ".eval/promotion-plan.json",
         "destination": "promotion-plan.json",
-        "identity": "sha256:1a926934a5a263b98fd46b7595c6ca5c16c688c5d4407c97f810532eff84f8a4"
+        "identity": "sha256:b15a9ba9d51b3887ba7a0868e9f79c7ff10993da050289a730c6a61c44b991f1"
       },
       {
         "source": ".eval/attempt-ledger.json",
         "destination": "attempt-ledger.json",
-        "identity": "sha256:0e5e5414488aa3c66ea38fa3685da7b6f456efee8c628902d5a99df85905c37a"
+        "identity": "sha256:1a8f5b26b234b60e8a1fbf358cebc88789e194a5ec28dcaef4a01f02ea95cc52"
       },
       {
         "source": ".eval/attempts/001/eval-result.md",
         "destination": "attempts/001/eval-result.md",
-        "identity": "sha256:d34f79b0bdf5b904f5e943fa54ea5e64f65d17f75b6d90e791d92f49ee130204"
+        "identity": "sha256:19a9515d842b6668ae960db84d41c4f73c5cbe375e35c8360dc6c0607151b5fa"
+      },
+      {
+        "source": ".eval/attempts/002/eval-result.md",
+        "destination": "attempts/002/eval-result.md",
+        "identity": "sha256:a98cb979255f0deb59be043c5e8df0f5da4a6cd7f0fbd97635c62930edcedf66"
       }
     ]
   },
   "result": {
     "artifacts": {
-      "promotion-plan.json": "sha256:1a926934a5a263b98fd46b7595c6ca5c16c688c5d4407c97f810532eff84f8a4",
-      "attempt-ledger.json": "sha256:0e5e5414488aa3c66ea38fa3685da7b6f456efee8c628902d5a99df85905c37a",
-      "attempts/001/eval-result.md": "sha256:d34f79b0bdf5b904f5e943fa54ea5e64f65d17f75b6d90e791d92f49ee130204"
+      "promotion-plan.json": "sha256:b15a9ba9d51b3887ba7a0868e9f79c7ff10993da050289a730c6a61c44b991f1",
+      "attempt-ledger.json": "sha256:1a8f5b26b234b60e8a1fbf358cebc88789e194a5ec28dcaef4a01f02ea95cc52",
+      "attempts/001/eval-result.md": "sha256:19a9515d842b6668ae960db84d41c4f73c5cbe375e35c8360dc6c0607151b5fa",
+      "attempts/002/eval-result.md": "sha256:a98cb979255f0deb59be043c5e8df0f5da4a6cd7f0fbd97635c62930edcedf66"
     },
-    "integrityIdentity": "sha256:a3c9e8e5df8bcf15ed45c45d1cc8a320248e6d150af1ef7ee1ed376490937dd6"
+    "integrityIdentity": "sha256:245fa648c064cf8a702780cd0625a80fdf44dd2f57954b3a45739008eef76136"
   }
 }
