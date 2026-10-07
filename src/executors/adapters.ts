@@ -220,30 +220,34 @@ function tomlString(value: string): string {
   return JSON.stringify(value);
 }
 
-// Codex `workspace-write` keeps `.git` (with `.agents` and `.codex`) read-only
-// inside every writable root, so a worker granted `git-commit` could never
-// create `.git/index.lock` (the 014e H3 live canary block). Write grants
-// therefore select this named Codex permission profile instead. It mirrors
-// `workspace-write`: the whole filesystem is readable; `/tmp`, `$TMPDIR` and
-// each writable workspace are writable; the network is off. The one difference
-// is that each writable workspace's Git metadata is writable, so the worker can
-// commit. Hooks and repository config stay read-only, so a worker cannot plant
-// code that a later operator `git` command would run outside the sandbox.
-export const CODEX_WRITE_PROFILE = "harness-workspace-git";
+// A named Codex permission profile composes the provider sandbox from the
+// actual workspace modes. The outer Harness namespace still decides what is
+// visible; this nested profile preserves each visible workspace's read/write
+// mode while keeping the network off and scratch/temp writable. Git metadata
+// is read-only unless the grant separately authorizes git-commit. When it is
+// authorized, hooks and repository config remain read-only so a worker cannot
+// plant code that a later operator Git command would run outside the sandbox.
+export const CODEX_WORKSPACE_PROFILE = "harness-workspaces";
 const CODEX_READ_ONLY_METADATA = [
   join(".git", "hooks"),
   join(".git", "config"),
   ".agents",
   ".codex",
 ];
-export function codexWriteProfile(roots: readonly string[]): string[] {
+export function codexWorkspaceProfile(
+  writableRoots: readonly string[],
+  gitWritableRoots: readonly string[],
+): string[] {
+  const gitWritable = new Set(gitWritableRoots);
   const entries = [
     '":root"="read"',
     '":slash_tmp"="write"',
     '":tmpdir"="write"',
-    ...roots.flatMap((root) => [
+    ...writableRoots.flatMap((root) => [
       `${tomlString(root)}="write"`,
-      `${tomlString(join(root, ".git"))}="write"`,
+      `${tomlString(join(root, ".git"))}=${
+        gitWritable.has(root) ? '"write"' : '"read"'
+      }`,
       ...CODEX_READ_ONLY_METADATA.map(
         (path) => `${tomlString(join(root, path))}="read"`,
       ),
@@ -251,11 +255,11 @@ export function codexWriteProfile(roots: readonly string[]): string[] {
   ];
   return [
     "-c",
-    `default_permissions=${tomlString(CODEX_WRITE_PROFILE)}`,
+    `default_permissions=${tomlString(CODEX_WORKSPACE_PROFILE)}`,
     "-c",
-    `permissions.${CODEX_WRITE_PROFILE}.filesystem={${entries.join(", ")}}`,
+    `permissions.${CODEX_WORKSPACE_PROFILE}.filesystem={${entries.join(", ")}}`,
     "-c",
-    `permissions.${CODEX_WRITE_PROFILE}.network.enabled=false`,
+    `permissions.${CODEX_WORKSPACE_PROFILE}.network.enabled=false`,
   ];
 }
 
@@ -270,13 +274,13 @@ const codex: ProviderAdapter = {
   reasoning: { enforce: true, attest: false },
   // The Codex sandbox restricts writes, not reads.
   privateWorkspace: false,
-  // `--sandbox read-only|workspace-write` runs every command inside Codex's
-  // own bubblewrap sandbox.
+  // Codex runs every command inside its own bubblewrap sandbox, either the
+  // native read-only preset or the explicit mixed-workspace profile below.
   nestedSandbox: true,
   // Codex sandboxes always permit reading, command execution and Git
-  // inspection, and the write profile always permits commits. Any grant whose
-  // capabilities differ from what the selected sandbox actually provides is a
-  // mismatch and fails closed.
+  // inspection. The mixed profile permits Git metadata writes only with the
+  // paired repository-write/git-commit authority. Any grant whose capabilities
+  // differ from what the selected sandbox actually provides fails closed.
   checkCapabilities(capabilities) {
     const unknown = capabilities.find(
       (capability) => !codex.capabilities.includes(capability),
@@ -306,7 +310,6 @@ const codex: ProviderAdapter = {
   command(input) {
     const primary = input.workspaces[0];
     if (!primary) throw new Error("governed Codex launch requires a workspace");
-    const write = input.grant.capabilities.includes("repository-write");
     const options = [
       "--json",
       "--ephemeral",
@@ -334,17 +337,14 @@ const codex: ProviderAdapter = {
         : ["-c", `model_reasoning_effort=${tomlString(input.reasoning)}`]),
     ];
     const prompt = `${input.system}\n\n${input.prompt}`;
-    if (!write)
+    const writableRoots = input.workspaces
+      .filter((workspace) => workspace.mode === "write")
+      .map((workspace) => workspace.path);
+    if (writableRoots.length === 0)
       return codexExecCommand(primary.path, [], "read-only", options, prompt);
-    // As under `workspace-write`, the primary workspace is the writable
-    // working directory and every other write workspace is added.
-    const roots = [
-      primary.path,
-      ...input.workspaces
-        .slice(1)
-        .filter((workspace) => workspace.mode === "write")
-        .map((workspace) => workspace.path),
-    ];
+    const gitWritableRoots = input.grant.capabilities.includes("git-commit")
+      ? writableRoots
+      : [];
     // Codex refuses `--sandbox` together with `default_permissions`, so the
     // profile replaces it (and `--add-dir`) rather than widening it.
     return [
@@ -352,7 +352,7 @@ const codex: ProviderAdapter = {
       "exec",
       "--cd",
       primary.path,
-      ...codexWriteProfile(roots),
+      ...codexWorkspaceProfile(writableRoots, gitWritableRoots),
       ...options,
       prompt,
     ];

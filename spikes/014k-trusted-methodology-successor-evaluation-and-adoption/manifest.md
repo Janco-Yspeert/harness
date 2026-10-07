@@ -416,3 +416,33 @@
   verified from committed public evidence; `git diff --check` passed for Outcome
 - Measurements: 4 evaluator revisions, 6 verification attempts, 5
   implementation runs including retries; entry recorded contemporaneously
+
+## Post-Outcome host/runtime maintenance 001
+
+- Authority and provenance: explicit human authorization in the active Codex
+  App session; performed through Codex App, not through a governed Harness role
+  allocation
+- Scope: repair provider/runtime write composition so workspace modes govern
+  filesystem locations independently of `repository-write`, preserving the
+  accepted trusted sequence-6 verifier authority
+- Base: `caa701afb028135033b03e1d09abdfc2d5c8306a`
+- Result: implemented; deterministic verification passed; independent and live
+  governed operational confirmation not yet performed
+- Outputs: `src/claude-workflow.ts`
+  `sha256:920052ed9f51863da04a7b31c2c3d21c0bed9702edd80d93b16b05aedc3af22a`;
+  `src/executors/adapters.ts`
+  `sha256:4ac06e9eeada1a8f402f246256cc76a71ce173ca0ee5e804f4b45242233db477`;
+  `test/evidence-action.test.ts`
+  `sha256:bb16fbb336a9c013a49de1a4474941ae32dcdacf2ad0b543f78e04a7a934dc88`;
+  `test/external-project.test.ts`
+  `sha256:ff5d2d789bb8a108eb0aea4b03711c9cf7b46a1f074fa0524ad81ae6b37038b1`;
+  `post-outcome-maintenance-001-evaluator-write-composition.md`; `manifest.md`
+- Checks: focused provider/containment regression 68/69 initially (stale test
+  setup corrected), then 28/28 PASS and external-project 18/18 PASS; full
+  sequence-6 regression set 115/115 PASS; full suite 263/263 PASS; typecheck,
+  ESLint, Prettier and `git diff --check` PASS
+- Boundaries: no live provider call; no governed role identity; no change to
+  014k Outcome, trusted methodology sequence 6 or its identity, Spike 014f
+  candidate `af75b14d1847af02404a591a8829751dc8df2a2e`, or evaluator revision
+  `002`. A fresh unchanged protected Claude `evaluator-verify` remains required
+  as separately recorded operational confirmation.

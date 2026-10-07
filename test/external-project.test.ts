@@ -26,8 +26,8 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import {
   AdapterRefusal,
-  CODEX_WRITE_PROFILE,
-  codexWriteProfile,
+  CODEX_WORKSPACE_PROFILE,
+  codexWorkspaceProfile,
   planLaunch,
   ADAPTERS,
 } from "../src/executors/adapters.ts";
@@ -1183,7 +1183,7 @@ function codexInput(
   };
 }
 
-void test("014e D4 (H4): a Codex write grant selects a Git-writable permission profile for exactly its writable workspaces; read-only grants stay read-only", () => {
+void test("014e D4 (H4): Codex composes workspace modes and Git authority independently", () => {
   const write = ADAPTERS.codex.command(
     codexInput(ALL, [
       { path: "/work/stockdif", mode: "write" },
@@ -1206,14 +1206,19 @@ void test("014e D4 (H4): a Codex write grant selects a Git-writable permission p
     "--dangerously-bypass-approvals-and-sandbox",
   ])
     assert.ok(!write.includes(flag), flag);
-  const profile = codexWriteProfile(["/work/stockdif", "/work/extra"]);
+  const profile = codexWorkspaceProfile(
+    ["/work/stockdif", "/work/extra"],
+    ["/work/stockdif", "/work/extra"],
+  );
   assert.deepEqual(write.slice(4, 4 + profile.length), profile);
-  assert.ok(write.includes(`default_permissions="${CODEX_WRITE_PROFILE}"`));
+  assert.ok(write.includes(`default_permissions="${CODEX_WORKSPACE_PROFILE}"`));
   assert.ok(
-    write.includes(`permissions.${CODEX_WRITE_PROFILE}.network.enabled=false`),
+    write.includes(
+      `permissions.${CODEX_WORKSPACE_PROFILE}.network.enabled=false`,
+    ),
   );
   const filesystem = write.find((arg) =>
-    arg.startsWith(`permissions.${CODEX_WRITE_PROFILE}.filesystem=`),
+    arg.startsWith(`permissions.${CODEX_WORKSPACE_PROFILE}.filesystem=`),
   );
   assert.ok(filesystem);
   for (const entry of [
@@ -1239,18 +1244,40 @@ void test("014e D4 (H4): a Codex write grant selects a Git-writable permission p
     assertBoundedExecutorCommand(write);
   });
 
-  const read = ADAPTERS.codex.command(
+  const mixed = ADAPTERS.codex.command(
     codexInput(
       ["repository-read", "local-computation", "git-inspect"],
       [
-        { path: "/work/stockdif", mode: "write" },
-        { path: "/work/extra", mode: "write" },
+        { path: "/work/stockdif", mode: "read" },
+        { path: "/work/evaluator-private", mode: "write" },
       ],
     ),
   );
-  assert.equal(read[read.indexOf("--sandbox") + 1], "read-only");
-  assert.ok(!read.includes("--add-dir"));
-  assert.ok(!read.some((arg) => arg.includes("default_permissions")));
+  assert.ok(!mixed.includes("--sandbox"));
+  assert.ok(mixed.includes(`default_permissions="${CODEX_WORKSPACE_PROFILE}"`));
+  const mixedFilesystem = mixed.find((arg) =>
+    arg.startsWith(`permissions.${CODEX_WORKSPACE_PROFILE}.filesystem=`),
+  );
+  assert.ok(mixedFilesystem);
+  for (const entry of [
+    '":root"="read"',
+    '":slash_tmp"="write"',
+    '":tmpdir"="write"',
+    '"/work/evaluator-private"="write"',
+    '"/work/evaluator-private/.git"="read"',
+  ])
+    assert.ok(mixedFilesystem.includes(entry), entry);
+  assert.ok(!mixedFilesystem.includes('"/work/stockdif"="write"'));
+  assert.ok(!mixedFilesystem.includes('"/work/stockdif/.git"="write"'));
+
+  const readOnly = ADAPTERS.codex.command(
+    codexInput(
+      ["repository-read", "local-computation", "git-inspect"],
+      [{ path: "/work/stockdif", mode: "read" }],
+    ),
+  );
+  assert.equal(readOnly[readOnly.indexOf("--sandbox") + 1], "read-only");
+  assert.ok(!readOnly.some((arg) => arg.includes("default_permissions")));
 });
 
 function locateCodex(): string | undefined {
@@ -1333,9 +1360,9 @@ cd '${workspace}'
   // The H4 write profile: the commit lands; hooks and config stay protected.
   assert.deepEqual(
     run("profile", [
-      ...codexWriteProfile([workspace]),
+      ...codexWorkspaceProfile([workspace], [workspace]),
       "-P",
-      CODEX_WRITE_PROFILE,
+      CODEX_WORKSPACE_PROFILE,
     ]),
     { commit: "yes", "write-hook": "no", "write-config": "no" },
   );
@@ -1343,4 +1370,91 @@ cd '${workspace}'
   assert.equal(git(workspace, ["rev-list", "--count", "HEAD"]), "2");
   assert.equal(existsSync(join(hooks, "pre-commit")), false);
   assert.equal(readFileSync(configPath, "utf8"), config);
+});
+
+void test("sequence 6: the real Codex mixed profile writes private and scratch state but not the repository or its Git metadata", (t) => {
+  const codex = locateCodex();
+  if (codex === undefined) {
+    t.skip("codex is not installed");
+    return;
+  }
+  const located = locateContainment([]);
+  assert.ok(located.ok, "bubblewrap is required for containment tests");
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "codex-mixed-")));
+  t.after(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const workspace = join(dir, "repository");
+  const privateWorkspace = join(dir, "evaluator-private");
+  const scratch = join(dir, "scratch");
+  const forbidden = join(dir, "forbidden");
+  for (const path of [privateWorkspace, scratch, forbidden]) mkdirSync(path);
+  git(dir, ["init", "-q", "-b", "main", workspace]);
+  writeFileSync(join(workspace, "tracked.txt"), "baseline\n");
+  git(workspace, ["add", "tracked.txt"]);
+  git(workspace, ["commit", "-q", "-m", "baseline"]);
+  writeFileSync(join(forbidden, "secret.txt"), "secret\n");
+  const report = join(scratch, "mixed.results");
+  const check = (name: string, command: string): string =>
+    `if ( ${command} ) >/dev/null 2>&1; then echo ${name}=yes; else echo ${name}=no; fi`;
+  const script = [
+    "{",
+    check("read-repository", `cat '${workspace}/tracked.txt'`),
+    check("write-repository", `echo changed > '${workspace}/tracked.txt'`),
+    check("write-private", `echo private > '${privateWorkspace}/state.txt'`),
+    check("write-scratch", `echo scratch > '${scratch}/state.txt'`),
+    check("write-git", `touch '${workspace}/.git/index.lock'`),
+    check("read-forbidden", `cat '${forbidden}/secret.txt'`),
+    `} > '${report}'`,
+  ].join("\n");
+  const command = containedLaunch({
+    bwrap: located.path,
+    provider: "codex",
+    program: codex,
+    args: [
+      "sandbox",
+      "-C",
+      workspace,
+      ...codexWorkspaceProfile([privateWorkspace], []),
+      "-P",
+      CODEX_WORKSPACE_PROFILE,
+      "--",
+      "/bin/sh",
+      "-c",
+      script,
+    ],
+    cwd: workspace,
+    workspaces: [
+      { path: workspace, mode: "read" },
+      { path: privateWorkspace, mode: "write" },
+    ],
+    scratch,
+    nodePath: process.execPath,
+    toolFiles: [],
+    masked: [],
+    protectedRoots: [repository],
+    env: { PATH: "/usr/bin:/bin" },
+  });
+  const run = spawnSync(command.program, command.args, {
+    env: command.env,
+    encoding: "utf8",
+  });
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(results(report), {
+    "read-repository": "yes",
+    "write-repository": "no",
+    "write-private": "yes",
+    "write-scratch": "yes",
+    "write-git": "no",
+    "read-forbidden": "no",
+  });
+  assert.equal(
+    readFileSync(join(workspace, "tracked.txt"), "utf8"),
+    "baseline\n",
+  );
+  assert.equal(
+    readFileSync(join(privateWorkspace, "state.txt"), "utf8"),
+    "private\n",
+  );
+  assert.equal(existsSync(join(workspace, ".git", "index.lock")), false);
 });

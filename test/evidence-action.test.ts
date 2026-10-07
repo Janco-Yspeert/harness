@@ -541,7 +541,7 @@ void test("014g SC5: a launch that cannot enforce the composition is refused wit
   );
 });
 
-void test("014g: the Claude launch for a mediated grant holds no write or commit tool and denies command writes to the read-only repository", (t) => {
+void test("014g: the Claude launch can author private state while denying repository writes and commits", (t) => {
   const f = fixture(t);
   const command = buildGovernedClaudeCommand({
     workspaces: f.run.grant.workspaces
@@ -553,11 +553,14 @@ void test("014g: the Claude launch for a mediated grant holds no write or commit
     mcpConfig: "{}",
     system: "system",
     prompt: "prompt",
+    unattendedProtected: true,
   });
   const flag = (name: string): string =>
     required(command[command.indexOf(name) + 1]);
-  assert.ok(!flag("--tools").split(",").includes("Write"));
-  assert.ok(!flag("--tools").split(",").includes("Edit"));
+  assert.ok(flag("--tools").split(",").includes("Write"));
+  assert.ok(flag("--tools").split(",").includes("Edit"));
+  assert.ok(flag("--allowedTools").split(",").includes("Write"));
+  assert.ok(flag("--allowedTools").split(",").includes("Edit"));
   assert.ok(!flag("--allowedTools").includes("git commit"));
   assert.ok(!flag("--allowedTools").includes("git add"));
   assert.equal(flag("--permission-mode"), "dontAsk");
@@ -566,6 +569,10 @@ void test("014g: the Claude launch for a mediated grant holds no write or commit
   };
   assert.deepEqual(settings.sandbox.filesystem.denyWrite, [f.root]);
   assert.match(flag("--disallowedTools"), new RegExp(`Write\\(/${f.root}/`));
+  assert.doesNotMatch(
+    flag("--disallowedTools"),
+    new RegExp(`Write\\(/${resolve(f.root, "../private")}/`),
+  );
 });
 
 void test("014g: the evidence request is a typed, bounded worker operation", () => {

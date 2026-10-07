@@ -257,6 +257,7 @@ export function governedClaudeCapabilities(): readonly string[] {
 export function governedClaudePermissions(
   capabilities: readonly string[],
   workerOperations: readonly string[],
+  workspaceWrite = capabilities.includes("repository-write"),
 ): {
   tools: string[];
   allowedTools: string[];
@@ -273,6 +274,11 @@ export function governedClaudePermissions(
       );
     for (const family of mapped) families.add(family);
   }
+  // Capabilities decide which class of mutation is authorized; workspace
+  // modes decide where it may land. A read-only repository can therefore
+  // coexist with writable evaluator-private state without granting the
+  // repository-write capability.
+  if (workspaceWrite) families.add("workspace-write");
   const { tools, allowedTools } = resolveClaudeCapabilityTools(families, {
     allowDirectPush: false,
   });
@@ -314,6 +320,7 @@ export function buildGovernedClaudeCommand(
   const permissions = governedClaudePermissions(
     launch.capabilities,
     launch.workerOperations,
+    launch.workspaces.some((workspace) => workspace.mode === "write"),
   );
   // A protected governed worker has no approval surface
   // (`--permission-prompts none`). Admit every provider tool family selected by
