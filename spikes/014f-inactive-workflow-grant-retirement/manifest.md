@@ -104,3 +104,26 @@
   the harness workspace, so one unrelated containment test cannot hold, and the
   formatter cannot read an untracked sandbox artifact.
 - No promotion requested. Measurements unavailable.
+
+## Evaluator Prepare — execution b0f964d3-0539-49c7-b1c8-20fb9ac8272e
+
+- Skill: `evaluator`, mode `prepare`, contract version 14
+  (`sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b`).
+- Workflow: `014f-inactive-workflow-grant-retirement`; Role Grant
+  `sha256:faec3b470cb23134d01a98055a53f341b82f6f8d9baaef1d736a1e43fe582908`.
+- Inputs: `spike.md`
+  `sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c`,
+  `design-map.md`
+  `sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34`
+  (host-bound identities).
+- Result: succeeded; evaluator revision `002` frozen (replaces the
+  environment-blocked regression evidence plan of revision `001`; acceptance
+  semantics unchanged).
+- Outputs: `eval-requirements.md` `sha256:3e0c93e27cf21821703b1df7f2b3e7a9845d11967f95c3640520398ee7269cd4`, `coverage-map.json` (8
+  criterion records, pre-freeze integrity validation PASS, evaluator revision
+  identity
+  `sha256:39fcf19c29b5562fdc482752b0d7a3fd6452cd566a0693170237a1c70be039ab`),
+  `manifest.md`.
+- Checks: controlled positive, baseline-negative and single-defect negative
+  exercises on a discarded scratch reference; no candidate execution.
+- Measurements: wall-clock time and token usage unavailable.

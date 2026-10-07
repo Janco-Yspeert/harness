@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "spike": "014f-inactive-workflow-grant-retirement",
-  "evaluationRequirements": "sha256:50182839061aeb7bd3efe6da2f6ce6d7166bb1ee6d0f6d393b4c692897c80820",
+  "evaluationRequirements": "sha256:3e0c93e27cf21821703b1df7f2b3e7a9845d11967f95c3640520398ee7269cd4",
   "readiness": {
     "skill": "evaluator",
     "skillVersion": 14,
-    "evaluatorRevision": "001",
-    "evaluatorRevisionIdentity": "sha256:393a71adc7df9fd60446a7cabcea16f4f7877d1604668720ee98d6dd03737f41",
-    "privateInventoryIdentity": "sha256:09122e31324c9a590b6e879d1ec16f4da0feddcb4a59003228b87f2e08086671",
-    "validatorResultBinding": "sha256:789203fe68f6c417520a9726374835f165b640b3ad17022ae88049890052eb08",
+    "evaluatorRevision": "002",
+    "evaluatorRevisionIdentity": "sha256:39fcf19c29b5562fdc482752b0d7a3fd6452cd566a0693170237a1c70be039ab",
+    "privateInventoryIdentity": "sha256:4cd6d5cdf8af41937048474b90fcd6d176ddf3f70cf4b879d23db3c4bba6d170",
+    "validatorResultBinding": "sha256:3a53415f97d97807c6344c098c2f830e15defac14c2dbc60419d2ae112d8b113",
     "integrityValidation": "PASS",
     "criterionRecordCount": 8
   },
@@ -22,7 +22,7 @@
         "E1",
         "E4"
       ],
-      "sufficiency": "E1 drives the kernel operation on a terminal grant and confirms it records one event bound to the exact grant without allocating a role. E4 confirms the host operation succeeds only for the root credential (executor-session and anonymous callers are refused, invalid bodies refused) and lists retirement evidence."
+      "sufficiency": "E1 drives the kernel operation on a terminal grant and confirms it returns the recorded evidence, appends one event bound to the exact grant, and creates no execution, allocation or session; unknown, foreign-workflow, empty-reason and empty-grant requests are refused with no write. E4 confirms the host operation succeeds only for the root credential (anonymous and executor-session callers and malformed bodies are refused with no write) and lists retirement evidence."
     },
     {
       "id": "AC02",
@@ -33,7 +33,7 @@
         "E1",
         "E6"
       ],
-      "sufficiency": "E1 compares ledger bytes before and after to show a single appended event with the exact evidence and untouched original grant and executions. E6 shows prior executions, results and diagnostics stay identical and readable through kernel and host after retirement and successor use."
+      "sufficiency": "E1 compares ledger bytes before and after to show a single appended event with the exact evidence, an untouched original grant and executions, and an unmoved authority basis. E6 shows prior executions, role grants, host execution views and grant listings stay identical and readable after retirement and successor use."
     },
     {
       "id": "AC03",
@@ -44,7 +44,7 @@
         "E3",
         "E4"
       ],
-      "sufficiency": "E3 shows inspect is denied with retired wording and allocate, retry and spawned allocation are refused with no ledger write while a sibling grant stays usable. E4 shows attached, spawned and predecessor-bearing continuation over the host, including the request automatic continuation issues, are refused with no session or ledger write."
+      "sufficiency": "E3 shows inspect is denied with retired wording (not recovery wording) and attached, spawned, retry and replacement allocations are refused with no ledger write for the retired grant while an otherwise identical sibling grant retries normally, on the original and a restarted kernel. E4 shows attached, spawned and predecessor-bearing continuation over the host, including the request automatic continuation issues, are refused with no session, execution or ledger write."
     },
     {
       "id": "AC04",
@@ -55,7 +55,7 @@
         "E2",
         "E5"
       ],
-      "sufficiency": "E2 shows allocated, running and unresolved-human-request states each refuse retirement with an unchanged ledger, and that answering the request makes retirement succeed. E5 confirms the same refusal through the host path."
+      "sufficiency": "E2 shows allocated, running and unresolved-human-request states each refuse retirement with an unchanged ledger, and that completing the execution and answering the request makes retirement succeed, attributing each refusal to its condition. E5 confirms the same refusals through the host path."
     },
     {
       "id": "AC05",
@@ -66,7 +66,7 @@
         "E2",
         "E4"
       ],
-      "sufficiency": "E2 shows repeat retirement is a deterministic already-retired refusal with no second event. E4 shows the host repeat is a 409 refusal and that a new host and a new kernel over the same ledger both still deny the grant, so restart cannot resurrect or duplicate authority."
+      "sufficiency": "E2 shows repeat retirement is a deterministic already-retired refusal with no second event, on the original and a restarted kernel. E4 shows the host repeat is a 409 refusal and that a restarted host and a fresh kernel over the same ledger still deny the grant, so restart cannot resurrect or duplicate authority."
     },
     {
       "id": "AC06",
@@ -76,7 +76,7 @@
       "procedures": [
         "E6"
       ],
-      "sufficiency": "E6 issues a fresh successor grant after retirement, confirms it has its own budget and no supersession link, and runs an allocation through result and exit normally while the retired grant remains denied."
+      "sufficiency": "E6 issues a fresh successor grant after retirement through the ordinary host path, confirms it has its own budget and no supersession link, and runs an allocation through result and exit normally while the retired grant remains denied with its budget untouched."
     },
     {
       "id": "AC07",
@@ -86,7 +86,7 @@
       "procedures": [
         "R1"
       ],
-      "sufficiency": "The repository's existing supersession, recovery, correction, continuation and allocation-limit regressions are the authoritative behavior tests; R1 requires them, typecheck, lint and format checks to pass unchanged at the candidate commit, so a hidden duplicate would add no falsifiability."
+      "sufficiency": "The repository's existing supersession, recovery, correction, continuation and allocation-limit regressions are the authoritative behavior tests; R1 requires every test passing at the pre-implementation baseline to still pass at the candidate in the same environment, plus clean typecheck, lint and format over changed files, so unrelated environment limits neither hide nor fabricate a regression and a hidden duplicate would add no falsifiability."
     },
     {
       "id": "AC08",

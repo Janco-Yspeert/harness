@@ -58,9 +58,21 @@ provide them exactly as specified there:
 - **EA5** — Automatic continuation is a consequence of the shared liveness
   predicate the Design Map mandates; it is evaluated through the identical
   continuation request the host issues, plus the public regression suite.
-- **EA6** — The required public regression suite is the repository's normal
-  checks at the candidate commit: `npm test`, `npm run typecheck`,
-  `npm run lint`, `npm run format:check`, and `git diff --check`.
+- **EA6** — The required public regression is differential and
+  environment-neutral. At the candidate commit and, in the same environment, at
+  the committed evaluation baseline (the base commit the Implementation role
+  records for its candidate), the repository test suite `node --test test/*.test.ts` is run:
+  every test that passes at the baseline must pass at the candidate. A test
+  that already fails at the baseline in that environment is environmental and
+  is not attributed to the candidate. In addition, at the candidate:
+  `tsc --noEmit` is clean and `eslint` and `prettier --check` are clean over
+  the files the candidate changes relative to the baseline, and
+  `git diff --check` is clean over that change. Reason: AC07 is "existing
+  regressions unchanged"; unrelated environment limits must neither hide nor
+  fabricate a regression. Impact: none on implementation.
+- **EA7** — Evaluation reuses the repository's existing public fixtures
+  (`test/support/trusted-fixture.ts`, `tools/fixtures/governed-executor.ts`)
+  unmodified; implementation need not touch them.
 
 ## Blocking Questions
 
