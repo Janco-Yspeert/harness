@@ -523,3 +523,40 @@
   sequence 6 or its identity, Spike 014f candidate
   `af75b14d1847af02404a591a8829751dc8df2a2e`, or evaluator revision `002`.
   The preflight is operational evidence, not independent semantic evaluation.
+
+## Post-Outcome host/runtime maintenance 004
+
+- Authority and provenance: explicit human authorization in the active Codex
+  App session; performed inline through Codex App, not through a governed
+  Harness role allocation
+- Base: attempt-9 public evidence commit
+  `10b37cd6a495c9a5a012bc3961000c3ed61ca988`; generic correction commit
+  `e398ee8a2405c4898e118fcf4031be531b56b273`
+- Scope: restore accepted sequence-6 attempt-history derivation by making
+  current-cycle host allocations authoritative, joining semantic/finalization
+  history and canonical private evidence by explicit attempt identity, and
+  failing closed on terminal evidence gaps
+- Result: generic correction implemented. Attempts without evaluator results
+  are NONTERMINAL; semantic terminal results require exact private evidence;
+  missing terminal evidence is neither silently NONTERMINAL nor LOST; malformed,
+  duplicate, unknown, ambiguous, conflicting and changed evidence fails closed
+- 014f recovery: not performed. Attempt 9 private evidence contains aggregate
+  `8/8` coverage but no exact AC01–AC08 adjudication map, so no corrected public
+  result or `verification-finalized` was fabricated. Attempts 1, 2 and 5 have
+  exact committed public terminal results but no retained private artifact or
+  durable private identity, so complete promotion remains blocked
+- Outputs: `src/evaluation-closeout.ts`, `src/kernel/execution.ts`,
+  `test/successor-closeout.test.ts`, `test/kernel.test.ts`,
+  `test/skill-fidelity.test.ts`, `tools/fixtures/fake-provider.ts`,
+  `post-outcome-maintenance-004-attempt-history-and-finalization-recovery.md`,
+  identity
+  `sha256:9f7666cc4ec3a1bd1eb4dacb08b51fe6ac697605ebcd2b67d49ff37e85699789`,
+  and this manifest
+- Checks: focused closeout 16/16 PASS; host/closeout 54/54 PASS; sequence-6
+  archive/methodology 76/76 PASS; full suite 267/267 PASS; typecheck, ESLint,
+  Prettier and `git diff --check` PASS
+- Boundaries: no evaluator rerun, attempt 10, workflow event, private evidence
+  edit, finalization recovery or promotion action; no change to the 014k
+  Outcome, trusted methodology sequence 6 or its identity, Spike 014f candidate
+  `af75b14d1847af02404a591a8829751dc8df2a2e`, evaluator revision `002`, or
+  attempt-9 semantic PASS
