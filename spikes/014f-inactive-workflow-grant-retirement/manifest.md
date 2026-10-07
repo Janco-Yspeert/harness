@@ -163,3 +163,22 @@
   denials (`listen EPERM` and nested `git` `EPERM`); the pure retirement test
   passed, while the host retirement test was among the localhost-bind denials.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Evaluator verify — attempt 005
+
+- Skill: `evaluator`, mode `verify`, contract version 14
+  (`sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b`).
+- Workflow: `014f-inactive-workflow-grant-retirement`; execution
+  `832e166b-454d-4a55-ae33-d456dd9e1354`; Role Grant
+  `sha256:283ae4834b45f9257f5366dbdd73a17638c1e1882c3ab6e92db7cc1de15011a8`.
+- Inputs: candidate `af75b14d1847af02404a591a8829751dc8df2a2e`;
+  evaluator revision `002`
+  (`sha256:39fcf19c29b5562fdc482752b0d7a3fd6452cd566a0693170237a1c70be039ab`);
+  brief `sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c`;
+  design `sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34`;
+  coverage `sha256:14527f3f714d5d0bb86de59762adc01303f9b11ef4c097870d50e7da1cc7f15a`.
+- Result: `BLOCKED`, `INFRASTRUCTURE_FAILURE`. Frozen identities matched,
+  but the runtime provided no writable disposable storage, so 0/11 mandatory
+  executable cases ran and 0/8 criteria were adjudicated.
+- Outputs: `verification-result.json`, `manifest.md`. No promotion requested.
+- Measurements: unavailable.
