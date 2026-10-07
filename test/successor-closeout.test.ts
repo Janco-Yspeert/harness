@@ -231,12 +231,12 @@ void test("014k AC05/TR2c: trusted N refuses an unresolvable or substituted seal
 
 // ---- (b)/(i) authority boundary and accepted-substrate regressions --------
 
-void test("014k AC01/AC04/TR1,TR2b: candidates hold no adoption route; trusted history is unchanged at sequence 5", () => {
+void test("014k AC01/AC04/TR1,TR2b: candidates hold no adoption route; trusted history records the accepted sequence 6", () => {
   const history = readTrustedHistory("methodologies/harness/trusted.jsonl");
-  assert.equal(history.length, 5);
+  assert.equal(history.length, 6);
   assert.equal(
     history.at(-1)?.methodology,
-    "sha256:47296d5c73c7833002c482ed7ed75d67ecf21c7aec6fa62a5c84aeeab954effb",
+    "sha256:da22079f636de3a498ec853dc6dd8785f3aa8daa387130c96ac9927b377301f2",
   );
   for (const path of [
     "src/executors/protocol.ts",

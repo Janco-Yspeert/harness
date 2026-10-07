@@ -1014,7 +1014,7 @@ void test("014j AC02-AC07/TR2: root prepares an exact private observation and no
   assert.equal(subject.frozenProcedure?.procedure, "E5");
   assert.match(
     readFileSync(join(resolved.root, "subject", "stdout.bin"), "utf8"),
-    /# pass 1/,
+    /(?:#|ℹ) pass 1/,
   );
 
   const publicLedger = readFileSync(ledgerPath, "utf8");

@@ -336,10 +336,10 @@ void test("014e AC01/TR1: the unchanged Harness config and an external config bi
   assert.equal(other.id, self.id);
   const binding = trustedBinding(externalProject);
   assert.deepEqual(binding.trusted, {
-    sequence: 5,
+    sequence: 6,
     manifest:
-      "sha256:47296d5c73c7833002c482ed7ed75d67ecf21c7aec6fa62a5c84aeeab954effb",
-    revision: "9169ccf7d4543c214e7b7890ee29e428a5f8c01a",
+      "sha256:da22079f636de3a498ec853dc6dd8785f3aa8daa387130c96ac9927b377301f2",
+    revision: "f64b55286e2d2c06d4bd1fd1f815b1b9d09a5330",
   });
   assert.equal(binding.methodologyRepository, realpathSync(repository));
   // Nothing methodology-shaped exists in the external project.
