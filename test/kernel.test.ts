@@ -2360,7 +2360,22 @@ async function hostArchiveFixture(
     if (ledger)
       writeFileSync(
         join(root, ".eval/attempt-ledger.json"),
-        `${JSON.stringify({ attempts: [{ id: "001", status: "PASS", resultIdentity: identity(result) }] })}\n`,
+        `${JSON.stringify({
+          schemaVersion: 2,
+          attempts: [
+            {
+              id: "001",
+              implementation: `git:${candidate}`,
+              evaluatorRevision,
+              evaluatorRevisionIdentity: identity(
+                `${JSON.stringify({ evaluatorRevision, artifacts: { "eval-spec.md": identity(spec) } })}\n`,
+              ),
+              resultPath: ".eval/attempts/001/eval-result.md",
+              resultIdentity: identity(result),
+              status: "PASS",
+            },
+          ],
+        })}\n`,
       );
   };
   const parent = required(f.project.workspaces.evaluation).path;

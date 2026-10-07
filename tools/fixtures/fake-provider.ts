@@ -28,8 +28,9 @@ interface Step {
     // Pad the derived mappings up to exactly this many (e.g. B + 1).
     padTo?: number;
   };
-  // Write a file inside a granted workspace; `{{input:NAME}}` and
-  // `{{identity:WORKSPACE:PATH}}` are substituted from the assignment.
+  // Write a file inside a granted workspace; `{{input:NAME}}`,
+  // `{{identity:WORKSPACE:PATH}}` and `{{json:WORKSPACE:PATH:/pointer}}` are
+  // substituted from the assignment and existing fixture state.
   write?: {
     workspace: "repository" | "private";
     path: string;
@@ -213,6 +214,27 @@ if (scenario.hang) {
   };
   const substitute = (content: string): string =>
     content
+      .replaceAll(
+        /\{\{json:(repository|private):([^:}]+):([^}]+)\}\}/g,
+        (
+          _,
+          workspace: "repository" | "private",
+          path: string,
+          pointer: string,
+        ) => {
+          let value: unknown = JSON.parse(
+            readFileSync(join(workspaceRoot(workspace), path), "utf8"),
+          );
+          for (const segment of pointer.split("/").slice(1)) {
+            if (value === null || typeof value !== "object")
+              throw new Error(`fixture JSON pointer is unresolved: ${pointer}`);
+            value = (value as Record<string, unknown>)[segment];
+          }
+          if (typeof value !== "string")
+            throw new Error(`fixture JSON pointer is not a string: ${pointer}`);
+          return value;
+        },
+      )
       .replaceAll(/\{\{input:([\w-]+)\}\}/g, (_, name: string) => {
         const inputs = assignment?.inputs as Record<string, string>;
         return inputs[name] ?? "";

@@ -715,7 +715,10 @@ void test("014k AC14/TR2h: a fresh allocation after adoption binds the adopted m
   );
 });
 
-void test("014k AC06/AC10: the host derives the archive from the attempt ledger and allocations with no evaluator plan", (t) => {
+function archiveFixture(t: TestContext): {
+  root: string;
+  freeze: string;
+} {
   const root = scratch(t);
   const spec = put(root, ".eval/eval-spec.md", "spec\n");
   const freeze = put(
@@ -723,33 +726,237 @@ void test("014k AC06/AC10: the host derives the archive from the attempt ledger 
     ".eval/freeze.json",
     `${JSON.stringify({ evaluatorRevision: "001", artifacts: { "eval-spec.md": spec } })}\n`,
   );
-  const result = put(root, ".eval/attempts/001/eval-result.md", "pass\n");
+  return { root, freeze };
+}
+
+function privateEntry(
+  attempt: number,
+  status: "PASS" | "FAIL" | "BLOCKED",
+  resultIdentity: string,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const id = String(attempt).padStart(3, "0");
+  return {
+    id,
+    implementation: `git:${COMMIT}`,
+    evaluatorRevision: "001",
+    evaluatorRevisionIdentity: SHA("e"),
+    resultPath: `.eval/attempts/${id}/eval-result.md`,
+    resultIdentity,
+    status,
+    ...overrides,
+  };
+}
+
+function hostAttempt(
+  attempt: number,
+  result?: "PASS" | "FAIL" | "BLOCKED",
+): {
+  attempt: number;
+  execution: string;
+  candidate: string;
+  evaluatorRevision: string;
+  semanticResults: Array<{
+    execution: string;
+    result: "PASS" | "FAIL" | "BLOCKED";
+  }>;
+  finalizations: never[];
+} {
+  const execution = `execution-${String(attempt)}`;
+  return {
+    attempt,
+    execution,
+    candidate: COMMIT,
+    evaluatorRevision: "001",
+    semanticResults: result ? [{ execution, result }] : [],
+    finalizations: [],
+  };
+}
+
+void test("014k AC06/AC07/AC10: host allocations are the backbone; sparse private terminal evidence joins by explicit id", (t) => {
+  const { root, freeze } = archiveFixture(t);
+  const blocked = put(root, ".eval/attempts/008/eval-result.md", "blocked\n");
+  const pass = put(root, ".eval/attempts/009/eval-result.md", "pass\n");
   put(
     root,
     ".eval/attempt-ledger.json",
-    `${JSON.stringify({ attempts: [{ id: "001", status: "PASS", resultIdentity: result }] })}\n`,
+    `${JSON.stringify({
+      schemaVersion: 2,
+      attempts: [
+        privateEntry(9, "PASS", pass),
+        privateEntry(8, "BLOCKED", blocked),
+      ],
+    })}\n`,
   );
-  const allocations = [
-    { attempt: 1, execution: "e1", evaluatorRevision: "001" },
-  ];
+  const allocations = Array.from({ length: 9 }, (_, index) =>
+    hostAttempt(
+      index + 1,
+      index + 1 === 8 ? "BLOCKED" : index + 1 === 9 ? "PASS" : undefined,
+    ),
+  );
   const plan = deriveHostArchive(root, COMMIT, allocations);
-  assert.deepEqual(plan.items.map((item) => item.destination).sort(), [
-    "attempts/001/eval-result.md",
-    "evaluation-fact.json",
-    "freeze/001.json",
-    "revisions/001/eval-spec.md",
-  ]);
+  const fact = JSON.parse(
+    plan.items.find((item) => item.destination === "evaluation-fact.json")
+      ?.content ?? "null",
+  ) as EvaluationFact;
+  assert.deepEqual(
+    fact.attempts.map((entry) => [entry.attempt, entry.execution, entry.state]),
+    allocations.map((allocation) => [
+      allocation.attempt,
+      allocation.execution,
+      allocation.attempt < 8 ? "NONTERMINAL" : "TERMINAL",
+    ]),
+  );
+  assert.deepEqual(
+    plan.items
+      .filter((item) => item.destination.startsWith("attempts/"))
+      .map((item) => item.destination)
+      .sort(),
+    ["attempts/008/eval-result.md", "attempts/009/eval-result.md"],
+  );
   assert.equal(
     plan.items.find((item) => item.destination === "freeze/001.json")?.identity,
     freeze,
   );
-  put(root, ".eval/attempts/001/eval-result.md", "changed\n");
-  assert.throws(
-    () => deriveHostArchive(root, COMMIT, allocations),
-    /changed since it was recorded/,
+});
+
+void test("014k AC07/AC08: terminal host state never degrades to NONTERMINAL when private evidence is absent", (t) => {
+  const { root } = archiveFixture(t);
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({ schemaVersion: 2, attempts: [] })}\n`,
   );
   assert.throws(
-    () => deriveHostArchive(root, COMMIT, []),
-    /disagrees with host allocations/,
+    () => deriveHostArchive(root, COMMIT, [hostAttempt(1, "PASS")]),
+    /terminal evidence gap for attempt 1/,
+  );
+});
+
+void test("014k AC07/AC08: recorded-then-missing is LOST; never-produced stays NONTERMINAL", (t) => {
+  const { root } = archiveFixture(t);
+  const pass = put(root, ".eval/attempts/003/eval-result.md", "pass\n");
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({
+      schemaVersion: 2,
+      attempts: [
+        privateEntry(1, "BLOCKED", SHA("1")),
+        privateEntry(3, "PASS", pass),
+      ],
+    })}\n`,
+  );
+  const plan = deriveHostArchive(root, COMMIT, [
+    hostAttempt(1, "BLOCKED"),
+    hostAttempt(2),
+    hostAttempt(3, "PASS"),
+  ]);
+  const fact = JSON.parse(
+    plan.items.find((item) => item.destination === "evaluation-fact.json")
+      ?.content ?? "null",
+  ) as EvaluationFact;
+  assert.deepEqual(
+    fact.attempts.map((entry) => entry.state),
+    ["LOST", "NONTERMINAL", "TERMINAL"],
+  );
+});
+
+void test("014k AC08/AC10: malformed, duplicate, unknown and conflicting private history fails closed", (t) => {
+  const { root } = archiveFixture(t);
+  const result = put(root, ".eval/attempts/001/eval-result.md", "pass\n");
+  const writeLedger = (attempts: readonly Record<string, unknown>[]): void => {
+    put(
+      root,
+      ".eval/attempt-ledger.json",
+      `${JSON.stringify({ schemaVersion: 2, attempts })}\n`,
+    );
+  };
+  const allocation = hostAttempt(1, "PASS");
+  for (const [entries, message] of [
+    [
+      [privateEntry(1, "PASS", result), privateEntry(1, "PASS", result)],
+      /duplicate/,
+    ],
+    [[privateEntry(2, "PASS", result)], /no host allocation/],
+    [
+      [privateEntry(1, "PASS", result, { evaluatorRevision: "002" })],
+      /revision conflicts/,
+    ],
+    [[privateEntry(1, "FAIL", result)], /result conflicts/],
+    [[{ attempt: 1, status: "PASS" }], /canonical id/],
+  ] as const) {
+    writeLedger(entries);
+    assert.throws(() => deriveHostArchive(root, COMMIT, [allocation]), message);
+  }
+  writeLedger([privateEntry(1, "PASS", result)]);
+  assert.throws(
+    () =>
+      deriveHostArchive(root, COMMIT, [
+        {
+          ...allocation,
+          semanticResults: [{ execution: "wrong", result: "PASS" }],
+        },
+      ]),
+    /semantic execution conflicts/,
+  );
+  assert.throws(
+    () =>
+      deriveHostArchive(root, COMMIT, [
+        {
+          ...allocation,
+          finalizations: [
+            {
+              attempt: 1,
+              execution: allocation.execution,
+              candidate: COMMIT,
+              evaluatorRevision: "001",
+              result: "FAIL",
+            },
+          ],
+        },
+      ]),
+    /result conflicts/,
+  );
+  put(root, ".eval/attempts/001/eval-result.md", "changed\n");
+  assert.throws(
+    () => deriveHostArchive(root, COMMIT, [allocation]),
+    /changed since it was recorded/,
+  );
+});
+
+void test("014f topology: provider failures are NONTERMINAL, while earlier semantic results without private evidence are explicit gaps", (t) => {
+  const { root } = archiveFixture(t);
+  const blocked = put(root, ".eval/attempts/008/eval-result.md", "blocked\n");
+  const pass = put(root, ".eval/attempts/009/eval-result.md", "pass\n");
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({
+      schemaVersion: 2,
+      attempts: [
+        privateEntry(8, "BLOCKED", blocked),
+        privateEntry(9, "PASS", pass),
+      ],
+    })}\n`,
+  );
+  const allocations = Array.from({ length: 9 }, (_, index) => {
+    const attempt = index + 1;
+    const result = [1, 2, 5, 8].includes(attempt)
+      ? "BLOCKED"
+      : attempt === 9
+        ? "PASS"
+        : undefined;
+    return hostAttempt(attempt, result);
+  });
+  assert.deepEqual(
+    allocations
+      .filter((entry) => [3, 4, 6, 7].includes(entry.attempt))
+      .map((entry) => entry.semanticResults.length),
+    [0, 0, 0, 0],
+  );
+  assert.throws(
+    () => deriveHostArchive(root, COMMIT, allocations),
+    /terminal evidence gap for attempt 1/,
   );
 });

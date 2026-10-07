@@ -45,6 +45,7 @@ export type AttemptEntry =
 // authoritative history binding the terminal artifact (a prior record), never
 // merely an expected archive path.
 export interface ObservedAttempt {
+  readonly attempt?: number;
   readonly execution: string;
   readonly evaluatorRevision: string;
   readonly nonterminalReason?: string;
@@ -77,7 +78,7 @@ export function classifyAttempts(
 ): AttemptEntry[] {
   return observed.map((entry, index): AttemptEntry => {
     const base = {
-      attempt: index + 1,
+      attempt: entry.attempt ?? index + 1,
       execution: entry.execution,
       evaluatorRevision: entry.evaluatorRevision,
     };
@@ -334,7 +335,89 @@ export function closeoutPermitted(
 export interface AllocatedAttempt {
   readonly attempt: number;
   readonly execution: string;
+  readonly candidate: string;
   readonly evaluatorRevision: string;
+  readonly semanticResults?: readonly {
+    readonly execution: string;
+    readonly result: Verdict;
+  }[];
+  readonly finalizations?: readonly {
+    readonly attempt: number;
+    readonly execution: string;
+    readonly candidate: string;
+    readonly evaluatorRevision: string;
+    readonly result: Verdict;
+  }[];
+}
+
+interface PrivateAttempt {
+  readonly attempt: number;
+  readonly implementation: string;
+  readonly evaluatorRevision: string;
+  readonly evaluatorRevisionIdentity: string;
+  readonly status: "ALLOCATED" | Verdict;
+  readonly resultPath?: string;
+  readonly resultIdentity?: string;
+}
+
+function privateAttempts(value: unknown): PrivateAttempt[] {
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    throw new Error("attempt ledger must be an object");
+  const ledger = value as Record<string, unknown>;
+  if (ledger.schemaVersion !== 2 || !Array.isArray(ledger.attempts))
+    throw new Error("attempt ledger does not use the canonical schema");
+  const seen = new Set<number>();
+  return ledger.attempts.map((raw) => {
+    if (raw === null || typeof raw !== "object" || Array.isArray(raw))
+      throw new Error("private attempt entry is malformed");
+    const entry = raw as Record<string, unknown>;
+    if (typeof entry.id !== "string" || !/^\d{3}$/.test(entry.id))
+      throw new Error("private attempt entry is missing its canonical id");
+    const attempt = Number(entry.id);
+    if (attempt < 1 || String(attempt).padStart(3, "0") !== entry.id)
+      throw new Error(`private attempt id is invalid: ${entry.id}`);
+    if (seen.has(attempt))
+      throw new Error(`duplicate private attempt id: ${entry.id}`);
+    seen.add(attempt);
+    if (
+      typeof entry.implementation !== "string" ||
+      typeof entry.evaluatorRevision !== "string" ||
+      typeof entry.evaluatorRevisionIdentity !== "string" ||
+      !/^sha256:[a-f0-9]{64}$/.test(entry.evaluatorRevisionIdentity) ||
+      typeof entry.status !== "string" ||
+      !["ALLOCATED", ...VERDICTS].includes(entry.status)
+    )
+      throw new Error(`private attempt ${entry.id} is malformed`);
+    if (entry.status === "ALLOCATED") {
+      if (entry.resultIdentity !== null && entry.resultIdentity !== undefined)
+        throw new Error(`allocated private attempt ${entry.id} has a result`);
+      return {
+        attempt,
+        implementation: entry.implementation,
+        evaluatorRevision: entry.evaluatorRevision,
+        evaluatorRevisionIdentity: entry.evaluatorRevisionIdentity,
+        status: "ALLOCATED",
+      };
+    }
+    const expectedPath = `.eval/attempts/${entry.id}/eval-result.md`;
+    if (
+      entry.resultPath !== expectedPath ||
+      typeof entry.resultIdentity !== "string" ||
+      !/^sha256:[a-f0-9]{64}$/.test(entry.resultIdentity)
+    )
+      throw new Error(
+        `terminal private attempt ${entry.id} cannot be bound to exact evidence`,
+      );
+    return {
+      attempt,
+      implementation: entry.implementation,
+      evaluatorRevision: entry.evaluatorRevision,
+      evaluatorRevisionIdentity: entry.evaluatorRevisionIdentity,
+      status: entry.status as Verdict,
+      resultPath: entry.resultPath,
+      resultIdentity: entry.resultIdentity,
+    };
+  });
 }
 
 // Host derivation of the post-PASS archive from the private attempt ledger and
@@ -347,41 +430,95 @@ export function deriveHostArchive(
 ): ArchivePlan {
   const ledgerBytes = readRegular(evaluatorRoot, ".eval/attempt-ledger.json");
   if (ledgerBytes === null) throw new Error("attempt ledger is missing");
-  const ledger = JSON.parse(ledgerBytes.toString("utf8")) as {
-    attempts?: unknown;
-  };
-  if (!Array.isArray(ledger.attempts) || ledger.attempts.length === 0)
-    throw new Error("attempt ledger has no attempts");
-  const observed: ObservedAttempt[] = (
-    ledger.attempts as Record<string, unknown>[]
-  ).map((entry, index) => {
-    const allocation = allocations.find((item) => item.attempt === index + 1);
-    if (!allocation || Number(entry.id) !== index + 1)
-      throw new Error("attempt ledger disagrees with host allocations");
+  const privateEntries = privateAttempts(
+    JSON.parse(ledgerBytes.toString("utf8")),
+  );
+  if (allocations.length === 0) throw new Error("host has no allocations");
+  allocations.forEach((allocation, index) => {
+    if (allocation.attempt !== index + 1)
+      throw new Error("host allocation history is not complete and ordered");
+  });
+  const allocationIds = new Set(allocations.map((item) => item.attempt));
+  for (const entry of privateEntries)
+    if (!allocationIds.has(entry.attempt))
+      throw new Error(
+        `private attempt ${String(entry.attempt).padStart(3, "0")} has no host allocation`,
+      );
+  const byAttempt = new Map(
+    privateEntries.map((entry) => [entry.attempt, entry] as const),
+  );
+  const observed: ObservedAttempt[] = allocations.map((allocation) => {
+    const attempt = String(allocation.attempt);
+    const semantic = allocation.semanticResults ?? [];
+    const finalized = allocation.finalizations ?? [];
+    if (semantic.length > 1)
+      throw new Error(`attempt ${attempt} has ambiguous semantic results`);
+    if (finalized.length > 1)
+      throw new Error(`attempt ${attempt} has ambiguous finalizations`);
+    const result = semantic[0];
+    const finalization = finalized[0];
+    if (result && result.execution !== allocation.execution)
+      throw new Error(`attempt ${attempt} semantic execution conflicts`);
+    if (result && !VERDICTS.includes(result.result))
+      throw new Error(`attempt ${attempt} semantic result is invalid`);
+    if (
+      finalization &&
+      (finalization.attempt !== allocation.attempt ||
+        finalization.execution !== allocation.execution ||
+        finalization.candidate !== allocation.candidate ||
+        finalization.evaluatorRevision !== allocation.evaluatorRevision)
+    )
+      throw new Error(`attempt ${attempt} finalization conflicts`);
+    if (finalization && !result)
+      throw new Error(`attempt ${attempt} finalized without a semantic result`);
+    if (finalization && result && finalization.result !== result.result)
+      throw new Error(`attempt ${attempt} result conflicts`);
+    const entry = byAttempt.get(allocation.attempt);
+    if (entry) {
+      if (entry.implementation !== `git:${allocation.candidate}`)
+        throw new Error(`private attempt ${attempt} candidate conflicts`);
+      if (entry.evaluatorRevision !== allocation.evaluatorRevision)
+        throw new Error(`private attempt ${attempt} revision conflicts`);
+    }
     const base = {
+      attempt: allocation.attempt,
       execution: allocation.execution,
       evaluatorRevision: allocation.evaluatorRevision,
     };
-    if (!VERDICTS.includes(String(entry.status))) return base;
-    const path = `.eval/attempts/${String(index + 1).padStart(3, "0")}/eval-result.md`;
-    const bytes = readRegular(evaluatorRoot, path);
-    const recorded =
-      typeof entry.resultIdentity === "string"
-        ? entry.resultIdentity
-        : bytes === null
-          ? undefined
-          : identity(bytes);
-    if (recorded === undefined) throw new Error("terminal artifact missing");
+    if (!result) {
+      if (entry && entry.status !== "ALLOCATED")
+        throw new Error(
+          `private attempt ${attempt} is terminal without a host semantic result`,
+        );
+      return {
+        ...base,
+        nonterminalReason: "no evaluator semantic result",
+      };
+    }
+    if (!entry || entry.status === "ALLOCATED")
+      throw new Error(
+        `terminal evidence gap for attempt ${attempt}: exact private evidence is unavailable`,
+      );
+    if (entry.status !== result.result)
+      throw new Error(`private attempt ${attempt} result conflicts`);
     return {
       ...base,
-      result: entry.status as Verdict,
-      recorded: { path, identity: recorded },
+      result: result.result,
+      recorded: {
+        path: entry.resultPath as string,
+        identity: entry.resultIdentity as string,
+      },
     };
   });
   const attempts = classifyAttempts(evaluatorRoot, observed);
   const last = attempts.at(-1);
   const freeze = readRegular(evaluatorRoot, ".eval/freeze.json");
-  if (!last || last.state !== "TERMINAL" || freeze === null)
+  if (
+    !last ||
+    last.state !== "TERMINAL" ||
+    last.result !== "PASS" ||
+    freeze === null
+  )
     throw new Error("archive requires a terminal PASS and frozen revision");
   return buildArchivePlan(evaluatorRoot, {
     schemaVersion: 1,

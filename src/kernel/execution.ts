@@ -2746,14 +2746,27 @@ export class ExecutionKernel {
           );
           if (!sourceWorkspace)
             throw new Error("archive source workspace is outside role grant");
+          const allHistory = this.events(workflow);
+          const history = scopedEvents(
+            allHistory,
+            this.definition(workflow, grant.methodology).policy,
+          );
+          const semanticVerdict = (
+            value: unknown,
+          ): "PASS" | "FAIL" | "BLOCKED" => {
+            const verdicts = Object.values(object(value)).filter(
+              (item): item is "PASS" | "FAIL" | "BLOCKED" =>
+                item === "PASS" || item === "FAIL" || item === "BLOCKED",
+            );
+            if (verdicts.length !== 1)
+              throw new Error("host semantic result has no unique verdict");
+            return required(verdicts[0]);
+          };
           items = [
             ...deriveHostArchive(
               realpathSync(sourceWorkspace.path),
               candidate,
-              scopedEvents(
-                this.events(workflow),
-                this.definition(workflow, grant.methodology).policy,
-              )
+              history
                 .filter(
                   (event) =>
                     event.transition ===
@@ -2762,7 +2775,37 @@ export class ExecutionKernel {
                 .map((event) => ({
                   attempt: Number(event.evidence.attempt),
                   execution: String(event.evidence.execution),
+                  candidate: String(event.evidence.commit),
                   evaluatorRevision: String(event.evidence.evaluatorRevision),
+                  semanticResults: allHistory
+                    .filter(
+                      (candidate) =>
+                        candidate.transition === "kernel.result" &&
+                        candidate.evidence.execution ===
+                          event.evidence.execution,
+                    )
+                    .map((candidate) => ({
+                      execution: String(candidate.evidence.execution),
+                      result: semanticVerdict(candidate.evidence.methodology),
+                    })),
+                  finalizations: allHistory
+                    .filter(
+                      (candidate) =>
+                        candidate.transition === "verification-finalized" &&
+                        candidate.evidence.attempt === event.evidence.attempt &&
+                        candidate.evidence.execution ===
+                          event.evidence.execution,
+                    )
+                    .map((candidate) => ({
+                      attempt: Number(candidate.evidence.attempt),
+                      execution: String(candidate.evidence.execution),
+                      candidate: String(candidate.evidence.commit),
+                      evaluatorRevision: String(
+                        candidate.evidence.evaluatorRevision,
+                      ),
+                      result: String(candidate.evidence.result) as
+                        "PASS" | "FAIL" | "BLOCKED",
+                    })),
                 })),
             ).items,
           ];

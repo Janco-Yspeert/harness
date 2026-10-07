@@ -244,20 +244,33 @@ function verifySteps(
   } = {},
 ): Step[] {
   const last = attempts.length;
-  const [, result] = attempts[last - 1] ?? ["001", "PASS"];
-  const resultPath = `.eval/attempts/${String(last).padStart(3, "0")}/eval-result.md`;
+  const [activeRevision, result] = attempts[last - 1] ?? ["001", "PASS"];
+  const resultPath = (attempt: number): string =>
+    `.eval/attempts/${String(attempt).padStart(3, "0")}/eval-result.md`;
   const steps: Step[] = [
-    priv(resultPath, `attempt ${String(last)} ${result}\n`),
+    ...attempts.map(([, status], index) =>
+      priv(resultPath(index + 1), `attempt ${String(index + 1)} ${status}\n`),
+    ),
     priv(
       ".eval/attempt-ledger.json",
       json({
         schemaVersion: 2,
-        attempts: attempts.map(([, status], index) => ({
+        attempts: attempts.map(([revision, status], index) => ({
           id: String(index + 1).padStart(3, "0"),
+          implementation:
+            index === last - 1
+              ? "git:{{input:candidate}}"
+              : `{{json:private:.eval/attempt-ledger.json:/attempts/${String(index)}/implementation}}`,
+          evaluatorRevision: revision,
+          evaluatorRevisionIdentity: ident(
+            "private",
+            revision === activeRevision
+              ? ".eval/freeze.json"
+              : `.eval/revisions/${revision}/freeze.json`,
+          ),
+          resultPath: resultPath(index + 1),
+          resultIdentity: ident("private", resultPath(index + 1)),
           status,
-          ...(index === last - 1
-            ? { resultIdentity: ident("private", resultPath) }
-            : {}),
         })),
       }),
     ),
