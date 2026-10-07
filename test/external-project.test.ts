@@ -1110,7 +1110,7 @@ void test("014e D4 (H3): the nested-sandbox probe passes under real containment 
   );
 });
 
-void test("014e D4 (H3): a Codex worker whose nested sandbox cannot start is refused before any session or allocation; Claude remains eligible", async (t) => {
+void test("014e D4 (H3): Codex and Claude refuse before allocation when their nested sandbox cannot start", async (t) => {
   const f = external(t);
   const located = locateContainment([]);
   assert.ok(located.ok, "bubblewrap is required for containment tests");
@@ -1141,17 +1141,27 @@ void test("014e D4 (H3): a Codex worker whose nested sandbox cannot start is ref
     0,
   );
   assert.equal(existsSync(started), false);
-  // The refusal leaves the pre-authorized Claude substitution available:
-  // Claude builds no nested sandbox, so the same host still allocates it.
+  // Claude now uses a nested command sandbox for child network and credential
+  // isolation, so it must fail closed at the same pre-allocation boundary.
   const claude = await grant(host.url, "smoke-claude-promotion");
   assert.equal(claude.status, 201, JSON.stringify(claude.value));
-  const allocated = await call<{ execution: Execution }>(host.url, "continue", {
-    workflowGrant: claude.value.grant.id,
-    mode: "spawned",
-    role: "smoke-claude-promotion",
-  });
-  assert.equal(allocated.status, 201, JSON.stringify(allocated.value));
-  await settled(host.url, allocated.value.execution.id);
+  const claudeRefused = await call<{ category?: string }>(
+    host.url,
+    "continue",
+    {
+      workflowGrant: claude.value.grant.id,
+      mode: "spawned",
+      role: "smoke-claude-promotion",
+    },
+  );
+  assert.equal(claudeRefused.status, 409, JSON.stringify(claudeRefused.value));
+  assert.equal(claudeRefused.value.category, "provider-config-invalid");
+  assert.equal(
+    readLedger(f.ledger).filter((e) =>
+      ["kernel.session", "kernel.allocation"].includes(e.transition),
+    ).length,
+    0,
+  );
 });
 
 // H4 correction: Codex `workspace-write` keeps each writable root's `.git`

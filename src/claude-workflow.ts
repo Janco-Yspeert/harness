@@ -101,14 +101,53 @@ export function claudeSandboxSettings(
   workspaces: readonly string[],
   filesystemAuthority: "provider" | "host" = "provider",
 ): string {
+  const hostOwnsFilesystem = filesystemAuthority === "host";
   return JSON.stringify({
-    permissions: { blockReadsOutsideWorkingDirectories: true },
+    // A governed launch is already inside Harness's exact mount topology.
+    // Asking Claude's command parser to infer filesystem effects from shell
+    // syntax would make provider language recognition an authority boundary.
+    permissions: {
+      blockReadsOutsideWorkingDirectories: !hostOwnsFilesystem,
+    },
     sandbox: {
       enabled: true,
       failIfUnavailable: true,
       autoAllowBashIfSandboxed: true,
       allowUnsandboxedCommands: false,
       excludedCommands: [],
+      ...(hostOwnsFilesystem
+        ? {
+            // The parent Claude process retains provider and MCP connectivity.
+            // Only Bash and its descendants receive this strict deny-all
+            // network policy.
+            network: {
+              allowedDomains: [],
+              deniedDomains: ["*"],
+              strictAllowlist: true,
+            },
+            // Filesystem isolation is deliberately disabled below, but Claude
+            // 2.1.292 preserves credential-file masks and credential-env
+            // denials in that mode. The parent can authenticate from synthetic
+            // HOME while arbitrary child programs receive no usable provider
+            // authentication material.
+            credentials: {
+              files: [
+                { path: "~/.claude/.credentials.json", mode: "mask" },
+                { path: "~/.claude.json", mode: "mask" },
+                { path: "~/.claude/.claude.json", mode: "mask" },
+              ],
+              envVars: [
+                { name: "ANTHROPIC_API_KEY", mode: "deny" },
+                { name: "ANTHROPIC_AUTH_TOKEN", mode: "deny" },
+                { name: "CLAUDE_CODE_OAUTH_TOKEN", mode: "deny" },
+                {
+                  name: "CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR",
+                  mode: "deny",
+                },
+              ],
+            },
+          }
+        : {}),
       // Governed launches already run inside host-owned bubblewrap mounts that
       // enforce each workspace mode and expose no other host paths. Rebuilding
       // that filesystem policy in Claude's nested sandbox is both redundant
@@ -116,15 +155,14 @@ export function claudeSandboxSettings(
       // points such as .claude/hooks while preparing deny-write rules. Keep
       // Claude's command/network sandbox, but leave filesystem authority with
       // the outer containment. Legacy launches still use the provider fence.
-      filesystem:
-        filesystemAuthority === "host"
-          ? { disabled: true }
-          : {
-              denyRead: [
-                ...new Set(workspaces.map((workspace) => dirname(workspace))),
-              ],
-              allowRead: [...workspaces],
-            },
+      filesystem: hostOwnsFilesystem
+        ? { disabled: true }
+        : {
+            denyRead: [
+              ...new Set(workspaces.map((workspace) => dirname(workspace))),
+            ],
+            allowRead: [...workspaces],
+          },
     },
   });
 }
@@ -332,12 +370,11 @@ export function buildGovernedClaudeCommand(
   );
   // A protected governed worker has no approval surface
   // (`--permission-prompts none`). Admit every provider tool family selected by
-  // the reviewed Harness capability mapping so `dontAsk` can use each enabled
-  // family without consulting an independent provider classifier. The more
-  // specific rules remain in force: read-only workspace Edit/Write denials and
-  // the git-push denial override these broad family grants. Host-owned
-  // bubblewrap remains the filesystem boundary, while unprotected launches
-  // keep their prefix-bounded mapping.
+  // the reviewed Harness capability mapping. Bash is auto-allowed only after
+  // Claude has installed its fail-closed child sandbox; Harness's outer
+  // bubblewrap and workspace modes remain the filesystem authority. The more
+  // specific read-only Edit/Write and git-push denials remain useful provider
+  // guardrails, but do not carry the actual filesystem boundary.
   const allowedTools = launch.unattendedProtected
     ? [...new Set([...permissions.allowedTools, ...permissions.tools])]
     : permissions.allowedTools;
@@ -365,7 +402,7 @@ export function buildGovernedClaudeCommand(
     "--disallowedTools",
     [...permissions.disallowedTools, ...readOnly].join(","),
     "--permission-mode",
-    launch.unattendedProtected ? "dontAsk" : permissions.permissionMode,
+    permissions.permissionMode,
     "--permission-prompts",
     "none",
     "--no-session-persistence",

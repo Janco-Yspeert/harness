@@ -486,3 +486,40 @@
   014f candidate `af75b14d1847af02404a591a8829751dc8df2a2e`, or evaluator
   revision `002`. A separately authorized minimal protected-Claude runtime
   preflight is the next operational step before any evaluator retry.
+
+## Post-Outcome host/runtime maintenance 003
+
+- Authority and provenance: explicit human authorization in the active Codex
+  App session; performed through Codex App, not through a governed Harness role
+  allocation
+- Base and predecessor: maintenance 002 commit
+  `2bf56bee4efa10707ec1cf548110ac7e8f9e8993`
+- Runtime evidence: historical successful 014k executions used
+  `claude-sonnet-5-5` / Claude Code `2.1.284`; the inspected and preflighted
+  runtime is Claude Code `2.1.292`
+- Diagnosis: protected `dontAsk` denied Bash before execution, while the copied
+  synthetic-HOME OAuth file would have been readable to a child after disabling
+  duplicated filesystem isolation unless protected independently
+- Result: implemented a control/execution-plane split. Harness bubblewrap owns
+  exact filesystem modes; Claude's fail-closed child sandbox owns strict
+  deny-all network isolation and masks provider credentials; protected
+  mixed-workspace launches use sandbox-aware `acceptEdits`, never bypass mode;
+  Claude nested-sandbox startup is probed before allocation
+- Outputs: `src/claude-workflow.ts`, `src/executors/adapters.ts`,
+  `test/evidence-action.test.ts`, `test/external-project.test.ts`,
+  `test/governed-executors.test.ts`,
+  `post-outcome-maintenance-003-claude-control-execution-plane.md`, and this
+  manifest
+- Deterministic checks: focused provider/containment 59/59 PASS; sequence-6
+  regression set 115/115 PASS; full suite 263/263 PASS; typecheck, ESLint,
+  Prettier and `git diff --check` PASS
+- Disposable live preflight: one launch, confirmed `claude-sonnet-5-5` /
+  `2.1.292`; Harness MCP and parent provider traffic worked; child computation,
+  repository read, Git inspection, private/scratch/tmp writes worked; repository
+  and Git-metadata writes, outside-root visibility, DNS/external network, and
+  provider credential access were denied; disposable state was deleted
+- Boundaries: no 014f Workflow Grant, Role Grant, or evaluator allocation was
+  created; no attempt 9; no change to the 014k Outcome, trusted methodology
+  sequence 6 or its identity, Spike 014f candidate
+  `af75b14d1847af02404a591a8829751dc8df2a2e`, or evaluator revision `002`.
+  The preflight is operational evidence, not independent semantic evaluation.

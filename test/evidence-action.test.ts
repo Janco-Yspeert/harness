@@ -563,7 +563,7 @@ void test("sequence 6: the governed Claude launch keeps its command sandbox whil
   assert.ok(flag("--allowedTools").split(",").includes("Edit"));
   assert.ok(!flag("--allowedTools").includes("git commit"));
   assert.ok(!flag("--allowedTools").includes("git add"));
-  assert.equal(flag("--permission-mode"), "dontAsk");
+  assert.equal(flag("--permission-mode"), "acceptEdits");
   const settings = JSON.parse(flag("--settings")) as {
     permissions: { blockReadsOutsideWorkingDirectories: boolean };
     sandbox: {
@@ -571,6 +571,15 @@ void test("sequence 6: the governed Claude launch keeps its command sandbox whil
       failIfUnavailable: boolean;
       allowUnsandboxedCommands: boolean;
       excludedCommands: string[];
+      network: {
+        allowedDomains: string[];
+        deniedDomains: string[];
+        strictAllowlist: boolean;
+      };
+      credentials: {
+        files: Array<{ path: string; mode: string }>;
+        envVars: Array<{ name: string; mode: string }>;
+      };
       filesystem: {
         disabled: boolean;
         denyWrite?: string[];
@@ -579,12 +588,23 @@ void test("sequence 6: the governed Claude launch keeps its command sandbox whil
       };
     };
   };
-  assert.equal(settings.permissions.blockReadsOutsideWorkingDirectories, true);
+  assert.equal(settings.permissions.blockReadsOutsideWorkingDirectories, false);
   assert.equal(settings.sandbox.enabled, true);
   assert.equal(settings.sandbox.failIfUnavailable, true);
   assert.equal(settings.sandbox.allowUnsandboxedCommands, false);
   assert.deepEqual(settings.sandbox.excludedCommands, []);
   assert.deepEqual(settings.sandbox.filesystem, { disabled: true });
+  assert.deepEqual(settings.sandbox.network, {
+    allowedDomains: [],
+    deniedDomains: ["*"],
+    strictAllowlist: true,
+  });
+  assert.ok(
+    settings.sandbox.credentials.files.every(({ mode }) => mode === "mask"),
+  );
+  assert.ok(
+    settings.sandbox.credentials.envVars.every(({ mode }) => mode === "deny"),
+  );
   assert.match(flag("--disallowedTools"), new RegExp(`Write\\(/${f.root}/`));
   assert.doesNotMatch(
     flag("--disallowedTools"),

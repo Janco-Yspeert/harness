@@ -111,8 +111,10 @@ const claude: ProviderAdapter = {
   // an exact effort constraint blocks rather than being optimistically met.
   reasoning: { enforce: false, attest: false },
   privateWorkspace: true,
-  // Governed Claude runs use permission rules, not a namespace sandbox.
-  nestedSandbox: false,
+  // Claude owns the child command's network/credential sandbox. Harness owns
+  // the surrounding filesystem namespace and proves nested namespace support
+  // before allocating a contained execution.
+  nestedSandbox: true,
   checkCapabilities(capabilities) {
     try {
       governedClaudePermissions(capabilities, WORKER_OPERATIONS);

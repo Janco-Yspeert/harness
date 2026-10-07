@@ -994,10 +994,16 @@ void test("AC12/AC03: provider environment and records never carry host or provi
     HOME: "/home/x",
     HARNESS_SESSION_TOKEN: "secret",
     ANTHROPIC_API_KEY: "secret",
+    ANTHROPIC_AUTH_TOKEN: "secret",
+    CLAUDE_CODE_OAUTH_TOKEN: "secret",
+    CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR: "7",
   });
   assert.equal(env.PATH, "/usr/bin");
   assert.equal(env.HARNESS_SESSION_TOKEN, undefined);
   assert.equal(env.ANTHROPIC_API_KEY, undefined);
+  assert.equal(env.ANTHROPIC_AUTH_TOKEN, undefined);
+  assert.equal(env.CLAUDE_CODE_OAUTH_TOKEN, undefined);
+  assert.equal(env.CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR, undefined);
 });
 
 void test("AC04/AC13: unregistered, generated, uninstalled or unenforceable launches cannot start", async (t) => {
@@ -1359,15 +1365,53 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
   const writableSettings = JSON.parse(
     command[command.indexOf("--settings") + 1] ?? "{}",
   ) as {
+    permissions: { blockReadsOutsideWorkingDirectories: boolean };
     sandbox: {
       enabled: boolean;
       allowUnsandboxedCommands: boolean;
+      network: {
+        allowedDomains: string[];
+        deniedDomains: string[];
+        strictAllowlist: boolean;
+      };
       filesystem: unknown;
+      credentials: {
+        files: Array<{ path: string; mode: string }>;
+        envVars: Array<{ name: string; mode: string }>;
+      };
     };
   };
   assert.equal(writableSettings.sandbox.enabled, true);
   assert.equal(writableSettings.sandbox.allowUnsandboxedCommands, false);
+  assert.equal(
+    writableSettings.permissions.blockReadsOutsideWorkingDirectories,
+    false,
+  );
   assert.deepEqual(writableSettings.sandbox.filesystem, { disabled: true });
+  assert.deepEqual(writableSettings.sandbox.network, {
+    allowedDomains: [],
+    deniedDomains: ["*"],
+    strictAllowlist: true,
+  });
+  assert.deepEqual(writableSettings.sandbox.credentials.files, [
+    { path: "~/.claude/.credentials.json", mode: "mask" },
+    { path: "~/.claude.json", mode: "mask" },
+    { path: "~/.claude/.claude.json", mode: "mask" },
+  ]);
+  assert.deepEqual(
+    writableSettings.sandbox.credentials.envVars.map(({ name }) => name),
+    [
+      "ANTHROPIC_API_KEY",
+      "ANTHROPIC_AUTH_TOKEN",
+      "CLAUDE_CODE_OAUTH_TOKEN",
+      "CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR",
+    ],
+  );
+  assert.ok(
+    writableSettings.sandbox.credentials.envVars.every(
+      ({ mode }) => mode === "deny",
+    ),
+  );
   const ordinaryAllowed = new Set(
     (command[command.indexOf("--allowedTools") + 1] ?? "").split(","),
   );
@@ -1388,7 +1432,7 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
   });
   assert.equal(
     unattended[unattended.indexOf("--permission-mode") + 1],
-    "dontAsk",
+    "acceptEdits",
   );
   assert.equal(
     unattended[unattended.indexOf("--permission-prompts") + 1],
@@ -1397,9 +1441,9 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
   const unattendedAllowed = new Set(
     (unattended[unattended.indexOf("--allowedTools") + 1] ?? "").split(","),
   );
-  // `dontAsk` with no approval UI receives every tool family selected by the
-  // reviewed Harness mapping. Prefix grants remain present, but are no longer
-  // the accidental gate for an otherwise enabled family.
+  // The child sandbox auto-allows Bash after its effect boundary is installed;
+  // no provider command classifier or command-pattern vocabulary defines the
+  // authority of the resulting process.
   for (const family of full.tools) assert.ok(unattendedAllowed.has(family));
   assert.ok(unattendedAllowed.has("Edit"));
   assert.ok(unattendedAllowed.has("Write"));
@@ -1444,7 +1488,7 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
     });
     const flag = (name: string): string =>
       protectedCommand[protectedCommand.indexOf(name) + 1] ?? "";
-    assert.equal(flag("--permission-mode"), "dontAsk", role);
+    assert.equal(flag("--permission-mode"), "acceptEdits", role);
     assert.equal(flag("--permission-prompts"), "none", role);
     const protectedAllowed = new Set(flag("--allowedTools").split(","));
     for (const family of full.tools)
@@ -1468,6 +1512,7 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
   assert.doesNotThrow(() => {
     codex.checkCapabilities(ALL);
   });
+  assert.equal(ADAPTERS.claude.nestedSandbox, true);
   assert.doesNotThrow(() => {
     codex.checkCapabilities([
       "repository-read",
