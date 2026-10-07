@@ -17,5 +17,15 @@
     "criteriaSatisfied": 8,
     "criteriaTotal": 8
   },
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED"
+  },
   "summary": "Frozen identities matched. All 11 mandatory executable cases passed against the clean committed candidate. Differential public regression: no test passing at the baseline fails at the candidate; the single candidate failure also fails at the baseline (environmental). tsc, eslint, prettier and git diff --check are clean. Provenance checks passed."
 }
