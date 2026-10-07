@@ -1,17 +1,21 @@
 {
   "schemaVersion": 1,
   "workflow": "014f-inactive-workflow-grant-retirement",
-  "execution": "7b26f056-fd50-46c1-90dc-a072295373a6",
-  "attempt": 8,
+  "execution": "d59a2e87-2bf0-494c-86af-9012967229b6",
+  "attempt": 9,
+  "commit": "af75b14d1847af02404a591a8829751dc8df2a2e",
   "candidate": "af75b14d1847af02404a591a8829751dc8df2a2e",
   "evaluatorRevision": "002",
-  "result": "BLOCKED",
-  "classification": "INFRASTRUCTURE_FAILURE",
+  "result": "PASS",
   "coverage": {
-    "mandatoryExecutableRun": 0,
+    "mandatoryExecutableRun": 11,
     "mandatoryExecutableTotal": 11,
-    "criteriaAdjudicated": 0,
+    "mandatoryExecutablePassed": 11,
+    "nonExecutableProcedures": 2,
+    "nonExecutableSatisfied": 2,
+    "criteriaAdjudicated": 8,
+    "criteriaSatisfied": 8,
     "criteriaTotal": 8
   },
-  "summary": "Shell execution failed in the sandbox launcher (read-only filesystem error), so no candidate checkout or evaluation could run. No coverage results are claimed."
+  "summary": "Frozen identities matched. All 11 mandatory executable cases passed against the clean committed candidate. Differential public regression: no test passing at the baseline fails at the candidate; the single candidate failure also fails at the baseline (environmental). tsc, eslint, prettier and git diff --check are clean. Provenance checks passed."
 }

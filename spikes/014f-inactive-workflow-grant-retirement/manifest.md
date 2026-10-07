@@ -216,3 +216,23 @@
   for attempt 8. This correction does not fabricate one. The attempted public
   result remains historical infrastructure-failure evidence.
 - Measurements: provider calls 1; other runtime measurements unavailable.
+
+## Evaluator verify — attempt 009
+
+- Skill: `evaluator`, mode `verify`, contract version 14
+  (`sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b`).
+- Workflow: `014f-inactive-workflow-grant-retirement`; execution
+  `d59a2e87-2bf0-494c-86af-9012967229b6`; Role Grant
+  `sha256:2be47c1a08de48261c0263c65ac6c9b356a97f2d2ad75cf0111441412d4a8f05`.
+- Inputs: candidate `af75b14d1847af02404a591a8829751dc8df2a2e`; evaluator
+  revision `002`
+  (`sha256:39fcf19c29b5562fdc482752b0d7a3fd6452cd566a0693170237a1c70be039ab`);
+  brief `sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c`;
+  design `sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34`;
+  coverage `sha256:14527f3f714d5d0bb86de59762adc01303f9b11ef4c097870d50e7da1cc7f15a`.
+- Result: `PASS`. Frozen identities matched; 11/11 mandatory executable
+  procedures passed; the 2 non-executable procedures (differential regression,
+  provenance) were satisfied; 8/8 criteria adjudicated and satisfied.
+- Outputs: `verification-result.json` (carries the validator-bound `commit`
+  field), `manifest.md`. Promotion is requested separately through the host.
+- Measurements: unavailable.
