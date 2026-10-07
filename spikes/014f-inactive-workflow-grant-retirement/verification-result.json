@@ -1,51 +1,17 @@
 {
   "schemaVersion": 1,
-  "attempt": "005",
-  "allocationKey": "sha256:1c31140a6b5ea21eee40dbed717c0dfe42807eca75ddde3a080d5b18308c1087",
-  "execution": "832e166b-454d-4a55-ae33-d456dd9e1354",
-  "roleGrant": "sha256:283ae4834b45f9257f5366dbdd73a17638c1e1882c3ab6e92db7cc1de15011a8",
-  "commit": "af75b14d1847af02404a591a8829751dc8df2a2e",
+  "workflow": "014f-inactive-workflow-grant-retirement",
+  "execution": "7b26f056-fd50-46c1-90dc-a072295373a6",
+  "attempt": 8,
+  "candidate": "af75b14d1847af02404a591a8829751dc8df2a2e",
   "evaluatorRevision": "002",
-  "evaluatorRevisionIdentity": "sha256:39fcf19c29b5562fdc482752b0d7a3fd6452cd566a0693170237a1c70be039ab",
-  "inputs": {
-    "brief": "sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c",
-    "design": "sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34",
-    "evaluationRequirements": "sha256:3e0c93e27cf21821703b1df7f2b3e7a9845d11967f95c3640520398ee7269cd4",
-    "coverage": "sha256:14527f3f714d5d0bb86de59762adc01303f9b11ef4c097870d50e7da1cc7f15a"
-  },
   "result": "BLOCKED",
   "classification": "INFRASTRUCTURE_FAILURE",
-  "evaluatorIntegrity": {
-    "status": "MATCHED",
-    "candidateEvaluationBegan": false,
-    "note": "All frozen public and private bundle identities matched before execution."
+  "coverage": {
+    "mandatoryExecutableRun": 0,
+    "mandatoryExecutableTotal": 11,
+    "criteriaAdjudicated": 0,
+    "criteriaTotal": 8
   },
-  "coverageResults": {
-    "AC01": "NOT_ADJUDICATED",
-    "AC02": "NOT_ADJUDICATED",
-    "AC03": "NOT_ADJUDICATED",
-    "AC04": "NOT_ADJUDICATED",
-    "AC05": "NOT_ADJUDICATED",
-    "AC06": "NOT_ADJUDICATED",
-    "AC07": "NOT_ADJUDICATED",
-    "AC08": "NOT_ADJUDICATED"
-  },
-  "accounting": {
-    "criteria": 8,
-    "satisfied": 0,
-    "notSatisfied": 0,
-    "notAdjudicated": 8,
-    "executableCases": 11,
-    "executablePassed": 0,
-    "executableFailed": 0,
-    "executableNotRun": 11,
-    "failedProcedures": [],
-    "note": "The verification runtime mounted the repository, evaluator workspace and temporary filesystem read-only. Mandatory evaluation requires writable disposable state, so no candidate-facing case or public regression began. This is not evidence of an implementation defect."
-  },
-  "regression": {
-    "status": "NOT_RUN",
-    "reason": "A clean detached candidate and baseline could not be materialized in the read-only verification runtime."
-  },
-  "promotionRequested": false,
-  "humanAcceptance": "Not applicable. Re-run verification for this unchanged candidate and evaluator revision in a runtime with writable disposable storage."
+  "summary": "Shell execution failed in the sandbox launcher (read-only filesystem error), so no candidate checkout or evaluation could run. No coverage results are claimed."
 }
