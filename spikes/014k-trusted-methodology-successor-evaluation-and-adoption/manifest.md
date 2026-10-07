@@ -531,7 +531,7 @@
   Harness role allocation
 - Base: attempt-9 public evidence commit
   `10b37cd6a495c9a5a012bc3961000c3ed61ca988`; generic correction commit
-  `e398ee8a2405c4898e118fcf4031be531b56b273`
+  `e398ee8535b045aad7e14eaefecf66ebc80a11cd`
 - Scope: restore accepted sequence-6 attempt-history derivation by making
   current-cycle host allocations authoritative, joining semantic/finalization
   history and canonical private evidence by explicit attempt identity, and
@@ -550,7 +550,7 @@
   `test/skill-fidelity.test.ts`, `tools/fixtures/fake-provider.ts`,
   `post-outcome-maintenance-004-attempt-history-and-finalization-recovery.md`,
   identity
-  `sha256:9f7666cc4ec3a1bd1eb4dacb08b51fe6ac697605ebcd2b67d49ff37e85699789`,
+  `sha256:4bbc41acdcd022d96fb1a00c95050e08333646a8504a69809346d4c08c016c73`,
   and this manifest
 - Checks: focused closeout 16/16 PASS; host/closeout 54/54 PASS; sequence-6
   archive/methodology 76/76 PASS; full suite 267/267 PASS; typecheck, ESLint,

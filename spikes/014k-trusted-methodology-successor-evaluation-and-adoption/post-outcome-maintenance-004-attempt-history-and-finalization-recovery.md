@@ -11,7 +11,7 @@ or a new evaluator execution.
 
 The starting repository commit was
 `10b37cd6a495c9a5a012bc3961000c3ed61ca988`. The generic implementation
-checkpoint is `e398ee8a2405c4898e118fcf4031be531b56b273`.
+checkpoint is `e398ee8535b045aad7e14eaefecf66ebc80a11cd`.
 
 Trusted methodology sequence 6 remains unchanged. Spike 014f candidate
 `af75b14d1847af02404a591a8829751dc8df2a2e`, evaluator revision `002`, attempt
@@ -122,7 +122,7 @@ promotion action or archive write occurred.
 
 ## Files and verification
 
-Implementation checkpoint `e398ee8a2405c4898e118fcf4031be531b56b273`
+Implementation checkpoint `e398ee8535b045aad7e14eaefecf66ebc80a11cd`
 changed:
 
 - `src/evaluation-closeout.ts`
