@@ -541,7 +541,7 @@ void test("014g SC5: a launch that cannot enforce the composition is refused wit
   );
 });
 
-void test("014g: the Claude launch can author private state while denying repository writes and commits", (t) => {
+void test("sequence 6: the governed Claude launch keeps its command sandbox while outer containment owns filesystem modes", (t) => {
   const f = fixture(t);
   const command = buildGovernedClaudeCommand({
     workspaces: f.run.grant.workspaces
@@ -565,9 +565,26 @@ void test("014g: the Claude launch can author private state while denying reposi
   assert.ok(!flag("--allowedTools").includes("git add"));
   assert.equal(flag("--permission-mode"), "dontAsk");
   const settings = JSON.parse(flag("--settings")) as {
-    sandbox: { filesystem: { denyWrite: string[] } };
+    permissions: { blockReadsOutsideWorkingDirectories: boolean };
+    sandbox: {
+      enabled: boolean;
+      failIfUnavailable: boolean;
+      allowUnsandboxedCommands: boolean;
+      excludedCommands: string[];
+      filesystem: {
+        disabled: boolean;
+        denyWrite?: string[];
+        denyRead?: string[];
+        allowRead?: string[];
+      };
+    };
   };
-  assert.deepEqual(settings.sandbox.filesystem.denyWrite, [f.root]);
+  assert.equal(settings.permissions.blockReadsOutsideWorkingDirectories, true);
+  assert.equal(settings.sandbox.enabled, true);
+  assert.equal(settings.sandbox.failIfUnavailable, true);
+  assert.equal(settings.sandbox.allowUnsandboxedCommands, false);
+  assert.deepEqual(settings.sandbox.excludedCommands, []);
+  assert.deepEqual(settings.sandbox.filesystem, { disabled: true });
   assert.match(flag("--disallowedTools"), new RegExp(`Write\\(/${f.root}/`));
   assert.doesNotMatch(
     flag("--disallowedTools"),

@@ -76,6 +76,7 @@ function fixture(t: TestContext): Fixture {
   symlinkSync(f.sibling, join(f.repo, "link-out"));
   execFileSync("git", ["init", "-q", "-b", "main", f.repo]);
   const out = join(f.scratch, "report");
+  const tmpMarker = `harness-fs-${String(process.pid)}-${String(Date.now())}`;
   const check = (name: string, command: string): string =>
     `if ( ${command} ) >/dev/null 2>&1; then echo ${name}=yes; else echo ${name}=no; fi >> '${out}'`;
   writeFileSync(
@@ -90,7 +91,9 @@ function fixture(t: TestContext): Fixture {
         "git-commit-repo",
         `git -C '${f.repo}' -c user.name=t -c user.email=t@example.invalid commit --allow-empty -q -m fixture`,
       ),
+      check("write-git-metadata", `touch '${f.repo}/.git/index.lock'`),
       check("write-scratch", `echo ok > '${f.scratch}/scratch-file'`),
+      check("write-private-tmp", `echo ok > '/tmp/${tmpMarker}'`),
       check("read-evaluation", `cat '${f.evaluation}/secret.txt'`),
       check("write-evaluation", `echo x > '${f.evaluation}/inside.txt'`),
       check("read-sibling", `cat '${f.sibling}/sibling.txt'`),
@@ -173,6 +176,7 @@ const DENIED = {
   "dotdot-escape": "no",
   "home-is-synthetic": "yes",
   "write-scratch": "yes",
+  "write-private-tmp": "yes",
 };
 
 void test("014h AC02/AC04: a public worker uses its granted repository and scratch; private, sibling, checkout and real-home paths are unavailable", (t) => {
@@ -184,6 +188,7 @@ void test("014h AC02/AC04: a public worker uses its granted repository and scrat
     "edit-repo": "yes",
     "delete-repo": "yes",
     "git-commit-repo": "yes",
+    "write-git-metadata": "yes",
     ...DENIED,
   });
   // Host side: the granted writes landed, nothing else did.
@@ -208,6 +213,7 @@ void test("014h AC03/B2: a read-granted repository rejects create, edit, delete 
     "edit-repo": "no",
     "delete-repo": "no",
     "git-commit-repo": "no",
+    "write-git-metadata": "no",
     ...DENIED,
   });
   assert.equal(existsSync(join(f.repo, "created.txt")), false);
@@ -232,6 +238,8 @@ void test("014h AC07/B1/B3: repository read + evaluator-private write + scratch;
   assert.equal(report["read-evaluation"], "yes");
   assert.equal(report["write-evaluation"], "yes");
   assert.equal(report["write-scratch"], "yes");
+  assert.equal(report["write-private-tmp"], "yes");
+  assert.equal(report["write-git-metadata"], "no");
   assert.equal(report["read-sibling"], "no");
   assert.equal(report["write-sibling"], "no");
   assert.equal(report["read-checkout"], "no");

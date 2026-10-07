@@ -446,3 +446,43 @@
   candidate `af75b14d1847af02404a591a8829751dc8df2a2e`, or evaluator revision
   `002`. A fresh unchanged protected Claude `evaluator-verify` remains required
   as separately recorded operational confirmation.
+
+## Post-Outcome host/runtime maintenance 002
+
+- Authority and provenance: explicit human authorization in the active Codex
+  App session; performed inline through Codex App, not through a governed
+  Harness role allocation
+- Predecessor: maintenance 001 commit
+  `1c1b432ccb68e856926d8635a11ab39def7ef17e`; base includes immutable Spike
+  014f attempt-8 evidence commits `5031475e47b0894c87e6bc8f89cf450ba73f61c5`
+  and `f938fec61f7574a7e274a242a6522cb91e314fe7`
+- Scope: stop Claude's nested command sandbox from reconstructing filesystem
+  write policy already enforced by authoritative outer Harness containment,
+  while retaining Claude command/network isolation and all sequence-6
+  capability, tool and publication restrictions
+- Diagnosis: execution `7b26f056-fd50-46c1-90dc-a072295373a6` failed before
+  evaluator Bash execution because Claude Code `2.1.292` tried to create the
+  nested sandbox mount point
+  `/home/velveteen/vk-code/harness/.claude/hooks` inside the outer read-only
+  repository mount
+- Result: implemented; governed contained Claude launches disable only the
+  nested sandbox filesystem component. The sandbox remains enabled and
+  fail-closed with unsandboxed commands forbidden; outer bubblewrap remains the
+  exact filesystem boundary
+- Evidence repair: restored the complete Spike 014f manifest forward from
+  maintenance 001 and appended the attempt-8 overwrite and validation history.
+  The attempted result used `candidate` instead of validator-bound `commit`, so
+  `verification result identity mismatch` prevented `verification-finalized`.
+  The malformed result, both evidence commits and ledger failure remain intact
+- Outputs: `src/claude-workflow.ts`, `test/evidence-action.test.ts`,
+  `test/governed-executors.test.ts`, `test/host-fs-isolation.test.ts`, the Spike
+  014f `manifest.md`,
+  `post-outcome-maintenance-002-claude-shell-composition.md`, and this manifest
+- Checks: focused provider/containment 35/35 and expanded 70/70 PASS; full
+  sequence-6 regression set 115/115 PASS; full suite 263/263 PASS; typecheck,
+  ESLint and Prettier PASS; `git diff --check` rerun immediately before commit
+- Boundaries: no live provider call and no new evaluator allocation; no change
+  to the 014k Outcome, trusted methodology sequence 6 or its identity, Spike
+  014f candidate `af75b14d1847af02404a591a8829751dc8df2a2e`, or evaluator
+  revision `002`. A separately authorized minimal protected-Claude runtime
+  preflight is the next operational step before any evaluator retry.

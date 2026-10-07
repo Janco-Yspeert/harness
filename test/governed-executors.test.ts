@@ -1356,6 +1356,18 @@ void test("AC06: one reviewed capability mapping per provider, failing closed wi
     command[command.indexOf("--permission-mode") + 1],
     "acceptEdits",
   );
+  const writableSettings = JSON.parse(
+    command[command.indexOf("--settings") + 1] ?? "{}",
+  ) as {
+    sandbox: {
+      enabled: boolean;
+      allowUnsandboxedCommands: boolean;
+      filesystem: unknown;
+    };
+  };
+  assert.equal(writableSettings.sandbox.enabled, true);
+  assert.equal(writableSettings.sandbox.allowUnsandboxedCommands, false);
+  assert.deepEqual(writableSettings.sandbox.filesystem, { disabled: true });
   const ordinaryAllowed = new Set(
     (command[command.indexOf("--allowedTools") + 1] ?? "").split(","),
   );

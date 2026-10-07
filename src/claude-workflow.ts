@@ -99,7 +99,7 @@ export const GOVERNED_CLAUDE_FLAGS: readonly string[] =
 // (notably arbitrary /tmp entries), then re-open only the exact allocation.
 export function claudeSandboxSettings(
   workspaces: readonly string[],
-  readOnly: readonly string[] = [],
+  filesystemAuthority: "provider" | "host" = "provider",
 ): string {
   return JSON.stringify({
     permissions: { blockReadsOutsideWorkingDirectories: true },
@@ -109,14 +109,22 @@ export function claudeSandboxSettings(
       autoAllowBashIfSandboxed: true,
       allowUnsandboxedCommands: false,
       excludedCommands: [],
-      filesystem: {
-        denyRead: [
-          ...new Set(workspaces.map((workspace) => dirname(workspace))),
-        ],
-        allowRead: [...workspaces],
-        // Granted read-only workspaces stay unwritable from commands too.
-        ...(readOnly.length > 0 ? { denyWrite: [...readOnly] } : {}),
-      },
+      // Governed launches already run inside host-owned bubblewrap mounts that
+      // enforce each workspace mode and expose no other host paths. Rebuilding
+      // that filesystem policy in Claude's nested sandbox is both redundant
+      // and invalid for a read-only repository: sandbox-runtime creates mount
+      // points such as .claude/hooks while preparing deny-write rules. Keep
+      // Claude's command/network sandbox, but leave filesystem authority with
+      // the outer containment. Legacy launches still use the provider fence.
+      filesystem:
+        filesystemAuthority === "host"
+          ? { disabled: true }
+          : {
+              denyRead: [
+                ...new Set(workspaces.map((workspace) => dirname(workspace))),
+              ],
+              allowRead: [...workspaces],
+            },
     },
   });
 }
@@ -348,15 +356,7 @@ export function buildGovernedClaudeCommand(
     "--mcp-config",
     launch.mcpConfig,
     ...(permissions.commands
-      ? [
-          "--settings",
-          claudeSandboxSettings(
-            commandWorkspaces,
-            launch.workspaces
-              .filter((workspace) => workspace.mode === "read")
-              .map((workspace) => workspace.path),
-          ),
-        ]
+      ? ["--settings", claudeSandboxSettings(commandWorkspaces, "host")]
       : []),
     "--tools",
     permissions.tools.join(","),
