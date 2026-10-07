@@ -127,3 +127,39 @@
 - Checks: controlled positive, baseline-negative and single-defect negative
   exercises on a discarded scratch reference; no candidate execution.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Implementation — execution 6fab9128-013e-44cf-9f61-1b1a6fcb657a
+
+- Skill: `implementation`, contract version 5
+  (`sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`).
+- Workflow: `014f-inactive-workflow-grant-retirement`; Role Grant
+  `sha256:e5bbef29b253d25c909561ec86fdd81adeecc14e93418784b6dc7db5a9993a1b`.
+- Inputs: `spike.md`
+  `sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c`,
+  `design-map.md`
+  `sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34`,
+  `coverage-map.json`
+  `sha256:14527f3f714d5d0bb86de59762adc01303f9b11ef4c097870d50e7da1cc7f15a`,
+  and `eval-requirements.md`
+  `sha256:3e0c93e27cf21821703b1df7f2b3e7a9845d11967f95c3640520398ee7269cd4`.
+  No implementation feedback was bound. Base commit `cbf2dd6`.
+- Outputs (sha256): `src/kernel/execution.ts`
+  `c83a37d36bb05ea667aed4ef99fb02b8634fce9a065dbd0aaac43e82842b2c05`,
+  `src/kernel/host.ts`
+  `91bdb534e04811f345be0def48031dda8530e625cfbd0c983ddd271138f24422`,
+  `src/kernel/resolver.ts`
+  `b8b7fd2ef653a0570421e2400ed7ff48ee7631443c61d908469d324ab143bb63`,
+  and `test/kernel.test.ts`
+  `5d4d8aa59386cc760d8ba3d42ceea26cba87678bb77339e68382e9986339f71d`.
+- Status: candidate produced. The committed retirement implementation remains
+  coherent under evaluator revision 002; that revision changed the regression
+  evidence plan, not the frozen feature semantics, so no source rewrite was
+  required.
+- Checks: exact pure retirement kernel test 1/1 pass; `tsc --noEmit` clean;
+  focused `eslint` clean; focused `prettier --check` clean; candidate
+  `git diff --check` clean. The broader `npm test` run was stopped after two
+  bounded waits: 5 of 20 test files reported pass, 15 reported failure, and the
+  process did not terminate. Direct diagnostics identified worker-sandbox
+  denials (`listen EPERM` and nested `git` `EPERM`); the pure retirement test
+  passed, while the host retirement test was among the localhost-bind denials.
+- Measurements: wall-clock time and token usage unavailable.
