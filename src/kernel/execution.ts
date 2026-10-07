@@ -1584,6 +1584,156 @@ export class ExecutionKernel {
       return next;
     });
   }
+  recoverTransition(
+    workflow: string,
+    request: {
+      execution: string;
+      roleGrant: string;
+      allocationEvent: string;
+      semanticResult: string;
+      transition: string;
+      candidate: string;
+      evaluatorRevision: string;
+      attempt: number;
+      result: string;
+      artifactCommit: string;
+      artifactPath: string;
+      artifactIdentity: string;
+    },
+  ): LedgerEvent {
+    return this.#transaction(workflow, () => {
+      const execution = this.execution(workflow, request.execution);
+      if (execution.roleGrant !== request.roleGrant)
+        throw new Error("transition recovery role grant drift");
+      const result = required(
+        execution.result,
+        "transition recovery requires the original semantic result",
+      );
+      if (
+        result.id !== request.semanticResult ||
+        result.execution !== request.execution ||
+        result.roleGrant !== request.roleGrant ||
+        result.disposition !== "succeeded" ||
+        result.methodology.result !== request.result
+      )
+        throw new Error("transition recovery semantic result drift");
+      const grant = this.roleGrant(workflow, request.roleGrant);
+      if (
+        grant.inputs.candidate !== request.candidate ||
+        grant.inputs.evaluatorRevision !== request.evaluatorRevision
+      )
+        throw new Error("transition recovery Role Grant input drift");
+      const definition = this.definition(workflow, grant.methodology);
+      const policy = required(definition.roles[grant.role]).policy;
+      const rules = policy.outcomes.filter(
+        (candidate) =>
+          candidate.disposition === result.disposition &&
+          matches(result.methodology, candidate.methodology ?? {}) &&
+          (candidate.requiredActions ?? []).every((kind) =>
+            execution.actions.some(
+              (action) =>
+                action.request.kind === kind && action.status === "succeeded",
+            ),
+          ),
+      );
+      if (rules.length !== 1 || rules[0]?.transition !== request.transition)
+        throw new Error("transition recovery outcome drift");
+      const rule = required(rules[0]);
+      if (
+        !rule.evidence?.artifact ||
+        rule.evidence.artifact !== request.artifactPath
+      )
+        throw new Error("transition recovery artifact path drift");
+      const events = this.events(workflow);
+      const allocation = events.find(
+        (event) =>
+          event.id === request.allocationEvent &&
+          event.transition === rule.evidence?.allocation,
+      );
+      if (
+        !allocation ||
+        allocation.evidence.execution !== request.execution ||
+        allocation.evidence.roleGrant !== request.roleGrant ||
+        allocation.evidence.commit !== request.candidate ||
+        allocation.evidence.evaluatorRevision !== request.evaluatorRevision ||
+        allocation.evidence.attempt !== request.attempt
+      )
+        throw new Error("transition recovery allocation drift");
+      const resultIndex = events.findIndex(
+        (event) =>
+          event.transition === "kernel.result" &&
+          event.evidence.id === request.semanticResult,
+      );
+      if (
+        resultIndex < 0 ||
+        !events
+          .slice(resultIndex + 1)
+          .some(
+            (event) =>
+              event.transition === "kernel.transition-blocked" &&
+              event.evidence.execution === request.execution,
+          )
+      )
+        throw new Error("transition recovery requires a blocked transition");
+      const existing = events.find(
+        (event) =>
+          event.transition === request.transition &&
+          event.evidence.semanticResult === request.semanticResult,
+      );
+      if (existing) {
+        if (
+          existing.evidence.execution !== request.execution ||
+          existing.evidence.roleGrant !== request.roleGrant ||
+          existing.evidence.commit !== request.candidate ||
+          existing.evidence.evaluatorRevision !== request.evaluatorRevision ||
+          existing.evidence.attempt !== request.attempt ||
+          existing.evidence.result !== request.result ||
+          existing.evidence.artifactCommit !== request.artifactCommit ||
+          existing.evidence.path !== request.artifactPath ||
+          existing.evidence.identity !== request.artifactIdentity
+        )
+          throw new Error("transition recovery existing transition drift");
+        return existing;
+      }
+      const head = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: this.project.root,
+        encoding: "utf8",
+      }).trim();
+      if (head !== request.artifactCommit)
+        throw new Error("transition recovery artifact commit drift");
+      const artifact = inside(
+        resolve(
+          this.project.root,
+          required(this.project.workflows[workflow]).directory,
+        ),
+        request.artifactPath,
+      );
+      const bytes = readFileSync(artifact);
+      if (
+        identity(bytes) !== request.artifactIdentity ||
+        identity(
+          execFileSync(
+            "git",
+            [
+              "show",
+              `${request.artifactCommit}:${relative(this.project.root, artifact)}`,
+            ],
+            { cwd: this.project.root },
+          ),
+        ) !== request.artifactIdentity
+      )
+        throw new Error("transition recovery artifact identity drift");
+      this.#transition(workflow, request.execution);
+      return required(
+        this.events(workflow).find(
+          (event) =>
+            event.transition === request.transition &&
+            event.evidence.semanticResult === request.semanticResult,
+        ),
+        "transition recovery validation did not finalize",
+      );
+    });
+  }
   #transition(workflow: string, id: string): void {
     const execution = this.execution(workflow, id);
     if (!execution.result) return;

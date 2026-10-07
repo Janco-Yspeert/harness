@@ -1023,6 +1023,29 @@ export class GovernedHost {
         );
         return;
       }
+      if (operation === "transition-recovery") {
+        needRoot();
+        if (get) throw new Error("transition recovery requires POST");
+        if (typeof body.attempt !== "number")
+          throw new Error("transition recovery attempt is required");
+        send(201, {
+          transition: this.kernel.recoverTransition(workflow, {
+            execution: text(body.execution),
+            roleGrant: text(body.roleGrant),
+            allocationEvent: text(body.allocationEvent),
+            semanticResult: text(body.semanticResult),
+            transition: text(body.transition),
+            candidate: text(body.candidate),
+            evaluatorRevision: text(body.evaluatorRevision),
+            attempt: body.attempt,
+            result: text(body.result),
+            artifactCommit: text(body.artifactCommit),
+            artifactPath: text(body.artifactPath),
+            artifactIdentity: text(body.artifactIdentity),
+          }),
+        });
+        return;
+      }
       if (operation === "grant-retirements") {
         needRoot();
         if (get) {

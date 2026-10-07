@@ -25,6 +25,7 @@ import {
   appendLedger,
   contentId,
   identity,
+  object,
   predicate,
   required,
 } from "../src/kernel/ledger.ts";
@@ -184,6 +185,133 @@ function allocate(
     session: current.id,
     role,
   });
+}
+function blockedTransitionRecoveryFixture(t: TestContext, name: string) {
+  const f = fixture(t, name);
+  const candidate = "a".repeat(40);
+  const evaluatorRevision = "002";
+  f.contract.inputs = [
+    { name: "candidate", event: "inputs-bound", field: "candidate" },
+    {
+      name: "evaluatorRevision",
+      event: "inputs-bound",
+      field: "evaluatorRevision",
+    },
+  ];
+  f.contract.methodology = { result: ["PASS"] };
+  required(f.policy.roles.produce).onAllocate = {
+    transition: "verification-allocated",
+    fromInputs: {
+      commit: "candidate",
+      evaluatorRevision: "evaluatorRevision",
+    },
+    counterField: "attempt",
+  };
+  required(f.policy.roles.produce).outcomes = [
+    {
+      disposition: "succeeded",
+      methodology: { result: "PASS" },
+      transition: "verification-finalized",
+      evidence: {
+        artifact: "verification-result.json",
+        validator: "verification-accounting",
+        allocation: "verification-allocated",
+      },
+    },
+  ];
+  json(join(f.root, "contracts/produce.json"), f.contract);
+  json(join(f.root, "policy.json"), f.policy);
+  json(join(f.root, "items", f.workflow, "verification-result.json"), {
+    commit: candidate,
+    evaluatorRevision,
+    result: "PASS",
+  });
+  git(f.root, ["init", "-b", "main"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "malformed verification evidence"]);
+  const malformedCommit = git(f.root, ["rev-parse", "HEAD"]);
+  f.event("inputs-bound", { candidate, evaluatorRevision });
+  const k = new ExecutionKernel({
+    project: f.project,
+    executors: profiles,
+    validators: {
+      "verification-accounting": {
+        identity: "sha256:transition-recovery-validator",
+        validate: (document, context) => {
+          const value = document as Record<string, unknown>;
+          const binding = required(context);
+          if (
+            value.commit !== binding.inputs.candidate ||
+            value.evaluatorRevision !== binding.inputs.evaluatorRevision ||
+            value.result !== binding.result.result
+          )
+            throw new Error("verification result identity mismatch");
+          if (
+            typeof value.coverageResults !== "object" ||
+            value.coverageResults === null ||
+            Array.isArray(value.coverageResults)
+          )
+            throw new Error("expected an object");
+        },
+      },
+    },
+  });
+  const grant = k.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached"],
+    maxAllocations: 2,
+    inline: true,
+  });
+  const session = k.register(f.workflow, "fixture").session;
+  const execution = k.allocate(f.workflow, grant.id, {
+    mode: "attached",
+    session: session.id,
+    role: "produce",
+  }).execution;
+  const allocation = required(
+    k
+      .events(f.workflow)
+      .find(
+        (event) =>
+          event.transition === "verification-allocated" &&
+          event.evidence.execution === execution.id,
+      ),
+  );
+  k.process(f.workflow, execution.id, "running");
+  k.result(f.workflow, execution.id, "succeeded", { result: "PASS" });
+  const semanticResult = required(k.execution(f.workflow, execution.id).result);
+  assert.equal(
+    k.execution(f.workflow, execution.id).transition?.status,
+    "blocked",
+  );
+  json(join(f.root, "items", f.workflow, "verification-result.json"), {
+    commit: candidate,
+    evaluatorRevision,
+    result: "PASS",
+    coverageResults: { AC01: "SATISFIED" },
+  });
+  git(f.root, ["add", `items/${f.workflow}/verification-result.json`]);
+  git(f.root, ["commit", "-m", "correct verification evidence"]);
+  const artifactCommit = git(f.root, ["rev-parse", "HEAD"]);
+  const artifactPath = "verification-result.json";
+  const artifactIdentity = identity(
+    readFileSync(join(f.root, "items", f.workflow, artifactPath)),
+  );
+  const request = {
+    execution: execution.id,
+    roleGrant: execution.roleGrant,
+    allocationEvent: required(allocation.id),
+    semanticResult: semanticResult.id,
+    transition: "verification-finalized",
+    candidate,
+    evaluatorRevision,
+    attempt: 1,
+    result: "PASS",
+    artifactCommit,
+    artifactPath,
+    artifactIdentity,
+  };
+  return { ...f, k, request, malformedCommit };
 }
 async function api<T>(
   url: string,
@@ -1619,6 +1747,143 @@ void test("H5: host recovery preserves a result whose canonical transition was b
   assert.equal(recovered.failure, null);
   assert.equal(recovered.result?.disposition, "succeeded");
   assert.equal(recovered.transition?.status, "blocked");
+});
+
+void test("H5: a blocked post-result transition recovers once from corrected committed evidence", (t) => {
+  const f = blockedTransitionRecoveryFixture(t, "transition-recovery");
+  const before = f.k.events(f.workflow);
+  const originalResult = before.find(
+    (event) => event.transition === "kernel.result",
+  );
+  assert.ok(originalResult);
+  assert.equal(
+    before.filter((event) => event.transition === "verification-allocated")
+      .length,
+    1,
+  );
+  assert.equal(
+    before.filter((event) => event.transition === "kernel.result").length,
+    1,
+  );
+  assert.equal(
+    before.filter((event) => event.transition === "verification-finalized")
+      .length,
+    0,
+  );
+  assert.equal(
+    object(
+      JSON.parse(
+        git(f.root, [
+          "show",
+          `${f.malformedCommit}:items/${f.workflow}/verification-result.json`,
+        ]),
+      ),
+    ).coverageResults,
+    undefined,
+    "the malformed historical artifact remains immutable",
+  );
+
+  const recovered = f.k.recoverTransition(f.workflow, f.request);
+  assert.equal(recovered.transition, "verification-finalized");
+  assert.equal(recovered.evidence.semanticResult, f.request.semanticResult);
+  assert.equal(recovered.evidence.identity, f.request.artifactIdentity);
+  assert.equal(recovered.evidence.artifactCommit, f.request.artifactCommit);
+
+  const replay = f.k.recoverTransition(f.workflow, f.request);
+  assert.equal(replay.id, recovered.id, "replay returns the canonical event");
+  const after = f.k.events(f.workflow);
+  assert.equal(
+    after.filter((event) => event.transition === "verification-finalized")
+      .length,
+    1,
+  );
+  assert.equal(
+    after.filter((event) => event.transition === "kernel.transition").length,
+    1,
+  );
+  assert.equal(
+    after.filter((event) => event.transition === "kernel.result").length,
+    1,
+  );
+  assert.equal(
+    after.filter((event) => event.transition === "verification-allocated")
+      .length,
+    1,
+  );
+  assert.equal(
+    after.find((event) => event.transition === "kernel.result")?.id,
+    originalResult.id,
+  );
+});
+
+void test("H5: transition recovery refuses binding drift without changing history", (t) => {
+  const f = blockedTransitionRecoveryFixture(t, "transition-recovery-drift");
+  const initial = f.k.events(f.workflow).length;
+  const changes: Array<[string, object, RegExp]> = [
+    ["candidate", { candidate: "b".repeat(40) }, /Role Grant input drift/],
+    [
+      "evaluator revision",
+      { evaluatorRevision: "003" },
+      /Role Grant input drift/,
+    ],
+    ["semantic result", { result: "FAIL" }, /semantic result drift/],
+    [
+      "public artifact identity",
+      { artifactIdentity: `sha256:${"0".repeat(64)}` },
+      /artifact identity drift/,
+    ],
+    [
+      "original result identity",
+      { semanticResult: "missing-result" },
+      /semantic result drift/,
+    ],
+    [
+      "allocation identity",
+      { allocationEvent: "missing-allocation" },
+      /allocation drift/,
+    ],
+    ["attempt", { attempt: 2 }, /allocation drift/],
+    ["role grant", { roleGrant: "missing-grant" }, /role grant drift/],
+  ];
+  for (const [name, change, expected] of changes)
+    assert.throws(
+      () =>
+        f.k.recoverTransition(f.workflow, {
+          ...f.request,
+          ...change,
+        }),
+      expected,
+      name,
+    );
+  const events = f.k.events(f.workflow);
+  assert.equal(events.length, initial);
+  assert.equal(
+    events.some((event) => event.transition === "verification-finalized"),
+    false,
+  );
+});
+
+void test("H5: transition recovery requires an existing semantic result", (t) => {
+  const f = fixture(t, "transition-recovery-no-result");
+  assert.throws(
+    () =>
+      f.kernel.recoverTransition(f.workflow, {
+        execution: "missing-execution",
+        roleGrant: "missing-grant",
+        allocationEvent: "missing-allocation",
+        semanticResult: "missing-result",
+        transition: "verification-finalized",
+        candidate: "a".repeat(40),
+        evaluatorRevision: "002",
+        attempt: 1,
+        result: "PASS",
+        artifactCommit: "a".repeat(40),
+        artifactPath: "verification-result.json",
+        artifactIdentity: `sha256:${"0".repeat(64)}`,
+      }),
+    /unknown execution/,
+  );
+  assert.equal(f.kernel.events(f.workflow).length, 0);
 });
 
 void test("H6: a validator-rejected result permits a bounded successor correction, preserving history, and denies retry after canonical success", (t) => {
