@@ -560,3 +560,41 @@
   Outcome, trusted methodology sequence 6 or its identity, Spike 014f candidate
   `af75b14d1847af02404a591a8829751dc8df2a2e`, evaluator revision `002`, or
   attempt-9 semantic PASS
+
+## Post-Outcome host/runtime maintenance 005
+
+- Authority and provenance: explicit human authorization in the active Codex
+  App session; performed inline through Codex App, not through a governed
+  Harness role allocation
+- Scope: recover only Spike 014f attempt 9's missing criterion-level public
+  accounting and replay its blocked canonical transition without evaluator
+  execution, a new semantic result, or another allocation
+- Surviving evidence: exact named E1–E6 case outcomes, R1 differential
+  observations and P1 identity observations were retained in the bounded
+  provider diagnostic and joined mechanically through the frozen revision-002
+  coverage map; no AC value was inferred from the aggregate `8/8` counter
+- Implementation: generic root-only, drift-refusing and idempotent transition
+  recovery in commits `1649d727d202dfafe1ba9afa960068478fcbb07c` and
+  `ce4c4a2182b7710f6597ffe078bc4066a9fde1c4`
+- Corrected evidence: commit
+  `193c4d4cbf109fb0cf3fcd3685d11fb482a061ec`, identity
+  `sha256:f5ccd08882665d49cd26d05155ca6e0cd4e23210fc3a77d0d239ad443212ac9a`;
+  original malformed commit `10b37cd6a495c9a5a012bc3961000c3ed61ca988`
+  and its blocked transitions remain immutable
+- Result: canonical `verification-finalized`
+  `138271e4-40d9-4f5d-bdf9-42e72fc8fbc0` and matching
+  `kernel.transition` `02fdef5c-3f5e-4008-be87-d8aece983916`; exact replay
+  returned the same event and appended nothing
+- Record: `post-outcome-maintenance-005-attempt-9-evidence-finalization-recovery.md`,
+  identity
+  `sha256:2cded59b423569bf3c3ddbc161dcb408bbbdd32e68e4026ea5095cf22d023606`
+- Checks: focused recovery 3/3 PASS; kernel 41/41 PASS; sequence-6
+  kernel/workflow/skill-fidelity/closeout regressions PASS; full suite PASS;
+  typecheck, ESLint, Prettier and `git diff --check` PASS
+- Boundaries: no evaluator rerun, attempt 10, private evaluator edit,
+  archive/promotion recovery, As-Built or acceptance; no change to the 014k
+  Outcome, trusted sequence 6, candidate
+  `af75b14d1847af02404a591a8829751dc8df2a2e`, evaluator revision `002`, or
+  attempt-9 semantic PASS. Attempts 1, 2 and 5 still block complete archival
+  because their canonical terminal history has no retained private terminal
+  artifact or durable private identity.
