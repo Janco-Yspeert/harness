@@ -1840,9 +1840,9 @@ void test("H5: transition recovery refuses binding drift without changing histor
     [
       "allocation identity",
       { allocationEvent: "missing-allocation" },
-      /allocation drift/,
+      /allocation .*drift/,
     ],
-    ["attempt", { attempt: 2 }, /allocation drift/],
+    ["attempt", { attempt: 2 }, /allocation .*drift/],
     ["role grant", { roleGrant: "missing-grant" }, /role grant drift/],
   ];
   for (const [name, change, expected] of changes)

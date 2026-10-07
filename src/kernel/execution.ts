@@ -1650,15 +1650,18 @@ export class ExecutionKernel {
           event.id === request.allocationEvent &&
           event.transition === rule.evidence?.allocation,
       );
-      if (
-        !allocation ||
-        allocation.evidence.execution !== request.execution ||
-        allocation.evidence.roleGrant !== request.roleGrant ||
-        allocation.evidence.commit !== request.candidate ||
-        allocation.evidence.evaluatorRevision !== request.evaluatorRevision ||
-        allocation.evidence.attempt !== request.attempt
-      )
-        throw new Error("transition recovery allocation drift");
+      if (!allocation)
+        throw new Error("transition recovery allocation event drift");
+      if (allocation.evidence.execution !== request.execution)
+        throw new Error("transition recovery allocation execution drift");
+      if (allocation.evidence.roleGrant !== request.roleGrant)
+        throw new Error("transition recovery allocation role grant drift");
+      if (allocation.evidence.commit !== request.candidate)
+        throw new Error("transition recovery allocation candidate drift");
+      if (allocation.evidence.evaluatorRevision !== request.evaluatorRevision)
+        throw new Error("transition recovery allocation evaluator drift");
+      if (allocation.evidence.attempt !== request.attempt)
+        throw new Error("transition recovery allocation attempt drift");
       const resultIndex = events.findIndex(
         (event) =>
           event.transition === "kernel.result" &&
