@@ -598,3 +598,46 @@
   attempt-9 semantic PASS. Attempts 1, 2 and 5 still block complete archival
   because their canonical terminal history has no retained private terminal
   artifact or durable private identity.
+
+## Post-Outcome host/runtime maintenance 006
+
+- Authority and provenance: explicit human authorization in the active Codex
+  App session; performed inline through Codex App, not through a governed
+  Harness role allocation; implementation skill contract version 5, identity
+  `sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`
+- Base and implementation: maintenance-005 checkpoint
+  `703b4d2ca8f8481441dd43e6bfc1a585cc36700b`; generic recovery implementation
+  `1bf3cbef36348d8f3ec75e2b3330d7a2ae323417`
+- Recovery declaration: commit
+  `0984a9ea1dfb7e5a6ced1be994545cb821298eb3`, identity
+  `sha256:8e7cf8a755b3a33bd32a5bd45aa2bce19cdcab4bb86e2ca739cdaec8d5e43df0`
+- Result: the root-only, content-addressed recovery records terminal private
+  evidence independently from semantic lifecycle. Attempts 1, 2 and 5 are
+  truthfully UNBOUND; attempts 3, 4, 6 and 7 are NONTERMINAL; attempt 8 is
+  RECOVERY_BOUND at
+  `sha256:be938ffedf151ed10252a330c732f7478c7037a3c61d22f71a8364ff1c488304`;
+  attempt 9 is BOUND and remains the sole PASS
+- Promotion: nine-attempt provenance
+  `sha256:b46f3ce0fe40431b2381cfd74a9f69dd379ddd415fc53750a3db742bdbcbd109`,
+  integrity
+  `sha256:074457cff2dc17e70b5e1606dbfa81d43457172ab7707c2407206e68ff08e9b0`,
+  promotion
+  `sha256:d283a7ffb58a9c9a227783148f1a7f63249443377aef1943986b4b218583c7e5`,
+  and `promotion-recorded` event `60c33af1-2e6f-4ef6-815f-a818cbd47e12`
+- Archive semantics: explicitly `incomplete` /
+  `HISTORICAL_UNBOUND_PRIVATE_EVIDENCE`; no missing bytes were reconstructed,
+  no UNBOUND entry asserts prior persistence, and exact replay appended no
+  second promotion
+- Outputs: generic implementation and tests, the committed recovery declaration,
+  the promoted 014f evaluation archive,
+  `post-outcome-maintenance-006-historical-unbound-evidence-recovery.md`, and
+  this manifest
+- Checks: focused archive/recovery/kernel/methodology/closeout regressions
+  108/108 PASS; full suite 283/283 PASS; typecheck, ESLint, Prettier and
+  `git diff --check` PASS
+- Boundaries: no evaluator run, attempt 10, verdict change, private-ledger
+  rewrite or fabricated artifact; no change to the 014k Outcome, trusted
+  methodology sequence 6 or its identity, candidate
+  `af75b14d1847af02404a591a8829751dc8df2a2e`, or evaluator revision `002`.
+  The exact recovered promotion now permits As-Built; human acceptance remains
+  downstream of As-Built.
