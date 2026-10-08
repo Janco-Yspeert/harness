@@ -236,3 +236,29 @@
 - Outputs: `verification-result.json` (carries the validator-bound `commit`
   field), `manifest.md`. Promotion is requested separately through the host.
 - Measurements: unavailable.
+
+## As-Built — execution 11075cd7-106d-4dcd-985b-46e63087bf4e
+
+- Skill: `as-built`, contract version 4
+  (`sha256:dc3c422691fb36a292b49db411ff9aefd5199f8602b73ef87428fd0a09ea534b`).
+- Workflow: `014f-inactive-workflow-grant-retirement`; Role Grant
+  `sha256:41d3f83782381e2991099062dc2c83c7b2984494de998722dfe28ae9ca468f39`.
+- Inspected implementation: `af75b14d1847af02404a591a8829751dc8df2a2e`.
+- Inputs: `spike.md`
+  `sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c`,
+  `design-map.md`
+  `sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34`,
+  `verification-result.json`
+  `sha256:f5ccd08882665d49cd26d05155ca6e0cd4e23210fc3a77d0d239ad443212ac9a`,
+  and `evaluation/promotion.json`
+  `sha256:d283a7ffb58a9c9a227783148f1a7f63249443377aef1943986b4b218583c7e5`.
+- Promotion validation: the bound identity matched the file bytes and the file
+  was already committed with exactly those bytes; no promotion checkpoint was
+  required.
+- Result: succeeded. No Missing, Contradictory, or Extra discrepancies found.
+- Output: `as-built.md`
+  `sha256:28e1ca62d780563132decee0413572c4fb6282bc0c2ff3aaa170525a417a5211`.
+- Checks: static inspection of the exact candidate, its implementation diff,
+  relevant source and visible tests, frozen public inputs, accepted
+  verification result, and promoted evidence. The evaluator was not rerun.
+- Measurements: wall-clock time and token usage unavailable.
