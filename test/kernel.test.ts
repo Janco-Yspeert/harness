@@ -3043,6 +3043,377 @@ void test("root complete-evidence recovery records exactly one truthful promotio
   );
 });
 
+void test("root unbound-evidence recovery records one explicitly incomplete promotion", (t) => {
+  const f = fixture(t, "unbound-archive-recovery");
+  const candidate = "e".repeat(40);
+  const evaluatorRevision = "002";
+  const source = required(f.project.workspaces.evaluation).path;
+  const passPath = ".eval/attempts/002/eval-result.md";
+  const passBytes = "# Attempt 2\n\nPASS\n";
+  const passIdentity = identity(passBytes);
+  const ledgerBytes = '{"schemaVersion":2,"attempts":[]}\n';
+  const ledgerIdentity = identity(ledgerBytes);
+  const specIdentity = identity("spec\n");
+  const freezeBytes = `${JSON.stringify({
+    schemaVersion: 1,
+    evaluatorRevision,
+    artifacts: { "eval-spec.md": specIdentity },
+  })}\n`;
+  const freezeIdentity = identity(freezeBytes);
+  for (const [path, bytes] of [
+    [passPath, passBytes],
+    [".eval/attempt-ledger.json", ledgerBytes],
+    [".eval/freeze.json", freezeBytes],
+    ["eval-spec.md", "spec\n"],
+  ] as const) {
+    mkdirSync(dirname(join(source, path)), { recursive: true });
+    writeFileSync(join(source, path), bytes);
+  }
+
+  f.event("candidate", { commit: candidate, evaluatorRevision });
+  f.contract.workspaces.push("evaluation");
+  f.contract.inputs.push(
+    { name: "candidate", event: "candidate", field: "commit" },
+    {
+      name: "evaluatorRevision",
+      event: "candidate",
+      field: "evaluatorRevision",
+    },
+  );
+  f.contract.methodology = { result: ["PASS", "BLOCKED"] };
+  f.contract.promotion = {
+    sourceWorkspace: "evaluation",
+    destinationWorkspace: "repository",
+    destination: "evaluation",
+    candidateInput: "candidate",
+    revisionInput: "evaluatorRevision",
+    when: { result: "PASS" },
+    allocationEvent: "verification-allocated",
+    attemptField: "attempt",
+    transition: "promotion-recorded",
+    derive: "host-archive",
+  };
+  const role = required(f.policy.roles.produce);
+  role.onAllocate = {
+    transition: "verification-allocated",
+    fromInputs: {
+      commit: "candidate",
+      evaluatorRevision: "evaluatorRevision",
+    },
+    counterField: "attempt",
+  };
+  role.outcomes = [
+    {
+      disposition: "succeeded",
+      methodology: { result: "PASS" },
+      transition: "semantic-pass-recorded",
+    },
+    {
+      disposition: "succeeded",
+      methodology: { result: "BLOCKED" },
+      transition: "semantic-blocked-recorded",
+    },
+  ];
+  f.policy.roles["evaluator-verify"] = role;
+  delete f.policy.roles.produce;
+  json(join(f.root, "contracts/produce.json"), f.contract);
+  json(join(f.root, "policy.json"), f.policy);
+  git(f.root, ["init", "-b", "proof"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "runtime base"]);
+  const runtimeCommit = git(f.root, ["rev-parse", "HEAD"]);
+
+  const parent = f.authorize();
+  const first = allocate(f, parent, "evaluator-verify");
+  f.kernel.process(f.workflow, first.execution.id, "running");
+  const firstSemantic = f.kernel.result(
+    f.workflow,
+    first.execution.id,
+    "succeeded",
+    { result: "BLOCKED" },
+  );
+  const firstPublic = "attempt 1 blocked\n";
+  writeFileSync(
+    join(f.root, "items/work-item/verification-result.json"),
+    firstPublic,
+  );
+  git(f.root, ["add", "items/work-item/verification-result.json"]);
+  git(f.root, ["commit", "-m", "attempt 1 public result"]);
+  const firstArtifactCommit = git(f.root, ["rev-parse", "HEAD"]);
+  const firstFinalization = f.event("verification-finalized", {
+    result: "BLOCKED",
+    execution: first.execution.id,
+    roleGrant: first.grant.id,
+    commit: candidate,
+    evaluatorRevision,
+    attempt: 1,
+    cycle: "001",
+    artifactCommit: firstArtifactCommit,
+    path: "verification-result.json",
+    identity: identity(firstPublic),
+    semanticResult: firstSemantic.result?.id,
+  });
+  f.kernel.process(f.workflow, first.execution.id, "exited");
+
+  const second = allocate(f, parent, "evaluator-verify");
+  f.kernel.process(f.workflow, second.execution.id, "running");
+  const secondSemantic = f.kernel.result(
+    f.workflow,
+    second.execution.id,
+    "succeeded",
+    { result: "PASS" },
+  );
+  const secondPublic = "attempt 2 pass\n";
+  writeFileSync(
+    join(f.root, "items/work-item/verification-result.json"),
+    secondPublic,
+  );
+  git(f.root, ["add", "items/work-item/verification-result.json"]);
+  git(f.root, ["commit", "-m", "attempt 2 public result"]);
+  const secondArtifactCommit = git(f.root, ["rev-parse", "HEAD"]);
+  const secondFinalization = f.event("verification-finalized", {
+    result: "PASS",
+    execution: second.execution.id,
+    roleGrant: second.grant.id,
+    commit: candidate,
+    evaluatorRevision,
+    attempt: 2,
+    cycle: "001",
+    artifactCommit: secondArtifactCommit,
+    path: "verification-result.json",
+    identity: identity(secondPublic),
+    semanticResult: secondSemantic.result?.id,
+  });
+
+  const bindingPath = "items/work-item/private-evidence-binding.md";
+  const bindingBytes = [
+    "# Attempt 2 private evidence binding",
+    "",
+    `Execution: ${second.execution.id}`,
+    `Identity: ${passIdentity}`,
+    "",
+  ].join("\n");
+  writeFileSync(join(f.root, bindingPath), bindingBytes);
+  git(f.root, ["add", bindingPath]);
+  git(f.root, ["commit", "-m", "bind successful private evidence"]);
+  const bindingCommit = git(f.root, ["rev-parse", "HEAD"]);
+
+  const allocations = f.kernel
+    .events(f.workflow)
+    .filter((event) => event.transition === "verification-allocated");
+  const semanticEvents = f.kernel
+    .events(f.workflow)
+    .filter((event) => event.transition === "kernel.result");
+  const declarationPath = "unbound-recovery.json";
+  const declaration = `${JSON.stringify(
+    {
+      schemaVersion: 1,
+      kind: "evaluator-unbound-evidence-recovery",
+      classification: "HISTORICAL_UNBOUND_PRIVATE_EVIDENCE",
+      archiveCompleteness: "incomplete",
+      workflow: f.workflow,
+      cycle: "001",
+      candidate,
+      evaluatorRevision,
+      runtimeCommit,
+      closeoutAuthorized: true,
+      missingBytesReconstructed: false,
+      unboundPriorExistenceAsserted: false,
+      attempts: [
+        {
+          attempt: 1,
+          allocation: allocations[0]?.id,
+          execution: first.execution.id,
+          roleGrant: first.grant.id,
+          candidate,
+          evaluatorRevision,
+          lifecycle: "TERMINAL",
+          result: "BLOCKED",
+          semanticResult: firstSemantic.result?.id,
+          semanticEvent: semanticEvents[0]?.id,
+          finalization: firstFinalization.id,
+          publicArtifact: {
+            path: "verification-result.json",
+            identity: identity(firstPublic),
+            commit: firstArtifactCommit,
+          },
+          blockedTransition: null,
+          privateEvidence: {
+            disposition: "UNBOUND",
+            expectedPath: ".eval/attempts/001/eval-result.md",
+            priorPersistence: "UNKNOWN",
+            reconstructed: false,
+          },
+        },
+        {
+          attempt: 2,
+          allocation: allocations[1]?.id,
+          execution: second.execution.id,
+          roleGrant: second.grant.id,
+          candidate,
+          evaluatorRevision,
+          lifecycle: "TERMINAL",
+          result: "PASS",
+          semanticResult: secondSemantic.result?.id,
+          semanticEvent: semanticEvents[1]?.id,
+          finalization: secondFinalization.id,
+          publicArtifact: {
+            path: "verification-result.json",
+            identity: identity(secondPublic),
+            commit: secondArtifactCommit,
+          },
+          blockedTransition: null,
+          privateEvidence: {
+            disposition: "BOUND",
+            path: passPath,
+            identity: passIdentity,
+            historicalBinding: {
+              kind: "committed-maintenance-record",
+              path: bindingPath,
+              commit: bindingCommit,
+              identity: identity(bindingBytes),
+            },
+          },
+        },
+      ],
+      successfulAttempt: 2,
+      canonicalPass: {
+        execution: second.execution.id,
+        semanticResult: secondSemantic.result?.id,
+        finalization: secondFinalization.id,
+        publicArtifact: {
+          path: "verification-result.json",
+          identity: identity(secondPublic),
+          commit: secondArtifactCommit,
+        },
+        privateArtifact: { path: passPath, identity: passIdentity },
+      },
+      privateLedger: {
+        path: ".eval/attempt-ledger.json",
+        identity: ledgerIdentity,
+        canonical: false,
+      },
+      revision: {
+        id: evaluatorRevision,
+        freezePath: ".eval/freeze.json",
+        freezeIdentity,
+      },
+    },
+    null,
+    2,
+  )}\n`;
+  writeFileSync(join(f.root, "items/work-item", declarationPath), declaration);
+  git(f.root, ["add", `items/${f.workflow}/${declarationPath}`]);
+  git(f.root, ["commit", "-m", "authorize unbound evidence recovery"]);
+  const hostRuntimeCommit = git(f.root, ["rev-parse", "HEAD"]);
+  const before = f.kernel.events(f.workflow);
+  const recovery = f.kernel.authorizeUnboundArchiveRecovery(f.workflow, {
+    execution: second.execution.id,
+    declarationPath,
+    declarationIdentity: identity(declaration),
+    hostRuntimeRepository: f.root,
+    hostRuntimeCommit,
+  });
+  assert.ok(!("existing" in recovery));
+  if ("existing" in recovery) throw new Error("unexpected replay");
+  const repeatedAuthorization = f.kernel.authorizeUnboundArchiveRecovery(
+    f.workflow,
+    {
+      execution: second.execution.id,
+      declarationPath,
+      declarationIdentity: identity(declaration),
+      hostRuntimeRepository: f.root,
+      hostRuntimeCommit,
+    },
+  );
+  assert.ok(!("existing" in repeatedAuthorization));
+  if ("existing" in repeatedAuthorization) throw new Error("unexpected replay");
+  assert.equal(repeatedAuthorization.authority, recovery.authority);
+  assert.equal(
+    f.kernel
+      .events(f.workflow)
+      .filter(
+        (event) =>
+          event.transition === "kernel.unbound-archive-recovery-authorized",
+      ).length,
+    1,
+  );
+  const metadata = {
+    archiveCompleteness: "incomplete" as const,
+    classification: "HISTORICAL_UNBOUND_PRIVATE_EVIDENCE" as const,
+    authority: recovery.authority,
+    declarationPath,
+    declarationIdentity: identity(declaration),
+    runtimeCommit,
+    hostRuntimeCommit,
+    canonicalPass: required(secondSemantic.result?.id),
+    provenanceIdentity: recovery.provenanceIdentity,
+    closeoutAuthorized: true as const,
+    evidenceReconstructed: false as const,
+  };
+  const promoted = f.kernel.promote(
+    f.workflow,
+    second.execution.id,
+    candidate,
+    evaluatorRevision,
+    2,
+    recovery.artifacts,
+    undefined,
+    undefined,
+    metadata,
+    recovery.generated,
+  );
+  assert.equal(promoted.status, "succeeded", String(promoted.reason));
+  const after = f.kernel.events(f.workflow);
+  assert.equal(
+    after.filter((event) => event.transition === "kernel.result").length,
+    before.filter((event) => event.transition === "kernel.result").length,
+  );
+  assert.equal(
+    after.filter((event) => event.transition === "verification-allocated")
+      .length,
+    2,
+  );
+  assert.equal(
+    after.filter((event) => event.transition === "verification-finalized")
+      .length,
+    2,
+  );
+  const promotion = required(
+    after.findLast((event) => event.transition === "promotion-recorded"),
+  );
+  assert.deepEqual(promotion.evidence.unboundArchiveRecovery, metadata);
+  const provenance = object(
+    JSON.parse(
+      readFileSync(
+        join(f.root, "items/work-item/evaluation/attempt-provenance.json"),
+        "utf8",
+      ),
+    ),
+  );
+  assert.equal(provenance.archiveCompleteness, "incomplete");
+  assert.equal(
+    existsSync(
+      join(f.root, "items/work-item/evaluation/attempts/001/eval-result.md"),
+    ),
+    false,
+  );
+  const replay = f.kernel.authorizeUnboundArchiveRecovery(f.workflow, {
+    execution: second.execution.id,
+    declarationPath,
+    declarationIdentity: identity(declaration),
+    hostRuntimeRepository: f.root,
+    hostRuntimeCommit,
+  });
+  assert.ok("existing" in replay);
+  assert.equal(
+    f.kernel
+      .events(f.workflow)
+      .filter((event) => event.transition === "promotion-recorded").length,
+    1,
+  );
+});
+
 void test("014a: configured human decisions bind canonical evidence through the root host path", async (t) => {
   for (const decision of ["accept", "reject"] as const) {
     await t.test(decision, async (t) => {

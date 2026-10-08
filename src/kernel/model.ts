@@ -533,6 +533,19 @@ export interface PromotionActionRequest {
     evidenceReconstructed: false;
     evidenceOmitted: false;
   };
+  unboundArchiveRecovery?: {
+    archiveCompleteness: "incomplete";
+    classification: "HISTORICAL_UNBOUND_PRIVATE_EVIDENCE";
+    authority: string;
+    declarationPath: string;
+    declarationIdentity: string;
+    runtimeCommit: string;
+    hostRuntimeCommit: string;
+    canonicalPass: string;
+    provenanceIdentity: string;
+    closeoutAuthorized: true;
+    evidenceReconstructed: false;
+  };
 }
 export interface EvidenceFileRecord {
   destination: string;

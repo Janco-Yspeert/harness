@@ -55,6 +55,14 @@ import {
   type CompleteArchiveRecoveryDeclaration,
 } from "./archive-recovery.ts";
 import {
+  buildUnboundArchiveArtifacts,
+  parseUnboundArchiveRecoveryDeclaration,
+  UNBOUND_ARCHIVE_RECOVERY_CLASSIFICATION,
+  type CommittedBinding,
+  type RecoveryAttemptContext,
+  type UnboundArchiveRecoveryDeclaration,
+} from "./unbound-archive-recovery.ts";
+import {
   authorityBasis,
   recoveryScopedAuthorityBasis,
   resolveAuthority,
@@ -2616,6 +2624,438 @@ export class ExecutionKernel {
       return { authority, declaration, artifacts };
     });
   }
+  authorizeUnboundArchiveRecovery(
+    workflow: string,
+    request: {
+      execution: string;
+      declarationPath: string;
+      declarationIdentity: string;
+      hostRuntimeRepository: string;
+      hostRuntimeCommit: string;
+    },
+  ):
+    | {
+        authority: string;
+        declaration: UnboundArchiveRecoveryDeclaration;
+        artifacts: PromotionArtifact[];
+        generated: ArchiveItem[];
+        provenanceIdentity: string;
+      }
+    | { existing: PromotionActionResult } {
+    return this.#transaction(workflow, () => {
+      const execution = this.execution(workflow, request.execution);
+      const grant = this.roleGrant(workflow, execution.roleGrant);
+      const allowed = grant.hostActions.promotion;
+      const definition = this.definition(workflow, grant.methodology);
+      const events = this.events(workflow);
+      const current = scopedEvents(events, definition.policy);
+      const finalized = current.findLast(
+        (event) => event.transition === "verification-finalized",
+      );
+      if (
+        grant.role !== "evaluator-verify" ||
+        !allowed ||
+        execution.result?.methodology.result !== "PASS" ||
+        finalized?.evidence.result !== "PASS" ||
+        finalized.evidence.execution !== execution.id ||
+        finalized.evidence.commit !== allowed.candidate ||
+        finalized.evidence.evaluatorRevision !== allowed.evaluatorRevision ||
+        finalized.evidence.semanticResult !== execution.result.id
+      )
+        throw new Error(
+          "unbound-evidence recovery requires the canonical current verification PASS",
+        );
+
+      const priorPromotion = current.find(
+        (event) =>
+          event.transition === allowed.transition &&
+          event.evidence.semanticResult === finalized.evidence.semanticResult,
+      );
+      if (priorPromotion) {
+        const prior = object(priorPromotion.evidence.unboundArchiveRecovery);
+        if (prior.declarationIdentity !== request.declarationIdentity)
+          throw new Error(
+            "authoritative PASS already has a different recorded promotion",
+          );
+        const actionId = String(priorPromotion.evidence.action);
+        const result = events.find(
+          (event) =>
+            event.transition === "kernel.action-result" &&
+            event.evidence.id === actionId,
+        );
+        if (!result || result.evidence.status !== "succeeded")
+          throw new Error(
+            "recorded recovery promotion has no successful action",
+          );
+        return {
+          existing: result.evidence as unknown as PromotionActionResult,
+        };
+      }
+
+      const repository = realpathSync(this.project.root);
+      const workflowRoot = realpathSync(
+        resolve(
+          repository,
+          required(this.project.workflows[workflow]).directory,
+        ),
+      );
+      const declarationPath = boundedPath(
+        workflowRoot,
+        request.declarationPath,
+      );
+      const declarationBytes = readFileSync(declarationPath);
+      if (identity(declarationBytes) !== request.declarationIdentity)
+        throw new Error("unbound-evidence declaration identity mismatch");
+      const relativeDeclaration = relative(repository, declarationPath);
+      const committed = execFileSync(
+        "git",
+        ["-C", repository, "show", `HEAD:${relativeDeclaration}`],
+        { stdio: "pipe" },
+      );
+      if (identity(committed) !== request.declarationIdentity)
+        throw new Error(
+          "unbound-evidence declaration lacks committed provenance",
+        );
+      const declaration = parseUnboundArchiveRecoveryDeclaration(
+        JSON.parse(declarationBytes.toString("utf8")),
+      );
+      try {
+        execFileSync(
+          "git",
+          [
+            "-C",
+            request.hostRuntimeRepository,
+            "merge-base",
+            "--is-ancestor",
+            declaration.runtimeCommit,
+            request.hostRuntimeCommit,
+          ],
+          { stdio: "pipe" },
+        );
+      } catch {
+        throw new Error(
+          "unbound-evidence recovery implementation is not in the host runtime lineage",
+        );
+      }
+
+      const sourceWorkspace = grant.workspaces.find((workspace) => {
+        const configured =
+          this.project.workflows[workflow]?.workspaces?.[
+            allowed.sourceWorkspace
+          ] ?? this.project.workspaces[allowed.sourceWorkspace];
+        return (
+          configured?.id === workspace.id && configured.path === workspace.path
+        );
+      });
+      if (!sourceWorkspace)
+        throw new Error(
+          "unbound-evidence recovery source workspace is unavailable",
+        );
+      const sourceRoot = realpathSync(sourceWorkspace.path);
+
+      const bindingIdentity = (
+        binding: CommittedBinding,
+        expectedIdentity: string,
+        attempt: number,
+        executionId: string,
+      ): string => {
+        let bytes: Buffer;
+        try {
+          bytes = execFileSync(
+            "git",
+            ["-C", repository, "show", `${binding.commit}:${binding.path}`],
+            { stdio: "pipe" },
+          );
+          execFileSync(
+            "git",
+            [
+              "-C",
+              repository,
+              "merge-base",
+              "--is-ancestor",
+              binding.commit,
+              "HEAD",
+            ],
+            { stdio: "pipe" },
+          );
+        } catch {
+          throw new Error(
+            `attempt ${String(attempt)} historical private binding is unavailable`,
+          );
+        }
+        const text = bytes.toString("utf8");
+        if (
+          identity(bytes) !== binding.identity ||
+          !text.includes(expectedIdentity) ||
+          !text.includes(executionId) ||
+          !text.toLowerCase().includes(`attempt ${String(attempt)}`)
+        )
+          throw new Error(
+            `attempt ${String(attempt)} historical private binding does not bind the declared evidence`,
+          );
+        return expectedIdentity;
+      };
+
+      const declaredByAttempt = new Map(
+        declaration.attempts.map(
+          (attempt) => [attempt.attempt, attempt] as const,
+        ),
+      );
+      const semanticVerdict = (value: unknown): "PASS" | "FAIL" | "BLOCKED" => {
+        const verdicts = Object.values(object(value)).filter(
+          (item): item is "PASS" | "FAIL" | "BLOCKED" =>
+            item === "PASS" || item === "FAIL" || item === "BLOCKED",
+        );
+        if (verdicts.length !== 1)
+          throw new Error("host semantic result has no unique verdict");
+        return required(verdicts[0]);
+      };
+      const allocations = current
+        .filter((event) => event.transition === allowed.allocationEvent)
+        .sort(
+          (a, b) =>
+            Number(a.evidence[allowed.attemptField]) -
+            Number(b.evidence[allowed.attemptField]),
+        );
+      const attempts: RecoveryAttemptContext[] = allocations.map(
+        (allocation, index) => {
+          const attempt = Number(allocation.evidence[allowed.attemptField]);
+          if (attempt !== index + 1)
+            throw new Error(
+              "canonical verification attempts are incomplete or out of order",
+            );
+          const executionId = String(allocation.evidence.execution);
+          const semanticEvents = events.filter(
+            (event) =>
+              event.transition === "kernel.result" &&
+              event.evidence.execution === executionId,
+          );
+          if (semanticEvents.length > 1)
+            throw new Error(
+              `attempt ${String(attempt)} has ambiguous semantic results`,
+            );
+          const semanticEvent = semanticEvents[0];
+          const finalizations = events.filter(
+            (event) =>
+              event.transition === "verification-finalized" &&
+              event.evidence.execution === executionId &&
+              event.evidence.attempt === attempt,
+          );
+          if (finalizations.length > 1)
+            throw new Error(
+              `attempt ${String(attempt)} has ambiguous finalizations`,
+            );
+          const finalization = finalizations[0];
+          const declared = declaredByAttempt.get(attempt);
+          if (!declared)
+            throw new Error(
+              `attempt ${String(attempt)} is absent from the declaration`,
+            );
+
+          let publicArtifact;
+          if (finalization) {
+            publicArtifact = {
+              path: String(finalization.evidence.path),
+              identity: String(finalization.evidence.identity),
+              commit: String(finalization.evidence.artifactCommit),
+            };
+          } else if (
+            declared.lifecycle === "TERMINAL" &&
+            declared.publicArtifact
+          ) {
+            const requests = events.filter(
+              (event) =>
+                event.transition === "kernel.action-request" &&
+                event.evidence.execution === executionId &&
+                event.evidence.kind === "evidence" &&
+                Array.isArray(event.evidence.files) &&
+                event.evidence.files.some(
+                  (file) =>
+                    typeof file === "object" &&
+                    file !== null &&
+                    (file as { destination?: unknown }).destination ===
+                      declared.publicArtifact?.path &&
+                    (file as { identity?: unknown }).identity ===
+                      declared.publicArtifact?.identity,
+                ),
+            );
+            const requestEvent = requests.at(-1);
+            const requestId = requestEvent?.evidence.id;
+            const resultEvent = events.find(
+              (event) =>
+                event.transition === "kernel.action-result" &&
+                object(event.evidence.request).id === requestId &&
+                event.evidence.status === "succeeded",
+            );
+            if (
+              !requestEvent ||
+              !resultEvent ||
+              resultEvent.evidence.after !== declared.publicArtifact.commit
+            )
+              throw new Error(
+                `attempt ${String(attempt)} public artifact provenance is unavailable`,
+              );
+            publicArtifact = declared.publicArtifact;
+          }
+          if (publicArtifact) {
+            const path = relative(
+              repository,
+              boundedPath(workflowRoot, publicArtifact.path),
+            );
+            const bytes = execFileSync(
+              "git",
+              ["-C", repository, "show", `${publicArtifact.commit}:${path}`],
+              { stdio: "pipe" },
+            );
+            if (identity(bytes) !== publicArtifact.identity)
+              throw new Error(
+                `attempt ${String(attempt)} public artifact identity drifted`,
+              );
+          }
+
+          const blockedEvents = events.filter(
+            (event) =>
+              event.transition === "kernel.transition-blocked" &&
+              event.evidence.execution === executionId,
+          );
+          const declaredBlocked =
+            declared.lifecycle === "TERMINAL"
+              ? declared.blockedTransition
+              : null;
+          const blockedEvent = declaredBlocked
+            ? blockedEvents.find((event) => event.id === declaredBlocked.event)
+            : undefined;
+          if (
+            declaredBlocked &&
+            (!blockedEvent ||
+              blockedEvent.evidence.reason !== declaredBlocked.reason)
+          )
+            throw new Error(
+              `attempt ${String(attempt)} blocked transition provenance drifted`,
+            );
+
+          let durablePrivateIdentity: string | undefined;
+          if (declared.lifecycle === "TERMINAL") {
+            const privateEvidence = declared.privateEvidence;
+            if (privateEvidence.disposition === "BOUND")
+              durablePrivateIdentity = bindingIdentity(
+                privateEvidence.historicalBinding,
+                privateEvidence.identity,
+                attempt,
+                executionId,
+              );
+            if (privateEvidence.disposition === "LOST")
+              durablePrivateIdentity = bindingIdentity(
+                privateEvidence.historicalBinding,
+                privateEvidence.historicalIdentity,
+                attempt,
+                executionId,
+              );
+          }
+          return {
+            attempt,
+            allocation: required(allocation.id),
+            execution: executionId,
+            roleGrant: String(allocation.evidence.roleGrant),
+            candidate: String(allocation.evidence.commit),
+            evaluatorRevision: String(allocation.evidence.evaluatorRevision),
+            ...(semanticEvent
+              ? {
+                  semanticResult: String(semanticEvent.evidence.id),
+                  semanticEvent: required(semanticEvent.id),
+                  result: semanticVerdict(semanticEvent.evidence.methodology),
+                }
+              : {}),
+            ...(finalization
+              ? { finalization: required(finalization.id) }
+              : {}),
+            ...(publicArtifact ? { publicArtifact } : {}),
+            ...(blockedEvent
+              ? {
+                  blockedTransition: {
+                    event: required(blockedEvent.id),
+                    reason: String(blockedEvent.evidence.reason),
+                  },
+                }
+              : {}),
+            ...(durablePrivateIdentity ? { durablePrivateIdentity } : {}),
+          };
+        },
+      );
+
+      const terminalAttempt = Number(finalized.evidence[allowed.attemptField]);
+      const currentPublicPath = relative(
+        repository,
+        boundedPath(workflowRoot, String(finalized.evidence.path)),
+      );
+      const currentPublic = execFileSync(
+        "git",
+        [
+          "-C",
+          repository,
+          "show",
+          `${String(finalized.evidence.artifactCommit)}:${currentPublicPath}`,
+        ],
+        { stdio: "pipe" },
+      );
+      if (identity(currentPublic) !== finalized.evidence.identity)
+        throw new Error("authoritative public PASS evidence is not intact");
+
+      const built = buildUnboundArchiveArtifacts(
+        sourceRoot,
+        declaration,
+        declarationBytes,
+        request.declarationIdentity,
+        {
+          workflow,
+          cycle: String(finalized.evidence.cycle),
+          candidate: allowed.candidate,
+          evaluatorRevision: allowed.evaluatorRevision,
+          successfulAttempt: terminalAttempt,
+          attempts,
+          promotionRecorded: false,
+          runtimeCommit: declaration.runtimeCommit,
+        },
+      );
+      const priorAuthority = current.findLast(
+        (event) =>
+          event.transition === "kernel.unbound-archive-recovery-authorized" &&
+          event.evidence.execution === execution.id &&
+          event.evidence.declarationIdentity === request.declarationIdentity,
+      );
+      const authority = priorAuthority
+        ? String(priorAuthority.evidence.id)
+        : randomUUID();
+      if (!priorAuthority)
+        this.#append(workflow, "kernel.unbound-archive-recovery-authorized", {
+          schemaVersion: 1,
+          id: authority,
+          origin: "human",
+          execution: execution.id,
+          candidate: allowed.candidate,
+          evaluatorRevision: allowed.evaluatorRevision,
+          attempt: terminalAttempt,
+          verification: finalized.id,
+          semanticResult: finalized.evidence.semanticResult,
+          declarationPath: request.declarationPath,
+          declarationIdentity: request.declarationIdentity,
+          classification: UNBOUND_ARCHIVE_RECOVERY_CLASSIFICATION,
+          archiveCompleteness: "incomplete",
+          provenanceIdentity: built.provenanceIdentity,
+          runtimeCommit: declaration.runtimeCommit,
+          hostRuntimeCommit: request.hostRuntimeCommit,
+          closeoutAuthorized: true,
+          evidenceReconstructed: false,
+        });
+      return {
+        authority,
+        declaration,
+        artifacts: built.artifacts,
+        generated: built.generated,
+        provenanceIdentity: built.provenanceIdentity,
+      };
+    });
+  }
   authorizeCompleteArchiveRecovery(
     workflow: string,
     request: {
@@ -2871,6 +3311,10 @@ export class ExecutionKernel {
     suppliedArtifacts: PromotionArtifact[],
     archiveLoss?: NonNullable<PromotionActionRequest["archiveLoss"]>,
     archiveRecovery?: NonNullable<PromotionActionRequest["archiveRecovery"]>,
+    unboundArchiveRecovery?: NonNullable<
+      PromotionActionRequest["unboundArchiveRecovery"]
+    >,
+    recoveryItems?: ArchiveItem[],
   ): PromotionActionResult {
     return this.#transaction(workflow, () => {
       let artifacts = suppliedArtifacts;
@@ -2879,8 +3323,12 @@ export class ExecutionKernel {
       // Host-derived archive: the request carries no evaluator-authored
       // artifacts; the host derives them from policy and exact identities.
       let derivedError: string | undefined;
-      const derive = grant.hostActions.promotion?.derive === "host-archive";
-      let items: ArchiveItem[] | undefined;
+      const derive =
+        grant.hostActions.promotion?.derive === "host-archive" &&
+        archiveLoss === undefined &&
+        archiveRecovery === undefined &&
+        unboundArchiveRecovery === undefined;
+      let items: ArchiveItem[] | undefined = recoveryItems;
       if (derive) {
         try {
           // The archive source is the exact workspace the Role Grant bound
@@ -2986,6 +3434,7 @@ export class ExecutionKernel {
         artifacts,
         ...(archiveLoss ? { archiveLoss } : {}),
         ...(archiveRecovery ? { archiveRecovery } : {}),
+        ...(unboundArchiveRecovery ? { unboundArchiveRecovery } : {}),
       };
       this.#append(workflow, "kernel.action-request", { ...request });
       const action: PromotionActionResult = {
@@ -3153,6 +3602,7 @@ export class ExecutionKernel {
                 artifacts: request.artifacts,
                 ...(archiveLoss ? { archiveLoss } : {}),
                 ...(archiveRecovery ? { archiveRecovery } : {}),
+                ...(unboundArchiveRecovery ? { unboundArchiveRecovery } : {}),
               },
               result: {
                 artifacts: action.artifacts,
@@ -3222,6 +3672,7 @@ export class ExecutionKernel {
           action: action.id,
           ...(archiveLoss ? { archiveLoss } : {}),
           ...(archiveRecovery ? { archiveRecovery } : {}),
+          ...(unboundArchiveRecovery ? { unboundArchiveRecovery } : {}),
         });
       this.#transition(workflow, id);
       this.#telemetry("host-action", execution, action.id);

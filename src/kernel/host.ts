@@ -1291,6 +1291,56 @@ export class GovernedHost {
           );
           return;
         }
+        if (sub === "promote-unbound-recovery") {
+          needRoot();
+          this.#assertRuntime();
+          const runtimeRoot =
+            this.#external?.runtimeRoot ?? installedRuntimeRoot();
+          const runtime = runtimeCommit(runtimeRoot);
+          const recovery = this.kernel.authorizeUnboundArchiveRecovery(
+            workflow,
+            {
+              execution: execution.id,
+              declarationPath: text(body.declarationPath),
+              declarationIdentity: text(body.declarationIdentity),
+              hostRuntimeRepository: runtime.repository,
+              hostRuntimeCommit: runtime.commit,
+            },
+          );
+          if ("existing" in recovery) {
+            send(200, recovery.existing);
+            return;
+          }
+          send(
+            200,
+            this.kernel.promote(
+              workflow,
+              execution.id,
+              recovery.declaration.candidate,
+              recovery.declaration.evaluatorRevision,
+              recovery.declaration.successfulAttempt,
+              recovery.artifacts,
+              undefined,
+              undefined,
+              {
+                archiveCompleteness: "incomplete",
+                classification: "HISTORICAL_UNBOUND_PRIVATE_EVIDENCE",
+                authority: recovery.authority,
+                declarationPath: text(body.declarationPath),
+                declarationIdentity: text(body.declarationIdentity),
+                runtimeCommit: recovery.declaration.runtimeCommit,
+                hostRuntimeCommit: runtime.commit,
+                canonicalPass:
+                  recovery.declaration.canonicalPass.semanticResult,
+                provenanceIdentity: recovery.provenanceIdentity,
+                closeoutAuthorized: true,
+                evidenceReconstructed: false,
+              },
+              recovery.generated,
+            ),
+          );
+          return;
+        }
         if (sub === "cancel") {
           needRoot();
           // Record the terminal status first, then terminate the actual child.
