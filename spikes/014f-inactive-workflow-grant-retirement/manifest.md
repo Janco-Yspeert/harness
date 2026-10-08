@@ -262,3 +262,30 @@
   relevant source and visible tests, frozen public inputs, accepted
   verification result, and promoted evidence. The evaluator was not rerun.
 - Measurements: wall-clock time and token usage unavailable.
+
+## Outcome — execution 01c8b98e-247d-4ebd-99a1-d40c8777aa6a
+
+- Skill: `outcome`, contract version 5
+  (`sha256:2ab64cee141d06a88ff04dc540ddfa7a15c364e07bb717b7fab70c15460b7e82`).
+- Workflow: `014f-inactive-workflow-grant-retirement`; Role Grant
+  `sha256:d5c2260b0e2fe20d37220cb1b46f1180feebe2187b72ea7cb07e77a505f96123`.
+- Inputs: candidate and accepted candidate
+  `af75b14d1847af02404a591a8829751dc8df2a2e`; brief
+  `sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c`;
+  design
+  `sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34`;
+  prior manifest
+  `sha256:3476159d07d39f3d39ac20ac872aeb448ab0da729460f161639924027eea250b`;
+  As-Built
+  `sha256:28e1ca62d780563132decee0413572c4fb6282bc0c2ff3aaa170525a417a5211`;
+  promotion
+  `sha256:d283a7ffb58a9c9a227783148f1a7f63249443377aef1943986b4b218583c7e5`.
+- Result: succeeded; completion mode `STANDARD`.
+- Output: `outcome.md`
+  `sha256:11863d2518d1782bf0f8ddcb76110605633ef34f641b3b66e00123edf4d9234a`.
+- Checks: bound input hashes matched exact repository bytes; candidate and
+  acceptance identities matched; candidate was a committed Git object;
+  canonical attempt 009 PASS, promotion provenance, completed As-Built, and
+  human acceptance were inspected; `git diff --check` passed for Outcome.
+  Evaluation was not rerun because Outcome synthesizes the accepted evidence.
+- Measurements: wall-clock time and token usage unavailable.
