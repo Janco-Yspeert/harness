@@ -68,6 +68,7 @@ import {
   resolveAuthority,
   type Resolution,
 } from "./resolver.ts";
+import type { LaunchAttemptRecord } from "./orchestration.ts";
 import {
   DIAGNOSTIC_CATEGORIES,
   type Diagnostic,
@@ -808,6 +809,137 @@ export class ExecutionKernel {
       this.options.validators,
     );
   }
+  recordLaunchAttempt(
+    workflow: string,
+    record: LaunchAttemptRecord,
+  ): LaunchAttemptRecord {
+    return this.#transaction(workflow, () => {
+      if (
+        this.events(workflow).some(
+          (event) =>
+            event.transition === "kernel.launch-attempt" &&
+            event.evidence.id === record.id,
+        )
+      )
+        throw new Error("duplicate operational launch-attempt identity");
+      this.#append(workflow, "kernel.launch-attempt", record);
+      return record;
+    });
+  }
+  consumeReadiness(
+    workflow: string,
+    launchAttempt: string,
+    launchIntent: string,
+    shapeIdentity: string,
+  ): void {
+    this.#transaction(workflow, () => {
+      const attempt = this.events(workflow).find(
+        (event) =>
+          event.transition === "kernel.launch-attempt" &&
+          event.evidence.id === launchAttempt,
+      );
+      if (
+        !attempt ||
+        attempt.evidence.outcome !== "ready" ||
+        attempt.evidence.launchIntent !== launchIntent ||
+        attempt.evidence.shapeIdentity !== shapeIdentity
+      )
+        throw new Error("readiness does not match the current launch intent");
+      if (
+        this.events(workflow).some(
+          (event) =>
+            event.transition === "kernel.readiness-consumed" &&
+            event.evidence.launchAttempt === launchAttempt,
+        )
+      )
+        throw new Error("readiness result is single-use");
+      this.#append(workflow, "kernel.readiness-consumed", {
+        launchAttempt,
+        launchIntent,
+        shapeIdentity,
+      });
+    });
+  }
+  recordRetryExhaustion(
+    workflow: string,
+    value: {
+      workflowGrant: string;
+      kind: "operational" | "semantic";
+      scope: string;
+      exhausted: string;
+      used: number;
+      role?: string;
+    },
+  ): void {
+    this.#transaction(workflow, () => {
+      if (
+        !this.events(workflow).some(
+          (event) =>
+            event.transition === "kernel.retry-exhausted" &&
+            event.evidence.exhausted === value.exhausted,
+        )
+      )
+        this.#append(workflow, "kernel.retry-exhausted", value);
+    });
+  }
+  recordSemanticProgress(
+    workflow: string,
+    value: {
+      workflowGrant: string;
+      identity: string;
+      progress: Data;
+    },
+  ): void {
+    this.#transaction(workflow, () => {
+      this.#append(workflow, "kernel.semantic-progress", value);
+    });
+  }
+  authorizeRetry(
+    workflow: string,
+    request: {
+      workflowGrant: string;
+      kind: "operational" | "semantic";
+      exhausted: string;
+      count: number;
+    },
+  ): Data {
+    return this.#transaction(workflow, () => {
+      this.grant(workflow, request.workflowGrant);
+      if (!Number.isSafeInteger(request.count) || request.count < 1)
+        throw new Error("retry count must be a positive finite integer");
+      const exhaustion = this.events(workflow).findLast(
+        (event) =>
+          event.transition === "kernel.retry-exhausted" &&
+          event.evidence.workflowGrant === request.workflowGrant &&
+          event.evidence.kind === request.kind &&
+          event.evidence.exhausted === request.exhausted,
+      );
+      if (!exhaustion)
+        throw new Error("retry authority must bind the exact exhausted state");
+      if (
+        this.events(workflow).some(
+          (event) =>
+            event.transition === "kernel.retry-authority" &&
+            event.evidence.exhausted === request.exhausted,
+        )
+      )
+        throw new Error("exhausted retry state already authorized");
+      const authority = {
+        schemaVersion: 1,
+        id: randomUUID(),
+        workflowGrant: request.workflowGrant,
+        kind: request.kind,
+        exhausted: request.exhausted,
+        scope: String(exhaustion.evidence.scope),
+        ...(typeof exhaustion.evidence.role === "string"
+          ? { role: exhaustion.evidence.role }
+          : {}),
+        count: request.count,
+      };
+      this.#append(workflow, "kernel.retry-authority", authority);
+      return authority;
+    });
+  }
   session(id: string): Session {
     let session: Session | undefined;
     const exposures = new Set<string>();
@@ -1286,21 +1418,6 @@ export class ExecutionKernel {
             }
           : {}),
       };
-      // Record exposure before delivering any workspace or contract to an executor.
-      for (const workspace of grant.workspaces)
-        if (workspace.exposure !== "public")
-          this.#append(workflow, "kernel.exposure", {
-            schemaVersion: 1,
-            session: session.id,
-            execution: execution.id,
-            exposure: workspace.exposure,
-            workspace: workspace.id,
-            roleGrant: grant.id,
-          });
-      this.#append(workflow, "kernel.session", {
-        ...session,
-        workspaces: grant.workspaces,
-      });
       this.#append(workflow, "kernel.allocation", {
         workflowGrant: parent.id,
         grant,
@@ -1324,10 +1441,14 @@ export class ExecutionKernel {
         for (const [field, input] of Object.entries(allocation.fromInputs))
           evidence[field] = required(grant.inputs[input]);
         if (allocation.counterField)
-          evidence[allocation.counterField] =
-            scopedEvents(this.events(workflow), definition.policy).filter(
-              (e) => e.transition === allocation.transition,
-            ).length + 1;
+          evidence[allocation.counterField] = scopedEvents(
+            this.events(workflow),
+            definition.policy,
+          ).filter(
+            (event) =>
+              event.transition === "kernel.allocation" &&
+              (event.evidence.grant as RoleGrant).role === grant.role,
+          ).length;
         const scope = definition.policy.scopeEvent;
         if (scope)
           evidence[scope.field] =
@@ -1336,6 +1457,22 @@ export class ExecutionKernel {
             )?.evidence[scope.field] ?? scope.initial;
         this.#append(workflow, allocation.transition, evidence);
       }
+      // Allocation is the semantic-attempt commit. Exposure follows any
+      // methodology onAllocate projection and still precedes delivery.
+      for (const workspace of grant.workspaces)
+        if (workspace.exposure !== "public")
+          this.#append(workflow, "kernel.exposure", {
+            schemaVersion: 1,
+            session: session.id,
+            execution: execution.id,
+            exposure: workspace.exposure,
+            workspace: workspace.id,
+            roleGrant: grant.id,
+          });
+      this.#append(workflow, "kernel.session", {
+        ...session,
+        workspaces: grant.workspaces,
+      });
       this.#telemetry("allocated", execution);
       return { execution, grant, duplicate: false };
     });

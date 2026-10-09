@@ -48,6 +48,7 @@ import type {
   RoleGrant,
   WorkflowGrant,
 } from "../src/kernel/model.ts";
+import type { CanonicalExecutionShape } from "../src/kernel/orchestration.ts";
 import { roleInputs } from "../src/kernel/resolver.ts";
 import { normalizeOrigin } from "../src/kernel/roots.ts";
 import { trustedBinding, trustedDefinition } from "../src/kernel/trust.ts";
@@ -1174,10 +1175,10 @@ function codexInput(
   workspaces: readonly { path: string; mode: "write" | "read" }[],
 ) {
   return {
-    grant: {
+    shape: {
       capabilities,
-      executorConstraints: { protected: false, forbiddenExposure: [] },
-    } as unknown as RoleGrant,
+      protected: false,
+    } as unknown as CanonicalExecutionShape,
     workspaces: workspaces.map((workspace, index) => ({
       id: `w${String(index)}`,
       path: workspace.path,

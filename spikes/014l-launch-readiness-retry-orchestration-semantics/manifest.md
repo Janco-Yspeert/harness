@@ -90,3 +90,48 @@
   validation passed with negative controls. The candidate implementation was
   neither run nor inspected.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-09 — Implementation attempt 1
+
+- Execution: `f78a05b5-b93c-4f41-b495-69c7ce603bce`.
+- Skill: `implementation`, contract version 5
+  (`sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`).
+- Role Grant: `sha256:dc2013e585da34f9c0b02b9ac614406e516f07d5cd2f22a6de06aebd2c580409`.
+- Inputs: `spike.md`
+  `sha256:de56e9970b339a55dc8d3024458769445e10474f73cdc1e1917afd6a2102e803`;
+  `design-map.md`
+  `sha256:11fddfcd3eef9294a6d899e21b403cf65537f4623c5a8be71fb89a7a4ffac00d`;
+  `coverage-map.json`
+  `sha256:4ba8570cd18ef090cee84087ca1f2e1cc951c797bc51a0f17c87fd82ac937cec`;
+  `eval-requirements.md`
+  `sha256:3359c649327fffbbc735a862c56a599db22276e9f8827b1c3c5f25f64144cbdb`.
+  Each identity matched its host binding and committed provenance before the
+  implementation changed files. No retry-feedback input was bound.
+- Result: succeeded. The host now derives canonical spawned and attached
+  shapes, records pre-semantic operational attempts, runs a separate
+  material-free readiness process or attached compatibility check, commits
+  semantic work only at `kernel.allocation`, keeps exposure after allocation
+  and before delivery, enforces independent operational and semantic retry
+  authority, detects repeated semantic no-progress, and projects canonical
+  orchestration status through the existing root-only `resolve` response.
+- Output content identity before this manifest entry:
+  `sha256:8bf898c4bd62d5c821e819e9253e90c82b447e02e1019c3ab9d07c0a5a2d222a`
+  over `git diff --cached --binary` against evaluator-prepared baseline
+  `03330f5a942c3d9bec30c8467dd159f8213664d6`, limited to 10 candidate source
+  and test paths. This excludes this manifest update.
+- Visible verification: all 33 frozen deterministic 014l cases passed
+  (`node test/orchestration.test.ts`; 33 passed, 0 failed); `npm run typecheck`,
+  `npm run lint`, `npm run format:check`, and scoped `git diff --check` passed.
+  A broad `npm test` was attempted: the 014l suite and several pure suites
+  passed, while this execution sandbox rejected loopback listeners and child
+  processes with `EPERM`; after the remaining integration workers made no
+  further progress, the run was terminated. No assertion failure from that
+  run was treated as product evidence.
+- Candidate size before this entry: 10 paths, 2,121 insertions and 109
+  deletions.
+- Limitations: no live provider was exercised; production readiness uses a
+  one-shot provider invocation, while deterministic tests inject its public
+  material-free boundary. Evaluator-private material and workflow ledgers were
+  not inspected. Unrelated worktree/runtime residue was preserved and excluded
+  from the candidate.
+- Measurement cutoff: immediately before this manifest update.

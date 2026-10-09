@@ -13,7 +13,7 @@ import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import {
-  AdapterRefusal,
+  checkedCommand,
   locateProvider,
   planLaunch,
   registeredAdapter,
@@ -38,20 +38,47 @@ import {
 } from "../candidate-observation.ts";
 import {
   assertWorkspaces,
+  containedLaunch,
   locateContainment,
   probeContainment,
   probeNestedSandbox,
+  workerToolFiles,
 } from "../executors/containment.ts";
 import {
   GovernedProviderRun,
   launchWorkspaces,
+  providerEnvironment,
+  READINESS_TOOLS_PATH,
 } from "../executors/governed.ts";
 import { ExecutionKernel, type KernelOptions } from "./execution.ts";
-import { identity, object, required, text } from "./ledger.ts";
+import { contentId, identity, object, required, text } from "./ledger.ts";
+import {
+  assertEffectiveShape,
+  attachedCompatibility,
+  authorityScopeIdentity,
+  deriveExecutionShape,
+  deriveLaunchIntent,
+  effectiveShape,
+  makeLaunchAttempt,
+  operationalAttempts,
+  operationalExhaustedIdentity,
+  operationalRetryAllowance,
+  probeInput,
+  readinessIdentity,
+  safeShapeSummary,
+  semanticExhaustedIdentity,
+  semanticProgressIdentity,
+  shapeIdentity,
+  type CanonicalExecutionShape,
+  type OperationalFailureClass,
+  type ReadinessProbeInput,
+  type ReadinessProbeResult,
+} from "./orchestration.ts";
 import type {
   Data,
   DiagnosticCategory,
   Execution,
+  ExecutorProfile,
   HumanRequest,
   PromotionArtifact,
 } from "./model.ts";
@@ -81,6 +108,12 @@ export interface ProviderRuntime {
   runtimeRoot?: string;
   // Containment program override (deterministic refusal tests only).
   bwrap?: string;
+  // Material-free pre-semantic probe. Tests inject deterministic provider
+  // facts here; the input intentionally cannot carry a Role Grant, skill,
+  // contract, semantic bindings, or governed workspace paths.
+  readinessProbe?: (
+    input: ReadinessProbeInput,
+  ) => ReadinessProbeResult | Promise<ReadinessProbeResult>;
 }
 export interface GovernedHostOptions extends Omit<
   KernelOptions,
@@ -94,6 +127,142 @@ class HostRefusal extends Error {
   constructor(category: DiagnosticCategory, message: string) {
     super(message);
     this.category = category;
+  }
+}
+function operationalFailure(error: unknown): OperationalFailureClass {
+  const category = error instanceof HostRefusal ? error.category : undefined;
+  if (category === "provider-not-installed" || category === "no-adapter")
+    return "provider-unavailable";
+  if (category === "permission-denied") return "authentication-failure";
+  if (category === "provider-config-invalid")
+    return "launch-shape-incompatibility";
+  return "pre-allocation-readiness-failure";
+}
+async function runProviderReadiness(input: {
+  shape: CanonicalExecutionShape;
+  adapter: ProviderAdapter;
+  program: string;
+  profile: { maxTurns?: number };
+  plan: { model?: string; reasoning?: string };
+  containment?: {
+    bwrap: string;
+    masked: string[];
+    protectedRoots: string[];
+  };
+  spawnProvider?: typeof spawn;
+}): Promise<ReadinessProbeResult> {
+  const root = mkdtempSync(join(tmpdir(), "harness-readiness-"));
+  try {
+    const scratch = join(root, "scratch");
+    mkdirSync(scratch);
+    mkdirSync(join(scratch, "cache"));
+    mkdirSync(join(scratch, "npm-cache"));
+    const workspaces = input.shape.workspaces.map((workspace, index) => {
+      const path = join(root, `workspace-${String(index)}`);
+      mkdirSync(path);
+      return {
+        id: `synthetic:${workspace.id}`,
+        path,
+        mode: workspace.mode,
+        exposure: "synthetic",
+      };
+    });
+    const command = checkedCommand(input.adapter, input.program, {
+      shape: input.shape,
+      workspaces,
+      scratch,
+      relay: { port: 9, key: "readiness" },
+      nodePath: process.execPath,
+      workerToolsPath: READINESS_TOOLS_PATH,
+      system:
+        "HARNESS_READINESS_V1. Call the Harness readiness tool exactly once, perform a harmless computation, then return.",
+      prompt:
+        "Call the Harness readiness tool exactly once and report only whether it passed.",
+      ...input.plan,
+      ...(input.profile.maxTurns === undefined
+        ? {}
+        : { maxTurns: input.profile.maxTurns }),
+    });
+    const launch = input.containment
+      ? containedLaunch({
+          bwrap: input.containment.bwrap,
+          provider: input.adapter.id,
+          program: command.program,
+          args: command.args,
+          cwd: workspaces[0]?.path ?? scratch,
+          workspaces,
+          scratch,
+          nodePath: process.execPath,
+          toolFiles: workerToolFiles(READINESS_TOOLS_PATH),
+          masked: input.containment.masked,
+          protectedRoots: input.containment.protectedRoots,
+          env: providerEnvironment(scratch),
+        })
+      : { ...command, env: providerEnvironment(scratch) };
+    const child = (input.spawnProvider ?? spawn)(launch.program, launch.args, {
+      cwd: workspaces[0]?.path ?? scratch,
+      stdio: ["ignore", "pipe", "ignore"],
+      env: launch.env,
+    });
+    return await new Promise<ReadinessProbeResult>((resolveProbe) => {
+      let finished = false;
+      let failure: OperationalFailureClass | undefined;
+      let toolConnected = false;
+      let pending = "";
+      const finish = (result: ReadinessProbeResult): void => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        resolveProbe(result);
+      };
+      child.stdout.on("data", (chunk: Buffer) => {
+        pending += chunk.toString("utf8");
+        const lines = pending.split(/\r?\n/);
+        pending = lines.pop() ?? "";
+        for (const line of lines)
+          for (const event of input.adapter.parse(line)) {
+            if (event.kind === "confirmed" && input.adapter.id === "claude")
+              toolConnected = true;
+            if (event.kind === "tools-unavailable") {
+              failure = "required-connectivity-tool-failure";
+              toolConnected = false;
+            }
+            if (event.kind === "tool-confirmed" && event.tool === "readiness")
+              toolConnected = true;
+            if (event.kind === "permission-denied")
+              failure = "authentication-failure";
+            if (
+              event.kind === "provider-error" ||
+              event.kind === "rate-limited"
+            )
+              failure = "pre-allocation-readiness-failure";
+          }
+      });
+      child.once("error", () => {
+        finish({
+          state: "failed",
+          failure: "provider-unavailable",
+        });
+      });
+      child.once("exit", (code, signal) => {
+        if (code === 0 && signal === null && !failure && toolConnected)
+          finish({ state: "passed", effective: effectiveShape(input.shape) });
+        else
+          finish({
+            state: "failed",
+            failure: failure ?? "required-connectivity-tool-failure",
+          });
+      });
+      const timer = setTimeout(() => {
+        child.kill("SIGTERM");
+        finish({
+          state: "failed",
+          failure: "pre-allocation-readiness-failure",
+        });
+      }, 15_000);
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 }
 function gitBytes(root: string, args: readonly string[]): Buffer {
@@ -656,15 +825,44 @@ export class GovernedHost {
         needRoot();
         if (!get) throw new Error("resolution is observation; use GET");
         const url = new URL(required(request.url), "http://localhost");
-        send(
-          200,
-          this.kernel.inspect(
+        const resolution = this.kernel.inspect(
+          workflow,
+          text(id),
+          url.searchParams.get("role") ?? undefined,
+          url.searchParams.get("session") ?? undefined,
+        );
+        send(200, {
+          ...resolution,
+          orchestration: this.#orchestrationStatus(
             workflow,
             text(id),
-            url.searchParams.get("role") ?? undefined,
-            url.searchParams.get("session") ?? undefined,
+            resolution,
           ),
-        );
+        });
+        return;
+      }
+      if (operation === "retries") {
+        needRoot();
+        if (get) throw new Error("retry authority requires POST");
+        const allowed = new Set([
+          "workflowGrant",
+          "kind",
+          "exhausted",
+          "count",
+        ]);
+        const extra = Object.keys(body).find((key) => !allowed.has(key));
+        if (extra)
+          throw new Error(`retry request contains unsupported field ${extra}`);
+        if (body.kind !== "operational" && body.kind !== "semantic")
+          throw new Error("retry kind must be operational or semantic");
+        send(201, {
+          authority: this.kernel.authorizeRetry(workflow, {
+            workflowGrant: text(body.workflowGrant),
+            kind: body.kind,
+            exhausted: text(body.exhausted),
+            count: body.count === undefined ? 1 : Number(body.count),
+          }),
+        });
         return;
       }
       if (operation === "evaluator-corrections") {
@@ -775,8 +973,65 @@ export class GovernedHost {
         if (inline && body.mode !== "attached")
           throw new Error("inline adoption requires attached execution");
         if (body.mode === "attached") {
+          const session = this.kernel.session(text(body.session));
+          const proposed = this.kernel.inspect(workflow, grantId, role);
+          if (proposed.kind !== "grant") {
+            send(409, proposed);
+            return;
+          }
+          const profile = session.profile;
+          const shape = deriveExecutionShape(
+            proposed.grant,
+            profile,
+            "attached",
+            session,
+          );
+          const runtimeGeneration = contentId({
+            profile,
+            provider: profile.provider,
+          });
+          const launchIntent = deriveLaunchIntent({
+            workflowScope: workflow,
+            grant: proposed.grant,
+            mode: "attached",
+            predecessor: predecessor ?? null,
+            shape,
+            runtimeGeneration,
+          });
+          const failure = attachedCompatibility(shape, session);
+          const attempt = makeLaunchAttempt({
+            workflowGrant: grantId,
+            role: proposed.grant.role,
+            mode: "attached",
+            predecessor: predecessor ?? proposed.grant.predecessor,
+            launchIntent,
+            shapeIdentity: shapeIdentity(shape),
+            shapeSummary: safeShapeSummary(shape),
+            adapter: profile.provider,
+            runtimeGeneration,
+            ordinal: 1,
+            readiness: "not-applicable",
+            compatibility: failure ? "failed" : "passed",
+            outcome: failure ? "refused" : "ready",
+            failure,
+            effective: failure
+              ? null
+              : (effectiveShape(shape) as unknown as Data),
+            readinessIdentity: null,
+            consumed: false,
+          });
+          this.kernel.recordLaunchAttempt(workflow, attempt);
+          if (failure) {
+            send(409, {
+              kind: "denied",
+              reason:
+                "attached session is incompatible with canonical attachment shape",
+              category: failure,
+            });
+            return;
+          }
           const result = this.kernel.allocate(workflow, grantId, {
-            session: text(body.session),
+            session: session.id,
             mode: "attached",
             ...(role ? { role } : {}),
             ...(predecessor ? { predecessor } : {}),
@@ -805,42 +1060,109 @@ export class GovernedHost {
         }
         if (this.#external) this.#assertRuntime();
         const profile = this.kernel.select(resolution.grant, "spawned");
-        if (!profile)
-          throw new HostRefusal("no-adapter", "no eligible spawned executor");
+        if (!profile) {
+          const unavailable: ExecutorProfile = {
+            id: "unavailable",
+            provider: "unavailable",
+            modes: ["spawned"],
+            capabilities: [...resolution.grant.capabilities],
+            isolation: resolution.grant.executorConstraints.protected
+              ? ["private-workspace"]
+              : [],
+            available: false,
+          };
+          const shape = deriveExecutionShape(
+            resolution.grant,
+            unavailable,
+            "spawned",
+          );
+          const runtimeGeneration = contentId({ unavailable: true });
+          const launchIntent = deriveLaunchIntent({
+            workflowScope: workflow,
+            grant: resolution.grant,
+            mode: "spawned",
+            predecessor: predecessor ?? null,
+            shape,
+            runtimeGeneration,
+          });
+          let allowance = operationalRetryAllowance(
+            this.kernel.events(workflow),
+            launchIntent,
+          );
+          while (
+            Math.max(allowance.automaticRemaining, allowance.humanRemaining) > 0
+          ) {
+            this.kernel.recordLaunchAttempt(
+              workflow,
+              makeLaunchAttempt({
+                workflowGrant: grantId,
+                role: resolution.grant.role,
+                mode: "spawned",
+                predecessor: predecessor ?? resolution.grant.predecessor,
+                launchIntent,
+                shapeIdentity: shapeIdentity(shape),
+                shapeSummary: safeShapeSummary(shape),
+                adapter: "unavailable",
+                runtimeGeneration,
+                ordinal: allowance.used + 1,
+                readiness: "failed",
+                compatibility: "not-applicable",
+                outcome: "refused",
+                failure: "provider-unavailable",
+                effective: null,
+                readinessIdentity: null,
+                consumed: false,
+              }),
+            );
+            allowance = operationalRetryAllowance(
+              this.kernel.events(workflow),
+              launchIntent,
+            );
+          }
+          const exhausted = operationalExhaustedIdentity(
+            launchIntent,
+            allowance.used,
+          );
+          this.kernel.recordRetryExhaustion(workflow, {
+            workflowGrant: grantId,
+            kind: "operational",
+            scope: launchIntent,
+            exhausted,
+            used: allowance.used,
+          });
+          send(409, {
+            kind: "stop",
+            reason: "operational retry budget exhausted",
+            category: "provider-unavailable",
+            exhausted,
+          });
+          return;
+        }
         // Every spawned registered-adapter launch, for the Harness repository
         // and external projects alike, runs inside host containment; there is
         // no unwrapped fallback. Programmatic command profiles (test fixtures)
         // are the only uncontained spawned kind.
-        if (this.#external && profile.command?.length)
-          throw new HostRefusal(
-            "provider-config-invalid",
-            "external projects launch only contained registered adapters",
-          );
         const contained = !profile.command?.length;
+        const shape = deriveExecutionShape(
+          resolution.grant,
+          profile,
+          "spawned",
+        );
+        const runtimeGeneration = contentId({
+          profile,
+          runtime: this.#external?.runtime.commit ?? "installed-runtime",
+        });
+        const launchIntent = deriveLaunchIntent({
+          workflowScope: workflow,
+          grant: resolution.grant,
+          mode: "spawned",
+          predecessor: predecessor ?? null,
+          shape,
+          runtimeGeneration,
+        });
         let containment:
           | { bwrap: string; masked: string[]; protectedRoots: string[] }
           | undefined;
-        if (contained) {
-          const bwrap = this.#runtime.bwrap
-            ? { ok: true as const, path: this.#runtime.bwrap }
-            : locateContainment(this.#excludedProviderRoots());
-          if (!bwrap.ok)
-            throw new HostRefusal("provider-config-invalid", bwrap.reason);
-          try {
-            probeContainment(bwrap.path);
-          } catch (error) {
-            if (error instanceof AdapterRefusal)
-              throw new HostRefusal(error.category, error.message);
-            throw error;
-          }
-          containment = {
-            bwrap: bwrap.path,
-            masked: Object.keys(this.kernel.project.workflows).map((name) =>
-              this.kernel.path(name),
-            ),
-            protectedRoots: this.#protectedRoots(),
-          };
-        }
         // Production profiles launch only a registered adapter's installed
         // provider. A command profile exists only when passed programmatically.
         let provider:
@@ -850,51 +1172,156 @@ export class GovernedHost {
               plan: { model?: string; reasoning?: string };
             }
           | undefined;
-        if (!profile.command?.length) {
-          const adapter = registeredAdapter(profile.provider);
-          if (!adapter)
-            throw new HostRefusal(
-              "no-adapter",
-              `executor profile ${profile.id} names no registered provider adapter`,
+        let successfulAttempt: ReturnType<typeof makeLaunchAttempt> | undefined;
+        while (!successfulAttempt) {
+          const allowance = operationalRetryAllowance(
+            this.kernel.events(workflow),
+            launchIntent,
+          );
+          const remaining = Math.max(
+            allowance.automaticRemaining,
+            allowance.humanRemaining,
+          );
+          if (remaining === 0) {
+            const exhausted = operationalExhaustedIdentity(
+              launchIntent,
+              allowance.used,
             );
-          const located = this.#runtime.locate
-            ? this.#runtime.locate(adapter.program)
-            : locateProvider(
-                adapter.program,
-                process.env.PATH,
-                this.#excludedProviderRoots(),
-              );
-          if (!located.ok)
-            throw new HostRefusal("provider-not-installed", located.reason);
-          try {
-            provider = {
-              adapter,
-              program: located.path,
-              plan: planLaunch(adapter, resolution.grant, profile),
-            };
-            if (containment)
-              assertWorkspaces(launchWorkspaces(resolution.grant));
-            // A provider that builds its own nested sandbox is launched
-            // inside containment only when that sandbox can start there.
-            if (containment && adapter.nestedSandbox) {
-              const workspaces = launchWorkspaces(resolution.grant);
-              probeNestedSandbox({
-                bwrap: containment.bwrap,
-                provider: adapter.id,
-                cwd: required(workspaces[0]).path,
-                workspaces,
-                nodePath: process.execPath,
-                masked: containment.masked,
-                protectedRoots: containment.protectedRoots,
-              });
-            }
-          } catch (error) {
-            if (error instanceof AdapterRefusal)
-              throw new HostRefusal(error.category, error.message);
-            throw error;
+            this.kernel.recordRetryExhaustion(workflow, {
+              workflowGrant: grantId,
+              kind: "operational",
+              scope: launchIntent,
+              exhausted,
+              used: allowance.used,
+            });
+            send(409, {
+              kind: "stop",
+              reason: "operational retry budget exhausted",
+              category: "operational-retry-exhaustion",
+              exhausted,
+            });
+            return;
           }
+          containment = undefined;
+          provider = undefined;
+          let failure: OperationalFailureClass | null = null;
+          let probeResult: ReadinessProbeResult | undefined;
+          try {
+            if (this.#external && profile.command?.length)
+              throw new HostRefusal(
+                "provider-config-invalid",
+                "external projects launch only contained registered adapters",
+              );
+            if (contained) {
+              const bwrap = this.#runtime.bwrap
+                ? { ok: true as const, path: this.#runtime.bwrap }
+                : locateContainment(this.#excludedProviderRoots());
+              if (!bwrap.ok)
+                throw new HostRefusal("provider-config-invalid", bwrap.reason);
+              probeContainment(bwrap.path);
+              containment = {
+                bwrap: bwrap.path,
+                masked: Object.keys(this.kernel.project.workflows).map((name) =>
+                  this.kernel.path(name),
+                ),
+                protectedRoots: this.#protectedRoots(),
+              };
+            }
+            if (!profile.command?.length) {
+              const adapter = registeredAdapter(profile.provider);
+              if (!adapter)
+                throw new HostRefusal(
+                  "no-adapter",
+                  `executor profile ${profile.id} names no registered provider adapter`,
+                );
+              const located = this.#runtime.locate
+                ? this.#runtime.locate(adapter.program)
+                : locateProvider(
+                    adapter.program,
+                    process.env.PATH,
+                    this.#excludedProviderRoots(),
+                  );
+              if (!located.ok)
+                throw new HostRefusal("provider-not-installed", located.reason);
+              provider = {
+                adapter,
+                program: located.path,
+                plan: planLaunch(adapter, resolution.grant, profile),
+              };
+              if (containment)
+                assertWorkspaces(launchWorkspaces(resolution.grant));
+              if (containment && adapter.nestedSandbox) {
+                const workspaces = launchWorkspaces(resolution.grant);
+                probeNestedSandbox({
+                  bwrap: containment.bwrap,
+                  provider: adapter.id,
+                  cwd: required(workspaces[0]).path,
+                  workspaces,
+                  nodePath: process.execPath,
+                  masked: containment.masked,
+                  protectedRoots: containment.protectedRoots,
+                });
+              }
+            }
+            const input = probeInput(shape, launchIntent);
+            probeResult = this.#runtime.readinessProbe
+              ? await this.#runtime.readinessProbe(input)
+              : provider
+                ? await runProviderReadiness({
+                    shape,
+                    adapter: provider.adapter,
+                    program: provider.program,
+                    profile,
+                    plan: provider.plan,
+                    ...(containment ? { containment } : {}),
+                    ...(this.#runtime.spawnProvider
+                      ? { spawnProvider: this.#runtime.spawnProvider }
+                      : {}),
+                  })
+                : { state: "passed", effective: effectiveShape(shape) };
+            if (probeResult.state !== "passed" || !probeResult.effective)
+              failure =
+                probeResult.failure ?? "pre-allocation-readiness-failure";
+            else assertEffectiveShape(shape, probeResult.effective);
+          } catch (error) {
+            failure = operationalFailure(error);
+          }
+          const ordinal =
+            operationalAttempts(this.kernel.events(workflow), launchIntent)
+              .length + 1;
+          const probe = probeInput(shape, launchIntent);
+          const attempt = makeLaunchAttempt({
+            workflowGrant: grantId,
+            role: resolution.grant.role,
+            mode: "spawned",
+            predecessor: predecessor ?? resolution.grant.predecessor,
+            launchIntent,
+            shapeIdentity: shapeIdentity(shape),
+            shapeSummary: safeShapeSummary(shape),
+            adapter: profile.provider,
+            runtimeGeneration,
+            ordinal,
+            readiness: failure ? "failed" : "passed",
+            compatibility: "not-applicable",
+            outcome: failure ? "refused" : "ready",
+            failure,
+            effective:
+              !failure && probeResult?.effective
+                ? (probeResult.effective as unknown as Data)
+                : null,
+            readinessIdentity: readinessIdentity(probe),
+            consumed: false,
+          });
+          this.kernel.recordLaunchAttempt(workflow, attempt);
+          if (!failure) successfulAttempt = attempt;
         }
         const registration = this.kernel.register(workflow, profile.id);
+        this.kernel.consumeReadiness(
+          workflow,
+          successfulAttempt.id,
+          launchIntent,
+          shapeIdentity(shape),
+        );
         const allocation = this.kernel.allocate(workflow, grantId, {
           session: registration.session.id,
           mode: "spawned",
@@ -918,6 +1345,7 @@ export class GovernedHost {
             adapter: provider.adapter,
             program: provider.program,
             plan: provider.plan,
+            shape,
             ...(containment ? { containment } : {}),
             ...(this.kernel.options.privateDataRoot
               ? { privateDataRoot: this.kernel.options.privateDataRoot }
@@ -1366,11 +1794,153 @@ export class GovernedHost {
       });
     }
   }
+  #orchestrationStatus(
+    workflow: string,
+    grantId: string,
+    resolution: ReturnType<ExecutionKernel["inspect"]>,
+  ): Data {
+    const events = this.kernel.events(workflow);
+    const attempts = events
+      .filter(
+        (event) =>
+          event.transition === "kernel.launch-attempt" &&
+          event.evidence.workflowGrant === grantId,
+      )
+      .map((event) => event.evidence);
+    const latestAttempt = attempts.at(-1);
+    const executions = this.kernel
+      .executions(workflow)
+      .filter((execution) => execution.workflowGrant === grantId);
+    const latestExecution = executions.at(-1);
+    const active = executions.find((execution) =>
+      ["allocated", "running"].includes(execution.process),
+    );
+    const role =
+      resolution.kind === "grant"
+        ? resolution.grant.role
+        : latestExecution
+          ? this.kernel.roleGrant(workflow, latestExecution.roleGrant).role
+          : null;
+    const semanticAttempts = role
+      ? executions.filter(
+          (execution) =>
+            this.kernel.roleGrant(workflow, execution.roleGrant).role === role,
+        ).length
+      : executions.length;
+    const retry =
+      role === null
+        ? undefined
+        : this.kernel.definition(
+            workflow,
+            this.kernel.grant(workflow, grantId).methodology,
+          ).roles[role]?.policy.retry;
+    const launchIntent =
+      typeof latestAttempt?.launchIntent === "string"
+        ? latestAttempt.launchIntent
+        : null;
+    const operational = launchIntent
+      ? operationalRetryAllowance(events, launchIntent)
+      : { used: 0, automaticRemaining: 4, humanRemaining: 4 };
+    const progress = events.findLast(
+      (event) =>
+        event.transition === "kernel.semantic-progress" &&
+        event.evidence.workflowGrant === grantId,
+    )?.evidence.identity;
+    const stopped = events.findLast(
+      (event) =>
+        event.transition === "kernel.continuation-stopped" &&
+        event.evidence.workflowGrant === grantId,
+    );
+    return {
+      workflowScope: workflow,
+      phase: role ?? "terminal",
+      eligibleRole: resolution.kind === "grant" ? resolution.grant.role : null,
+      eligibleActions:
+        resolution.kind === "grant"
+          ? ["continue"]
+          : resolution.kind === "gate"
+            ? ["human-authority"]
+            : [],
+      activeExecution: active?.id ?? null,
+      operationalLaunchAttempt: latestAttempt?.id ?? null,
+      launchIntent,
+      requestedRole: latestAttempt?.role ?? role,
+      requestedProfile:
+        typeof latestAttempt?.shapeSummary === "object" &&
+        latestAttempt.shapeSummary !== null
+          ? ((latestAttempt.shapeSummary as Data).profile ?? null)
+          : null,
+      executionMode: latestAttempt?.mode ?? latestExecution?.mode ?? null,
+      shapeIdentity: latestAttempt?.shapeIdentity ?? null,
+      shape: latestAttempt?.shapeSummary ?? null,
+      adapter: latestAttempt?.adapter ?? null,
+      readiness:
+        latestAttempt?.mode === "attached"
+          ? latestAttempt.compatibility
+          : (latestAttempt?.readiness ?? "not-started"),
+      effectiveCapabilities: latestAttempt?.effective ?? null,
+      allocationCommitted: latestExecution !== undefined,
+      semanticAttempt: semanticAttempts,
+      operationalRetries: {
+        attempts: operational.used,
+        used: Math.max(0, operational.used - 1),
+        automaticRemaining: operational.automaticRemaining,
+        humanRemaining: operational.humanRemaining,
+      },
+      semanticRetries: {
+        used: Math.max(0, semanticAttempts - 1),
+        remaining: retry
+          ? Math.max(0, retry.limit - Math.max(0, semanticAttempts - 1))
+          : 0,
+      },
+      failureClass: latestAttempt?.failure ?? latestExecution?.category ?? null,
+      gateReason:
+        stopped?.evidence.reason ??
+        (resolution.kind === "grant" ? null : resolution.reason),
+      progressIdentity: progress ?? null,
+      authorityRequired:
+        stopped || resolution.kind === "gate" ? "human/root" : null,
+      incompatibility:
+        latestAttempt?.failure === "launch-shape-incompatibility" ||
+        latestAttempt?.failure === "attached-session-incompatibility"
+          ? latestAttempt.failure
+          : null,
+    };
+  }
   #continue(workflow: string, grantId: string, port: number): void {
     const grant = this.kernel.grant(workflow, grantId);
     if (!grant.continuation || !grant.delegation.includes("spawned")) return;
     const resolution = this.kernel.inspect(workflow, grantId);
     if (resolution.kind !== "grant") {
+      if (resolution.reason.includes("retry/correction bound exhausted")) {
+        const events = this.kernel.events(workflow);
+        const recorded = events.findLast(
+          (event) =>
+            event.transition === "kernel.semantic-progress" &&
+            event.evidence.workflowGrant === grantId,
+        )?.evidence.identity;
+        const progress =
+          typeof recorded === "string"
+            ? recorded
+            : contentId({ workflow, reason: resolution.reason });
+        const used = this.kernel
+          .executions(workflow)
+          .filter((execution) => execution.workflowGrant === grantId).length;
+        const latest = this.kernel
+          .executions(workflow)
+          .filter((execution) => execution.workflowGrant === grantId)
+          .at(-1);
+        this.kernel.recordRetryExhaustion(workflow, {
+          workflowGrant: grantId,
+          kind: "semantic",
+          scope: progress,
+          exhausted: semanticExhaustedIdentity(progress, used),
+          used,
+          ...(latest
+            ? { role: this.kernel.roleGrant(workflow, latest.roleGrant).role }
+            : {}),
+        });
+      }
       this.kernel.continuationStopped(workflow, grantId, resolution.reason);
       return;
     }
@@ -1406,6 +1976,61 @@ export class GovernedHost {
       )
         return;
     }
+    const progressObject = {
+      workflowScope: workflow,
+      phase: resolution.grant.role,
+      eligibleRole: resolution.grant.role,
+      inputBindings: contentId(resolution.grant.inputs),
+      methodology: resolution.grant.methodology,
+      evaluatorRevision: resolution.grant.inputs.evaluatorRevision ?? null,
+      lastDisposition:
+        existing?.result?.disposition ?? existing?.process ?? null,
+      feedback:
+        resolution.grant.inputs.implementationFeedback ??
+        resolution.grant.inputs.feedback ??
+        (existing?.result
+          ? contentId({
+              disposition: existing.result.disposition,
+              methodology: existing.result.methodology,
+            })
+          : null),
+      pendingTransition: existing?.transition?.status ?? null,
+      reasonClass: null,
+      eligibleActions: ["continue"],
+      authorityScope: authorityScopeIdentity(resolution.grant),
+    };
+    const progressIdentity = semanticProgressIdentity(progressObject);
+    const previousProgress = this.kernel
+      .events(workflow)
+      .findLast(
+        (event) =>
+          event.transition === "kernel.semantic-progress" &&
+          event.evidence.workflowGrant === grantId,
+      );
+    if (previousProgress?.evidence.identity === progressIdentity) {
+      const used = this.kernel
+        .executions(workflow)
+        .filter((execution) => execution.workflowGrant === grantId).length;
+      this.kernel.recordRetryExhaustion(workflow, {
+        workflowGrant: grantId,
+        kind: "semantic",
+        scope: progressIdentity,
+        exhausted: semanticExhaustedIdentity(progressIdentity, used),
+        used,
+        role: resolution.grant.role,
+      });
+      this.kernel.continuationStopped(
+        workflow,
+        grantId,
+        "repeated-no-progress",
+      );
+      return;
+    }
+    this.kernel.recordSemanticProgress(workflow, {
+      workflowGrant: grantId,
+      identity: progressIdentity,
+      progress: progressObject,
+    });
     // Reuse precisely the supported allocation operation; a caller disconnect is irrelevant.
     void fetch(
       `http://127.0.0.1:${String(port)}/governed/${encodeURIComponent(workflow)}/continue`,

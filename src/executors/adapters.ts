@@ -21,6 +21,7 @@ import type {
   RoleGrant,
   Workspace,
 } from "../kernel/model.ts";
+import type { CanonicalExecutionShape } from "../kernel/orchestration.ts";
 import {
   assertBoundedExecutorCommand,
   codexExecCommand,
@@ -46,12 +47,13 @@ export type ProviderEvent =
       version: string | null;
     }
   | { kind: "tools-unavailable"; detail: string }
+  | { kind: "tool-confirmed"; tool: string }
   | { kind: "permission-denied"; detail: string }
   | { kind: "rate-limited"; detail: string }
   | { kind: "provider-error"; detail: string };
 
 export interface AdapterCommandInput {
-  readonly grant: RoleGrant;
+  readonly shape: CanonicalExecutionShape;
   readonly workspaces: readonly Workspace[];
   readonly scratch: string;
   // Per-execution loopback relay and its relay-only key (never a host
@@ -131,7 +133,7 @@ const claude: ProviderAdapter = {
         path: workspace.path,
         mode: workspace.mode,
       })),
-      capabilities: input.grant.capabilities,
+      capabilities: input.shape.capabilities,
       workerOperations: WORKER_OPERATIONS,
       scratch: input.scratch,
       mcpConfig: JSON.stringify({
@@ -149,7 +151,7 @@ const claude: ProviderAdapter = {
       }),
       system: input.system,
       prompt: input.prompt,
-      unattendedProtected: input.grant.executorConstraints.protected,
+      unattendedProtected: input.shape.protected,
       ...(input.model === undefined ? {} : { model: input.model }),
       ...(input.maxTurns === undefined ? {} : { maxTurns: input.maxTurns }),
     });
@@ -344,7 +346,7 @@ const codex: ProviderAdapter = {
       .map((workspace) => workspace.path);
     if (writableRoots.length === 0)
       return codexExecCommand(primary.path, [], "read-only", options, prompt);
-    const gitWritableRoots = input.grant.capabilities.includes("git-commit")
+    const gitWritableRoots = input.shape.capabilities.includes("git-commit")
       ? writableRoots
       : [];
     // Codex refuses `--sandbox` together with `default_permissions`, so the
@@ -399,6 +401,15 @@ const codex: ProviderAdapter = {
         },
       ];
     }
+    if (
+      event.type === "item.completed" &&
+      item?.type === "mcp_tool_call" &&
+      item.server === GOVERNED_WORKER_TOOL_SERVER &&
+      (item.status === "completed" || item.status === "success")
+    )
+      return [
+        { kind: "tool-confirmed", tool: stringValue(item.tool) ?? "unknown" },
+      ];
     return [];
   },
 };

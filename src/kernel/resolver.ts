@@ -484,7 +484,17 @@ export function resolveAuthority(
     !override &&
     semantics.predecessor &&
     allocations.filter((a) => (a.evidence.grant as RoleGrant).role === name)
-      .length > role.policy.retry.limit
+      .length >
+      role.policy.retry.limit +
+        effectiveEvents
+          .filter(
+            (event) =>
+              event.transition === "kernel.retry-authority" &&
+              event.evidence.workflowGrant === workflow.id &&
+              event.evidence.kind === "semantic" &&
+              event.evidence.role === name,
+          )
+          .reduce((sum, event) => sum + Number(event.evidence.count ?? 0), 0)
   )
     return {
       kind: "stop",

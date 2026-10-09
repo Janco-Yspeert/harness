@@ -34,6 +34,11 @@ import type {
   RoleGrant,
   WorkerExecutionContext,
 } from "../kernel/model.ts";
+import {
+  deriveExecutionShape,
+  shapeIdentity,
+  type CanonicalExecutionShape,
+} from "../kernel/orchestration.ts";
 import { stopChild, workflowScratchEnvironment } from "../workflow-backend.ts";
 import {
   checkedCommand,
@@ -50,6 +55,9 @@ import {
 
 export const WORKER_TOOLS_PATH = fileURLToPath(
   new URL("./worker-tools.ts", import.meta.url),
+);
+export const READINESS_TOOLS_PATH = fileURLToPath(
+  new URL("./readiness-tools.ts", import.meta.url),
 );
 const MAX_RELAY_LINE = 262_144;
 const MAX_PRIVATE_DIAGNOSTIC_BYTES = 262_144;
@@ -181,6 +189,7 @@ export interface GovernedLaunch {
   readonly adapter: ProviderAdapter;
   readonly program: string;
   readonly plan: { model?: string; reasoning?: string };
+  readonly shape: CanonicalExecutionShape;
   readonly privateDataRoot?: string;
   readonly humanWaitMs?: number;
   readonly onExit: () => void;
@@ -389,6 +398,18 @@ export class GovernedProviderRun {
       return;
     }
     const assignment = this.#assignment;
+    if (
+      shapeIdentity(
+        deriveExecutionShape(assignment.roleGrant, launch.profile, "spawned"),
+      ) !== shapeIdentity(launch.shape)
+    ) {
+      this.#fail(
+        "provider-config-invalid",
+        "delivered assignment differs from the canonical launch shape",
+      );
+      launch.onExit();
+      return;
+    }
     this.#confirmed =
       assignment.roleGrant.executorConstraints.exactModel === undefined ||
       !launch.adapter.model.attest;
@@ -405,7 +426,7 @@ export class GovernedProviderRun {
       const workspaces = launchWorkspaces(assignment.roleGrant);
       const instructions = workerInstructions(assignment);
       const { program, args } = checkedCommand(launch.adapter, launch.program, {
-        grant: assignment.roleGrant,
+        shape: launch.shape,
         workspaces,
         scratch,
         relay: { port: address.port, key: this.#relayKey },
@@ -581,6 +602,7 @@ export class GovernedProviderRun {
       this.#diagnostic("assignment-not-delivered", event.detail);
       return;
     }
+    if (event.kind === "tool-confirmed") return;
     if (event.kind === "permission-denied") {
       this.#diagnostic("permission-denied", event.detail);
       return;

@@ -48,6 +48,10 @@ import { ExecutionKernel } from "../src/kernel/execution.ts";
 import { appendLedger, identity, readLedger } from "../src/kernel/ledger.ts";
 import { loadDefinition } from "../src/kernel/methodology.ts";
 import type {
+  CanonicalExecutionShape,
+  ReadinessProbeInput,
+} from "../src/kernel/orchestration.ts";
+import type {
   Execution,
   ExecutorProfile,
   RoleGrant,
@@ -202,6 +206,10 @@ function smoke(
             profile.provider === (grant.role === CODEX ? "codex" : "claude"),
         ) ?? profiles[0],
       providerRuntime: {
+        readinessProbe: (input: ReadinessProbeInput) => ({
+          state: "passed" as const,
+          effective: input.expectedEffective,
+        }),
         ...(options.locate === false
           ? {
               locate: (program: string) => ({
@@ -1730,10 +1738,10 @@ void test("AC08: the versioned worker protocol is typed, provider-neutral and ca
   assert.equal(unknown.result.isError, true);
   // Both providers receive the identical tool server and operations.
   const input = {
-    grant: {
+    shape: {
       capabilities: ALL,
-      executorConstraints: { protected: false, forbiddenExposure: [] },
-    } as unknown as RoleGrant,
+      protected: false,
+    } as unknown as CanonicalExecutionShape,
     workspaces: [
       { id: "w", path: "/work", mode: "write" as const, exposure: "public" },
     ],
@@ -1772,10 +1780,10 @@ void test("worker result instructions surface the pinned methodology vocabulary 
 
 void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is loadable and callable by both providers", () => {
   const input = {
-    grant: {
+    shape: {
       capabilities: ALL,
-      executorConstraints: { protected: false, forbiddenExposure: [] },
-    } as unknown as RoleGrant,
+      protected: false,
+    } as unknown as CanonicalExecutionShape,
     workspaces: [
       { id: "w", path: "/work", mode: "write" as const, exposure: "public" },
     ],
