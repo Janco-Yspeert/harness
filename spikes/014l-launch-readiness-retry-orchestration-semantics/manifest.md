@@ -70,3 +70,23 @@
 - Limitations: no live provider was exercised; evaluator-private material and
   workflow ledgers were not inspected.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-09 — Evaluator Prepare
+
+- Execution: `50dccdf2-4832-4906-b621-dee1f96f789a`.
+- Skill: `evaluator`, mode `prepare`, contract version 14
+  (`sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b`).
+- Role Grant: `sha256:f9076194e71ff9246c7fc0155efa6c5d1b0bc2e5834f722936673b0ac46fae03`.
+- Inputs: `spike.md`
+  `sha256:de56e9970b339a55dc8d3024458769445e10474f73cdc1e1917afd6a2102e803`;
+  `design-map.md`
+  `sha256:11fddfcd3eef9294a6d899e21b403cf65537f4623c5a8be71fb89a7a4ffac00d`.
+- Result: succeeded; evaluator revision `001`
+  (`sha256:6293e45e5cb22a6449fec4315cc5440cc031e98e0ca3b93983798c8236f543cc`).
+- Outputs: `eval-requirements.md`
+  `sha256:3359c649327fffbbc735a862c56a599db22276e9f8827b1c3c5f25f64144cbdb`;
+  `coverage-map.json` (25 criterion records); `manifest.md`.
+- Checks: bound input identities verified; pre-freeze structural integrity
+  validation passed with negative controls. The candidate implementation was
+  neither run nor inspected.
+- Measurement cutoff: immediately before this manifest update.
