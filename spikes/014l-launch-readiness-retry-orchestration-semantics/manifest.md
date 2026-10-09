@@ -47,3 +47,26 @@
 - Limitations: no live provider was exercised; evaluator-private material and
   workflow ledgers were not inspected.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-09 — Design Map
+
+- Execution: `8c47727a-84ae-45fc-ad31-5105b96e1735`.
+- Skill: `design-map`, contract version 4
+  (`sha256:238af12bbee012a784f234f2aaab9d4e783a58ec1b7c0257937bc54a16010136`).
+- Role Grant: `sha256:05fffb0586ec80d2d394214f8fd662e20bb36ddf03c4cf991f2cc76ce9829c64`.
+- Input: `spike.md`
+  `sha256:de56e9970b339a55dc8d3024458769445e10474f73cdc1e1917afd6a2102e803`
+  (verified against the host-bound identity and committed bytes at `a9c69e27`).
+- Result: succeeded.
+- Output: `design-map.md`
+  `sha256:11fddfcd3eef9294a6d899e21b403cf65537f4623c5a8be71fb89a7a4ffac00d`;
+  `manifest.md`.
+- Checks: frozen brief identity and committed provenance verified; scoped
+  `git diff --check` passed for the Design Map; static inspection covered the
+  relevant public host, kernel, resolver, model, provider-adapter, governed-run,
+  worker-protocol, visible-test, goals, and prior public Design Map contracts.
+  No product tests were run because this role changed documentation/evidence
+  only.
+- Limitations: no live provider was exercised; evaluator-private material and
+  workflow ledgers were not inspected.
+- Measurement cutoff: immediately before this manifest update.
