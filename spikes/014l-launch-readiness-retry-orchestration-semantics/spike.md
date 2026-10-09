@@ -1,6 +1,6 @@
 # Spike 014l - Launch, Readiness, Retry, and Orchestration Semantics
 
-**Status:** Draft for Brief Readiness and human review; not frozen
+**Status:** Revised draft after Brief Readiness; not frozen
 
 **Starting point:** Spike 014f is complete/as-built. The stale Stockdif/H4 Workflow Grant has been retired. This spike must not resume Stockdif work.
 
@@ -43,69 +43,151 @@ After this spike:
 
 1. Harness derives the exact structured launch shape for a governed role from canonical host state.
 2. Provider adapters translate that shape without inventing, dropping, or broadening authority.
-3. Harness determines whether a role runtime is plausibly usable before exposing governed role material.
-4. Operational launch/setup failures remain durable history but do not become semantic attempts.
-5. A semantic attempt begins at a well-defined exposure boundary.
-6. Automatic retry authority is bounded and deterministic.
-7. Human-authorized retries are explicit and bound to the failure being retried.
-8. Repeated automatic continuation cannot loop indefinitely without meaningful state progress.
-9. The host can project enough canonical status to explain the current launch/retry/attempt state without reconstructing it manually.
+3. Spawned execution proves material-free runtime readiness before semantic allocation.
+4. Attached execution proves compatibility of the existing session before semantic allocation.
+5. Operational launch/setup failures have their own durable launch-attempt identity and do not become semantic attempts.
+6. `kernel.allocation` is the canonical event that commits a semantic attempt.
+7. Automatic operational retry authority is exactly bounded and independent from semantic role retry policy.
+8. Human-authorized retries are explicit and bound to one exhausted operational or semantic retry state.
+9. Repeated automatic semantic continuation cannot loop indefinitely without meaningful state progress.
+10. The existing root-only `resolve` observation exposes a canonical status projection sufficient to explain launch, readiness, retry, attempt, and no-progress state.
 
 ## Core execution model
 
-The lifecycle MUST distinguish at least:
+014l defines two distinct loops separated by one canonical semantic-attempt boundary.
 
-    allocation
+### Operational loop
+
+For spawned execution:
+
+    resolve eligible role
         |
         v
-    canonical launch shape
+    derive proposed Role Grant semantics
+    and canonical launch shape
         |
         v
-    provider translation
+    derive launch-intent identity
         |
         v
-    operational preparation / readiness
+    record operational launch attempt
         |
         v
-    semantic-attempt boundary
+    material-free readiness probe
+        |
+        +---- failure ---> operational retry, bounded by launch intent
         |
         v
-    governed role exposure / execution
+    readiness PASS
+
+For attached execution:
+
+    resolve eligible role
         |
         v
-    semantic result
+    derive proposed Role Grant semantics
+    and canonical attachment shape
+        |
+        v
+    validate existing session compatibility
+        |
+        +---- failure ---> operational refusal before semantic attempt
+        |
+        v
+    compatibility PASS
 
-### Operational execution
+### Semantic loop
 
-An operational execution represents host/provider work required to establish that a role can run.
+After successful spawned readiness or attached compatibility:
 
-Examples include:
+    register/select governed session as applicable
+        |
+        v
+    kernel.allocation
+        |
+        +---- SEMANTIC ATTEMPT COMMITS HERE
+        |
+        v
+    role onAllocate transition / attempt projection
+        |
+        v
+    record required exposure provenance
+        |
+        v
+    deliver governed assignment / skill / contract / workspaces
+        |
+        v
+    semantic role execution
+        |
+        v
+    semantic result / transition
+        |
+        +---- governed semantic correction/retry as policy permits
 
-- provider process launch;
-- provider authentication;
-- adapter initialization;
-- containment setup;
-- worker/tool connectivity;
-- writable scratch/private workspace validation;
-- effective tool-capability validation;
-- harmless runtime computation;
-- validation that the effective provider launch matches the canonical launch shape.
+## Canonical semantic-attempt boundary
 
-Operational execution is durable evidence.
+### Semantic commit event
 
-Operational execution is not, by itself, a semantic attempt.
+`kernel.allocation` is the canonical event that commits a semantic attempt.
 
-### Semantic-attempt boundary
+A semantic attempt does not exist before that event.
 
-A semantic attempt begins immediately before the first role-specific governed exposure or authorization to perform semantic role work.
+Once `kernel.allocation` has been appended, that semantic attempt is irrevocably part of history even if assignment delivery, provider startup, process execution, result handshake, or later semantic work fails.
 
-Readiness MUST therefore complete before candidate, evaluator-private, or other governed role material is exposed.
+Harness MUST NOT retroactively reclassify a committed semantic allocation as operational in order to preserve retry budget.
 
-Once the semantic-attempt boundary has been crossed, failure consumes that semantic attempt even if the eventual failure is provider/process-related.
+### Required ordering
 
-Harness MUST NOT retroactively classify an exposed execution as merely operational in order to preserve retry budget.
+For every governed semantic attempt, the following ordering is normative:
 
-Exposure history remains authoritative.
+1. resolve role eligibility and the proposed Role Grant semantics;
+2. derive the canonical launch/attachment shape;
+3. complete the applicable pre-semantic readiness or compatibility check;
+4. select or register the governed session as applicable, without delivering governed role material;
+5. append `kernel.allocation`, binding the semantic execution and Role Grant;
+6. emit any role `onAllocate` transition and attempt-counter projection;
+7. append required non-public exposure provenance before the corresponding workspace/material is delivered;
+8. deliver the governed assignment, pinned skill, contract, bindings, and workspaces;
+9. begin semantic role execution.
+
+A session MAY be registered before `kernel.allocation`, but registration alone MUST NOT expose governed assignment content, role skill content, role contract content, candidate content, evaluator-private content, or non-public workspace content.
+
+The proposed Role Grant MAY be derived before readiness, but it MUST NOT be durably bound to a semantic execution before `kernel.allocation`.
+
+### Attempt numbering
+
+Semantic attempt numbering MUST derive from committed semantic allocation history in the applicable methodology scope.
+
+Operational launch attempts do not increment semantic attempt numbering.
+
+A role `onAllocate` counter may continue to project the methodology-visible attempt number, but that projection MUST correspond to host-owned committed semantic allocations rather than operational launches.
+
+## Operational launch attempts
+
+Every spawned pre-semantic launch/readiness try MUST have its own durable operational launch-attempt identity.
+
+The operational launch-attempt record MUST bind at least:
+
+- workflow/cycle scope;
+- resolved role;
+- execution mode;
+- predecessor semantic execution where applicable;
+- launch-intent identity;
+- canonical launch-shape identity;
+- adapter/provider identity;
+- runtime/configuration generation identity available to the host;
+- normalized outcome/failure classification.
+
+Operational launch-attempt records MUST NOT:
+
+- create a semantic execution;
+- append `kernel.allocation`;
+- increment a methodology attempt counter;
+- record governed role exposure that did not occur;
+- consume semantic role retry budget;
+- consume workflow semantic allocation or automatic-work budget.
+
+Operational history remains append-only.
 
 ## Canonical launch shape
 
@@ -113,7 +195,7 @@ Harness MUST derive and provide the exact structured launch shape required for e
 
 The orchestrator or supervising model MUST NOT reconstruct provider invocation semantics from prose, historical examples, repository conventions, or previous executions.
 
-The canonical launch shape should include, where applicable:
+For spawned execution, the canonical launch shape MUST include, where applicable:
 
 - provider/adapter identity;
 - role and role mode;
@@ -122,10 +204,12 @@ The canonical launch shape should include, where applicable:
 - private/scratch workspace access;
 - allowed host actions/tools;
 - containment profile;
-- required invocation/skill/contract identity;
-- assignment/input bindings;
+- required invocation/skill/contract identities;
+- assignment/input binding identities;
 - exposure class;
 - expected result/action interface.
+
+For attached execution, Harness MUST derive an equivalent canonical attachment shape containing the role, execution mode, required session/profile capabilities, workspace/access shape, isolation requirements, model/reasoning constraints, exposure constraints, assigned contract/skill identities, and expected result/action interface.
 
 ### Launch-shape ownership
 
@@ -139,7 +223,7 @@ Provider adapters MUST NOT reinterpret the requested authority or infer addition
 
 ### Effective launch validation
 
-The effective provider launch MUST be checked against the requested canonical launch shape before governed exposure wherever the incompatibility is detectable before execution.
+The effective provider launch MUST be checked against the canonical launch shape before governed semantic allocation wherever incompatibility is detectable without governed role material.
 
 A mismatch between requested and effective launch capability is an operational readiness failure.
 
@@ -148,182 +232,295 @@ Examples include:
 - a role requiring read-only repository access plus writable private scratch being translated into globally read-only execution;
 - required worker/MCP capability being absent from the effective runtime;
 - provider defaults broadening repository or tool access beyond the role grant;
-- required invocation mode, skill, or result channel not being available;
+- required invocation mode or result channel not being available;
 - the adapter silently selecting a materially different profile or authority shape.
 
 Such failures:
 
-- MUST occur before governed role exposure where detectable;
-- MUST be recorded durably;
+- MUST occur before `kernel.allocation` where detectable;
+- MUST be recorded durably as operational launch attempts;
 - MUST consume operational rather than semantic retry budget;
 - MUST NOT be repaired by the supervising model inventing an alternate launch command;
 - MUST fail closed where the effective launch shape cannot be proven compatible with the granted shape.
 
-## Readiness
+## Spawned readiness topology
 
-Before crossing the semantic-attempt boundary, the relevant adapter/runtime MUST demonstrate sufficient readiness for the requested role profile.
+014l uses one readiness topology for one-shot provider adapters:
 
-Readiness should cover, where applicable:
+> a separate, material-free readiness probe followed by a distinct one-shot semantic launch.
 
-- provider availability;
+014l MUST NOT implement a two-stage semantic provider conversation or persistent provider session in order to satisfy readiness.
+
+### Material allowed during readiness
+
+The readiness probe MAY receive only material necessary to prove provider/runtime viability, including:
+
+- provider executable and adapter identity;
+- selected profile/model/reasoning selectors;
+- containment profile;
+- canonical capability and permission shape;
+- synthetic or empty probe-owned workspaces that reproduce required read/write/isolation modes;
+- public non-semantic runtime configuration required to start the adapter;
+- tool/worker endpoints required to test connectivity;
+- a fixed harmless probe instruction or computation.
+
+The probe MUST NOT receive:
+
+- spike brief content as a work assignment;
+- candidate implementation content;
+- evaluator-private material;
+- role-specific semantic work prompts;
+- assigned skill contents;
+- assigned contract contents;
+- non-public governed workspace contents;
+- semantic input artifacts whose content is part of the role assignment.
+
+Host-side deterministic checks MAY inspect actual filesystem metadata, path existence, mount construction, and writeability without exposing governed content to the provider.
+
+Where provider behaviour must be tested, synthetic/empty workspaces SHOULD reproduce the effective permission and containment shape without exposing governed content.
+
+### Readiness requirements
+
+The spawned readiness probe MUST demonstrate, where applicable:
+
+- provider availability and process startup;
 - authentication;
 - required worker/tool connectivity;
 - containment startup;
-- required workspace shape;
-- writable scratch/private storage;
+- required synthetic workspace shape;
+- writable scratch/private storage semantics;
 - effective role tool permissions;
 - harmless process/computation capability;
 - compatibility between canonical and effective launch shape.
 
-The readiness probe MUST NOT require exposure of candidate content, evaluator-private content, or equivalent governed role material.
-
 A failed readiness probe:
 
-- is recorded durably;
-- consumes operational retry budget where applicable;
+- is recorded as an operational launch attempt;
+- consumes operational retry budget;
 - consumes no semantic attempt;
 - produces no semantic role result;
-- MUST NOT create misleading evaluator/implementation attempt numbering.
+- MUST NOT create semantic attempt numbering or governed exposure provenance.
 
-### Readiness caching
+### Readiness freshness
 
-Readiness MAY be cached where useful, but cache validity MUST NOT depend solely on immutable configuration identity.
+014l does not introduce reusable readiness caching across semantic launches.
 
-Authentication, connectivity, provider state, and external runtime conditions may change without a configuration digest changing.
+A successful readiness result is:
 
-Any caching mechanism therefore MUST:
+- bound to one exact launch-intent identity;
+- bound to the adapter/provider executable identity and host-known runtime/configuration generation;
+- single-use;
+- consumed by the immediately following semantic allocation/launch;
+- invalid if any component of the launch-intent identity changes before semantic allocation;
+- invalid if a contradictory operational failure occurs before semantic allocation.
 
-- bind to the relevant provider/runtime/profile/configuration identities;
-- have bounded validity or equivalent revalidation semantics;
-- be invalidated by contradictory runtime failure;
-- fail closed when readiness cannot be established.
+An operational retry performs a fresh readiness probe.
 
-This spike does not require sophisticated readiness caching. Correct semantics are more important than optimisation.
+Long-lived caching, shared readiness leases, or reuse across unrelated semantic launches belongs to later optimisation work.
 
-## Retry classes
+## Attached execution
 
-Harness MUST distinguish operational retry from semantic retry.
+Attached governed execution is in scope for 014l.
 
-### Operational retry
+Attached execution does not perform spawned-provider translation or launch a material-free provider probe because the provider/session already exists.
 
-Operational retry is used where the semantic-attempt boundary was not crossed.
+Before `kernel.allocation`, Harness MUST derive the canonical attachment shape and validate the existing session using host-known canonical provenance.
 
-Examples include:
+The compatibility check MUST include, where applicable:
 
-- provider failed to launch;
-- authentication unavailable;
-- containment could not start;
-- scratch workspace unusable;
-- required tool connectivity unavailable;
-- canonical/effective launch shape mismatch.
+- session/profile identity;
+- required capabilities;
+- required workspace modes;
+- isolation/private-workspace requirements;
+- model/reasoning constraints that are enforceable for attached mode;
+- accumulated exposure provenance, including forbidden-exposure checks;
+- whether the session is currently eligible to execute another role;
+- required host/tool/action compatibility.
 
-Operational retries MAY occur automatically within a bounded budget.
+An attached compatibility failure before `kernel.allocation` is operational, not semantic.
 
-They MUST NOT:
+Because 014l does not create or control the already-running provider process, attached compatibility failures are NOT automatically retried against the same incompatible session. The host stops with the normalized operational refusal.
 
-- increment semantic attempt number;
-- broaden authority;
-- broaden exposure;
-- alter candidate/evaluator identity;
-- silently change role profile or workspace permissions.
+Selecting a different session or materially changing the required attachment shape creates a new launch intent.
 
-### Semantic retry
+After attached compatibility succeeds, the same canonical semantic-attempt boundary, allocation ordering, semantic retry rules, no-progress rules, and status projection apply as for spawned execution.
 
-Semantic retry is used where a semantic attempt occurred but failed to produce an acceptable terminal result.
+Existing exposure prohibitions remain authoritative. In particular, implementation-exposed attached state MUST NOT be reused for protected evaluator execution.
 
-Semantic retry continues to obey the role's normal governed retry semantics and exposure constraints.
+## Operational retry policy
 
-The host MUST NOT relabel a semantic retry as operational merely because its terminal failure was technical.
+### Fixed budget
 
-## Automatic retry budget
+014l introduces a host-owned operational retry budget with an effective value of exactly **three automatic retries after the initial failed operational launch attempt**.
 
-Automatic retry is finite.
+Thus one unchanged spawned launch intent can produce at most:
 
-For a single unchanged failed state, Harness may perform at most three automatic retries beyond the original failed execution, unless an existing stricter policy applies.
+- one initial operational launch attempt; plus
+- three automatic operational retries.
 
-After exhaustion, Harness MUST stop automatic continuation.
+The operational budget is infrastructure policy for 014l. It is not a methodology semantic retry limit and is not configured per role in this spike.
 
-Retry budget MUST be observable from canonical host state.
+Existing semantic role retry limits neither reduce nor extend this operational retry budget.
 
-Operational and semantic retry budgets MUST NOT be conflated.
+Operational launch attempts do not consume semantic `maxAllocations`, semantic `maxAutomaticWork`, or methodology attempt counters.
+
+After the third automatic operational retry fails, Harness MUST stop automatic operational continuation for that launch intent.
+
+### Launch-intent identity
+
+Operational retry usage accumulates under one canonical launch-intent identity.
+
+The identity MUST be a deterministic digest of normalized canonical fields equivalent to:
+
+- workflow/cycle scope identity;
+- role;
+- execution mode;
+- predecessor semantic execution identity where applicable;
+- candidate/input binding identity relevant to the role;
+- trusted/candidate methodology identity where applicable;
+- evaluator revision identity where applicable;
+- canonical launch/attachment-shape digest;
+- host runtime/configuration generation digest;
+- effective authority-scope digest.
+
+The identity MUST explicitly ignore:
+
+- operational launch-attempt UUID;
+- semantic execution UUID not yet created;
+- session UUID created only for the current launch;
+- timestamps;
+- retry counters;
+- raw provider diagnostic strings;
+- failure classification;
+- reissued Workflow Grant or Role Grant UUID where its effective authority scope is identical.
+
+A change to any included semantic/runtime/authority field creates a new launch intent and therefore a new operational retry budget.
+
+Changing only an ignored bookkeeping or diagnostic field does not reset the budget.
+
+A sequence such as authentication failure followed by scratch failure followed by connectivity failure remains the same launch intent if the included launch-intent fields are unchanged.
+
+## Semantic retry policy
+
+Semantic retry begins only after `kernel.allocation` has committed a semantic attempt.
+
+Semantic retry continues to obey the role's existing methodology retry semantics, terminal disposition rules, exposure constraints, and semantic retry bounds.
+
+Operational launch failures before `kernel.allocation` MUST NOT increment or exhaust semantic retry counts.
+
+The host MUST NOT relabel a committed semantic attempt as operational merely because its later failure was provider/process-related.
 
 ## Human-authorized retry
 
-A human may explicitly authorize additional retry after the automatic budget is exhausted.
+A human may explicitly authorize retry after either an operational or semantic automatic budget is exhausted.
 
 Human retry authority MUST:
 
-- identify the exact failed state or execution being retried;
-- preserve existing candidate, evaluator, exposure, and workspace constraints unless separately authorized;
-- authorize a bounded additional retry rather than creating indefinite retry authority;
+- identify whether it extends an operational or semantic retry budget;
+- bind to the exact exhausted budget identity and exhaustion event/state;
+- preserve existing candidate, evaluator, exposure, workspace, role, launch-shape, and authority scope unless separately authorized;
+- authorize a finite number of additional retries;
 - be recorded durably.
 
-By default, one explicit human retry authorization permits one additional retry.
+By default, one explicit human retry authorization permits exactly one additional retry.
 
-Further retry requires further explicit authority unless a deliberately bounded count was authorized.
+A human MAY explicitly authorize a larger finite count N. The durable authority must record N.
 
-Human-authorized retry MUST NOT silently become methodology policy.
+Human authorization does not silently become methodology policy, does not alter the underlying default automatic budget, and does not erase previous exhaustion history.
 
-## No-progress detection
+For operational retry, changing the effective authority/launch scope instead of merely extending the exhausted budget creates a new launch intent and requires the ordinary authority checks for that new intent.
 
-Automatic continuation MUST stop when Harness detects that it is repeating an orchestration cycle without meaningful progress.
+## Deterministic no-progress detection
 
-Progress MUST be derived deterministically from canonical state rather than inferred by a supervising model.
+Operational transient retry is governed exclusively by the operational retry budget above and does not participate in semantic no-progress comparison.
 
-The implementation SHOULD define a progress identity incorporating the relevant combination of:
+No-progress detection applies to automatic **semantic** continuation.
 
-- workflow phase;
-- role;
-- candidate identity;
-- evaluator/methodology identity where relevant;
-- semantic result or feedback identity;
-- unresolved failure classification;
-- transition state;
-- governing authority identity.
+### Canonical semantic progress identity
 
-If automatic continuation returns to an equivalent unresolved orchestration state without any meaningful change to the bound state, Harness MUST treat the recurrence as no progress rather than continuing indefinitely.
+After each semantic resolution point at which Harness could automatically continue, the host MUST construct a canonical normalized progress object containing exactly the semantic fields equivalent to:
 
-Operational transient failures remain governed by the operational retry budget and MUST NOT be confused with semantic workflow-loop detection.
+- workflow/cycle scope identity;
+- current workflow phase;
+- currently eligible semantic role;
+- candidate/input binding identity relevant to that role;
+- trusted/candidate methodology identity where applicable;
+- evaluator revision identity where applicable;
+- last terminal semantic disposition;
+- semantic feedback/result content identity relevant to the next action;
+- pending transition state;
+- normalized gate or unresolved semantic reason class;
+- sorted set of eligible semantic action kinds;
+- effective authority-scope digest for those eligible semantic actions.
 
-When automatic progress is no longer available, the host MUST stop in an explicit human-gated state with a normalized reason equivalent to repeated-no-progress.
+The progress identity is the deterministic digest of that canonical normalized object.
+
+The normalization MUST explicitly ignore:
+
+- semantic execution UUIDs;
+- session UUIDs;
+- operational launch-attempt identities;
+- Workflow Grant or Role Grant UUIDs whose effective scope is equivalent;
+- timestamps;
+- retry counters;
+- process PIDs;
+- raw provider diagnostics;
+- non-semantic log/evidence record identities that do not alter any included semantic field.
+
+### Stop rule
+
+Immediately before starting another automatic semantic continuation, Harness MUST compare the newly resolved semantic progress identity with the identity at the preceding automatic semantic resolution point.
+
+If they are equal, Harness MUST NOT start another automatic semantic execution.
+
+It MUST stop in a human-gated state with normalized reason `repeated-no-progress` or the repository's exact equivalent.
+
+One repeated equivalent semantic state is sufficient to stop automatic continuation.
+
+If any included progress field changes, the state is progress and automatic continuation may proceed subject to normal authority and retry policy.
+
+A human may explicitly authorize a further semantic retry from a `repeated-no-progress` state. That authorization permits only its bounded retry count and does not erase no-progress history. If the authorized retry resolves to the same canonical progress identity again, automatic continuation stops again.
 
 ## Status projection
 
-014l MUST provide a canonical host-derived projection sufficient to understand launch/retry/orchestration state.
+014l MUST extend the existing root-only workflow `resolve` GET observation as the public host projection surface for launch/retry/orchestration status.
 
-At minimum it should expose:
+No second status store or independent authority surface may be introduced.
 
-- current workflow phase;
-- active execution, if any;
-- requested role/profile;
-- canonical workspace/access shape;
-- provider/adapter selected;
+The `resolve` response MUST expose, either directly or in one canonical nested status object, at least:
+
+- current workflow/cycle scope and phase;
+- currently eligible role/action;
+- active semantic execution, if any;
+- active/most recent operational launch attempt, if any;
+- launch-intent identity;
+- requested role/profile and execution mode;
+- canonical launch or attachment-shape identity and safe summary;
+- provider/adapter selected for spawned mode;
+- readiness or attached-compatibility state;
 - effective capability/readiness result;
-- whether the semantic-attempt boundary has been crossed;
+- whether `kernel.allocation` has committed the current semantic attempt;
 - current semantic attempt number;
-- operational retries used/remaining;
-- automatic semantic retries used/remaining;
-- last failure classification;
+- operational retries used and remaining for the current launch intent;
+- automatic semantic retries used and remaining under existing role policy;
+- last normalized operational or semantic failure classification;
 - current gate/stop reason;
+- current semantic progress identity where one exists;
 - currently eligible next action or actions;
 - authority required for any otherwise-eligible privileged action;
 - any normalized launch-shape incompatibility.
 
-Sensitive provider-private or evaluator-private data need not be exposed in the public projection.
+Sensitive provider-private or evaluator-private content MUST NOT be exposed merely to satisfy status.
 
-This status is a projection of canonical state.
+The status projection MUST be regenerable from canonical host records and MUST NOT be independently mutable.
 
-It MUST NOT become a second state store or competing authority.
-
-A richer operator-facing status/CLI experience belongs to subsequent architecture cleanup.
+A richer human-facing CLI rendering belongs to subsequent architecture cleanup.
 
 ## Failure classification
 
 Operational failures MUST be classified sufficiently to support deterministic retry and diagnosis.
 
-The spike does not require an exhaustive taxonomy, but MUST avoid collapsing all failures into a generic role failure.
-
-The host should distinguish at least categories equivalent to:
+The host MUST distinguish at least categories equivalent to:
 
 - provider unavailable/start failure;
 - authentication failure;
@@ -331,12 +528,12 @@ The host should distinguish at least categories equivalent to:
 - workspace/storage readiness failure;
 - required connectivity/tool failure;
 - launch-shape incompatibility;
-- pre-exposure readiness failure;
-- post-exposure execution/process failure;
+- attached-session incompatibility;
+- pre-allocation readiness failure;
+- post-allocation execution/process failure;
 - semantic terminal failure;
-- no-progress/retry exhaustion.
-
-The exact enum/schema should fit the existing architecture.
+- operational retry exhaustion;
+- repeated semantic no-progress.
 
 Provider-specific raw errors MAY be retained as evidence, but provider wording MUST NOT become orchestration semantics.
 
@@ -345,97 +542,119 @@ Provider-specific raw errors MAY be retained as evidence, but provider wording M
 014l MUST preserve the following:
 
 - the host remains authoritative for role eligibility and automatic continuation;
-- the host is authoritative for the semantic launch specification;
+- the host is authoritative for the semantic launch/attachment specification;
 - provider adapters translate but do not reinterpret authority;
+- `kernel.allocation` is the sole semantic-attempt commit event;
+- operational launch attempts do not become semantic attempts;
 - retry never implies expanded workspace or tool permission;
 - retry never implies expanded exposure;
 - retry never changes candidate/evaluator identity unless separately governed;
 - implementation-exposed state cannot be reused as protected evaluator state;
 - human authority remains explicit where automatic authority has ended;
 - failure remains durably visible even where no semantic attempt occurred;
-- fail-closed behavior remains the default where authority, effective capability, or readiness is ambiguous.
+- fail-closed behavior remains the default where authority, effective capability, readiness, attachment compatibility, or progress state is ambiguous.
 
 ## Acceptance criteria
 
-### AC1 - Canonical launch shape is host-derived
+### AC1 - Canonical launch/attachment shape is host-derived
 
-A governed role launch is derived from canonical role/grant state rather than constructed by the supervising model.
+Spawned and attached governed role execution derives its required runtime shape from canonical role/grant state rather than from supervising-model reconstruction.
 
 ### AC2 - Provider translation preserves authority shape
 
-Provider-specific translation neither drops required capabilities nor broadens granted capabilities.
+Spawned provider translation neither drops required capabilities nor broadens granted capabilities.
 
-### AC3 - Effective launch shape is validated before exposure
+### AC3 - Spawned readiness topology is material-free and one-shot
 
-Where detectable before execution, incompatibility between the canonical and effective launch shape is treated as an operational readiness failure.
+A spawned one-shot provider passes a separate material-free, single-use readiness probe bound to the exact launch intent before semantic allocation.
 
-### AC4 - Operational and semantic attempts are distinct
+### AC4 - Attached execution has an explicit compatibility path
 
-A failure before the semantic-attempt boundary is durably recorded without creating or incrementing a semantic implementation/evaluator attempt.
+Attached execution validates the existing session against the canonical attachment shape before semantic allocation and does not invent spawned-provider probe semantics.
 
-### AC5 - Exposure creates semantic-attempt commitment
+### AC5 - Operational launch attempts have distinct durable identity
 
-Once governed role exposure begins, that execution is recorded as a semantic attempt even if a later provider/runtime failure prevents a semantic result.
+A spawned readiness attempt is durably recorded without creating a semantic execution or semantic attempt.
 
-### AC6 - Readiness precedes governed exposure
+### AC6 - kernel.allocation is the semantic-attempt commit
 
-Required runtime readiness is established before candidate/evaluator-private governed material is exposed.
+No semantic attempt exists before `kernel.allocation`; after it is appended, the semantic attempt is irrevocably part of history.
 
-### AC7 - Readiness failure preserves confidentiality
+### AC7 - Allocation ordering is deterministic
 
-A failed readiness probe can be demonstrated without candidate or protected evaluator exposure.
+Role `onAllocate` transition/counter projection occurs after `kernel.allocation`, and required non-public exposure provenance is appended after allocation but before the corresponding governed material is delivered.
 
-### AC8 - Launch mismatch cannot consume semantic attempt budget
+### AC8 - Readiness failure preserves confidentiality
 
-A pre-exposure launch-shape mismatch is durably recorded without creating a semantic attempt.
+A failed spawned readiness probe can be demonstrated without spike work assignment content, candidate content, evaluator-private content, assigned skill contents, assigned contract contents, or other non-public semantic role material.
 
-### AC9 - Orchestrator cannot repair launch semantics ad hoc
+### AC9 - Effective launch shape is validated before semantic allocation
+
+Where detectable without governed role material, canonical/effective spawned launch incompatibility is an operational failure before `kernel.allocation`.
+
+### AC10 - Launch mismatch cannot consume semantic attempt budget
+
+A pre-allocation launch/readiness mismatch is durably recorded without creating a semantic attempt or incrementing semantic attempt numbering.
+
+### AC11 - Orchestrator cannot repair launch semantics ad hoc
 
 The supervising model cannot bypass a launch-shape failure by inventing provider commands, flags, permissions, or alternate invocation machinery outside the governed adapter path.
 
-### AC10 - Operational retry is bounded
+### AC12 - Operational retry budget is exact and independently keyed
 
-Operational failures may retry automatically only within a deterministic bounded budget.
+One unchanged spawned launch intent receives one initial operational attempt plus exactly three automatic operational retries, keyed by the normative launch-intent identity and independent from semantic role retry policy.
 
-### AC11 - Semantic retry remains separately governed
+### AC13 - Operational budget reset semantics are deterministic
 
-Semantic retry counts and role retry policy are unaffected by pre-exposure operational failures.
+Only a change to an included launch-intent field creates a new operational retry budget; failure class, retry UUIDs, timestamps, diagnostics, and equivalent grant reissuance do not reset it.
 
-### AC12 - Retry cannot broaden authority
+### AC14 - Semantic retry remains separately governed
 
-Automatic or human-authorized retry cannot implicitly expand workspace, tools, role, exposure class, or candidate/evaluator scope.
+Semantic retry begins only after `kernel.allocation` and continues to obey existing methodology retry semantics unaffected by pre-allocation operational failures.
 
-### AC13 - Human retry is explicit and bounded
+### AC15 - Retry cannot broaden authority
 
-After automatic retry exhaustion, another retry requires durable explicit human authority bound to the failed state.
+Automatic or human-authorized retry cannot implicitly expand workspace, tools, role, exposure class, candidate/evaluator scope, or launch/attachment shape.
 
-### AC14 - Failure history remains append-only
+### AC16 - Human retry is explicit and bounded
+
+After automatic exhaustion, additional operational or semantic retry requires durable human authority bound to the exact exhausted budget/state and finite retry count.
+
+### AC17 - Failure history remains append-only
 
 Operational failures remain visible in durable history even though they do not become semantic attempts.
 
-### AC15 - Attempt numbering reflects semantic work
+### AC18 - Attempt numbering reflects semantic work
 
-Provider/setup failures no longer create misleading gaps or inflated semantic attempt numbering.
+Semantic attempt numbering is derived from committed semantic allocation history; operational launch attempts create no gaps or inflated semantic attempt count.
 
-### AC16 - No-progress loops stop automatically
+### AC19 - No-progress identity is canonical
 
-A deterministic repeated orchestration state cannot trigger unbounded automatic continuation.
+Semantic no-progress uses the exact normalized field set and ignored-field rules defined by this brief rather than execution/session UUID churn or model inference.
 
-### AC17 - Status explains launch and retry state
+### AC20 - One repeated semantic state stops automatic continuation
 
-The host can project launch shape, effective readiness, current phase, execution, attempt status, retry budgets, failure classification, gate, and eligible next action from canonical state.
+If the newly resolved semantic progress identity equals the immediately preceding automatic semantic progress identity, Harness stops before launching another automatic semantic execution.
 
-### AC18 - Status has no independent authority
+### AC21 - Operational retry is not semantic no-progress
 
-Status can be regenerated from canonical records and cannot disagree with them through independent mutation.
+Repeated operational readiness failures use the operational retry budget and do not independently trip semantic no-progress detection.
 
-### AC19 - Existing exposure separation remains enforced
+### AC22 - resolve exposes the normative status projection
 
-Implementation exposure cannot contaminate protected evaluator execution through retry or readiness reuse.
+The existing root-only `resolve` GET observation exposes all minimum launch, readiness, allocation-boundary, retry, failure, progress, gate, and eligible-action fields required by this brief.
 
-### AC20 - Existing successful governed workflows still succeed
+### AC23 - Status has no independent authority
 
-The new orchestration semantics do not require unnecessary human intervention for a normal successful implementation/evaluation path.
+The status projection is regenerated from canonical records and cannot disagree with them through independent mutation.
+
+### AC24 - Existing exposure separation remains enforced
+
+Implementation exposure cannot contaminate protected evaluator execution through retry, attached reuse, or readiness mechanisms.
+
+### AC25 - Existing successful governed workflows still succeed
+
+The new orchestration semantics do not require unnecessary human intervention for a normal successful attached or spawned implementation/evaluation path.
 
 ## Required deterministic tests
 
@@ -443,27 +662,39 @@ The spike should prefer deterministic fixtures over expensive live-provider call
 
 At minimum add coverage for:
 
-1. canonical role/grant state produces the expected launch shape;
-2. repository-read/private-write role shape maps correctly to provider-native permissions;
-3. provider translation dropping required private/scratch write capability fails before exposure;
-4. provider translation broadening repository write capability fails closed;
-5. missing required worker/tool capability fails readiness;
-6. supervising model cannot substitute an ad hoc provider invocation;
-7. provider launch failure before semantic attempt;
-8. authentication/readiness failure;
-9. containment startup failure;
-10. unwritable scratch/private workspace;
-11. readiness succeeds followed by semantic execution;
-12. process/provider failure after governed exposure;
-13. operational retry budget exhaustion;
-14. semantic retry budget unaffected by operational failures;
-15. explicit human-authorized retry after automatic exhaustion;
-16. human retry does not expand authority;
-17. repeated no-progress orchestration stops;
-18. changed relevant state progresses rather than falsely triggering loop detection;
-19. failed readiness produces no protected exposure;
-20. status projection accurately represents canonical launch shape and each retry/failure state;
-21. existing normal successful workflow regression.
+1. canonical role/grant state produces the expected spawned launch shape;
+2. canonical role/grant state produces the expected attached attachment shape;
+3. repository-read/private-write spawned shape maps correctly to provider-native permissions;
+4. provider translation dropping required private/scratch write capability fails before `kernel.allocation`;
+5. provider translation broadening repository write capability fails closed;
+6. missing required worker/tool capability fails readiness;
+7. readiness probe receives no governed semantic role material;
+8. readiness PASS is single-use and bound to one exact launch intent;
+9. changed launch intent invalidates an unused readiness PASS;
+10. provider launch/authentication failure creates a durable operational launch attempt but no semantic allocation;
+11. containment startup failure creates no semantic attempt;
+12. unwritable synthetic scratch/private workspace semantics fail readiness;
+13. attached incompatible session fails before semantic allocation;
+14. attached compatible session reaches the same `kernel.allocation` semantic boundary;
+15. `kernel.allocation` precedes role `onAllocate` transition/counter projection;
+16. non-public exposure provenance is appended after semantic allocation and before corresponding governed delivery;
+17. process/provider failure after `kernel.allocation` consumes the semantic attempt;
+18. one launch intent permits one initial operational attempt plus exactly three automatic retries;
+19. changing only failure class does not reset operational retry budget;
+20. changing a normative launch-intent field creates a new operational retry budget;
+21. semantic retry budget is unaffected by pre-allocation operational failures;
+22. explicit human-authorized operational retry after exhaustion is bounded to the exhausted launch intent;
+23. explicit human-authorized semantic retry after semantic exhaustion is bounded to the exact semantic state;
+24. human retry does not expand authority;
+25. semantically identical automatic resolution despite new execution/session/grant UUIDs produces the same progress identity;
+26. changed semantic feedback/candidate/phase produces a different progress identity;
+27. one repeated equivalent semantic progress identity stops automatic continuation;
+28. operational retries do not trigger semantic no-progress;
+29. failed readiness produces no protected exposure;
+30. `resolve` status accurately represents launch intent, readiness, allocation boundary, retry budgets, progress identity, gate, and eligible actions;
+31. status is reproducible from canonical records and has no independent mutation path;
+32. existing normal attached workflow regression;
+33. existing normal spawned workflow regression.
 
 Use live-provider execution only where a property cannot be established deterministically.
 
@@ -475,13 +706,20 @@ Prefer extending the current host authority model rather than adding another coo
 
 In particular:
 
-- launch shape should be derived from host-owned grant/role state;
-- retry history should be derived from host-owned execution/allocation records;
+- derive proposed Role Grant semantics before readiness without durably committing a semantic allocation;
+- give operational launch attempts their own host-owned record/identity;
+- make `kernel.allocation` the canonical semantic-attempt commit;
+- derive semantic attempt numbering from committed host allocation history;
+- derive launch/attachment shapes from host-owned grant/role state;
+- keep the spawned readiness probe material-free and single-use;
+- validate attached sessions from canonical host-known provenance rather than provider reinvocation;
+- derive retry history from host-owned operational-attempt and semantic-allocation records;
 - provider adapters should report operational facts rather than decide semantic authority;
 - provider adapters should translate canonical launch semantics rather than reconstruct them;
 - the supervising model should not decide whether a retry is operational or semantic;
-- status should be host-derived;
-- provider-specific failure wording should be normalized at the adapter boundary;
+- compute semantic progress identity deterministically from the normative field set;
+- extend the existing root-only `resolve` observation rather than creating a second status authority;
+- normalize provider-specific failure wording at the adapter boundary;
 - avoid one-off exceptions for historical 014f/014j failures.
 
 The implementation should make the historical failure patterns impossible or well-defined generically, not encode those individual incidents as policy.
@@ -491,7 +729,9 @@ The implementation should make the historical failure patterns impossible or wel
 014l MUST NOT expand into:
 
 - persistent or resumable provider sessions;
+- two-stage semantic provider conversations;
 - provider conversation lifecycle management;
+- reusable readiness caching across semantic launches;
 - telemetry/cost accounting beyond data strictly necessary for retry semantics;
 - token/context optimisation;
 - cached semantic summaries;
@@ -509,7 +749,7 @@ Those belong to later work.
 
 ## Relationship to subsequent spikes
 
-014l establishes correct launch, readiness, and retry semantics.
+014l establishes correct launch, readiness, semantic-boundary, retry, and no-progress semantics.
 
 Expected follow-on ownership remains:
 
@@ -525,18 +765,22 @@ Expected follow-on ownership remains:
 
 The implementation should produce normal governed evidence for:
 
-- host-derived canonical launch shape;
+- host-derived canonical spawned launch shape;
+- host-derived canonical attached attachment shape;
 - provider translation preserving authority shape;
-- launch-shape mismatch failing before exposure;
-- operational versus semantic attempt separation;
-- readiness-before-exposure;
-- bounded retry behavior;
-- explicit human retry authority;
-- no-progress stopping;
-- status projection;
+- material-free single-use readiness;
+- attached compatibility before semantic allocation;
+- durable operational launch-attempt identity;
+- `kernel.allocation` as the semantic-attempt commit;
+- normative allocation/exposure/delivery ordering;
+- operational versus semantic retry separation;
+- exact operational retry budget and launch-intent reset semantics;
+- bounded human retry authority;
+- canonical semantic progress identity and one-repeat stop rule;
+- root-only `resolve` status projection;
 - regression behavior.
 
-Evaluator verification should focus on whether the semantics are generic and fail-closed, not merely whether historical 014f/014j scenarios can be reproduced.
+Evaluator verification should focus on whether the semantics are generic, deterministic, and fail-closed, not merely whether historical 014f/014j scenarios can be reproduced.
 
 Temporary evaluator fixtures should not be deleted automatically. Any fixture that demonstrates a useful stable invariant should be identified for possible inclusion in the permanent deterministic test suite.
 
@@ -546,25 +790,36 @@ The As-Built should reconstruct behavior primarily from implementation and repos
 
 It should explicitly record:
 
-- the final canonical launch-shape representation and ownership;
+- the final operational launch-attempt record and identity;
+- the final launch-intent normalization/digest;
+- the final canonical launch/attachment-shape representation and ownership;
 - provider translation semantics;
-- the final semantic-attempt boundary;
-- operational versus semantic retry representation;
-- retry-budget semantics;
+- spawned material-free readiness topology and single-use freshness rule;
+- attached compatibility semantics;
+- `kernel.allocation` as the final semantic-attempt boundary;
+- actual ordering of allocation, role `onAllocate`, exposure provenance, and governed material delivery;
+- semantic attempt-number derivation;
+- operational and semantic retry representation;
+- exact operational retry budget;
 - human retry authority semantics;
-- readiness architecture and invalidation behavior;
-- no-progress identity/detection behavior;
-- status projection source of truth;
+- canonical semantic progress normalization and stop rule;
+- `resolve` status projection source of truth;
 - any deliberate divergence from this brief.
 
 ## Completion condition
 
-014l is complete when Harness can reliably answer both:
+014l is complete when Harness can reliably answer all of the following from canonical host state:
 
-> What exact governed runtime shape is this role supposed to receive, and did the provider actually supply it?
+> What exact governed runtime shape is this role supposed to receive?
 
-and:
+> Before semantic allocation, did the spawned runtime prove readiness or did the attached session prove compatibility?
 
-> Did the role fail, or did Harness fail to get the role into a state where it could meaningfully try?
+> Has `kernel.allocation` committed a semantic attempt yet?
 
-and then apply the correct retry, authority, exposure, and history semantics without manual forensic interpretation.
+> If execution failed, did Harness fail operationally or did the semantic role actually get a committed attempt?
+
+> What exact operational or semantic retry budget applies, and why?
+
+> Has automatic semantic continuation made meaningful canonical progress?
+
+and then apply the correct retry, authority, exposure, history, and stop semantics without manual forensic interpretation.
