@@ -182,8 +182,8 @@
   `sha256:c371b918bc29c71c826632bde2e95505148d24c09f8cbe2488bdb04916ee143a`
   of `git diff --cached --binary`; 209 insertions and 36 deletions.
 - Visible verification: the two focused 014m tests passed; all 33 affected
-  014l orchestration tests passed; `npm run typecheck`, `npm run lint`, scoped
-  Prettier, and scoped `git diff --check` passed.
+  014l orchestration tests passed; `npm run typecheck`, `npm run lint`,
+  scoped Prettier, and scoped `git diff --check` passed.
 - Checks unavailable in this execution sandbox: the selected existing
   implementation-feedback and methodology-evolution tests were refused while
   creating nested Git repositories (`spawnSync git EPERM`), and the selected
@@ -193,3 +193,19 @@
   not inspected; unrelated working-tree artifacts were preserved and excluded.
 - Measurement cutoff: immediately before this manifest update; runtime token
   and wall-clock statistics were unavailable.
+
+## 2026-10-10 — Evaluator Verification (attempt 7)
+
+- Execution: `93599c1e-3e91-4d2a-b013-b853a7805122`.
+- Skill: `evaluator`, mode `verify`, contract version 14
+  (`sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b`).
+- Candidate: `3e753a4a732c87fc5b42e9e3cf771482aba6a522`; evaluator revision
+  `001`.
+- Result: succeeded as a report; verification result `BLOCKED`, classification
+  `INFRASTRUCTURE_FAILURE`. Output: `verification-result.json`; `manifest.md`.
+- Checks: none could be run. Every shell command failed at sandbox start-up
+  with a read-only filesystem error, so no frozen case was executed and no
+  candidate coverage is claimed.
+- Limitations: private attempt ledger and result were not finalized for lack of
+  a write-capable tool. A rerun in a working execution environment is needed.
+- Measurement cutoff: immediately before this manifest update.

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "workflow": "014m-pre-semantic-implementation-correction",
+  "execution": "93599c1e-3e91-4d2a-b013-b853a7805122",
+  "attempt": 7,
+  "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+  "evaluatorRevision": "001",
+  "result": "BLOCKED",
+  "classification": "INFRASTRUCTURE_FAILURE",
+  "candidateEvaluationBegan": false,
+  "coverage": {
+    "E1": "not-run",
+    "E2": "not-run",
+    "E3": "not-run"
+  },
+  "reason": "The evaluator execution environment could not run any command: every shell invocation failed at sandbox start-up with a read-only filesystem error while creating a protected path in the public repository mount. No frozen executable case, regression, or evidence procedure was run against the candidate, and no candidate coverage result is claimed. This is an infrastructure failure, not an implementation failure.",
+  "diagnostics": ["shell sandbox start-up failed repeatedly: Read-only file system"],
+  "evaluatorIntegrity": "frozen revision not mutated; identity checks were not completed because command execution was unavailable"
+}
