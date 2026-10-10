@@ -1,0 +1,123 @@
+{
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md acceptance criterion AC01",
+      "mode": "HIDDEN_EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 observes the configured human decision and proves authorization is unavailable unless the complete current pre-semantic exhausted-evidence predicate holds."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md acceptance criterion AC02",
+      "mode": "HIDDEN_EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 checks every host-derived binding category and the behavioral mismatch/staleness matrix against the real decision surface."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md acceptance criterion AC03",
+      "mode": "HIDDEN_EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 requires non-empty reason and defects and verifies that the recorded operational failure class remains unchanged."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md acceptance criterion AC04",
+      "mode": "HIDDEN_EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 compares transition history before and after authorization and requires no allocation, semantic attempt, evaluator result, verdict, or verification-finalized fact."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md acceptance criterion AC05",
+      "mode": "HIDDEN_EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 resolves implementation only after the exact authorization and confirms ordinary evaluator and implementation-correction predicates are unchanged."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md acceptance criterion AC06",
+      "mode": "HIDDEN_EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 validates the named contract input, its authorization identity binding, and assignment exposure of the immutable public evidence without evaluator-private content."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md acceptance criterion AC07",
+      "mode": "HIDDEN_EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 verifies successful handoff consumption plus replay, different-candidate, different-intent, and drift refusal."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md acceptance criterion AC08",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["E2"],
+      "sufficiency": "E2 executes and reviews real-surface regressions showing failed/interrupted executions retain bounded retry authority and successful handoff returns to ordinary downstream resolution."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md acceptance criterion AC09",
+      "mode": "HIDDEN_EXECUTABLE_AND_PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["E1", "E2"],
+      "sufficiency": "E1 checks the explicit-decision gate while E2 exercises authentication, quota, provider, and infrastructure classifications without automatic correction."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md acceptance criterion AC10",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["E2"],
+      "sufficiency": "The complete E2 suite and scoped review cover the unchanged evaluator, repair, correction, acceptance, promotion, As-Built, and Outcome paths."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md acceptance criterion AC11",
+      "mode": "PUBLIC_REGRESSION_AND_DIFF_REVIEW",
+      "required": true,
+      "procedures": ["E2"],
+      "sufficiency": "E2 combines the full regression result with a scoped candidate diff review that requires methodology-only changes or a documented minimal runtime enforcement gap."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md acceptance criterion AC12",
+      "mode": "MANUAL_PUBLIC_EVIDENCE",
+      "required": true,
+      "procedures": ["E3"],
+      "sufficiency": "E3 binds the exact trusted-sequence-6 evaluation and closeout evidence, which directly establishes that candidate sequence 7 did not govern its own verdict."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md acceptance criterion AC13",
+      "mode": "MANUAL_PUBLIC_EVIDENCE",
+      "required": true,
+      "procedures": ["E3"],
+      "sufficiency": "E3 checks the explicit adoption's exact predecessor, candidate, PASS, closeout, and As-Built bindings and the single forward-only sequence-7 append."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md acceptance criterion AC14",
+      "mode": "MANUAL_PUBLIC_EVIDENCE",
+      "required": true,
+      "procedures": ["E3"],
+      "sufficiency": "E3 checks host restart and a fresh ordinary grant over preserved Spike 014l history, including sequence pinning and the exact next authorized action without executing correction."
+    }
+  ],
+  "readiness": {
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:d688bfc9e340045420d2b7f967b6f2d025438c79def95f295c3c22dfd79cdcf9",
+    "privateInventoryIdentity": "sha256:061c2ebe5cc28727c1b0dd0fa56613a34726dfae078fedc534eeb9fcda09c62d",
+    "validatorResultBinding": "sha256:f42316ec90f817ccf005e0715e1b8f778d5b990dd46bd07549916661af1215c6",
+    "integrityValidation": "PASS"
+  }
+}

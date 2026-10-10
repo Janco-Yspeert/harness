@@ -46,3 +46,33 @@
   produced only the shared design contract; evaluator-private material and
   workflow ledgers were not inspected.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-10 — Evaluator Preparation
+
+- Execution: `0ae54648-547e-409a-b0d9-9885e873197e`.
+- Skill: `evaluator`, contract version 14
+  (`sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b`).
+- Role Grant: `sha256:6418aad21304ce74c4aea4afc00ee37508aa86adf05fcfd75327bb30d82f3f40`.
+- Inputs: `spike.md`
+  `sha256:d0623b61c859a4eb4ec9b11d2894cd26ea66a2f2228a89de6e1b2a83b1bdf224`;
+  `design-map.md`
+  `sha256:a07c99f8c8fb4bac61896fec343ab87b89b6dad287be7e4bbd41ee3f456e973d`.
+- Result: succeeded; evaluator revision `001` passed deterministic pre-freeze
+  integrity validation.
+- Outputs: `eval-requirements.md`
+  `sha256:1b1eaf32ba8212ee7fc8515e27459fa4b8a45f9a259b596714c08259e1603066`;
+  `coverage-map.json`
+  `sha256:ffa66179ce318eb1c45d3525707b12a027591e4ec9841ab3a36c9d9a63057c17`;
+  evaluator revision `001`
+  `sha256:d688bfc9e340045420d2b7f967b6f2d025438c79def95f295c3c22dfd79cdcf9`;
+  and this manifest entry.
+- Coverage: 14 required criterion records, 3 frozen evidence procedures, and 2
+  mandatory executable evaluator cases; trusted-N closeout, adoption, and
+  post-adoption cutover use frozen public/host evidence procedures.
+- Checks: controlled positive and negative oracle exercises passed; evaluator
+  support syntax checks passed; the prepared coverage validator accepted the
+  public map; frozen inventory identities and committed public provenance were
+  checked; scoped `git diff --check` passed.
+- Limitations: the prepared evaluator was not run against a candidate during
+  preparation; no live provider or external network service was exercised.
+- Measurement cutoff: immediately before this manifest update.
