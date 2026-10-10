@@ -1,4 +1,5 @@
 {
+  "evaluationRequirements": "sha256:1b1eaf32ba8212ee7fc8515e27459fa4b8a45f9a259b596714c08259e1603066",
   "criteria": [
     {
       "id": "AC01",

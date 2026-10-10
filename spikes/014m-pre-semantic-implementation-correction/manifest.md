@@ -113,3 +113,37 @@
   its public coverage projection omits the required evaluation-requirements
   identity; this candidate does not rewrite that evaluator-owned evidence.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-10 — Governed Evaluator Preparation
+
+- Execution: `b9dbe747-3274-4850-8210-826a6d399961`.
+- Skill: `evaluator`, contract version 14
+  (`sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b`).
+- Role Grant: `sha256:f532744b466c9433be85120c334fd6d58c9998a538eb2443b6da8a5c9f9a749b`.
+- Inputs: `spike.md`
+  `sha256:d0623b61c859a4eb4ec9b11d2894cd26ea66a2f2228a89de6e1b2a83b1bdf224`;
+  `design-map.md`
+  `sha256:a07c99f8c8fb4bac61896fec343ab87b89b6dad287be7e4bbd41ee3f456e973d`.
+- Result: succeeded; evaluator revision `001` remains unchanged and passed
+  deterministic preparation-integrity validation.
+- Outputs: `eval-requirements.md`
+  `sha256:1b1eaf32ba8212ee7fc8515e27459fa4b8a45f9a259b596714c08259e1603066`;
+  `coverage-map.json`
+  `sha256:5dfbec098fa7a08352c4fa3a8f3b38510b15ac800df617b65770be637885a681`;
+  evaluator revision `001`
+  `sha256:d688bfc9e340045420d2b7f967b6f2d025438c79def95f295c3c22dfd79cdcf9`;
+  and this manifest entry. The public coverage projection now binds the exact
+  frozen evaluation-requirements identity required for governed input
+  resolution; acceptance semantics and private evaluator bytes did not change.
+- Coverage: 14 required criterion records, 3 frozen evidence procedures, and 2
+  mandatory executable evaluator cases; trusted-N closeout, adoption, and
+  post-adoption cutover retain their frozen public/host evidence procedures.
+- Checks: bound input identities and committed provenance verified; frozen
+  inventory hashes matched; evaluator JavaScript parsed; controlled oracle
+  self-check and deterministic structural validation passed; the public
+  prepared-coverage validator accepted the projection; scoped formatting and
+  whitespace checks passed.
+- Limitations: the evaluator was not run against the candidate during this
+  preparation execution; no live provider or external network service was
+  exercised.
+- Measurement cutoff: immediately before this manifest update.
