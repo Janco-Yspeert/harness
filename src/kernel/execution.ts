@@ -68,7 +68,12 @@ import {
   resolveAuthority,
   type Resolution,
 } from "./resolver.ts";
-import type { LaunchAttemptRecord } from "./orchestration.ts";
+import {
+  OPERATIONAL_FAILURE_CLASSES,
+  operationalExhaustedIdentity,
+  operationalRetryAllowance,
+  type LaunchAttemptRecord,
+} from "./orchestration.ts";
 import {
   DIAGNOSTIC_CATEGORIES,
   type Diagnostic,
@@ -166,18 +171,26 @@ function preSemanticImplementationCorrection(
     typeof launchAttempt.launchIntent !== "string" ||
     typeof launchAttempt.role !== "string" ||
     launchAttempt.role === "implementation" ||
-    typeof launchAttempt.failure !== "string"
+    typeof launchAttempt.failure !== "string" ||
+    !OPERATIONAL_FAILURE_CLASSES.some(
+      (classification) => classification === launchAttempt.failure,
+    )
   )
     throw new Error(
       "pre-semantic correction requires the latest downstream launch attempt to be a failed unconsumed refusal",
     );
-  if (
-    events.some(
-      (event) =>
-        event.transition === "kernel.readiness-consumed" &&
-        event.evidence.launchAttempt === launchAttempt.id,
-    )
-  )
+  const semanticallyAllocated = events.some((event) => {
+    if (event.transition === "kernel.readiness-consumed")
+      return event.evidence.launchIntent === launchAttempt.launchIntent;
+    if (event.transition !== "kernel.allocation") return false;
+    const grant = event.evidence.grant as RoleGrant | undefined;
+    return (
+      events.indexOf(event) > events.indexOf(attempt) &&
+      event.evidence.workflowGrant === launchAttempt.workflowGrant &&
+      grant?.role === launchAttempt.role
+    );
+  });
+  if (semanticallyAllocated)
     throw new Error(
       "pre-semantic correction cannot use a semantically consumed launch attempt",
     );
@@ -188,18 +201,28 @@ function preSemanticImplementationCorrection(
       event.evidence.kind === "operational" &&
       event.evidence.scope === launchAttempt.launchIntent,
   );
-  if (typeof exhaustion?.evidence.exhausted !== "string")
+  const exhausted = exhaustion?.evidence;
+  const attempts = events.filter(
+    (event) =>
+      event.transition === "kernel.launch-attempt" &&
+      event.evidence.launchIntent === launchAttempt.launchIntent,
+  );
+  if (
+    typeof exhausted?.exhausted !== "string" ||
+    exhausted.workflowGrant !== launchAttempt.workflowGrant ||
+    !Number.isSafeInteger(exhausted.used) ||
+    exhausted.used !== attempts.length ||
+    exhausted.exhausted !==
+      operationalExhaustedIdentity(launchAttempt.launchIntent, attempts.length)
+  )
     throw new Error(
       "pre-semantic correction requires exact operational retry exhaustion",
     );
-  if (
-    events.some(
-      (event) =>
-        events.indexOf(event) > events.indexOf(exhaustion) &&
-        event.transition === "kernel.retry-authority" &&
-        event.evidence.exhausted === exhaustion.evidence.exhausted,
-    )
-  )
+  const allowance = operationalRetryAllowance(
+    events,
+    launchAttempt.launchIntent,
+  );
+  if (allowance.automaticRemaining > 0 || allowance.humanRemaining > 0)
     throw new Error(
       "pre-semantic correction requires an exhausted retry state with no unused retry authority",
     );
@@ -232,7 +255,7 @@ function preSemanticImplementationCorrection(
     downstreamRole: launchAttempt.role,
     launchIntent: launchAttempt.launchIntent,
     launchAttempt: launchAttempt.id,
-    retryExhaustion: exhaustion.evidence.exhausted,
+    retryExhaustion: exhausted.exhausted,
     failureClassification: launchAttempt.failure,
     cycle,
   };
@@ -256,7 +279,7 @@ function preSemanticImplementationCorrection(
     implementationHandoff: required(handoff.id),
     implementationInputs,
     launchAttemptEvidence: contentId(launchAttempt),
-    retryExhaustionEvidence: contentId(exhaustion.evidence),
+    retryExhaustionEvidence: contentId(exhausted),
     reason,
     defects,
   };

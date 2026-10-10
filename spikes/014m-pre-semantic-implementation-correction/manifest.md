@@ -147,3 +147,49 @@
   preparation execution; no live provider or external network service was
   exercised.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-10 — Governed Implementation
+
+- Execution: `51184adc-8143-4c92-8762-3c4b5585b32c`.
+- Skill: `implementation`, contract version 5
+  (`sha256:8968bbd6f3fade371b6d7c872702b1c559539ce3f05b63071abb127c2ba145d8`).
+- Role Grant:
+  `sha256:410f6728aa7f2149b9afdf2a8277312ed64053efdc98cacb954ffe10aa149e91`.
+- Inputs: `spike.md`
+  `sha256:d0623b61c859a4eb4ec9b11d2894cd26ea66a2f2228a89de6e1b2a83b1bdf224`;
+  `design-map.md`
+  `sha256:a07c99f8c8fb4bac61896fec343ab87b89b6dad287be7e4bbd41ee3f456e973d`;
+  `coverage-map.json`
+  `sha256:5dfbec098fa7a08352c4fa3a8f3b38510b15ac800df617b65770be637885a681`;
+  `eval-requirements.md`
+  `sha256:1b1eaf32ba8212ee7fc8515e27459fa4b8a45f9a259b596714c08259e1603066`.
+  Each working file matched its host-bound identity; no implementation
+  feedback input was bound.
+- Base: governed evaluator-prepared checkpoint `e5207485`. The earlier
+  candidate at `295dd4ae` was audited as pre-existing work rather than treated
+  as this execution's completion evidence.
+- Result: succeeded. The authorization resolver now accepts only a known
+  operational failure class, recomputes the exact retry-exhaustion identity
+  from the launch intent and complete attempt count, requires the canonical
+  operational allowance to be exhausted, binds exhaustion to the launch
+  attempt's Workflow Grant, and refuses both readiness consumption and direct
+  downstream semantic allocation. Visible coverage now includes the complete
+  caller-mismatch matrix, pre-exhaustion refusal, explicit-decision gate,
+  semantic-allocation refusal, interrupted retry retention, input drift, and
+  successful-handoff consumption.
+- Output: corrective candidate patch over two source/test paths, excluding
+  this entry, identity
+  `sha256:c371b918bc29c71c826632bde2e95505148d24c09f8cbe2488bdb04916ee143a`
+  of `git diff --cached --binary`; 209 insertions and 36 deletions.
+- Visible verification: the two focused 014m tests passed; all 33 affected
+  014l orchestration tests passed; `npm run typecheck`, `npm run lint`, scoped
+  Prettier, and scoped `git diff --check` passed.
+- Checks unavailable in this execution sandbox: the selected existing
+  implementation-feedback and methodology-evolution tests were refused while
+  creating nested Git repositories (`spawnSync git EPERM`), and the selected
+  workflow-run integration tests were refused while binding localhost
+  (`listen EPERM`), all before relevant assertions. No live provider or network
+  service was exercised. Evaluator-private material and workflow ledgers were
+  not inspected; unrelated working-tree artifacts were preserved and excluded.
+- Measurement cutoff: immediately before this manifest update; runtime token
+  and wall-clock statistics were unavailable.

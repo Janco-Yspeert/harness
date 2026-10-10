@@ -21,6 +21,7 @@ import { harnessValidators } from "../src/methodologies/harness-public.ts";
 import { ExecutionKernel } from "../src/kernel/execution.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
 import { authorityBasis } from "../src/kernel/resolver.ts";
+import { operationalExhaustedIdentity } from "../src/kernel/orchestration.ts";
 import {
   appendLedger,
   contentId,
@@ -3564,8 +3565,8 @@ void test("014m: pre-semantic correction preserves implementation lineage and ex
   const cycle = "002";
   const candidate = "a".repeat(40);
   const launchIntent = identity("launch-intent");
-  const launchAttempt = "launch-attempt-001";
-  const retryExhaustion = identity("retry-exhaustion");
+  const launchAttempt = "launch-attempt-004";
+  const retryExhaustion = operationalExhaustedIdentity(launchIntent, 4);
   const inputIdentity = identity(
     readFileSync(join(f.root, "items/work-item/input.txt")),
   );
@@ -3625,19 +3626,46 @@ void test("014m: pre-semantic correction preserves implementation lineage and ex
     commit: candidate,
     inputs: { input: inputIdentity, priorCorrection: identity("superseded") },
   });
-  f.event("kernel.launch-attempt", {
-    id: launchAttempt,
+  const recordAttempt = (ordinal: number) =>
+    f.event("kernel.launch-attempt", {
+      id: `launch-attempt-${String(ordinal).padStart(3, "0")}`,
+      workflowGrant: "prior-grant",
+      role: "evaluator-verify",
+      mode: "spawned",
+      predecessor: null,
+      launchIntent,
+      ordinal,
+      outcome: "refused",
+      readiness: "failed",
+      compatibility: "not-applicable",
+      failure: "authentication-failure",
+      consumed: false,
+    });
+  for (let ordinal = 1; ordinal <= 3; ordinal += 1) recordAttempt(ordinal);
+  f.event("kernel.retry-exhausted", {
     workflowGrant: "prior-grant",
-    role: "evaluator-verify",
-    mode: "spawned",
-    predecessor: null,
-    launchIntent,
-    outcome: "refused",
-    readiness: "failed",
-    compatibility: "not-applicable",
-    failure: "authentication-failure",
-    consumed: false,
+    kind: "operational",
+    scope: launchIntent,
+    exhausted: operationalExhaustedIdentity(launchIntent, 3),
+    used: 3,
   });
+  const grant = f.authorize();
+  assert.throws(
+    () =>
+      f.kernel.decide(f.workflow, grant.id, "authorize", {
+        candidate,
+        downstreamRole: "evaluator-verify",
+        launchIntent,
+        launchAttempt: "launch-attempt-003",
+        retryExhaustion: operationalExhaustedIdentity(launchIntent, 3),
+        failureClassification: "authentication-failure",
+        cycle,
+        reason: "host readiness exposed a candidate runtime defect",
+        defects: ["the readiness tool is absent from the provider allowlist"],
+      }),
+    /no unused retry authority/,
+  );
+  recordAttempt(4);
   f.event("kernel.retry-exhausted", {
     workflowGrant: "prior-grant",
     kind: "operational",
@@ -3645,7 +3673,6 @@ void test("014m: pre-semantic correction preserves implementation lineage and ex
     exhausted: retryExhaustion,
     used: 4,
   });
-  const grant = f.authorize();
   const evidence = {
     candidate,
     downstreamRole: "evaluator-verify",
@@ -3657,13 +3684,39 @@ void test("014m: pre-semantic correction preserves implementation lineage and ex
     reason: "host readiness exposed a candidate runtime defect",
     defects: ["the readiness tool is absent from the provider allowlist"],
   };
+  assert.equal(f.kernel.inspect(f.workflow, grant.id).kind, "denied");
+  for (const [field, value] of Object.entries({
+    candidate: "b".repeat(40),
+    downstreamRole: "design-map",
+    launchIntent: identity("wrong-intent"),
+    launchAttempt: "wrong-attempt",
+    retryExhaustion: identity("wrong-exhaustion"),
+    failureClassification: "provider-unavailable",
+    cycle: "wrong-cycle",
+  }))
+    assert.throws(
+      () =>
+        f.kernel.decide(f.workflow, grant.id, "authorize", {
+          ...evidence,
+          [field]: value,
+        }),
+      new RegExp(`evidence mismatch: ${field}`),
+    );
   assert.throws(
     () =>
       f.kernel.decide(f.workflow, grant.id, "authorize", {
         ...evidence,
-        launchAttempt: "wrong-attempt",
+        reason: " ",
       }),
-    /evidence mismatch: launchAttempt/,
+    /requires reason/,
+  );
+  assert.throws(
+    () =>
+      f.kernel.decide(f.workflow, grant.id, "authorize", {
+        ...evidence,
+        defects: [],
+      }),
+    /requires defects/,
   );
   const decision = f.kernel.decide(f.workflow, grant.id, "authorize", evidence);
   const feedback = object(decision.evidence.feedback);
@@ -3695,6 +3748,11 @@ void test("014m: pre-semantic correction preserves implementation lineage and ex
     feedback,
   );
   f.kernel.process(f.workflow, allocated.execution.id, "interrupted");
+  assert.equal(
+    f.kernel.inspect(f.workflow, grant.id).kind,
+    "grant",
+    "an interrupted correction retains its bounded implementation authority",
+  );
 
   writeFileSync(join(f.root, "items/work-item/input.txt"), "drifted\n");
   assert.deepEqual(f.kernel.inspect(f.workflow, grant.id), {
@@ -3709,6 +3767,98 @@ void test("014m: pre-semantic correction preserves implementation lineage and ex
     inputs: { input: inputIdentity },
   });
   assert.equal(f.kernel.inspect(f.workflow, grant.id).kind, "denied");
+});
+
+void test("014m: pre-semantic correction refuses every semantic-allocation marker", (t) => {
+  for (const marker of ["readiness", "allocation"] as const) {
+    const f = fixture(t, `pre-semantic-${marker}`);
+    const cycle = "002";
+    const candidate = "a".repeat(40);
+    const launchIntent = identity(`launch-intent-${marker}`);
+    const launchAttempt = "launch-attempt-004";
+    const retryExhaustion = operationalExhaustedIdentity(launchIntent, 4);
+    const inputIdentity = identity(
+      readFileSync(join(f.root, "items/work-item/input.txt")),
+    );
+    f.policy.scopeEvent = {
+      transition: "correction-cycle-opened",
+      field: "cycle",
+      initial: "001",
+    };
+    f.policy.humanDecisions = {
+      authorize: {
+        transition: "pre-semantic-implementation-correction-authorized",
+        when: {
+          all: [
+            { event: "implementation-handoff", current: true },
+            { event: "kernel.launch-attempt", after: "implementation-handoff" },
+            { event: "kernel.retry-exhausted" },
+          ],
+        },
+        bindings: {},
+        requiredStrings: ["reason"],
+        requiredStringArrays: ["defects"],
+        excludePreservedInputs: [],
+        evidenceResolver: "pre-semantic-implementation-correction",
+      },
+    };
+    json(join(f.root, "policy.json"), f.policy);
+    f.event("correction-cycle-opened", { cycle });
+    f.event("implementation-handoff", {
+      cycle,
+      commit: candidate,
+      inputs: { input: inputIdentity },
+    });
+    for (let ordinal = 1; ordinal <= 4; ordinal += 1)
+      f.event("kernel.launch-attempt", {
+        id: `launch-attempt-${String(ordinal).padStart(3, "0")}`,
+        workflowGrant: "prior-grant",
+        role: "evaluator-verify",
+        mode: "spawned",
+        predecessor: null,
+        launchIntent,
+        ordinal,
+        outcome: "refused",
+        readiness: "failed",
+        compatibility: "not-applicable",
+        failure: "pre-allocation-readiness-failure",
+        consumed: false,
+      });
+    if (marker === "readiness")
+      f.event("kernel.readiness-consumed", {
+        launchAttempt,
+        launchIntent,
+        shapeIdentity: identity("shape"),
+      });
+    else
+      f.event("kernel.allocation", {
+        workflowGrant: "prior-grant",
+        grant: { role: "evaluator-verify" },
+      });
+    f.event("kernel.retry-exhausted", {
+      workflowGrant: "prior-grant",
+      kind: "operational",
+      scope: launchIntent,
+      exhausted: retryExhaustion,
+      used: 4,
+    });
+    const grant = f.authorize();
+    assert.throws(
+      () =>
+        f.kernel.decide(f.workflow, grant.id, "authorize", {
+          candidate,
+          downstreamRole: "evaluator-verify",
+          launchIntent,
+          launchAttempt,
+          retryExhaustion,
+          failureClassification: "pre-allocation-readiness-failure",
+          cycle,
+          reason: "the candidate caused readiness to fail",
+          defects: ["candidate readiness integration is incomplete"],
+        }),
+      /semantically consumed launch attempt/,
+    );
+  }
 });
 
 void test("TR6/TR7: a real publication transport failure preserves semantic PASS and withholds a policy-required action transition", (t) => {
