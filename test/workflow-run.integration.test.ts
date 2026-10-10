@@ -315,7 +315,7 @@ void test("a host-owned run outlives its client and is inspectable by identity",
     assert.equal(run.executionAttempt, 1);
     assert.equal(run.role, "implementation");
     assert.equal(run.skill, "skills/implementation/SKILL.md");
-    assert.equal(run.skillVersion, "5");
+    assert.equal(run.skillVersion, "6");
     assert.match(run.contractIdentity as string, /^sha256:[a-f0-9]{64}$/);
     assert.equal(run.contractDeliveryMode, "host-directed-repository-load");
     assert.equal(run.executor, "claude");
@@ -381,7 +381,7 @@ void test("governed roles resolve their repository contract instead of trusting 
     });
     assert.equal(omitted.status, 201, omitted.error);
     assert.equal(omitted.run.skill, "skills/implementation/SKILL.md");
-    assert.equal(omitted.run.skillVersion, "5");
+    assert.equal(omitted.run.skillVersion, "6");
     assert.equal(
       omitted.run.contractIdentity,
       `sha256:${createHash("sha256")

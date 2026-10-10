@@ -103,6 +103,7 @@ import type {
   TelemetrySink,
   WorkerExecutionContext,
   WorkflowGrant,
+  WorkflowPolicy,
   ArtifactValidators,
 } from "./model.ts";
 
@@ -136,6 +137,136 @@ export function redact(value: string): string {
 }
 export function safeDetail(value: string): string {
   return (redact(value).split("\n")[0] ?? "").slice(0, DETAIL_LIMIT);
+}
+
+function preSemanticImplementationCorrection(
+  events: LedgerEvent[],
+  policy: WorkflowPolicy,
+  supplied: Data,
+  excludedInputs: string[],
+): Data {
+  const current = scopedEvents(events, policy);
+  const handoff = current.findLast(
+    (event) => event.transition === "implementation-handoff",
+  );
+  if (!handoff || typeof handoff.evidence.commit !== "string")
+    throw new Error("pre-semantic correction requires a current candidate");
+  const handoffIndex = events.indexOf(handoff);
+  const attempt = events.findLast(
+    (event) =>
+      event.transition === "kernel.launch-attempt" &&
+      events.indexOf(event) > handoffIndex,
+  );
+  const launchAttempt = attempt?.evidence;
+  if (
+    !attempt ||
+    launchAttempt?.outcome !== "refused" ||
+    launchAttempt.consumed !== false ||
+    typeof launchAttempt.id !== "string" ||
+    typeof launchAttempt.launchIntent !== "string" ||
+    typeof launchAttempt.role !== "string" ||
+    launchAttempt.role === "implementation" ||
+    typeof launchAttempt.failure !== "string"
+  )
+    throw new Error(
+      "pre-semantic correction requires the latest downstream launch attempt to be a failed unconsumed refusal",
+    );
+  if (
+    events.some(
+      (event) =>
+        event.transition === "kernel.readiness-consumed" &&
+        event.evidence.launchAttempt === launchAttempt.id,
+    )
+  )
+    throw new Error(
+      "pre-semantic correction cannot use a semantically consumed launch attempt",
+    );
+  const exhaustion = events.findLast(
+    (event) =>
+      event.transition === "kernel.retry-exhausted" &&
+      events.indexOf(event) > events.indexOf(attempt) &&
+      event.evidence.kind === "operational" &&
+      event.evidence.scope === launchAttempt.launchIntent,
+  );
+  if (typeof exhaustion?.evidence.exhausted !== "string")
+    throw new Error(
+      "pre-semantic correction requires exact operational retry exhaustion",
+    );
+  if (
+    events.some(
+      (event) =>
+        events.indexOf(event) > events.indexOf(exhaustion) &&
+        event.transition === "kernel.retry-authority" &&
+        event.evidence.exhausted === exhaustion.evidence.exhausted,
+    )
+  )
+    throw new Error(
+      "pre-semantic correction requires an exhausted retry state with no unused retry authority",
+    );
+  const implementationInputs = Object.fromEntries(
+    Object.entries(object(handoff.evidence.inputs)).filter(
+      ([name]) => !excludedInputs.includes(name),
+    ),
+  );
+  if (
+    Object.keys(implementationInputs).length === 0 ||
+    Object.values(implementationInputs).some(
+      (value) => typeof value !== "string",
+    )
+  )
+    throw new Error(
+      "pre-semantic correction requires the original implementation input lineage",
+    );
+  const scope = required(
+    policy.scopeEvent,
+    "pre-semantic correction requires configured workflow scope",
+  );
+  const cycle =
+    events.findLast((event) => event.transition === scope.transition)?.evidence[
+      scope.field
+    ] ?? scope.initial;
+  if (typeof cycle !== "string")
+    throw new Error("pre-semantic correction scope must be a string");
+  const expected: Data = {
+    candidate: handoff.evidence.commit,
+    downstreamRole: launchAttempt.role,
+    launchIntent: launchAttempt.launchIntent,
+    launchAttempt: launchAttempt.id,
+    retryExhaustion: exhaustion.evidence.exhausted,
+    failureClassification: launchAttempt.failure,
+    cycle,
+  };
+  for (const [field, value] of Object.entries(expected))
+    if (contentId(supplied[field]) !== contentId(value))
+      throw new Error(`pre-semantic correction evidence mismatch: ${field}`);
+  const reason = supplied.reason;
+  const defects = supplied.defects;
+  if (typeof reason !== "string" || !reason.trim())
+    throw new Error("pre-semantic correction requires reason");
+  if (
+    !Array.isArray(defects) ||
+    defects.length === 0 ||
+    !defects.every(
+      (defect) => typeof defect === "string" && defect.trim().length > 0,
+    )
+  )
+    throw new Error("pre-semantic correction requires defects");
+  const feedback: Data = {
+    ...expected,
+    implementationHandoff: required(handoff.id),
+    implementationInputs,
+    launchAttemptEvidence: contentId(launchAttempt),
+    retryExhaustionEvidence: contentId(exhaustion.evidence),
+    reason,
+    defects,
+  };
+  return {
+    ...expected,
+    reason,
+    defects,
+    authorization: contentId(feedback),
+    feedback,
+  };
 }
 function boundedPath(root: string, path: string): string {
   if (!path || isAbsolute(path))
@@ -1189,6 +1320,7 @@ export class ExecutionKernel {
         ? { evaluatorRevision: grant.inputs.evaluatorRevision }
         : {}),
       ...(typeof attempt === "number" ? { attempt } : {}),
+      ...(grant.inputEvidence ? { inputEvidence: grant.inputEvidence } : {}),
       publicArtifactRoot: required(this.project.workflows[workflow]).directory,
       permittedEvidenceDestinations:
         grant.hostActions.evidence?.destinations ?? [],
@@ -2086,8 +2218,17 @@ export class ExecutionKernel {
         )
           throw new Error(`human decision requires ${field}`);
       }
+      const resolvedEvidence =
+        rule.evidenceResolver === "pre-semantic-implementation-correction"
+          ? preSemanticImplementationCorrection(
+              events,
+              definition.policy,
+              evidence,
+              rule.excludePreservedInputs ?? [],
+            )
+          : evidence;
       const canonical: Data = {
-        ...evidence,
+        ...resolvedEvidence,
         authorityOrigin: "human",
         decision,
         workflowGrant: grant.id,

@@ -48,6 +48,16 @@
       "jsonChecks": {
         "classification": "IMPLEMENTATION_FAILURE"
       }
+    },
+    {
+      "name": "preSemanticImplementationCorrection",
+      "event": "pre-semantic-implementation-correction-authorized",
+      "current": true,
+      "after": "implementation-handoff",
+      "field": "authorization",
+      "optional": true,
+      "evidenceField": "feedback",
+      "preserveInputsField": "implementationInputs"
     }
   ],
   "results": ["succeeded", "blocked", "refused", "failed"],

@@ -32,6 +32,14 @@ export interface InputRule {
   optional?: boolean;
   jsonChecks?: Record<string, unknown>;
   identityBinding?: { input: string; field: string };
+  // Expose a public-safe structured event field whose content identity equals
+  // this input. Correction roles can therefore consume the exact authority
+  // evidence rather than reverse-engineering it from mutable workflow state.
+  evidenceField?: string;
+  // When evidenceField is present, require every named input in this nested
+  // object to resolve to the same identity in the new Role Grant. This keeps a
+  // correction on the original valid input lineage while adding feedback.
+  preserveInputsField?: string;
   validator?: string;
   jsonValue?: string;
 }
@@ -129,6 +137,8 @@ export interface WorkflowPolicy {
       >;
       requiredStrings?: string[];
       requiredStringArrays?: string[];
+      evidenceResolver?: "pre-semantic-implementation-correction";
+      excludePreservedInputs?: string[];
     }
   >;
   maxAllocations: number;
@@ -341,6 +351,7 @@ export interface RoleGrant {
   contractIdentity: string;
   skillIdentity: string;
   inputs: Record<string, string>;
+  inputEvidence?: Record<string, Data>;
   workspaces: Workspace[];
   capabilities: string[];
   hostActions: {
@@ -413,6 +424,7 @@ export interface WorkerExecutionContext {
   candidate?: string;
   evaluatorRevision?: string;
   attempt?: number;
+  inputEvidence?: Record<string, Data>;
   publicArtifactRoot: string;
   permittedEvidenceDestinations: string[];
   privateWorkspaceIds: string[];

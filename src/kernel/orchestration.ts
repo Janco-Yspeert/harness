@@ -275,6 +275,7 @@ export function authorityScopeIdentity(grant: RoleGrant): string {
     contractIdentity: grant.contractIdentity,
     skillIdentity: grant.skillIdentity,
     inputs: grant.inputs,
+    ...(grant.inputEvidence ? { inputEvidence: grant.inputEvidence } : {}),
     workspaces: grant.workspaces,
     capabilities: sorted(grant.capabilities),
     hostActions: grant.hostActions,

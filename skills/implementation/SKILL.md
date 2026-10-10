@@ -7,20 +7,25 @@ description:
 
 # Spike Implementation
 
-Contract version: 5
+Contract version: 6
 
 Answer one question: **does the frozen spike now exist in the repository?**
 
 ## Inputs
 
 Require and read the frozen `spike.md`, frozen `design-map.md`, public
-`eval-requirements.md`, repository instructions, and any public implementation
-feedback bound from the exact current `verification-finalized` event after the
-prior implementation handoff and classified `IMPLEMENTATION_FAILURE`. The
-committed public verification record is the retry-feedback authority; verify its
-recorded content identity, classification, and committed provenance before
-changing files. Do not discover retry authority from mutable repository state or
-select a different skill/evaluator authority.
+`eval-requirements.md`, repository instructions, and any correction feedback
+explicitly bound by the Role Grant. Ordinary post-verification feedback must
+come from the exact current committed `verification-finalized` event after the
+prior implementation handoff and be classified `IMPLEMENTATION_FAILURE`.
+Pre-semantic correction feedback must come from the exact current
+`pre-semantic-implementation-correction-authorized` input and its
+`executionContext.inputEvidence` projection; verify that its authorization
+identity matches the canonical evidence, that its preserved input lineage
+matches the other Role Grant inputs, and that it contains a non-empty human
+reason and defect list. It is operational evidence plus human correction
+authority, never an evaluator verdict. Do not discover correction authority from
+mutable repository state or select a different skill/evaluator authority.
 
 An explicitly frozen process exception may omit named inputs. Do not infer an
 exception after work begins.
@@ -53,9 +58,10 @@ candidate and its manifest entry. Stage intended paths explicitly, inspect the
 staged diff, and exclude private evaluation, promoted evaluation, Outcomes, and
 unrelated work.
 
-On a confirmed implementation failure, consume only sanitized public feedback
-and the same frozen contract. Produce a new implementation commit. Do not ask
-the evaluator to rerun `prepare` and do not attempt to reconstruct hidden tests.
+On a confirmed implementation failure or an authorized pre-semantic correction,
+consume only the bound public feedback and the same frozen contract/input
+lineage. Produce a new implementation commit. Do not ask the evaluator to rerun
+`prepare` and do not attempt to reconstruct hidden tests.
 
 After implementation and visible verification, make each attempt's `manifest.md`
 entry the final repository-content step. Record skill/version, inputs, output

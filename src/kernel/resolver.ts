@@ -13,6 +13,7 @@ import {
 import { inside } from "./methodology.ts";
 import type {
   BoundRole,
+  Data,
   LedgerEvent,
   MethodologyDefinition,
   Project,
@@ -94,11 +95,13 @@ export function roleInputs(
   events: LedgerEvent[],
   definition: MethodologyDefinition,
   validators: ArtifactValidators = {},
+  inputEvidence: Record<string, Data> = {},
 ): Record<string, string> {
   const directory = project.workflows[workflow]?.directory;
   if (!directory) throw new Error("unknown workflow");
   const inputs: Record<string, string> = {};
   const documents: Record<string, unknown> = {};
+  const preservedInputs: Array<{ name: string; inputs: Data }> = [];
   const fieldAt = (value: unknown, path: string): unknown =>
     path.split(".").reduce<unknown>((v, key) => object(v)[key], value);
   for (const rule of role.contract.inputs) {
@@ -133,6 +136,27 @@ export function roleInputs(
         throw new Error(`required input identity missing: ${rule.name}`);
       }
       inputs[rule.name] = field;
+      if (rule.evidenceField) {
+        const exposed = fieldAt(event?.evidence, rule.evidenceField);
+        if (
+          exposed === null ||
+          typeof exposed !== "object" ||
+          Array.isArray(exposed) ||
+          contentId(exposed) !== field
+        )
+          throw new Error(`input evidence identity mismatch: ${rule.name}`);
+        inputEvidence[rule.name] = exposed as Data;
+        if (rule.preserveInputsField) {
+          const lineage = fieldAt(exposed, rule.preserveInputsField);
+          if (
+            lineage === null ||
+            typeof lineage !== "object" ||
+            Array.isArray(lineage)
+          )
+            throw new Error(`input lineage missing: ${rule.name}`);
+          preservedInputs.push({ name: rule.name, inputs: lineage as Data });
+        }
+      }
     } else {
       const name = rule.path ?? event?.evidence.path;
       if (typeof name !== "string")
@@ -198,6 +222,23 @@ export function roleInputs(
       ) !== inputs[rule.name]
     )
       throw new Error(`input identity binding mismatch: ${rule.name}`);
+  for (const lineage of preservedInputs)
+    for (const [name, expected] of Object.entries(lineage.inputs))
+      if (typeof expected !== "string")
+        throw new Error(
+          `preserved input lineage mismatch: ${lineage.name}.${name}`,
+        );
+      else if (inputs[name] === undefined) {
+        const rule = role.contract.inputs.find((input) => input.name === name);
+        if (!rule?.optional)
+          throw new Error(
+            `preserved input lineage missing: ${lineage.name}.${name}`,
+          );
+        inputs[name] = expected;
+      } else if (inputs[name] !== expected)
+        throw new Error(
+          `preserved input lineage mismatch: ${lineage.name}.${name}`,
+        );
   return inputs;
 }
 export function resolveAuthority(
@@ -309,6 +350,7 @@ export function resolveAuthority(
   )
     return { kind: "denied", reason: "session provenance prohibits role" };
   let inputs: Record<string, string>;
+  const inputEvidence: Record<string, Data> = {};
   try {
     inputs = roleInputs(
       project,
@@ -317,6 +359,7 @@ export function resolveAuthority(
       effectiveEvents,
       definition,
       validators,
+      inputEvidence,
     );
   } catch (e) {
     return { kind: "denied", reason: (e as Error).message };
@@ -414,6 +457,7 @@ export function resolveAuthority(
     contractIdentity: role.contractIdentity,
     skillIdentity: role.skill.identity,
     inputs,
+    ...(Object.keys(inputEvidence).length > 0 ? { inputEvidence } : {}),
     workspaces,
     capabilities: role.contract.capabilities,
     hostActions: {

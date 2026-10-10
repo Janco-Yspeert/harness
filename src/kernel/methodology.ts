@@ -175,7 +175,15 @@ export function definitionFrom(
       rawDecision.bindings === null ||
       Array.isArray(rawDecision.bindings) ||
       !Array.isArray(rawDecision.requiredStrings ?? []) ||
-      !Array.isArray(rawDecision.requiredStringArrays ?? [])
+      !Array.isArray(rawDecision.requiredStringArrays ?? []) ||
+      !Array.isArray(rawDecision.excludePreservedInputs ?? []) ||
+      (Array.isArray(rawDecision.excludePreservedInputs) &&
+        rawDecision.excludePreservedInputs.some(
+          (name) => typeof name !== "string" || name.length === 0,
+        )) ||
+      (rawDecision.evidenceResolver !== undefined &&
+        rawDecision.evidenceResolver !==
+          "pre-semantic-implementation-correction")
     )
       throw new Error(`invalid human decision: ${name}`);
   }

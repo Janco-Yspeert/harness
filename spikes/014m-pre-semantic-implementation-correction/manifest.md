@@ -76,3 +76,40 @@
 - Limitations: the prepared evaluator was not run against a candidate during
   preparation; no live provider or external network service was exercised.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-10 — Candidate Implementation
+
+- Authority: explicit operator request to implement the smallest generic
+  correction/re-entry mechanism; this entry does not claim an independently
+  allocated implementation handoff or evaluator acceptance.
+- Skill: `implementation`, contract version 6
+  (`sha256:f41e0d0c335b8123a47590bf1cd9364c1473209064d74c542e16de25600c9e9e`).
+- Inputs: `spike.md`
+  `sha256:d0623b61c859a4eb4ec9b11d2894cd26ea66a2f2228a89de6e1b2a83b1bdf224`;
+  `design-map.md`
+  `sha256:a07c99f8c8fb4bac61896fec343ab87b89b6dad287be7e4bbd41ee3f456e973d`;
+  `eval-requirements.md`
+  `sha256:1b1eaf32ba8212ee7fc8515e27459fa4b8a45f9a259b596714c08259e1603066`;
+  `coverage-map.json`
+  `sha256:ffa66179ce318eb1c45d3525707b12a027591e4ec9841ab3a36c9d9a63057c17`.
+- Result: candidate implementation succeeded. A configured human decision now
+  derives one content-identified authorization from the current candidate,
+  failed unconsumed downstream launch attempt, exact operational exhaustion,
+  current scope, and explicit human diagnosis. The implementation Role Grant
+  preserves the prior non-correction input lineage and exposes the exact
+  correction evidence; failed/interrupted executions retain it, while the next
+  successful handoff consumes it. Existing evaluator and post-verification
+  correction predicates were not changed.
+- Checks: TypeScript typecheck, ESLint, Prettier check, scoped diff check, the
+  focused pre-semantic correction test, existing implementation-feedback and
+  configured-human-decision tests, affected workflow-run integration tests,
+  methodology evolution tests, and all 014l orchestration tests passed. The
+  broad parallel suite was attempted but was not usable as acceptance evidence:
+  shared fixture paths and retry ledgers left by the run caused unrelated
+  occupied-state failures; affected tests were rerun cleanly by name.
+- Limitations: trusted-sequence-6 independent evaluation, closeout, human
+  adoption, and post-adoption 014l cutover remain outstanding. The current 014m
+  governed workflow also still rejects implementation input resolution because
+  its public coverage projection omits the required evaluation-requirements
+  identity; this candidate does not rewrite that evaluator-owned evidence.
+- Measurement cutoff: immediately before this manifest update.

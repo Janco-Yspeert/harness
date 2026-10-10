@@ -3559,6 +3559,158 @@ void test("014a: configured human decisions bind canonical evidence through the 
   }
 });
 
+void test("014m: pre-semantic correction preserves implementation lineage and exposes exact feedback once", (t) => {
+  const f = fixture(t, "pre-semantic-correction");
+  const cycle = "002";
+  const candidate = "a".repeat(40);
+  const launchIntent = identity("launch-intent");
+  const launchAttempt = "launch-attempt-001";
+  const retryExhaustion = identity("retry-exhaustion");
+  const inputIdentity = identity(
+    readFileSync(join(f.root, "items/work-item/input.txt")),
+  );
+  f.policy.scopeEvent = {
+    transition: "correction-cycle-opened",
+    field: "cycle",
+    initial: "001",
+  };
+  f.policy.humanDecisions = {
+    authorize: {
+      transition: "pre-semantic-implementation-correction-authorized",
+      when: {
+        all: [
+          { event: "implementation-handoff", current: true },
+          { event: "kernel.launch-attempt", after: "implementation-handoff" },
+          { event: "kernel.retry-exhausted" },
+        ],
+      },
+      bindings: {},
+      requiredStrings: ["reason"],
+      requiredStringArrays: ["defects"],
+      excludePreservedInputs: ["priorCorrection"],
+      evidenceResolver: "pre-semantic-implementation-correction",
+    },
+  };
+  required(f.policy.roles.produce).when = {
+    all: [
+      {
+        event: "pre-semantic-implementation-correction-authorized",
+        current: true,
+        latest: true,
+      },
+      {
+        not: {
+          event: "implementation-handoff",
+          current: true,
+          after: "pre-semantic-implementation-correction-authorized",
+        },
+      },
+    ],
+  };
+  f.contract.inputs.push({
+    name: "preSemanticImplementationCorrection",
+    event: "pre-semantic-implementation-correction-authorized",
+    current: true,
+    after: "implementation-handoff",
+    field: "authorization",
+    optional: true,
+    evidenceField: "feedback",
+    preserveInputsField: "implementationInputs",
+  });
+  json(join(f.root, "policy.json"), f.policy);
+  json(join(f.root, "contracts/produce.json"), f.contract);
+  f.event("correction-cycle-opened", { cycle });
+  f.event("implementation-handoff", {
+    cycle,
+    commit: candidate,
+    inputs: { input: inputIdentity, priorCorrection: identity("superseded") },
+  });
+  f.event("kernel.launch-attempt", {
+    id: launchAttempt,
+    workflowGrant: "prior-grant",
+    role: "evaluator-verify",
+    mode: "spawned",
+    predecessor: null,
+    launchIntent,
+    outcome: "refused",
+    readiness: "failed",
+    compatibility: "not-applicable",
+    failure: "authentication-failure",
+    consumed: false,
+  });
+  f.event("kernel.retry-exhausted", {
+    workflowGrant: "prior-grant",
+    kind: "operational",
+    scope: launchIntent,
+    exhausted: retryExhaustion,
+    used: 4,
+  });
+  const grant = f.authorize();
+  const evidence = {
+    candidate,
+    downstreamRole: "evaluator-verify",
+    launchIntent,
+    launchAttempt,
+    retryExhaustion,
+    failureClassification: "authentication-failure",
+    cycle,
+    reason: "host readiness exposed a candidate runtime defect",
+    defects: ["the readiness tool is absent from the provider allowlist"],
+  };
+  assert.throws(
+    () =>
+      f.kernel.decide(f.workflow, grant.id, "authorize", {
+        ...evidence,
+        launchAttempt: "wrong-attempt",
+      }),
+    /evidence mismatch: launchAttempt/,
+  );
+  const decision = f.kernel.decide(f.workflow, grant.id, "authorize", evidence);
+  const feedback = object(decision.evidence.feedback);
+  assert.equal(decision.evidence.authorization, contentId(feedback));
+  assert.deepEqual(feedback.implementationInputs, { input: inputIdentity });
+  assert.equal(
+    f.kernel
+      .events(f.workflow)
+      .some((event) => event.transition === "verification-finalized"),
+    false,
+  );
+
+  const correction = f.kernel.inspect(f.workflow, grant.id);
+  assert.equal(correction.kind, "grant", JSON.stringify(correction));
+  assert.equal(correction.grant.role, "produce");
+  assert.equal(correction.grant.inputs.input, inputIdentity);
+  assert.equal(
+    correction.grant.inputs.preSemanticImplementationCorrection,
+    decision.evidence.authorization,
+  );
+  assert.deepEqual(
+    correction.grant.inputEvidence?.preSemanticImplementationCorrection,
+    feedback,
+  );
+  const allocated = allocate(f, grant);
+  assert.deepEqual(
+    f.kernel.workerExecutionContext(f.workflow, allocated.execution.id)
+      .inputEvidence?.preSemanticImplementationCorrection,
+    feedback,
+  );
+  f.kernel.process(f.workflow, allocated.execution.id, "interrupted");
+
+  writeFileSync(join(f.root, "items/work-item/input.txt"), "drifted\n");
+  assert.deepEqual(f.kernel.inspect(f.workflow, grant.id), {
+    kind: "denied",
+    reason:
+      "preserved input lineage mismatch: preSemanticImplementationCorrection.input",
+  });
+  writeFileSync(join(f.root, "items/work-item/input.txt"), "one\n");
+  f.event("implementation-handoff", {
+    cycle,
+    commit: "b".repeat(40),
+    inputs: { input: inputIdentity },
+  });
+  assert.equal(f.kernel.inspect(f.workflow, grant.id).kind, "denied");
+});
+
 void test("TR6/TR7: a real publication transport failure preserves semantic PASS and withholds a policy-required action transition", (t) => {
   const f = fixture(t, "publication-failure");
   mkdirSync(required(f.project.remotes.publication)); // Existing path, deliberately not a Git remote.

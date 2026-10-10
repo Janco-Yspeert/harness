@@ -250,6 +250,22 @@
                     }
                   }
                 ]
+              },
+              {
+                "all": [
+                  {
+                    "event": "pre-semantic-implementation-correction-authorized",
+                    "current": true,
+                    "latest": true
+                  },
+                  {
+                    "not": {
+                      "event": "implementation-handoff",
+                      "current": true,
+                      "after": "pre-semantic-implementation-correction-authorized"
+                    }
+                  }
+                ]
               }
             ]
           }
@@ -494,6 +510,34 @@
     "initial": "001"
   },
   "humanDecisions": {
+    "authorize-pre-semantic-implementation-correction": {
+      "transition": "pre-semantic-implementation-correction-authorized",
+      "when": {
+        "all": [
+          { "event": "implementation-handoff", "current": true },
+          {
+            "event": "kernel.launch-attempt",
+            "after": "implementation-handoff"
+          },
+          { "event": "kernel.retry-exhausted" },
+          {
+            "not": {
+              "event": "pre-semantic-implementation-correction-authorized",
+              "current": true,
+              "after": "implementation-handoff"
+            }
+          }
+        ]
+      },
+      "bindings": {},
+      "requiredStrings": ["reason"],
+      "requiredStringArrays": ["defects"],
+      "excludePreservedInputs": [
+        "implementationFeedback",
+        "preSemanticImplementationCorrection"
+      ],
+      "evidenceResolver": "pre-semantic-implementation-correction"
+    },
     "accept": {
       "transition": "human-accepted",
       "when": {
