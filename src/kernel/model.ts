@@ -272,7 +272,7 @@ export interface PreimplementationRecoveryAuthority {
     identity: string;
   }>;
 }
-export interface HumanEvaluatorCorrectionAuthority {
+interface HumanEvaluatorCorrectionBase {
   schemaVersion: 1;
   id: string;
   project: string;
@@ -282,13 +282,32 @@ export interface HumanEvaluatorCorrectionAuthority {
   sourceEvaluatorRevision: string;
   attempt: number;
   execution: string;
+  reason: string;
+  semanticResult: string;
+}
+// The rejected variant is the original shape and deliberately has no `source`.
+export interface RejectedEvaluatorCorrectionAuthority extends HumanEvaluatorCorrectionBase {
   rejectionEvent: string;
   evidenceCommit: string;
   evidencePath: string;
   evidenceIdentity: string;
-  reason: string;
-  semanticResult: string;
 }
+// Layered over an exact canonical BLOCKED verification; never rewrites it.
+export interface FinalizedEvaluatorCorrectionAuthority extends HumanEvaluatorCorrectionBase {
+  source: "finalized-verification";
+  cycle: string;
+  finalizedEvent: string;
+  sourceCommit: string;
+  sourceRoleGrant: string;
+  sourceSemanticResult: string;
+  sourceResult: "BLOCKED";
+  sourceClassification: string;
+  sourceArtifactCommit: string;
+  sourceArtifactPath: string;
+  sourceArtifactIdentity: string;
+}
+export type HumanEvaluatorCorrectionAuthority =
+  RejectedEvaluatorCorrectionAuthority | FinalizedEvaluatorCorrectionAuthority;
 // A canonical PASS is not a failed execution, so it cannot use the narrowly
 // scoped evaluator-correction authority above. This record opens one explicit
 // successor correction cycle while retaining the exact PASS it responds to.

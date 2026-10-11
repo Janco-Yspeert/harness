@@ -710,8 +710,15 @@ void test("014a: human evaluator correction authority binds rejected verificatio
   assert.equal(authority.sourceEvaluatorRevision, "002");
   assert.equal(authority.attempt, 4);
   assert.equal(authority.execution, "verify-004");
-  assert.equal(authority.rejectionEvent, rejected.id);
-  assert.equal(authority.evidenceIdentity, evidenceIdentity);
+  assert.equal("source" in authority, false);
+  assert.equal(
+    (authority as { rejectionEvent?: string }).rejectionEvent,
+    rejected.id,
+  );
+  assert.equal(
+    (authority as { evidenceIdentity?: string }).evidenceIdentity,
+    evidenceIdentity,
+  );
   assert.match(authority.semanticResult, /^sha256:[a-f0-9]{64}$/);
   assert.equal(
     f.kernel.events(f.workflow).at(-1)?.transition,
@@ -4112,4 +4119,202 @@ void test("014f: host retirement operation is root-only and lists evidence", asy
   });
   assert.equal(cont.status, 409);
   assert.equal(f.kernel.executions(f.workflow).length, 0);
+});
+
+void test("014n: human authority classifies a finalized BLOCKED verification without altering it", (t) => {
+  const f = fixture(t, "014n-finalized-authority");
+  const real = JSON.parse(
+    readFileSync("methodologies/harness/policy.json", "utf8"),
+  ) as WorkflowPolicy;
+  const candidate = "c".repeat(40);
+  const attempt = 3;
+  const artifactPath = "verification-result.json";
+  const artifactBytes = `${JSON.stringify({
+    schemaVersion: 1,
+    workflow: f.workflow,
+    execution: "verify-003",
+    attempt,
+    commit: candidate,
+    evaluatorRevision: "003",
+    result: "BLOCKED",
+    classification: "INFRASTRUCTURE_FAILURE",
+  })}\n`;
+  writeFileSync(join(f.root, "items", f.workflow, artifactPath), artifactBytes);
+  git(f.root, ["init", "-b", "candidate"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "finalized verification artifact"]);
+  const artifactCommit = git(f.root, ["rev-parse", "HEAD"]);
+  const artifactIdentity = identity(Buffer.from(artifactBytes));
+  f.event("brief-frozen");
+  f.event("design-map-frozen");
+  f.event("evaluation-prepared");
+  f.event("implementation-handoff", { commit: candidate, attempt: 1 });
+  f.event("verification-allocated", {
+    execution: "verify-003",
+    roleGrant: "role-grant-003",
+    allocationKey: "sha256:attempt-003",
+    commit: candidate,
+    evaluatorRevision: "003",
+    attempt,
+  });
+  const finalized = f.event("verification-finalized", {
+    execution: "verify-003",
+    roleGrant: "role-grant-003",
+    semanticResult: "semantic-blocked-003",
+    commit: candidate,
+    evaluatorRevision: "003",
+    attempt,
+    result: "BLOCKED",
+    classification: "INFRASTRUCTURE_FAILURE",
+    artifactCommit,
+    path: artifactPath,
+    identity: artifactIdentity,
+  });
+  const request = {
+    source: "finalized-verification" as const,
+    classification: "EVALUATOR_COVERAGE_DEFECT",
+    sourceEvaluatorRevision: "003",
+    attempt,
+    execution: "verify-003",
+    finalizedEvent: required(finalized.id),
+    commit: candidate,
+    roleGrant: "role-grant-003",
+    semanticResult: "semantic-blocked-003",
+    result: "BLOCKED",
+    recordedClassification: "INFRASTRUCTURE_FAILURE",
+    artifactCommit,
+    artifactPath,
+    artifactIdentity,
+    reason: "evidence unavailable in isolation is an evaluator design defect",
+  };
+  const eligible = (role: string) =>
+    predicate(
+      required(real.roles[role]).when,
+      f.kernel.events(f.workflow),
+      real,
+    );
+  const ledger = () => readFileSync(f.kernel.path(f.workflow), "utf8");
+  const refused = (patch: object, pattern: RegExp) => {
+    const before = ledger();
+    assert.throws(
+      () =>
+        f.kernel.authorizeEvaluatorCorrection(f.workflow, {
+          ...request,
+          ...patch,
+        }),
+      pattern,
+    );
+    assert.equal(ledger(), before, "refusal appends nothing");
+  };
+
+  assert.equal(eligible("evaluator-repair"), false);
+  refused({ commit: "d".repeat(40) }, /exact canonical finalized/);
+  refused({ sourceEvaluatorRevision: "002" }, /exact canonical finalized/);
+  refused({ attempt: 4 }, /exact canonical finalized/);
+  refused({ execution: "other" }, /exact canonical finalized/);
+  refused({ artifactIdentity: `sha256:${"0".repeat(64)}` }, /exact canonical/);
+  refused({ result: "PASS" }, /invalid evaluator correction/);
+  refused({ reason: " " }, /invalid evaluator correction/);
+  refused({ source: "other" as never }, /invalid evaluator correction/);
+
+  const before = ledger();
+  const authority = f.kernel.authorizeEvaluatorCorrection(f.workflow, request);
+  assert.ok(ledger().startsWith(before), "original events are unchanged");
+  assert.equal(f.kernel.events(f.workflow).length, before.split("\n").length);
+  assert.equal(authority.classification, "EVALUATOR_COVERAGE_DEFECT");
+  assert.ok("source" in authority);
+  assert.equal(authority.sourceClassification, "INFRASTRUCTURE_FAILURE");
+  assert.equal(authority.sourceSemanticResult, "semantic-blocked-003");
+  assert.notEqual(authority.semanticResult, authority.sourceSemanticResult);
+  assert.equal(eligible("evaluator-repair"), true);
+  assert.equal(eligible("implementation"), false);
+  assert.equal(eligible("evaluator-verify"), false);
+  assert.throws(
+    () => f.kernel.authorizeEvaluatorCorrection(f.workflow, request),
+    /already recorded/,
+  );
+  f.event("evaluator-repair-recorded", {
+    repairTrigger: authority.semanticResult,
+  });
+  assert.equal(eligible("evaluator-repair"), false, "repair consumes it");
+  assert.equal(eligible("implementation"), false);
+});
+
+void test("014n: stale and inadmissible finalized sources are refused", (t) => {
+  const cases: Array<[string, string | undefined, string, string, RegExp]> = [
+    ["stale-attempt", "verification-allocated", "BLOCKED", "X", /stale/],
+    ["stale-handoff", "implementation-handoff", "BLOCKED", "X", /stale/],
+    ["stale-cycle", "correction-cycle-opened", "BLOCKED", "X", /stale/],
+    ["pass", undefined, "PASS", "X", /exact canonical finalized/],
+    [
+      "evaluator-defect",
+      undefined,
+      "BLOCKED",
+      "EVALUATOR_DEFECT",
+      /already makes evaluator repair eligible/,
+    ],
+  ];
+  for (const [name, later, result, classification, pattern] of cases) {
+    const f = fixture(t, `014n-${name}`);
+    const candidate = "c".repeat(40);
+    const artifact = `${JSON.stringify({
+      workflow: f.workflow,
+      execution: "v",
+      attempt: 1,
+      commit: candidate,
+      evaluatorRevision: "001",
+      result,
+      classification,
+    })}\n`;
+    writeFileSync(join(f.root, "items", f.workflow, "r.json"), artifact);
+    git(f.root, ["init", "-b", "candidate"]);
+    git(f.root, ["add", "."]);
+    git(f.root, ["commit", "-m", "artifact"]);
+    const artifactCommit = git(f.root, ["rev-parse", "HEAD"]);
+    f.event("implementation-handoff", { commit: candidate, attempt: 1 });
+    f.event("verification-allocated", {
+      execution: "v",
+      roleGrant: "g",
+      allocationKey: "k",
+      commit: candidate,
+      evaluatorRevision: "001",
+      attempt: 1,
+    });
+    const finalized = f.event("verification-finalized", {
+      execution: "v",
+      roleGrant: "g",
+      semanticResult: "s",
+      commit: candidate,
+      evaluatorRevision: "001",
+      attempt: 1,
+      result,
+      classification,
+      artifactCommit,
+      path: "r.json",
+      identity: identity(Buffer.from(artifact)),
+    });
+    if (later) f.event(later, { cycle: "002", commit: candidate });
+    assert.throws(
+      () =>
+        f.kernel.authorizeEvaluatorCorrection(f.workflow, {
+          source: "finalized-verification",
+          classification: "EVALUATOR_COVERAGE_DEFECT",
+          sourceEvaluatorRevision: "001",
+          attempt: 1,
+          execution: "v",
+          finalizedEvent: required(finalized.id),
+          commit: candidate,
+          roleGrant: "g",
+          semanticResult: "s",
+          result: "BLOCKED",
+          recordedClassification: classification,
+          artifactCommit,
+          artifactPath: "r.json",
+          artifactIdentity: identity(Buffer.from(artifact)),
+          reason: "diagnosis",
+        }),
+      pattern,
+      name,
+    );
+  }
 });

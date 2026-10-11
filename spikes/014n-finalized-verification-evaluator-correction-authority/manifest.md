@@ -44,3 +44,13 @@
 - Outputs: `eval-requirements.md` (`sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`); `coverage-map.json` (18 criteria records; 17 required); `manifest.md`
 - Checks: structural integrity validation over the prepared bundle; evaluator self-checks on controlled conditions; candidate implementation not run
 - Measurement cutoff: immediately before this manifest update.
+
+## Implementation — attempt 1
+
+- Skill: implementation, contract version 5
+- Inputs: `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`); `design-map.md` (`sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`); `eval-requirements.md` (`sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`); base commit `3f1708010fe1d78a2974dbfc230fa602ce479e5b`; no retry feedback
+- Result: `succeeded`
+- Outputs (sha256): `src/kernel/execution.ts` 0b0b4fff10e73b09260ea9d22f1f667aba24c7e0c9820972a1bcc3561b406944; `src/kernel/host.ts` 70794461a93eda117dd9b123cad4b5a512b9179d0e3808ca017ef87fff4732e1; `src/kernel/model.ts` 7dc73d7581deadc4b32463cf8af7a4bd2d1f9b1a033e568f52762236a7937dd9; `test/kernel.test.ts` d3819ad38db248a738a78e7b4c7af0d91a5e810f3c013bb425fe047e65146c24
+- Statistics: 4 files changed, 500 insertions, 27 deletions (src and test, before this entry); methodology bytes unchanged
+- Checks: typecheck, eslint and prettier clean; `test/kernel.test.ts` 44/46 pass, including 2 new 014n tests; the 2 failures (TR10, 014k AC06/AC10) fail identically without this change. Full suite not run.
+- Measurement cutoff: immediately before this manifest update.

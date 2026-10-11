@@ -93,7 +93,9 @@ import type {
   PublicationActionRequest,
   PublicationActionResult,
   HumanCorrectionCycleAuthority,
+  FinalizedEvaluatorCorrectionAuthority,
   HumanEvaluatorCorrectionAuthority,
+  RejectedEvaluatorCorrectionAuthority,
   HumanRequest,
   LedgerEvent,
   MethodologyDefinition,
@@ -302,6 +304,38 @@ function boundedPath(root: string, path: string): string {
 }
 // One host owns a project's executions. Synchronous ledger transactions serialize
 // request races; the on-disk lock also rejects competing host/CLI writers.
+export interface RejectedEvaluatorCorrectionRequest {
+  source?: undefined;
+  classification: string;
+  sourceEvaluatorRevision: string;
+  attempt: number;
+  execution: string;
+  rejectionEvent: string;
+  evidenceCommit: string;
+  evidencePath: string;
+  evidenceIdentity: string;
+  reason: string;
+}
+export interface FinalizedEvaluatorCorrectionRequest {
+  source: "finalized-verification";
+  classification: string;
+  sourceEvaluatorRevision: string;
+  attempt: number;
+  execution: string;
+  finalizedEvent: string;
+  commit: string;
+  roleGrant: string;
+  semanticResult: string;
+  result: string;
+  recordedClassification: string;
+  artifactCommit: string;
+  artifactPath: string;
+  artifactIdentity: string;
+  reason: string;
+}
+export type EvaluatorCorrectionRequest =
+  RejectedEvaluatorCorrectionRequest | FinalizedEvaluatorCorrectionRequest;
+
 export class ExecutionKernel {
   readonly project: Project;
   readonly options: KernelOptions;
@@ -705,19 +739,14 @@ export class ExecutionKernel {
   }
   authorizeEvaluatorCorrection(
     workflow: string,
-    request: {
-      classification: string;
-      sourceEvaluatorRevision: string;
-      attempt: number;
-      execution: string;
-      rejectionEvent: string;
-      evidenceCommit: string;
-      evidencePath: string;
-      evidenceIdentity: string;
-      reason: string;
-    },
+    request: EvaluatorCorrectionRequest,
   ): HumanEvaluatorCorrectionAuthority {
     return this.#transaction(workflow, () => {
+      if (request.source !== undefined) {
+        if ((request.source as string) !== "finalized-verification")
+          throw new Error("invalid evaluator correction authority");
+        return this.#authorizeFinalizedCorrection(workflow, request);
+      }
       if (
         request.classification !== "EVALUATOR_COVERAGE_DEFECT" ||
         !/^\d{3}$/.test(request.sourceEvaluatorRevision) ||
@@ -732,6 +761,8 @@ export class ExecutionKernel {
       )
         throw new Error("invalid evaluator correction authority");
       const events = this.events(workflow);
+      // An execution and attempt identify one verification lineage, so this is
+      // the lineage-key duplicate check for both source variants.
       if (
         events.some(
           (event) =>
@@ -800,7 +831,10 @@ export class ExecutionKernel {
         throw new Error(
           "evaluator correction artifact does not bind the rejected allocation",
         );
-      const decision = {
+      const decision: Omit<
+        RejectedEvaluatorCorrectionAuthority,
+        "semanticResult"
+      > = {
         schemaVersion: 1 as const,
         id: randomUUID(),
         project: this.project.id,
@@ -816,7 +850,7 @@ export class ExecutionKernel {
         evidenceIdentity: request.evidenceIdentity,
         reason: request.reason,
       };
-      const authority: HumanEvaluatorCorrectionAuthority = {
+      const authority: RejectedEvaluatorCorrectionAuthority = {
         ...decision,
         semanticResult: contentId(decision),
       };
@@ -827,6 +861,198 @@ export class ExecutionKernel {
       );
       return authority;
     });
+  }
+  #authorizeFinalizedCorrection(
+    workflow: string,
+    request: FinalizedEvaluatorCorrectionRequest,
+  ): FinalizedEvaluatorCorrectionAuthority {
+    const sha = /^[a-f0-9]{40,64}$/;
+    if (
+      request.classification !== "EVALUATOR_COVERAGE_DEFECT" ||
+      !/^\d{3}$/.test(request.sourceEvaluatorRevision) ||
+      !Number.isSafeInteger(request.attempt) ||
+      request.attempt < 1 ||
+      !request.execution ||
+      !request.finalizedEvent ||
+      !sha.test(request.commit) ||
+      !request.roleGrant ||
+      !request.semanticResult ||
+      request.result !== "BLOCKED" ||
+      !request.recordedClassification ||
+      !sha.test(request.artifactCommit) ||
+      !request.artifactPath ||
+      !/^sha256:[a-f0-9]{64}$/.test(request.artifactIdentity) ||
+      typeof request.reason !== "string" ||
+      !request.reason.trim()
+    )
+      throw new Error("invalid evaluator correction authority");
+    const events = this.events(workflow);
+    // An execution and attempt identify exactly one verification lineage
+    // (candidate and evaluator revision): the lineage-key duplicate check.
+    if (
+      events.some(
+        (event) =>
+          event.transition === "human-evaluator-correction-authorized" &&
+          event.evidence.execution === request.execution &&
+          event.evidence.attempt === request.attempt,
+      )
+    )
+      throw new Error("evaluator correction authority already recorded");
+    const finalizedIndex = events.findIndex(
+      (event) =>
+        event.id === request.finalizedEvent &&
+        event.transition === "verification-finalized",
+    );
+    const exact = events[finalizedIndex]?.evidence;
+    if (
+      !exact ||
+      exact.result !== "BLOCKED" ||
+      exact.classification !== request.recordedClassification ||
+      exact.execution !== request.execution ||
+      exact.roleGrant !== request.roleGrant ||
+      exact.semanticResult !== request.semanticResult ||
+      exact.commit !== request.commit ||
+      exact.evaluatorRevision !== request.sourceEvaluatorRevision ||
+      exact.attempt !== request.attempt ||
+      exact.artifactCommit !== request.artifactCommit ||
+      exact.path !== request.artifactPath ||
+      exact.identity !== request.artifactIdentity
+    )
+      throw new Error(
+        "evaluator correction authority lacks exact canonical finalized verification",
+      );
+    // A result that already makes evaluator repair eligible needs no human
+    // authority; expressed against the existing eligibility predicate.
+    if (exact.classification === "EVALUATOR_DEFECT")
+      throw new Error(
+        "finalized verification already makes evaluator repair eligible",
+      );
+    const staleness = new Set([
+      "implementation-handoff",
+      "evaluation-prepared",
+      "evaluator-repair-recorded",
+      "verification-allocated",
+      "verification-finalized",
+      "correction-cycle-opened",
+      "human-correction-cycle-authorized",
+      "human-evaluator-correction-authorized",
+    ]);
+    if (
+      events.slice(finalizedIndex + 1).some((e) => staleness.has(e.transition))
+    )
+      throw new Error("finalized verification is stale or superseded");
+    const openedCycle = events
+      .filter((event) => event.transition === "correction-cycle-opened")
+      .map((event) => String(event.evidence.cycle))
+      .at(-1);
+    const cycle = exact.cycle ?? "001";
+    if (typeof cycle !== "string" || cycle !== (openedCycle ?? "001"))
+      throw new Error("finalized verification is not in the current cycle");
+    const handoff = events.findLast(
+      (event) => event.transition === "implementation-handoff",
+    );
+    const allocations = events.filter(
+      (event) =>
+        event.transition === "verification-allocated" &&
+        event.evidence.execution === request.execution &&
+        event.evidence.attempt === request.attempt,
+    );
+    const allocation = allocations.length === 1 ? allocations[0] : undefined;
+    if (
+      !handoff ||
+      handoff.evidence.commit !== request.commit ||
+      !allocation ||
+      allocation.evidence.commit !== request.commit ||
+      allocation.evidence.evaluatorRevision !==
+        request.sourceEvaluatorRevision ||
+      allocation.evidence.roleGrant !== request.roleGrant
+    )
+      throw new Error(
+        "evaluator correction authority does not bind the verification allocation",
+      );
+    const allocatedGrant = events
+      .filter((event) => event.transition === "kernel.allocation")
+      .map((event) => object(event.evidence.grant))
+      .find((grant) => grant.id === request.roleGrant);
+    const allocationKey =
+      typeof allocation.evidence.allocationKey === "string"
+        ? allocation.evidence.allocationKey
+        : allocatedGrant?.allocationKey;
+    if (typeof allocationKey !== "string")
+      throw new Error("verification allocation identity is unavailable");
+    if (
+      exact.allocationKey !== undefined &&
+      exact.allocationKey !== allocationKey
+    )
+      throw new Error("finalized verification allocation identity mismatch");
+    const directory = required(this.project.workflows[workflow]).directory;
+    const artifact = inside(
+      resolve(this.project.root, directory),
+      request.artifactPath,
+    );
+    let bytes: Buffer;
+    try {
+      bytes = execFileSync(
+        "git",
+        [
+          "show",
+          `${request.artifactCommit}:${relative(this.project.root, artifact)}`,
+        ],
+        { cwd: this.project.root },
+      );
+    } catch {
+      throw new Error("evaluator correction artifact commit is unavailable");
+    }
+    if (identity(bytes) !== request.artifactIdentity)
+      throw new Error("evaluator correction artifact identity mismatch");
+    const result = object(JSON.parse(bytes.toString("utf8")));
+    if (
+      (result.workflow !== undefined && result.workflow !== workflow) ||
+      result.execution !== request.execution ||
+      (result.attempt !== request.attempt &&
+        result.attempt !== String(request.attempt).padStart(3, "0")) ||
+      result.commit !== request.commit ||
+      result.evaluatorRevision !== request.sourceEvaluatorRevision ||
+      result.result !== request.result ||
+      result.classification !== request.recordedClassification ||
+      (result.allocationKey !== undefined &&
+        result.allocationKey !== allocationKey)
+    )
+      throw new Error(
+        "evaluator correction artifact does not bind the finalized verification",
+      );
+    const decision: Omit<
+      FinalizedEvaluatorCorrectionAuthority,
+      "semanticResult"
+    > = {
+      schemaVersion: 1,
+      id: randomUUID(),
+      project: this.project.id,
+      workflow,
+      origin: "human",
+      source: "finalized-verification",
+      classification: "EVALUATOR_COVERAGE_DEFECT",
+      sourceEvaluatorRevision: request.sourceEvaluatorRevision,
+      attempt: request.attempt,
+      execution: request.execution,
+      cycle,
+      reason: request.reason,
+      finalizedEvent: request.finalizedEvent,
+      sourceCommit: request.commit,
+      sourceRoleGrant: request.roleGrant,
+      sourceSemanticResult: request.semanticResult,
+      sourceResult: "BLOCKED",
+      sourceClassification: request.recordedClassification,
+      sourceArtifactCommit: request.artifactCommit,
+      sourceArtifactPath: request.artifactPath,
+      sourceArtifactIdentity: request.artifactIdentity,
+    };
+    const authority: FinalizedEvaluatorCorrectionAuthority = {
+      ...decision,
+      semanticResult: contentId(decision),
+    };
+    this.#append(workflow, "human-evaluator-correction-authorized", authority);
+    return authority;
   }
   authorizeCorrectionCycle(
     workflow: string,
