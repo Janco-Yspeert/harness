@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "workflow": "014m-pre-semantic-implementation-correction",
-  "execution": "0daa0b4d-85a2-4401-8c47-d587616a7efa",
-  "attempt": 12,
+  "execution": "20c6dae8-67ca-462d-a525-84d9b8d1f47d",
+  "attempt": 13,
   "commit": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
-  "evaluatorRevision": "001",
+  "evaluatorRevision": "002",
   "result": "BLOCKED",
   "classification": "EVALUATOR_DEFECT",
   "candidateEvaluationBegan": true,
@@ -24,11 +24,11 @@
     "AC13": "NOT_ADJUDICATED",
     "AC14": "NOT_ADJUDICATED"
   },
-  "reason": "The frozen structural check for the authorization/binding contract requires one specific declarative policy shape. The brief, Design Map and public evaluation requirements deliberately leave predicate factoring and minimal relational enforcement to the implementation, and the candidate enforces the relationships through a host-side evidence resolver. The frozen evidence therefore cannot fairly establish or falsify the authorization criteria for this implementation. The full-suite regression case was also confounded by the evaluation environment (exact-candidate export without Git history, nested sandbox containment). The trusted-N, adoption and cutover evidence was not available for adjudication. No candidate coverage is claimed and this is not an implementation failure.",
+  "reason": "The repaired authorization contract analysis raised no diagnostics, but the frozen public-regression-evidence check still requires literal fixture/label tokens in the candidate's test text. The public evaluation requirements state that fixture, helper and test names are implementation choices, so this check is implementation-shaped and cannot fairly establish or falsify the authorization and outage criteria. The full-suite case failed only in sandbox-containment and governed-launch cases outside this spike (environmental; no case for this spike failed), and trusted-N, adoption and cutover evidence was not available for adjudication. No candidate coverage is claimed and this is not an implementation failure.",
   "diagnostics": [
     "evaluator helper self-check passed",
-    "frozen structural check expected an implementation-shaped declarative binding representation not required by public authority",
-    "full-suite run in an exact-candidate export failed predominantly with 'not a git repository'; a non-authoritative probe in the real checkout showed failures concentrated in sandbox-containment and working-tree dependent cases"
+    "frozen regression-evidence check demanded literal naming tokens not required by public authority",
+    "non-authoritative probe: the candidate's own focused tests for this spike passed; full-suite failures were confined to nested-sandbox containment and governed-launch cases"
   ],
-  "evaluatorIntegrity": "frozen revision 001 identities matched and the revision was not mutated; an evaluator repair of the implementation-shaped check is required before re-verifying the unchanged candidate"
+  "evaluatorIntegrity": "frozen revision 002 identities matched and the revision was not mutated; a further evaluator correction requires explicit evaluator vs methodology/evidence-model classification under the repair threshold before the unchanged candidate is re-verified"
 }

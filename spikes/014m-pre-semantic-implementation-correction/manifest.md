@@ -244,3 +244,22 @@
   full-regression evidence requires a git work tree of the exact candidate.
 - Boundaries: candidate not run; frozen brief, Design Map and public evaluation
   requirements unchanged.
+
+## Evaluator verification — attempt 13
+
+- Skill/mode: evaluator v14, `verify`
+- Candidate: `3e753a4a732c87fc5b42e9e3cf771482aba6a522`; evaluator revision
+  `002`; frozen identities matched.
+- Result: succeeded as a report; verification result `BLOCKED`, classification
+  `EVALUATOR_DEFECT`. Output: `verification-result.json`; `manifest.md`.
+- Checks: evaluator helper self-check passed; the authorization contract
+  analysis found no diagnostics, but the regression-evidence check required
+  literal fixture/label tokens that the public requirements leave to the
+  implementation, so it could not fairly adjudicate; the full-suite case failed
+  only in sandbox-containment and governed-launch cases outside this spike
+  (environmental); trusted-N evidence was not available. All 14 criteria are
+  `NOT_ADJUDICATED`.
+- Limitations: a further evaluator correction needs explicit classification
+  (evaluator vs methodology/evidence-model defect) under the repair threshold.
+  No implementation failure is claimed.
+- Measurement cutoff: immediately before this manifest update.
