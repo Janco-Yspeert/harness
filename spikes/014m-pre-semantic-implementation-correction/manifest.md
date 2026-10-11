@@ -209,3 +209,22 @@
 - Limitations: private attempt ledger and result were not finalized for lack of
   a write-capable tool. A rerun in a working execution environment is needed.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-11 — Evaluator Verification (attempt 12)
+
+- Execution: `0daa0b4d-85a2-4401-8c47-d587616a7efa`.
+- Skill: `evaluator`, mode `verify`, contract version 14
+  (`sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b`).
+- Candidate: `3e753a4a732c87fc5b42e9e3cf771482aba6a522`; evaluator revision
+  `001`; frozen identities matched.
+- Result: succeeded as a report; verification result `BLOCKED`, classification
+  `EVALUATOR_DEFECT`. Output: `verification-result.json`; `manifest.md`.
+- Checks: evaluator helper self-check passed; the frozen structural contract
+  check demanded an implementation-shaped declarative representation that the
+  public contract leaves to the implementation, so it could not adjudicate the
+  candidate; the full-suite case was confounded by the evaluation environment;
+  trusted-N evidence was not available. All 14 criteria are `NOT_ADJUDICATED`.
+- Limitations: an evaluator repair that preserves acceptance semantics is
+  required before re-verifying the unchanged candidate. No implementation
+  failure is claimed.
+- Measurement cutoff: immediately before this manifest update.
