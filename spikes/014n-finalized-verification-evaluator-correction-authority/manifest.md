@@ -101,3 +101,11 @@
 - Outputs: `verification-result.json`; `manifest.md`
 - Checks: frozen executable evaluation 12 of 12 pass; typecheck pass; methodology diff empty; full regression suite could not be adjudicated in the verification sandbox (same 22 containment-dependent failures at the pre-implementation parent commit), so AC17 is not adjudicated
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator repair — revision 003
+
+- Skill: evaluator (repair), contract version 14
+- Inputs: `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`); `design-map.md` (`sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`); `eval-requirements.md` (`sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`); source evaluator revision `002`; trigger `sha256:34f11dc0256f3ce0dc1bcb195a799cd59885301debbc883775725e3b114f281d`
+- Result: `succeeded`; evaluator revision `003`, structural integrity `PASS`, acceptance semantics preserved
+- Outputs: `coverage-map.json`; `manifest.md`
+- Measurement cutoff: immediately before this manifest update.

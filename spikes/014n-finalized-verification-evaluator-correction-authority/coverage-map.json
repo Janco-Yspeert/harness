@@ -90,7 +90,7 @@
         "E1",
         "E2"
       ],
-      "sufficiency": "legacy request yields an authority with no source field, the exact legacy field set, a content-derived semantic result recomputed independently, and legacy mismatch refusals; E2 reruns the existing suite"
+      "sufficiency": "legacy request yields an authority with no source field, the exact legacy field set, a content-derived semantic result recomputed independently, and legacy mismatch refusals; E2 runs the existing suite differentially against the pre-implementation parent"
     },
     {
       "id": "AC10",
@@ -170,7 +170,7 @@
       "procedures": [
         "E2"
       ],
-      "sufficiency": "the repository's typecheck and full test suite pass on the candidate, demonstrating no regression of existing behavior"
+      "sufficiency": "the repository typecheck passes and every full-suite test that passes at the pre-implementation parent also passes at the candidate when both are run in the same governed environment, so no existing behavior regressed; tests needing unavailable nested containment are not adjudicated as candidate behavior and may be supplemented by a host-prepared observation"
     },
     {
       "id": "AC18",
@@ -184,33 +184,21 @@
     }
   ],
   "readiness": {
-    "evaluatorRevision": "002",
-    "evaluatorRevisionIdentity": "sha256:f6efebd992419c66a8823bf55f20e440996c1b06249313c373b48ebcc23075fb",
-    "privateInventoryIdentity": "sha256:a79d970f116a15abe1c7735ba584642bf6a5c7104e5a67e4c0a5b4e55676141d",
-    "validatorResultBinding": "sha256:22e7bd1a3daaee14527819307a77839e8302adcd07ac7da0868b60fcd511a17c",
+    "evaluatorRevision": "003",
+    "evaluatorRevisionIdentity": "sha256:14c099c7689a75985bb7a9f927f2ae409d16fe200e6cf4c1e2f944b451b6d145",
+    "privateInventoryIdentity": "sha256:a057fa3eac285175b80365313b3fc9dd41831ab06147800a192eb7ff12d283d9",
+    "validatorResultBinding": "sha256:c78bb1486135c0e708221c72ee6efa3451defbb8d2760d506984ee158f88282d",
     "integrityValidation": "PASS"
   },
   "repair": {
-    "sourceEvaluatorRevision": "001",
-    "sourceEvaluatorRevisionIdentity": "sha256:9ab50eaad18d3fa8449f4dded353578fdd7c0b7770722a3d91fbf93f2c229365",
-    "resultingEvaluatorRevision": "002",
-    "trigger": "6e64200a-0a3f-4186-aaab-f076b8b52a58",
+    "sourceEvaluatorRevision": "002",
+    "sourceEvaluatorRevisionIdentity": "sha256:f6efebd992419c66a8823bf55f20e440996c1b06249313c373b48ebcc23075fb",
+    "resultingEvaluatorRevision": "003",
+    "trigger": "sha256:34f11dc0256f3ce0dc1bcb195a799cd59885301debbc883775725e3b114f281d",
     "affectedCriteria": [
-      "AC01",
-      "AC02",
-      "AC03",
-      "AC04",
-      "AC05",
-      "AC06",
-      "AC07",
-      "AC08",
       "AC09",
-      "AC10",
-      "AC11",
-      "AC12",
-      "AC13",
-      "AC14",
-      "AC15"
+      "AC16",
+      "AC17"
     ],
     "briefIdentity": "sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d",
     "designMapIdentity": "sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9",
