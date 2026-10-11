@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
   "commit": "c448eaa26d1b4205d54212bbe61939bdf67357dc",
-  "evaluatorRevision": "002",
-  "attempt": 3,
-  "result": "BLOCKED",
-  "classification": "INFRASTRUCTURE_FAILURE",
+  "evaluatorRevision": "003",
+  "attempt": 4,
+  "result": "PASS",
   "coverageResults": {
     "AC01": "SATISFIED",
     "AC02": "SATISFIED",
@@ -14,7 +13,7 @@
     "AC06": "SATISFIED",
     "AC07": "SATISFIED",
     "AC08": "SATISFIED",
-    "AC09": "NOT_ADJUDICATED",
+    "AC09": "SATISFIED",
     "AC10": "SATISFIED",
     "AC11": "SATISFIED",
     "AC12": "SATISFIED",
@@ -22,8 +21,8 @@
     "AC14": "SATISFIED",
     "AC15": "SATISFIED",
     "AC16": "SATISFIED",
-    "AC17": "NOT_ADJUDICATED",
+    "AC17": "SATISFIED",
     "AC18": "NOT_ADJUDICATED"
   },
-  "summary": "Frozen evaluator revision 002 ran on the candidate: all 12 executable cases pass, typecheck passes and the methodology diff is empty, so finalized-source correction authority now makes evaluator-repair eligible. The repository regression suite (AC17) cannot be adjudicated in the verification sandbox: 22 containment/nested-sandbox dependent tests fail identically at the pre-implementation parent commit, so the cause is environmental. AC09 regression leg and non-required AC18 are not adjudicated."
+  "notes": "AC18 is a non-required post-acceptance operator step and is not evaluated at candidate verification. Public regression compared differentially against the pre-implementation parent: identical failing set (22 environment-dependent containment tests), no new failure."
 }

@@ -109,3 +109,12 @@
 - Result: `succeeded`; evaluator revision `003`, structural integrity `PASS`, acceptance semantics preserved
 - Outputs: `coverage-map.json`; `manifest.md`
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator verify — attempt 4
+
+- Skill: evaluator (verify), contract version 14
+- Inputs: candidate `c448eaa26d1b4205d54212bbe61939bdf67357dc`; evaluator revision `003`; `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`); `design-map.md` (`sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`); `eval-requirements.md` (`sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`); frozen identities matched
+- Result: `succeeded`; verification `PASS`
+- Outputs: `verification-result.json`; `manifest.md`
+- Checks: frozen executable evaluation 12 of 12 pass; typecheck pass; methodology diff empty; differential full-suite comparison against the pre-implementation parent shows an identical failing set (22 environment-dependent containment tests) and no new failure; AC18 (non-required manual step) not adjudicated
+- Measurement cutoff: immediately before this manifest update.
