@@ -326,8 +326,33 @@ export function resolveAuthority(
   )
     candidates.push([override.role, required(definition.roles[override.role])]);
   if (!override) {
-    const gate = definition.policy.gates.find((g) =>
-      predicate(g.when, effectiveEvents, definition.policy),
+    // An unconsumed human evaluator-correction authority bound to the latest
+    // finalized verification supersedes only that verification's own
+    // classification gate. The recorded classification stays untouched and
+    // every other gate still applies.
+    const latestFinalized = effectiveEvents.findLast(
+      (e) => e.transition === "verification-finalized",
+    );
+    const authorityIndex = effectiveEvents.findLastIndex(
+      (e) => e.transition === "human-evaluator-correction-authorized",
+    );
+    const authority = effectiveEvents[authorityIndex];
+    const authorityLiftsVerificationGate =
+      latestFinalized !== undefined &&
+      authority !== undefined &&
+      authority.evidence.source === "finalized-verification" &&
+      authority.evidence.finalizedEvent === latestFinalized.id &&
+      effectiveEvents.indexOf(latestFinalized) < authorityIndex &&
+      !effectiveEvents
+        .slice(authorityIndex + 1)
+        .some((e) => e.transition === "evaluator-repair-recorded");
+    const gate = definition.policy.gates.find(
+      (g) =>
+        !(
+          authorityLiftsVerificationGate &&
+          "event" in g.when &&
+          g.when.event === "verification-finalized"
+        ) && predicate(g.when, effectiveEvents, definition.policy),
     );
     if (gate) return { kind: "gate", reason: gate.reason };
     if (effectiveEvents.some((e) => workflow.stopAfter.includes(e.transition)))

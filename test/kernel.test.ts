@@ -4128,6 +4128,25 @@ void test("014n: human authority classifies a finalized BLOCKED verification wit
   ) as WorkflowPolicy;
   const candidate = "c".repeat(40);
   const attempt = 3;
+  required(f.policy.roles.produce).when = {
+    all: [
+      { event: "human-evaluator-correction-authorized" },
+      { not: { event: "evaluator-repair-recorded" } },
+    ],
+  };
+  f.policy.gates = [
+    {
+      when: {
+        event: "verification-finalized",
+        current: true,
+        latest: true,
+        fields: { classification: "INFRASTRUCTURE_FAILURE" },
+      },
+      reason: "infrastructure failure requires recovery before continuation",
+    },
+  ];
+  json(join(f.root, "policy.json"), f.policy);
+  f.trust();
   const artifactPath = "verification-result.json";
   const artifactBytes = `${JSON.stringify({
     schemaVersion: 1,
@@ -4226,6 +4245,21 @@ void test("014n: human authority classifies a finalized BLOCKED verification wit
   assert.equal(authority.sourceClassification, "INFRASTRUCTURE_FAILURE");
   assert.equal(authority.sourceSemanticResult, "semantic-blocked-003");
   assert.notEqual(authority.semanticResult, authority.sourceSemanticResult);
+  const resolvedGrant = f.kernel.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached", "spawned"],
+    maxAllocations: 8,
+    inline: true,
+  });
+  const resolvedSession = f.kernel.register(f.workflow, "fixture");
+  const resolved = f.kernel.inspect(
+    f.workflow,
+    resolvedGrant.id,
+    "produce",
+    resolvedSession.session.id,
+  );
+  assert.notEqual(resolved.kind, "gate", JSON.stringify(resolved));
+  assert.equal(resolved.kind, "grant", JSON.stringify(resolved));
   assert.equal(eligible("evaluator-repair"), true);
   assert.equal(eligible("implementation"), false);
   assert.equal(eligible("evaluator-verify"), false);
