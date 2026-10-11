@@ -263,3 +263,21 @@
   (evaluator vs methodology/evidence-model defect) under the repair threshold.
   No implementation failure is claimed.
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator repair — revision 003
+
+- Skill/mode: evaluator v14, `repair`
+- Trigger: finalized verification attempt 13 (`BLOCKED`, `EVALUATOR_DEFECT`;
+  trigger `b57526ce-44e7-4557-b221-9665c4674120`)
+- Lineage: source revision `002`
+  (`sha256:e499e900b87f94132bb51715a4956323e78fc379a43c11eee3ae82b9c11a5271`)
+  to revision `003`
+  (`sha256:a53faa7ba3ea909376cbbdb6e9e7226691120d63d64cc8bb09eac29a7e6e252d`)
+- Result: structural integrity validation PASS; acceptance semantics
+  preserved; no new public seam or implementation-shaped requirement adopted.
+  The regression-evidence check no longer demands fixture, label or helper
+  naming that the public requirements leave to the implementation. Classified
+  an evaluator defect; this is the second in-cycle correction, so any further
+  issue requires the successor path.
+- Boundaries: candidate not run; frozen brief, Design Map and public evaluation
+  requirements unchanged.

@@ -144,17 +144,17 @@
     }
   ],
   "readiness": {
-    "evaluatorRevision": "002",
-    "evaluatorRevisionIdentity": "sha256:e499e900b87f94132bb51715a4956323e78fc379a43c11eee3ae82b9c11a5271",
+    "evaluatorRevision": "003",
+    "evaluatorRevisionIdentity": "sha256:a53faa7ba3ea909376cbbdb6e9e7226691120d63d64cc8bb09eac29a7e6e252d",
     "privateInventoryIdentity": "sha256:4775c4391c3d7c491bc7e92a9ece5cfda3cc9e62d3b922be866735bc5714aea8",
-    "validatorResultBinding": "sha256:3e3880b876416c5dcb4ea6c77def3827ab734a2619c46cab972e033f5d796046",
+    "validatorResultBinding": "sha256:6adbd083211be127f1cd214a29118d57ed60db98e6b20d2956ec48e3f868eca7",
     "integrityValidation": "PASS"
   },
   "repair": {
-    "sourceEvaluatorRevision": "001",
-    "sourceEvaluatorRevisionIdentity": "sha256:d688bfc9e340045420d2b7f967b6f2d025438c79def95f295c3c22dfd79cdcf9",
-    "resultingEvaluatorRevision": "002",
-    "trigger": "e6e3da68-b19c-43ce-941e-78f7f456d8f6",
+    "sourceEvaluatorRevision": "002",
+    "sourceEvaluatorRevisionIdentity": "sha256:e499e900b87f94132bb51715a4956323e78fc379a43c11eee3ae82b9c11a5271",
+    "resultingEvaluatorRevision": "003",
+    "trigger": "b57526ce-44e7-4557-b221-9665c4674120",
     "affectedCriteria": [
       "AC01",
       "AC02",
@@ -163,10 +163,7 @@
       "AC05",
       "AC06",
       "AC07",
-      "AC08",
-      "AC09",
-      "AC10",
-      "AC11"
+      "AC09"
     ],
     "briefIdentity": "sha256:d0623b61c859a4eb4ec9b11d2894cd26ea66a2f2228a89de6e1b2a83b1bdf224",
     "designMapIdentity": "sha256:a07c99f8c8fb4bac61896fec343ab87b89b6dad287be7e4bbd41ee3f456e973d",
