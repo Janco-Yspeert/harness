@@ -72,3 +72,12 @@
 - Outputs: `coverage-map.json` (repair binding, affected criteria AC01–AC15); `manifest.md`
 - Checks: structural integrity validation over the complete resulting revision; candidate not run
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator verify — attempt 2
+
+- Skill: evaluator, contract version 14, mode `verify`
+- Inputs: candidate `04f2745558fa51432b6c4dffb219a611f00bd0df`; evaluator revision `002`; brief `sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`; design map `sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`; frozen identities matched
+- Result: `succeeded`; verification `FAIL`, classification `IMPLEMENTATION_FAILURE`
+- Outputs: `verification-result.json`; `feedback.md`; `manifest.md`
+- Checks: frozen executable evaluation run (9 of 12 pass); typecheck pass; methodology diff empty; failures isolated to evaluator-repair eligibility after a finalized infrastructure-failure source; full regression suite not adjudicated
+- Measurement cutoff: immediately before this manifest update.
