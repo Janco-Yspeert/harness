@@ -1,0 +1,13 @@
+Operator runtime maintenance supersession
+
+parent-runtime: 08e63549f6992506fedccd9ec425345012e565ed
+
+earlier-superseded-draft: 5fcb0d44
+
+superseded-candidate: e25593776f9af8c8f7bc1add255239ad13ba3504
+
+replacement-candidate: f7a265230288cc5292d640e8097ab66f0fe506ee
+
+reason: verification-accounting permits artifacts without execution; when present execution remains exact, while canonical finalized-event execution remains mandatory
+
+trusted-methodology: sha256:da22079f636de3a498ec853dc6dd8785f3aa8daa387130c96ac9927b377301f2
