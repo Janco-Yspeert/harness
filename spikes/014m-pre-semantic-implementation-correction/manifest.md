@@ -281,3 +281,21 @@
   issue requires the successor path.
 - Boundaries: candidate not run; frozen brief, Design Map and public evaluation
   requirements unchanged.
+
+## Evaluator verification — attempt 14
+
+- Skill/mode: evaluator v14, `verify`
+- Candidate: `3e753a4a732c87fc5b42e9e3cf771482aba6a522`; evaluator revision
+  `003` (`sha256:a53faa7ba3ea909376cbbdb6e9e7226691120d63d64cc8bb09eac29a7e6e252d`);
+  frozen identities matched.
+- Result: succeeded as a report; verification result `BLOCKED`, classification
+  `INFRASTRUCTURE_FAILURE`. Output: `verification-result.json`; `manifest.md`.
+- Checks: evaluator helper self-check passed; the frozen authorization/contract
+  case passed on the exact candidate (AC01–AC07 satisfied); the full-suite case
+  failed only in governed-launch and nested-containment cases outside this
+  spike that this environment cannot support, so it could not be adjudicated;
+  trusted-N evidence was not available. AC08–AC14 are `NOT_ADJUDICATED`.
+- Limitations: needs an environment permitting nested containment and
+  provider launch, plus trusted-N evidence. No implementation failure is
+  claimed; the frozen evaluator was not modified.
+- Measurement cutoff: immediately before this manifest update.

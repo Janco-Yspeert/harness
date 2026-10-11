@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
   "workflow": "014m-pre-semantic-implementation-correction",
-  "execution": "20c6dae8-67ca-462d-a525-84d9b8d1f47d",
-  "attempt": 13,
+  "execution": "84f7b735-63e3-46d2-ac12-88e115b26a7d",
+  "attempt": 14,
   "commit": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
-  "evaluatorRevision": "002",
+  "evaluatorRevision": "003",
   "result": "BLOCKED",
-  "classification": "EVALUATOR_DEFECT",
+  "classification": "INFRASTRUCTURE_FAILURE",
   "candidateEvaluationBegan": true,
   "coverageResults": {
-    "AC01": "NOT_ADJUDICATED",
-    "AC02": "NOT_ADJUDICATED",
-    "AC03": "NOT_ADJUDICATED",
-    "AC04": "NOT_ADJUDICATED",
-    "AC05": "NOT_ADJUDICATED",
-    "AC06": "NOT_ADJUDICATED",
-    "AC07": "NOT_ADJUDICATED",
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
     "AC08": "NOT_ADJUDICATED",
     "AC09": "NOT_ADJUDICATED",
     "AC10": "NOT_ADJUDICATED",
@@ -24,11 +24,12 @@
     "AC13": "NOT_ADJUDICATED",
     "AC14": "NOT_ADJUDICATED"
   },
-  "reason": "The repaired authorization contract analysis raised no diagnostics, but the frozen public-regression-evidence check still requires literal fixture/label tokens in the candidate's test text. The public evaluation requirements state that fixture, helper and test names are implementation choices, so this check is implementation-shaped and cannot fairly establish or falsify the authorization and outage criteria. The full-suite case failed only in sandbox-containment and governed-launch cases outside this spike (environmental; no case for this spike failed), and trusted-N, adoption and cutover evidence was not available for adjudication. No candidate coverage is claimed and this is not an implementation failure.",
+  "reason": "The frozen authorization/contract case passed on the exact candidate. The full-suite case could not be adjudicated: its only failures (22, none for this spike) are in governed-launch and nested-containment cases that need real provider launch and nested sandboxing, which this verification environment denies. Trusted-N adoption and cutover evidence was not available. No implementation failure is claimed.",
   "diagnostics": [
     "evaluator helper self-check passed",
-    "frozen regression-evidence check demanded literal naming tokens not required by public authority",
-    "non-authoritative probe: the candidate's own focused tests for this spike passed; full-suite failures were confined to nested-sandbox containment and governed-launch cases"
+    "frozen contract case passed",
+    "full suite 296/318; all failures outside this spike and attributable to operational retry exhaustion or refused nested containment",
+    "trusted-N evidence absent"
   ],
-  "evaluatorIntegrity": "frozen revision 002 identities matched and the revision was not mutated; a further evaluator correction requires explicit evaluator vs methodology/evidence-model classification under the repair threshold before the unchanged candidate is re-verified"
+  "evaluatorIntegrity": "frozen revision 003 identities matched and the revision was not mutated"
 }
