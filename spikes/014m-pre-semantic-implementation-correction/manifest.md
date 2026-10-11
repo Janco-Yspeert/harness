@@ -228,3 +228,19 @@
   required before re-verifying the unchanged candidate. No implementation
   failure is claimed.
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator repair — evaluator revision 002
+
+- Skill/mode: evaluator v14, `repair`
+- Trigger: `e6e3da68-b19c-43ce-941e-78f7f456d8f6` (attempt 12, BLOCKED /
+  EVALUATOR_DEFECT)
+- Lineage: source revision `001`
+  (`sha256:d688bfc9e340045420d2b7f967b6f2d025438c79def95f295c3c22dfd79cdcf9`)
+  to revision `002`
+  (`sha256:e499e900b87f94132bb51715a4956323e78fc379a43c11eee3ae82b9c11a5271`)
+- Result: structural integrity validation PASS; acceptance semantics
+  preserved; no new public seam or implementation-shaped requirement adopted.
+  The authorization oracle no longer presumes one enforcement factoring, and the
+  full-regression evidence requires a git work tree of the exact candidate.
+- Boundaries: candidate not run; frozen brief, Design Map and public evaluation
+  requirements unchanged.
