@@ -63,3 +63,12 @@
 - Outputs: `verification-result.json`; `manifest.md`
 - Checks: frozen executable evaluation run; its finalized-source fixture is inconsistent with the frozen brief's artifact binding requirement, so the candidate could not be fairly adjudicated; methodology diff empty; evaluator repair required before re-verification of the unchanged candidate
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator repair
+
+- Skill: evaluator, contract version 14, mode `repair`
+- Inputs: source evaluator revision `001` (`sha256:9ab50eaad18d3fa8449f4dded353578fdd7c0b7770722a3d91fbf93f2c229365`); trigger `6e64200a-0a3f-4186-aaab-f076b8b52a58`; brief `sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`; design map `sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`; requirements `sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`
+- Result: `succeeded`; evaluator revision `002` (`sha256:f6efebd992419c66a8823bf55f20e440996c1b06249313c373b48ebcc23075fb`), integrity validation PASS, acceptance semantics preserved
+- Outputs: `coverage-map.json` (repair binding, affected criteria AC01–AC15); `manifest.md`
+- Checks: structural integrity validation over the complete resulting revision; candidate not run
+- Measurement cutoff: immediately before this manifest update.
