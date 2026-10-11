@@ -1,0 +1,9 @@
+Operator runtime maintenance continuation
+
+parent-runtime: f7a265230288cc5292d640e8097ab66f0fe506ee
+
+replacement-runtime: 536a17d0e28cdcf6d12d35921e8c72a9e5f4882a
+
+reason: evaluator-repair Role Grant bound only the trigger identity; host execution context now projects the exact canonical trigger event through a closed typed schema
+
+trusted-methodology: sha256:da22079f636de3a498ec853dc6dd8785f3aa8daa387130c96ac9927b377301f2
