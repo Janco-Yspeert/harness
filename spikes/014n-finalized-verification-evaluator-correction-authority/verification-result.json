@@ -1,35 +1,29 @@
 {
   "schemaVersion": 1,
-  "commit": "04f2745558fa51432b6c4dffb219a611f00bd0df",
+  "commit": "c448eaa26d1b4205d54212bbe61939bdf67357dc",
   "evaluatorRevision": "002",
-  "attempt": 2,
-  "result": "FAIL",
-  "classification": "IMPLEMENTATION_FAILURE",
+  "attempt": 3,
+  "result": "BLOCKED",
+  "classification": "INFRASTRUCTURE_FAILURE",
   "coverageResults": {
-    "AC01": "NOT_SATISFIED",
+    "AC01": "SATISFIED",
     "AC02": "SATISFIED",
-    "AC03": "NOT_SATISFIED",
-    "AC04": "NOT_SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
     "AC05": "SATISFIED",
     "AC06": "SATISFIED",
     "AC07": "SATISFIED",
-    "AC08": "NOT_SATISFIED",
+    "AC08": "SATISFIED",
     "AC09": "NOT_ADJUDICATED",
-    "AC10": "NOT_SATISFIED",
-    "AC11": "NOT_SATISFIED",
-    "AC12": "NOT_SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
     "AC13": "SATISFIED",
     "AC14": "SATISFIED",
-    "AC15": "NOT_ADJUDICATED",
+    "AC15": "SATISFIED",
     "AC16": "SATISFIED",
     "AC17": "NOT_ADJUDICATED",
     "AC18": "NOT_ADJUDICATED"
   },
-  "feedback": {
-    "violatedRequirement": "An unconsumed finalized-verification correction authority must make only evaluator-repair eligible (brief: Eligibility, retry, and consumption), including for a finalized BLOCKED / INFRASTRUCTURE_FAILURE source, with no methodology/policy change and no special-casing of that classification.",
-    "expected": "After the authority is recorded, the resolver selects evaluator-repair with the authority semantic result as repair trigger and the bound source revision as source revision; implementation and evaluator-verify stay ineligible; a recorded repair then consumes the authority.",
-    "observed": "The authority is accepted and recorded, but the resolver still returns the gate 'infrastructure failure requires recovery before continuation' instead of an evaluator-repair grant, so evaluator-repair is never eligible and consumption cannot occur.",
-    "safeDiagnostics": "Reproduced in isolation; legacy-flow controls and an arbitrary-classification source pass, so the defect is specific to the latest-current INFRASTRUCTURE_FAILURE gate not yielding to an unconsumed authority in kernel code. Typecheck passes; methodology diff against base is empty."
-  },
-  "summary": "Frozen evaluator revision 002 ran on the unchanged candidate: the revision 001 fixture defect is cured and the evaluator is trustworthy. The finalized-source INFRASTRUCTURE_FAILURE authority does not make evaluator-repair eligible because the existing infrastructure gate still applies."
+  "summary": "Frozen evaluator revision 002 ran on the candidate: all 12 executable cases pass, typecheck passes and the methodology diff is empty, so finalized-source correction authority now makes evaluator-repair eligible. The repository regression suite (AC17) cannot be adjudicated in the verification sandbox: 22 containment/nested-sandbox dependent tests fail identically at the pre-implementation parent commit, so the cause is environmental. AC09 regression leg and non-required AC18 are not adjudicated."
 }
