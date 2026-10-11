@@ -17,3 +17,12 @@
 - Outputs: `feedback.md`
 - Checks: brief read and diffed against preliminary 001; no tests run
 - Measurement cutoff: immediately before this manifest update.
+
+## Brief readiness — review 003
+
+- Skill: brief-readiness, contract version 5
+- Input: `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`), byte-identical to review 002
+- Result: `READY` (succeeded); findings unchanged from review 002 in `feedback.md` (0 blockers, 2 non-blocking material clarifications, 1 editorial)
+- Outputs: `feedback.md` (unchanged), `manifest.md`
+- Checks: brief re-read; identity compared to review 002; no tests run
+- Measurement cutoff: immediately before this manifest update.
