@@ -136,3 +136,14 @@
 - Result: `succeeded`; evaluator revision `004` (`sha256:5bbc58b528dc5312b5021e4fd5c4c86ec1aab367699c2c9e854415641cd8e04f`), structural integrity `PASS`, acceptance semantics preserved
 - Outputs: `coverage-map.json`; `manifest.md`
 - Measurement cutoff: immediately before this manifest update.
+
+## Implementation — attempt 3
+
+- Skill: implementation, contract version 5
+- Inputs: `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`); `design-map.md` (`sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`); `eval-requirements.md` (`sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`); `coverage-map.json` (`sha256:715ec419d82e2369465363361857d4bfb112714667ef3bd5f15bbf5e8fc84a50`, evaluator revision `004`); base commit `2324b86d36f4633d69dca3398d97e5f4c6afffaa`; no retry feedback bound
+- Result: `succeeded`
+- Changes: finalized-result artifacts may omit `execution` but reject a present mismatch; evaluator-repair grants expose the bound human diagnosis and source identities and take their source revision from that authority; only the exact source-classification gate is suppressed before and after one correctly bound repair, while an unbound repair cannot discharge it
+- Outputs (sha256): `src/kernel/execution.ts` d97e84985d19ffb7259f274476d5f8d9ccefa5a4d96e95d9ea84879138c11c4d; `src/kernel/resolver.ts` 1f550d23f792a3644203a647d94705dbf4a2c1b7f8f9aef0d4bdbc0d8e8b70a3; `test/kernel.test.ts` 931e2391888fdb2c6f65356eb3857330fed7ba083f01b632b6f448434c420ef3
+- Statistics: 3 files changed, 108 insertions, 17 deletions (source and test, before this entry); pinned methodology and skill bytes unchanged
+- Checks: typecheck, ESLint, focused Prettier and focused diff check pass; `test/orchestration.test.ts` and `test/worker-context.test.ts` pass (2/2); kernel suite reaches 15/46 passes, while 31 tests—including both 014n tests—are blocked during fixture setup by the worker sandbox (`spawnSync git EPERM` or `listen EPERM`) before their assertions; the broader npm suite was not completed because it encounters the same containment restrictions
+- Measurement cutoff: immediately before this manifest update.

@@ -136,6 +136,22 @@ export function roleInputs(
         throw new Error(`required input identity missing: ${rule.name}`);
       }
       inputs[rule.name] = field;
+      // Human evaluator-correction authority is a typed host-owned input, not
+      // merely an opaque trigger. Project it only to the role whose contract
+      // consumes that trigger so the repair worker can reason from the bound
+      // diagnosis and source identities without widening the methodology.
+      if (
+        rule.name === "repairTrigger" &&
+        event?.transition === "human-evaluator-correction-authorized"
+      ) {
+        inputEvidence[rule.name] = event.evidence;
+        const sourceRevision = event.evidence.sourceEvaluatorRevision;
+        if (typeof sourceRevision !== "string")
+          throw new Error(
+            "evaluator correction authority source revision is unavailable",
+          );
+        inputs.sourceEvaluatorRevision = sourceRevision;
+      }
       if (rule.evidenceField) {
         const exposed = fieldAt(event?.evidence, rule.evidenceField);
         if (
@@ -337,23 +353,43 @@ export function resolveAuthority(
       (e) => e.transition === "human-evaluator-correction-authorized",
     );
     const authority = effectiveEvents[authorityIndex];
+    const laterRepairs = effectiveEvents
+      .slice(authorityIndex + 1)
+      .filter((e) => e.transition === "evaluator-repair-recorded");
+    const boundRepair = laterRepairs.find((event) => {
+      const value = event.evidence.inputs;
+      if (value === null || typeof value !== "object" || Array.isArray(value))
+        return false;
+      const repairInputs = value as Data;
+      return (
+        repairInputs.repairTrigger === authority?.evidence.semanticResult &&
+        repairInputs.sourceEvaluatorRevision ===
+          authority?.evidence.sourceEvaluatorRevision
+      );
+    });
     const authorityLiftsVerificationGate =
       latestFinalized !== undefined &&
       authority !== undefined &&
       authority.evidence.source === "finalized-verification" &&
       authority.evidence.finalizedEvent === latestFinalized.id &&
       effectiveEvents.indexOf(latestFinalized) < authorityIndex &&
-      !effectiveEvents
-        .slice(authorityIndex + 1)
-        .some((e) => e.transition === "evaluator-repair-recorded");
-    const gate = definition.policy.gates.find(
-      (g) =>
-        !(
-          authorityLiftsVerificationGate &&
-          "event" in g.when &&
-          g.when.event === "verification-finalized"
-        ) && predicate(g.when, effectiveEvents, definition.policy),
-    );
+      (laterRepairs.length === 0 ||
+        (laterRepairs.length === 1 && boundRepair !== undefined));
+    const gate = definition.policy.gates.find((g) => {
+      const when = object(g.when);
+      const value = when.fields;
+      const fields =
+        value !== null && typeof value === "object" && !Array.isArray(value)
+          ? (value as Data)
+          : {};
+      const exactSourceClassificationGate =
+        when.event === "verification-finalized" &&
+        fields.classification === authority?.evidence.sourceClassification;
+      return (
+        !(authorityLiftsVerificationGate && exactSourceClassificationGate) &&
+        predicate(g.when, effectiveEvents, definition.policy)
+      );
+    });
     if (gate) return { kind: "gate", reason: gate.reason };
     if (effectiveEvents.some((e) => workflow.stopAfter.includes(e.transition)))
       return { kind: "stop", reason: "workflow stopping condition reached" };

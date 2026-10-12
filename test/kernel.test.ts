@@ -4134,6 +4134,10 @@ void test("014n: human authority classifies a finalized BLOCKED verification wit
       { not: { event: "evaluator-repair-recorded" } },
     ],
   };
+  f.policy.roles.verify = {
+    ...required(f.policy.roles.produce),
+    when: { event: "evaluator-repair-recorded" },
+  };
   f.policy.gates = [
     {
       when: {
@@ -4145,13 +4149,31 @@ void test("014n: human authority classifies a finalized BLOCKED verification wit
       reason: "infrastructure failure requires recovery before continuation",
     },
   ];
+  f.contract.inputs = [
+    {
+      name: "sourceEvaluatorRevision",
+      path: "coverage-map.json",
+      jsonValue: "readiness.evaluatorRevision",
+    },
+    {
+      name: "repairTrigger",
+      event: [
+        "verification-finalized",
+        "human-evaluator-correction-authorized",
+      ],
+      field: "semanticResult",
+    },
+  ];
+  json(join(f.root, "contracts/produce.json"), f.contract);
   json(join(f.root, "policy.json"), f.policy);
+  json(join(f.root, "items", f.workflow, "coverage-map.json"), {
+    readiness: { evaluatorRevision: "999" },
+  });
   f.trust();
   const artifactPath = "verification-result.json";
   const artifactBytes = `${JSON.stringify({
     schemaVersion: 1,
     workflow: f.workflow,
-    execution: "verify-003",
     attempt,
     commit: candidate,
     evaluatorRevision: "003",
@@ -4260,6 +4282,11 @@ void test("014n: human authority classifies a finalized BLOCKED verification wit
   );
   assert.notEqual(resolved.kind, "gate", JSON.stringify(resolved));
   assert.equal(resolved.kind, "grant", JSON.stringify(resolved));
+  assert.equal(resolved.grant.inputs.repairTrigger, authority.semanticResult);
+  assert.equal(resolved.grant.inputs.sourceEvaluatorRevision, "003");
+  const repairContext = required(resolved.grant.inputEvidence?.repairTrigger);
+  assert.equal(repairContext.reason, request.reason);
+  assert.equal(repairContext.sourceSemanticResult, request.semanticResult);
   assert.equal(eligible("evaluator-repair"), true);
   assert.equal(eligible("implementation"), false);
   assert.equal(eligible("evaluator-verify"), false);
@@ -4268,14 +4295,26 @@ void test("014n: human authority classifies a finalized BLOCKED verification wit
     /already recorded/,
   );
   f.event("evaluator-repair-recorded", {
-    repairTrigger: authority.semanticResult,
+    inputs: {
+      repairTrigger: authority.semanticResult,
+      sourceEvaluatorRevision: "003",
+    },
   });
   assert.equal(eligible("evaluator-repair"), false, "repair consumes it");
   assert.equal(eligible("implementation"), false);
+  const afterRepair = f.kernel.inspect(
+    f.workflow,
+    resolvedGrant.id,
+    "verify",
+    resolvedSession.session.id,
+  );
+  assert.equal(afterRepair.kind, "grant", JSON.stringify(afterRepair));
 });
 
 void test("014n: stale and inadmissible finalized sources are refused", (t) => {
-  const cases: Array<[string, string | undefined, string, string, RegExp]> = [
+  const cases: Array<
+    [string, string | undefined, string, string, RegExp, string?]
+  > = [
     ["stale-attempt", "verification-allocated", "BLOCKED", "X", /stale/],
     ["stale-handoff", "implementation-handoff", "BLOCKED", "X", /stale/],
     ["stale-cycle", "correction-cycle-opened", "BLOCKED", "X", /stale/],
@@ -4287,13 +4326,28 @@ void test("014n: stale and inadmissible finalized sources are refused", (t) => {
       "EVALUATOR_DEFECT",
       /already makes evaluator repair eligible/,
     ],
+    [
+      "artifact-execution-mismatch",
+      undefined,
+      "BLOCKED",
+      "X",
+      /artifact does not bind/,
+      "other-execution",
+    ],
   ];
-  for (const [name, later, result, classification, pattern] of cases) {
+  for (const [
+    name,
+    later,
+    result,
+    classification,
+    pattern,
+    artifactExecution = "v",
+  ] of cases) {
     const f = fixture(t, `014n-${name}`);
     const candidate = "c".repeat(40);
     const artifact = `${JSON.stringify({
       workflow: f.workflow,
-      execution: "v",
+      execution: artifactExecution,
       attempt: 1,
       commit: candidate,
       evaluatorRevision: "001",

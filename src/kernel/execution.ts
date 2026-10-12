@@ -1008,7 +1008,8 @@ export class ExecutionKernel {
     const result = object(JSON.parse(bytes.toString("utf8")));
     if (
       (result.workflow !== undefined && result.workflow !== workflow) ||
-      result.execution !== request.execution ||
+      (result.execution !== undefined &&
+        result.execution !== request.execution) ||
       (result.attempt !== request.attempt &&
         result.attempt !== String(request.attempt).padStart(3, "0")) ||
       result.commit !== request.commit ||
