@@ -128,3 +128,11 @@
 - Statistics: `as-built.md` 90 lines, 5095 bytes
 - Checks: all bound input identities matched; promotion identity matched the exact file bytes; candidate implementation lineage, surrounding policy and contracts, focused visible tests, accepted verification result, and promoted target-spike evidence inspected; artifact passed `git diff --check`; evaluation was not rerun
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator repair — revision 004
+
+- Skill: evaluator (repair), contract version 14
+- Inputs: `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`); `design-map.md` (`sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`); `eval-requirements.md` (`sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`); source evaluator revision `003`; trigger `sha256:98c4eef325088531f3ab8682c46e9cafd70191ceb1f0f56daea10fb854027c1a` (human-authorized implementation-and-evaluator correction cycle)
+- Result: `succeeded`; evaluator revision `004` (`sha256:5bbc58b528dc5312b5021e4fd5c4c86ec1aab367699c2c9e854415641cd8e04f`), structural integrity `PASS`, acceptance semantics preserved
+- Outputs: `coverage-map.json`; `manifest.md`
+- Measurement cutoff: immediately before this manifest update.

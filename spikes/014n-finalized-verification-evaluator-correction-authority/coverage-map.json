@@ -9,7 +9,7 @@
       "procedures": [
         "E1"
       ],
-      "sufficiency": "finalized BLOCKED verification with explicit human diagnosis yields one authority and makes evaluator-repair the resolved role"
+      "sufficiency": "finalized BLOCKED verification with explicit human diagnosis yields one authority and makes evaluator-repair the resolved role; the full authorize, one bound repair, reverify lifecycle resolves for several arbitrary non-repair-eligible source classes"
     },
     {
       "id": "AC02",
@@ -19,7 +19,7 @@
       "procedures": [
         "E1"
       ],
-      "sufficiency": "each bound field (candidate, revision, attempt, execution, artifact identity/commit/path, finalized event, grant, semantic result, result, recorded classification, missing field) is varied and every variant is refused with the ledger unchanged, after a twin fixture proves the exact request is accepted"
+      "sufficiency": "each bound field (candidate, revision, attempt, execution, artifact identity/commit/path, finalized event, grant, semantic result, result, recorded classification, missing field) is varied and every variant is refused with the ledger unchanged, after a twin fixture proves the exact request is accepted; the committed artifact's execution may be omitted, a matching present value is accepted and a mismatching one refused, while canonical execution stays mandatory"
     },
     {
       "id": "AC03",
@@ -79,7 +79,7 @@
       "procedures": [
         "E1"
       ],
-      "sufficiency": "a failed allocation leaves evaluator-repair eligible; a recorded repair removes eligibility and a second authorization is refused"
+      "sufficiency": "a failed allocation leaves evaluator-repair eligible; a recorded repair removes eligibility and a second authorization is refused; after the one bound repair evaluator-verify resolves with only the source gate discharged and an unbound repair does not discharge it"
     },
     {
       "id": "AC09",
@@ -100,7 +100,7 @@
       "procedures": [
         "E1"
       ],
-      "sufficiency": "the resolved repair grant's repairTrigger equals the authority semantic result, differs from the source's, and its source revision equals the bound revision"
+      "sufficiency": "the resolved repair grant's repairTrigger equals the authority semantic result, differs from the source's, and its source revision equals the bound revision; the repair worker alone receives a typed host-derived context carrying the human diagnosis and bound source identities"
     },
     {
       "id": "AC11",
@@ -110,7 +110,7 @@
       "procedures": [
         "E1"
       ],
-      "sufficiency": "the resolved role after authorization is evaluator-repair and never implementation or evaluator-verify"
+      "sufficiency": "the resolved role after authorization is evaluator-repair and never implementation or evaluator-verify; pending suppression and post-repair discharge touch only the exact source-classification gate, unrelated gates stay active and implementation stays ineligible"
     },
     {
       "id": "AC12",
@@ -184,21 +184,23 @@
     }
   ],
   "readiness": {
-    "evaluatorRevision": "003",
-    "evaluatorRevisionIdentity": "sha256:14c099c7689a75985bb7a9f927f2ae409d16fe200e6cf4c1e2f944b451b6d145",
-    "privateInventoryIdentity": "sha256:a057fa3eac285175b80365313b3fc9dd41831ab06147800a192eb7ff12d283d9",
-    "validatorResultBinding": "sha256:c78bb1486135c0e708221c72ee6efa3451defbb8d2760d506984ee158f88282d",
+    "evaluatorRevision": "004",
+    "evaluatorRevisionIdentity": "sha256:5bbc58b528dc5312b5021e4fd5c4c86ec1aab367699c2c9e854415641cd8e04f",
+    "privateInventoryIdentity": "sha256:a3321a9082d4acc2872a1dff8196eed018da5a8f0d1eda45ac1b5078a7707c31",
+    "validatorResultBinding": "sha256:fe70e0718b931c7ab7adf2968ba716beb628a8d1e699328f2bead1bb28b49272",
     "integrityValidation": "PASS"
   },
   "repair": {
-    "sourceEvaluatorRevision": "002",
-    "sourceEvaluatorRevisionIdentity": "sha256:f6efebd992419c66a8823bf55f20e440996c1b06249313c373b48ebcc23075fb",
-    "resultingEvaluatorRevision": "003",
-    "trigger": "sha256:34f11dc0256f3ce0dc1bcb195a799cd59885301debbc883775725e3b114f281d",
+    "sourceEvaluatorRevision": "003",
+    "sourceEvaluatorRevisionIdentity": "sha256:14c099c7689a75985bb7a9f927f2ae409d16fe200e6cf4c1e2f944b451b6d145",
+    "resultingEvaluatorRevision": "004",
+    "trigger": "sha256:98c4eef325088531f3ab8682c46e9cafd70191ceb1f0f56daea10fb854027c1a",
     "affectedCriteria": [
-      "AC09",
-      "AC16",
-      "AC17"
+      "AC01",
+      "AC02",
+      "AC08",
+      "AC10",
+      "AC11"
     ],
     "briefIdentity": "sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d",
     "designMapIdentity": "sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9",
