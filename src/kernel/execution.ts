@@ -3737,9 +3737,6 @@ export class ExecutionKernel {
       PromotionActionRequest["unboundArchiveRecovery"]
     >,
     recoveryItems?: ArchiveItem[],
-    operator014nRecovery?: NonNullable<
-      PromotionActionRequest["operator014nRecovery"]
-    >,
   ): PromotionActionResult {
     return this.#transaction(workflow, () => {
       let artifacts = suppliedArtifacts;
@@ -3752,8 +3749,7 @@ export class ExecutionKernel {
         grant.hostActions.promotion?.derive === "host-archive" &&
         archiveLoss === undefined &&
         archiveRecovery === undefined &&
-        unboundArchiveRecovery === undefined &&
-        operator014nRecovery === undefined;
+        unboundArchiveRecovery === undefined;
       let items: ArchiveItem[] | undefined = recoveryItems;
       if (derive) {
         try {
@@ -3861,7 +3857,6 @@ export class ExecutionKernel {
         ...(archiveLoss ? { archiveLoss } : {}),
         ...(archiveRecovery ? { archiveRecovery } : {}),
         ...(unboundArchiveRecovery ? { unboundArchiveRecovery } : {}),
-        ...(operator014nRecovery ? { operator014nRecovery } : {}),
       };
       this.#append(workflow, "kernel.action-request", { ...request });
       const action: PromotionActionResult = {
@@ -4030,7 +4025,6 @@ export class ExecutionKernel {
                 ...(archiveLoss ? { archiveLoss } : {}),
                 ...(archiveRecovery ? { archiveRecovery } : {}),
                 ...(unboundArchiveRecovery ? { unboundArchiveRecovery } : {}),
-                ...(operator014nRecovery ? { operator014nRecovery } : {}),
               },
               result: {
                 artifacts: action.artifacts,
@@ -4101,7 +4095,6 @@ export class ExecutionKernel {
           ...(archiveLoss ? { archiveLoss } : {}),
           ...(archiveRecovery ? { archiveRecovery } : {}),
           ...(unboundArchiveRecovery ? { unboundArchiveRecovery } : {}),
-          ...(operator014nRecovery ? { operator014nRecovery } : {}),
         });
       this.#transition(workflow, id);
       this.#telemetry("host-action", execution, action.id);
