@@ -194,3 +194,13 @@
 - Outputs: `verification-result.json`; `manifest.md`
 - Checks: frozen executable evaluation 20 of 20 pass; typecheck pass; methodology diff empty; differential full-suite comparison against the pre-implementation parent shows an identical failing set (22 environment-dependent containment tests) and no new failure; AC18 (non-required manual step) not adjudicated
 - Measurement cutoff: immediately before this manifest update.
+
+## As-Built — final candidate
+
+- Skill: as-built, contract version 4
+- Inputs: candidate `6fa5ed9fc62077dbe4be144c6f8ec5e026cc6d67`; `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`); `design-map.md` (`sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`); `verification-result.json` (`sha256:ded51a1ec5f84bcf635309b6ca0dcd099fd77b387ffd572ffc40b78ecfb98a4c`); `evaluation/promotion.json` (`sha256:890a238fee31aa9982e257c655cd61e8024ea6274149e9a9dfc518d362e412ac`, promotion checkpoint `df2ad66b1375cc5dca26ef9364c5629092120f0b`)
+- Result: `succeeded`; no Missing, Contradictory, or Extra discrepancies found
+- Output: `as-built.md` (`sha256:d9d24470d3f4e0b62c5797e254d37da1f81dde81126be2b65a717e5745771f21`)
+- Statistics: `as-built.md` 98 lines, 5844 bytes
+- Checks: all bound input identities matched; promotion identity matched the exact file bytes and all 30 promoted artifacts matched their recorded identities; candidate implementation lineage and diff, surrounding kernel code and focused tests, frozen contract, final accepted verification result, and promoted target-spike evidence inspected; artifact passed `git diff --check`; evaluation was not rerun
+- Measurement cutoff: immediately before this manifest update.
