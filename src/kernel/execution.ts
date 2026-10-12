@@ -67,7 +67,9 @@ import {
   type UnboundArchiveRecoveryDeclaration,
 } from "./unbound-archive-recovery.ts";
 import {
+  ACTIVE_LEDGER_CUTOVER_014N,
   ATTEMPT_NAMESPACE_014N,
+  cutover014nActiveAttemptLedger,
   derive014nAttemptNamespaceArchive,
   exact014nNamespaceMigration,
   validate014nAttemptNamespaceState,
@@ -2160,6 +2162,61 @@ export class ExecutionKernel {
           (event) =>
             event.transition === "kernel.attempt-namespace-migrated" &&
             event.evidence.kind === "014n-attempt-namespace-migration",
+        ),
+      );
+    });
+  }
+  cutover014nActiveAttemptLedger(
+    workflow: string,
+    runtimeCommit: string,
+  ): LedgerEvent {
+    return this.#transaction(workflow, () => {
+      const execution = this.execution(
+        workflow,
+        ACTIVE_LEDGER_CUTOVER_014N.execution,
+      );
+      const grant = this.roleGrant(workflow, execution.roleGrant);
+      const promotion = required(
+        grant.hostActions.promotion,
+        "014n cutover execution lacks its private evidence contract",
+      );
+      const configured =
+        this.project.workflows[workflow]?.workspaces?.[
+          promotion.sourceWorkspace
+        ] ?? this.project.workspaces[promotion.sourceWorkspace];
+      const evaluatorWorkspace = grant.workspaces.find(
+        (workspace) =>
+          configured !== undefined &&
+          workspace.id === configured.id &&
+          workspace.path === configured.path,
+      );
+      if (!evaluatorWorkspace)
+        throw new Error("014n evaluator workspace is outside Role Grant");
+      const events = this.events(workflow);
+      const evidence = cutover014nActiveAttemptLedger(
+        this.project.root,
+        realpathSync(evaluatorWorkspace.path),
+        workflow,
+        events,
+        runtimeCommit,
+      );
+      const existing = events.filter(
+        (event) =>
+          event.transition === "kernel.active-attempt-ledger-cutover" &&
+          event.evidence.kind === "014n-active-attempt-ledger-cutover",
+      );
+      if (existing.length > 1)
+        throw new Error("014n active-ledger cutover provenance is ambiguous");
+      if (existing.length === 1) {
+        if (canonical(existing[0]?.evidence) !== canonical(evidence))
+          throw new Error("014n active-ledger cutover provenance drift");
+        return required(existing[0]);
+      }
+      this.#append(workflow, "kernel.active-attempt-ledger-cutover", evidence);
+      return required(
+        this.events(workflow).findLast(
+          (event) =>
+            event.transition === "kernel.active-attempt-ledger-cutover",
         ),
       );
     });

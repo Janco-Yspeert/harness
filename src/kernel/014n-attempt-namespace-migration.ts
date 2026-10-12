@@ -1,10 +1,12 @@
 import { execFileSync } from "node:child_process";
 import {
   cpSync,
+  existsSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -46,6 +48,37 @@ export const ATTEMPT_NAMESPACE_014N = {
   classification: "EVALUATOR_DEFECT",
   legacyAttempt: 4,
   recoveredAttempt: 8,
+} as const;
+
+export const ACTIVE_LEDGER_CUTOVER_014N = {
+  workflow: ATTEMPT_NAMESPACE_014N.workflow,
+  sourceLedgerIdentity:
+    "sha256:62a4c4a7db98a4981253a9adeab1749143b10a21e37f014c3495d70ba8d4efec",
+  preservedLedgerPath:
+    ".eval/history/attempt-ledgers/014n-pre-canonical-cutover.json",
+  provenancePath: ".eval/history/014n-active-ledger-cutover.json",
+  allocationEvent: "89a3d1eb-1d14-43f0-9b29-de0889895c26",
+  kernelAllocationEvent: "b97b8eb9-e66f-40cd-a902-49739d60825b",
+  execution: "0c383b26-89f2-476e-864f-4ce1242b1f90",
+  roleGrant:
+    "sha256:aa15c34c2a6b60056079f6b34be926e515cc19cc05138ce59ecedc3690b348c4",
+  semanticResult: "c82d3221-83c8-4261-b28f-9def57cca757",
+  candidate: "bb84849b635c4736786c4ab84f86906b9275f84a",
+  evaluatorRevision: "005",
+  evaluatorRevisionIdentity:
+    "sha256:1f074b457b9ab4f02e227b6f1aeb86afd61e9563620d6020ee6a1b7450d351de",
+  attempt: 9,
+  result: "FAIL",
+  classification: "IMPLEMENTATION_FAILURE",
+  publicCommit: "39e9c3e68794cda23624891a01a9b6697cf787d7",
+  publicPath:
+    "spikes/014n-finalized-verification-evaluator-correction-authority/verification-result.json",
+  publicIdentity:
+    "sha256:318d5b1a99ee391b4df5152e4e8f898327bf15b875e84f2baa815fccb0768118",
+  privatePath: ".eval/attempts/009/eval-result.md",
+  privateIdentity:
+    "sha256:7ead5e8a972686dd845e46280a3a0920ccff8d6d65edf737024671f9f6e76c8a",
+  migratedAttempt8Path: ".eval/attempts/008/eval-result.md",
 } as const;
 
 const allocations = [
@@ -427,6 +460,420 @@ const historicalCanonicalAttempts = [
   },
 ] as const;
 
+const postMigrationAllocatedAttempts = [5, 6, 7].map((attempt) => ({
+  id: String(attempt).padStart(3, "0"),
+  implementation: `git:${ATTEMPT_NAMESPACE_014N.candidate}`,
+  evaluatorRevision: ATTEMPT_NAMESPACE_014N.evaluatorRevision,
+  evaluatorRevisionIdentity: ATTEMPT_NAMESPACE_014N.evaluatorRevisionIdentity,
+  status: "ALLOCATED",
+}));
+
+function exactFile(
+  root: string,
+  path: string,
+  expectedIdentity: string,
+): Buffer {
+  const bytes = read(root, path);
+  if (identity(bytes) !== expectedIdentity)
+    fail(`file identity differs: ${path}`);
+  return bytes;
+}
+
+function exactOrWrite(path: string, bytes: Buffer): void {
+  if (existsSync(path)) {
+    const stat = lstatSync(path);
+    if (
+      !stat.isFile() ||
+      stat.isSymbolicLink() ||
+      identity(readFileSync(path)) !== identity(bytes)
+    )
+      fail(`existing cutover artifact differs: ${path}`);
+    return;
+  }
+  writeFileSync(path, bytes, { flag: "wx" });
+}
+
+export function cutover014nActiveAttemptLedger(
+  projectRoot: string,
+  evaluatorRoot: string,
+  workflow: string,
+  events: readonly LedgerEvent[],
+  runtimeCommit: string,
+): Data {
+  if (workflow !== ACTIVE_LEDGER_CUTOVER_014N.workflow)
+    fail("active-ledger cutover workflow binding differs");
+  if (!/^[a-f0-9]{40}$/.test(runtimeCommit))
+    fail("active-ledger cutover runtime is invalid");
+
+  const migration = exact014nNamespaceMigration(events);
+  if (!migration) fail("active-ledger cutover requires namespace migration");
+  const migrationMappings = migration.evidence.mappings;
+  if (!Array.isArray(migrationMappings) || migrationMappings.length !== 8)
+    fail("active-ledger cutover migration mapping differs");
+
+  const verificationAllocations = events.filter(
+    (event) => event.transition === "verification-allocated",
+  );
+  if (verificationAllocations.length !== 9)
+    fail("active-ledger cutover allocation history length differs");
+  for (const [index, raw] of migrationMappings.entries()) {
+    const mapping = object(raw);
+    if (
+      verificationAllocations[index]?.id !== mapping.allocationEvent ||
+      mapping.recoveredAttempt !== index + 1
+    )
+      fail("active-ledger cutover allocation history differs");
+  }
+  const allocation = exactEvent(
+    events,
+    "verification-allocated",
+    ACTIVE_LEDGER_CUTOVER_014N.allocationEvent,
+  );
+  if (verificationAllocations[8]?.id !== allocation.id)
+    fail("attempt 009 allocation append order differs");
+  const expectedAllocation = {
+    execution: ACTIVE_LEDGER_CUTOVER_014N.execution,
+    roleGrant: ACTIVE_LEDGER_CUTOVER_014N.roleGrant,
+    commit: ACTIVE_LEDGER_CUTOVER_014N.candidate,
+    evaluatorRevision: ACTIVE_LEDGER_CUTOVER_014N.evaluatorRevision,
+    attempt: ACTIVE_LEDGER_CUTOVER_014N.attempt,
+    cycle: "002",
+  };
+  if (
+    canonical(
+      selected(allocation.evidence, Object.keys(expectedAllocation)),
+    ) !== canonical(expectedAllocation)
+  )
+    fail("attempt 009 allocation differs");
+  const kernel = exactEvent(
+    events,
+    "kernel.allocation",
+    ACTIVE_LEDGER_CUTOVER_014N.kernelAllocationEvent,
+  );
+  const grant = object(kernel.evidence.grant);
+  const execution = object(kernel.evidence.execution);
+  const inputs = object(grant.inputs);
+  if (
+    grant.id !== ACTIVE_LEDGER_CUTOVER_014N.roleGrant ||
+    execution.id !== ACTIVE_LEDGER_CUTOVER_014N.execution ||
+    inputs.candidate !== ACTIVE_LEDGER_CUTOVER_014N.candidate ||
+    inputs.evaluatorRevision !== ACTIVE_LEDGER_CUTOVER_014N.evaluatorRevision
+  )
+    fail("attempt 009 kernel allocation differs");
+
+  const semantic = events.filter(
+    (event) =>
+      event.transition === "kernel.result" &&
+      event.evidence.id === ACTIVE_LEDGER_CUTOVER_014N.semanticResult,
+  );
+  if (semantic.length !== 1)
+    fail("attempt 009 semantic result is missing or ambiguous");
+  const semanticEvent = semantic[0] as LedgerEvent;
+  const methodology = object(semanticEvent.evidence.methodology);
+  if (
+    semanticEvent.evidence.execution !== ACTIVE_LEDGER_CUTOVER_014N.execution ||
+    semanticEvent.evidence.roleGrant !== ACTIVE_LEDGER_CUTOVER_014N.roleGrant ||
+    methodology.result !== ACTIVE_LEDGER_CUTOVER_014N.result ||
+    methodology.classification !== ACTIVE_LEDGER_CUTOVER_014N.classification
+  )
+    fail("attempt 009 semantic result differs");
+
+  const workflowRoot = resolve(
+    projectRoot,
+    "spikes/014n-finalized-verification-evaluator-correction-authority",
+  );
+  const publicBytes = exactFile(
+    workflowRoot,
+    "verification-result.json",
+    ACTIVE_LEDGER_CUTOVER_014N.publicIdentity,
+  );
+  const committed = execFileSync(
+    "git",
+    [
+      "show",
+      `${ACTIVE_LEDGER_CUTOVER_014N.publicCommit}:${ACTIVE_LEDGER_CUTOVER_014N.publicPath}`,
+    ],
+    { cwd: projectRoot },
+  );
+  if (identity(committed) !== identity(publicBytes))
+    fail("attempt 009 committed public result differs");
+  const attempt8Bytes = exactFile(
+    evaluatorRoot,
+    ATTEMPT_NAMESPACE_014N.privateResultPath,
+    ATTEMPT_NAMESPACE_014N.privateResultIdentity,
+  );
+  const attempt9Bytes = exactFile(
+    evaluatorRoot,
+    ACTIVE_LEDGER_CUTOVER_014N.privatePath,
+    ACTIVE_LEDGER_CUTOVER_014N.privateIdentity,
+  );
+  exactFile(
+    evaluatorRoot,
+    ".eval/freeze.json",
+    ACTIVE_LEDGER_CUTOVER_014N.evaluatorRevisionIdentity,
+  );
+
+  const malformedLedger = read(evaluatorRoot, ".eval/attempt-ledger.json");
+  const preservedPath = resolve(
+    evaluatorRoot,
+    ACTIVE_LEDGER_CUTOVER_014N.preservedLedgerPath,
+  );
+  const alreadyCutOver =
+    identity(malformedLedger) !==
+    ACTIVE_LEDGER_CUTOVER_014N.sourceLedgerIdentity;
+  const sourceLedger = alreadyCutOver
+    ? exactFile(
+        evaluatorRoot,
+        ACTIVE_LEDGER_CUTOVER_014N.preservedLedgerPath,
+        ACTIVE_LEDGER_CUTOVER_014N.sourceLedgerIdentity,
+      )
+    : malformedLedger;
+  if (
+    identity(sourceLedger) !== ACTIVE_LEDGER_CUTOVER_014N.sourceLedgerIdentity
+  )
+    fail("active-ledger cutover source identity differs");
+  const source = object(JSON.parse(sourceLedger.toString("utf8")));
+  if (!Array.isArray(source.attempts) || source.attempts.length !== 6)
+    fail("active-ledger cutover source shape differs");
+  const archivedHistoricalLedger = exactFile(
+    workflowRoot,
+    "evaluation/historical/attempt-ledger.json",
+    ATTEMPT_NAMESPACE_014N.historicalLedgerIdentity,
+  );
+  const archivedHistorical = object(
+    JSON.parse(archivedHistoricalLedger.toString("utf8")),
+  );
+  if (
+    !Array.isArray(archivedHistorical.attempts) ||
+    canonical(source.attempts.slice(0, 4)) !==
+      canonical(archivedHistorical.attempts)
+  )
+    fail("active-ledger cutover historical prefix differs");
+  if (
+    canonical(source.attempts[4]) !==
+      canonical({
+        attempt: 4,
+        cycle: "002",
+        status: ATTEMPT_NAMESPACE_014N.result,
+        candidate: ATTEMPT_NAMESPACE_014N.candidate,
+        evaluatorRevision: ATTEMPT_NAMESPACE_014N.evaluatorRevision,
+        classification: ATTEMPT_NAMESPACE_014N.classification,
+        result: ATTEMPT_NAMESPACE_014N.privateResultPath,
+      }) ||
+    canonical(source.attempts[5]) !==
+      canonical({
+        attempt: 9,
+        cycle: "002",
+        status: ACTIVE_LEDGER_CUTOVER_014N.result,
+        candidate: ACTIVE_LEDGER_CUTOVER_014N.candidate,
+        evaluatorRevision: ACTIVE_LEDGER_CUTOVER_014N.evaluatorRevision,
+        classification: ACTIVE_LEDGER_CUTOVER_014N.classification,
+        result: ACTIVE_LEDGER_CUTOVER_014N.privatePath,
+      })
+  )
+    fail("active-ledger cutover malformed terminal rows differ");
+
+  const canonicalLedger = {
+    schemaVersion: 2,
+    attempts: [
+      ...historicalCanonicalAttempts,
+      ...postMigrationAllocatedAttempts,
+      {
+        id: "008",
+        implementation: `git:${ATTEMPT_NAMESPACE_014N.candidate}`,
+        evaluatorRevision: ATTEMPT_NAMESPACE_014N.evaluatorRevision,
+        evaluatorRevisionIdentity:
+          ATTEMPT_NAMESPACE_014N.evaluatorRevisionIdentity,
+        resultPath: ACTIVE_LEDGER_CUTOVER_014N.migratedAttempt8Path,
+        resultIdentity: ATTEMPT_NAMESPACE_014N.privateResultIdentity,
+        status: ATTEMPT_NAMESPACE_014N.result,
+      },
+      {
+        id: "009",
+        implementation: `git:${ACTIVE_LEDGER_CUTOVER_014N.candidate}`,
+        evaluatorRevision: ACTIVE_LEDGER_CUTOVER_014N.evaluatorRevision,
+        evaluatorRevisionIdentity:
+          ACTIVE_LEDGER_CUTOVER_014N.evaluatorRevisionIdentity,
+        resultPath: ACTIVE_LEDGER_CUTOVER_014N.privatePath,
+        resultIdentity: ACTIVE_LEDGER_CUTOVER_014N.privateIdentity,
+        status: ACTIVE_LEDGER_CUTOVER_014N.result,
+      },
+    ],
+  };
+  privateAttempts(canonicalLedger);
+  for (const entry of historicalCanonicalAttempts) {
+    exactFile(evaluatorRoot, entry.resultPath, entry.resultIdentity);
+  }
+  const revisionIdentities = new Map([
+    [
+      "001",
+      "sha256:9ab50eaad18d3fa8449f4dded353578fdd7c0b7770722a3d91fbf93f2c229365",
+    ],
+    [
+      "002",
+      "sha256:f6efebd992419c66a8823bf55f20e440996c1b06249313c373b48ebcc23075fb",
+    ],
+    [
+      "003",
+      "sha256:14c099c7689a75985bb7a9f927f2ae409d16fe200e6cf4c1e2f944b451b6d145",
+    ],
+    ["004", ATTEMPT_NAMESPACE_014N.evaluatorRevisionIdentity],
+  ]);
+  for (const [revision, revisionIdentity] of revisionIdentities) {
+    exactFile(
+      evaluatorRoot,
+      `.eval/revisions/${revision}/freeze.json`,
+      revisionIdentity,
+    );
+  }
+  for (let index = 0; index < 4; index += 1) {
+    const mapping = object(migrationMappings[index]);
+    const terminal = events.filter(
+      (event) =>
+        event.transition === "verification-finalized" &&
+        event.evidence.execution === mapping.execution,
+    );
+    const expected = historicalCanonicalAttempts[index];
+    if (!expected) fail("historical canonical attempt is missing");
+    const finalized = terminal[0];
+    if (!finalized) fail("historical terminal host evidence is missing");
+    if (
+      terminal.length !== 1 ||
+      finalized.evidence.attempt !== index + 1 ||
+      finalized.evidence.commit !== expected.implementation.slice(4) ||
+      finalized.evidence.evaluatorRevision !== expected.evaluatorRevision ||
+      finalized.evidence.result !== expected.status
+    )
+      fail(`historical terminal host evidence differs: ${String(index + 1)}`);
+  }
+  for (let index = 4; index < 7; index += 1) {
+    const mapping = object(migrationMappings[index]);
+    if (
+      events.some(
+        (event) =>
+          (event.transition === "kernel.result" ||
+            event.transition === "verification-finalized") &&
+          event.evidence.execution === mapping.execution,
+      )
+    )
+      fail(
+        `nonterminal allocation has terminal host evidence: ${String(index + 1)}`,
+      );
+  }
+  const attempt8Finalizations = events.filter(
+    (event) =>
+      event.transition === "verification-finalized" &&
+      event.evidence.execution === ATTEMPT_NAMESPACE_014N.execution,
+  );
+  const attempt8Finalized = attempt8Finalizations[0];
+  if (!attempt8Finalized)
+    fail("attempt 008 finalized host evidence is missing");
+  if (
+    attempt8Finalizations.length !== 1 ||
+    attempt8Finalized.evidence.attempt !== 8 ||
+    attempt8Finalized.evidence.result !== ATTEMPT_NAMESPACE_014N.result ||
+    attempt8Finalized.evidence.classification !==
+      ATTEMPT_NAMESPACE_014N.classification
+  )
+    fail("attempt 008 finalized host evidence differs");
+  const ledgerBytes = Buffer.from(
+    `${JSON.stringify(canonicalLedger, null, 2)}\n`,
+  );
+  const provenance = {
+    schemaVersion: 1,
+    kind: "014n-active-attempt-ledger-cutover",
+    workflow,
+    runtimeCommit,
+    sourceLedger: {
+      path: ACTIVE_LEDGER_CUTOVER_014N.preservedLedgerPath,
+      identity: ACTIVE_LEDGER_CUTOVER_014N.sourceLedgerIdentity,
+      preservedByteForByte: true,
+    },
+    activeLedger: {
+      path: ".eval/attempt-ledger.json",
+      identity: identity(ledgerBytes),
+      namespace: "workflow-global",
+    },
+    terminalCopies: [
+      {
+        attempt: 8,
+        allocationEvent: "002539fe-e303-4d1d-8fa3-7135ba9513bd",
+        evaluatorRevision: "004",
+        originalPath: ATTEMPT_NAMESPACE_014N.privateResultPath,
+        originalIdentity: ATTEMPT_NAMESPACE_014N.privateResultIdentity,
+        canonicalPath: ACTIVE_LEDGER_CUTOVER_014N.migratedAttempt8Path,
+        canonicalIdentity: ATTEMPT_NAMESPACE_014N.privateResultIdentity,
+        pathOrigin: "namespace-migration-copy",
+      },
+      {
+        attempt: 9,
+        allocationEvent: ACTIVE_LEDGER_CUTOVER_014N.allocationEvent,
+        evaluatorRevision: ACTIVE_LEDGER_CUTOVER_014N.evaluatorRevision,
+        originalPath: ACTIVE_LEDGER_CUTOVER_014N.privatePath,
+        originalIdentity: ACTIVE_LEDGER_CUTOVER_014N.privateIdentity,
+        canonicalPath: ACTIVE_LEDGER_CUTOVER_014N.privatePath,
+        canonicalIdentity: ACTIVE_LEDGER_CUTOVER_014N.privateIdentity,
+        pathOrigin: "original-canonical-path-with-obsolete-row",
+      },
+    ],
+    allocations: verificationAllocations.map((event, index) => ({
+      allocationEvent: event.id,
+      recoveredGlobalAttempt: index + 1,
+      originalAttempt: event.evidence.attempt,
+      cycle: event.evidence.cycle,
+      execution: event.evidence.execution,
+      roleGrant: event.evidence.roleGrant,
+      candidate: event.evidence.commit,
+      evaluatorRevision: event.evidence.evaluatorRevision,
+    })),
+    attempts: canonicalLedger.attempts.map((entry) => ({
+      id: entry.id,
+      status: entry.status,
+      evidenceOrigin:
+        entry.id === "008"
+          ? "namespace-migration"
+          : entry.id === "009"
+            ? "exact-current-host-and-private-evidence"
+            : Number(entry.id) <= 4
+              ? "prior-ledger-recovery"
+              : "canonical-host-allocation",
+    })),
+    bytesReconstructed: false,
+    bytesOmitted: false,
+  };
+  const provenanceBytes = Buffer.from(`${canonical(provenance)}\n`);
+
+  mkdirSync(resolve(evaluatorRoot, ".eval/history/attempt-ledgers"), {
+    recursive: true,
+  });
+  mkdirSync(resolve(evaluatorRoot, ".eval/attempts/008"), { recursive: true });
+  exactOrWrite(preservedPath, sourceLedger);
+  exactOrWrite(
+    resolve(evaluatorRoot, ACTIVE_LEDGER_CUTOVER_014N.migratedAttempt8Path),
+    attempt8Bytes,
+  );
+  exactOrWrite(
+    resolve(evaluatorRoot, ACTIVE_LEDGER_CUTOVER_014N.provenancePath),
+    provenanceBytes,
+  );
+  if (!alreadyCutOver) {
+    const staged = resolve(evaluatorRoot, ".eval/attempt-ledger.cutover.json");
+    writeFileSync(staged, ledgerBytes, { flag: "wx" });
+    renameSync(staged, resolve(evaluatorRoot, ".eval/attempt-ledger.json"));
+  }
+  const active = read(evaluatorRoot, ".eval/attempt-ledger.json");
+  if (identity(active) !== identity(ledgerBytes))
+    fail("canonical active ledger differs");
+  privateAttempts(JSON.parse(active.toString("utf8")));
+  return {
+    ...provenance,
+    provenancePath: ACTIVE_LEDGER_CUTOVER_014N.provenancePath,
+    provenanceIdentity: identity(provenanceBytes),
+    attempt8CanonicalIdentity: identity(attempt8Bytes),
+    attempt9Identity: identity(attempt9Bytes),
+  };
+}
+
 export function derive014nAttemptNamespaceArchive(
   projectRoot: string,
   evaluatorRoot: string,
@@ -448,6 +895,42 @@ export function derive014nAttemptNamespaceArchive(
     fail("archive host allocation sequence differs");
   const currentLedgerBytes = read(evaluatorRoot, ".eval/attempt-ledger.json");
   const currentLedger = object(JSON.parse(currentLedgerBytes.toString("utf8")));
+  try {
+    privateAttempts(currentLedger);
+    const ordinary = deriveHostArchive(
+      evaluatorRoot,
+      candidate,
+      hostAllocations,
+    );
+    const preserved = exactFile(
+      evaluatorRoot,
+      ACTIVE_LEDGER_CUTOVER_014N.preservedLedgerPath,
+      ACTIVE_LEDGER_CUTOVER_014N.sourceLedgerIdentity,
+    );
+    const provenance = read(
+      evaluatorRoot,
+      ACTIVE_LEDGER_CUTOVER_014N.provenancePath,
+    );
+    return {
+      evaluationFact: ordinary.evaluationFact,
+      items: [
+        ...ordinary.items,
+        {
+          source: ACTIVE_LEDGER_CUTOVER_014N.preservedLedgerPath,
+          destination: "historical/014n-pre-canonical-attempt-ledger.json",
+          identity: identity(preserved),
+        },
+        {
+          source: ACTIVE_LEDGER_CUTOVER_014N.provenancePath,
+          destination: "recovery/014n-active-attempt-ledger-cutover.json",
+          identity: identity(provenance),
+        },
+      ],
+    };
+  } catch (error) {
+    if (!(error instanceof Error) || !error.message.includes("private attempt"))
+      throw error;
+  }
   if (
     !Array.isArray(currentLedger.attempts) ||
     currentLedger.attempts.length < 5

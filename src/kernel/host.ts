@@ -1089,6 +1089,23 @@ export class GovernedHost {
         });
         return;
       }
+      if (operation === "014n-active-ledger-cutover") {
+        needRoot();
+        if (get) throw new Error("014n active-ledger cutover requires POST");
+        if (Object.keys(body).length !== 0)
+          throw new Error("014n active-ledger cutover accepts no caller input");
+        this.#assertRuntime();
+        const runtimeRoot =
+          this.#external?.runtimeRoot ?? installedRuntimeRoot();
+        const runtime = runtimeCommit(runtimeRoot);
+        send(201, {
+          cutover: this.kernel.cutover014nActiveAttemptLedger(
+            workflow,
+            runtime.commit,
+          ),
+        });
+        return;
+      }
       if (operation === "grant-retirements") {
         needRoot();
         if (get) {
