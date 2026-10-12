@@ -275,8 +275,8 @@ function evaluator(t: TestContext): {
   freezeIdentity: string;
 } {
   const root = scratch(t);
-  const spec = put(root, ".eval/eval-spec.md", "spec\n");
-  const hidden = put(root, ".eval/.hidden-test/a.test.ts", "test\n");
+  const spec = put(root, "eval-spec.md", "spec\n");
+  const hidden = put(root, ".hidden-test/a.test.ts", "test\n");
   const freezeIdentity = put(
     root,
     ".eval/freeze.json",
@@ -430,7 +430,7 @@ void test("014k AC06/AC10/TR2d,f: archive failure is recoverable, leaves the PAS
   const { root, fact } = evaluator(t);
   const factBefore = JSON.stringify(fact);
   const destination = join(scratch(t), "archive");
-  const spec = join(root, ".eval/eval-spec.md");
+  const spec = join(root, "eval-spec.md");
   writeFileSync(spec, "changed\n");
   const failed = executeArchive(root, fact, destination);
   assert.equal(failed.state, "failed");
@@ -452,6 +452,59 @@ void test("014k AC06/AC10/TR2d,f: archive failure is recoverable, leaves the PAS
   assert.equal(
     closeoutPermitted({ ...fact, candidate: "b".repeat(40) }, recovered),
     false,
+  );
+});
+
+void test("active revision payloads resolve only from evaluator-root frozen paths", (t) => {
+  const { root, fact } = evaluator(t);
+  const rootSpec = join(root, "eval-spec.md");
+  const legacySpec = join(root, ".eval/eval-spec.md");
+  mkdirSync(dirname(legacySpec), { recursive: true });
+  cpSync(rootSpec, legacySpec);
+  rmSync(rootSpec);
+  assert.throws(
+    () => buildArchivePlan(root, fact),
+    /revision 001 artifact is missing or changed: eval-spec\.md/,
+  );
+});
+
+void test("superseded revision payloads remain revision-scoped and fail closed on drift", (t) => {
+  const { root, fact } = evaluator(t);
+  const supersededSpec = put(
+    root,
+    ".eval/revisions/000/eval-spec.md",
+    "old spec\n",
+  );
+  put(
+    root,
+    ".eval/revisions/000/freeze.json",
+    JSON.stringify({
+      evaluatorRevision: "000",
+      artifacts: { "eval-spec.md": supersededSpec },
+    }),
+  );
+  const withSuperseded = {
+    ...fact,
+    attempts: [
+      { ...fact.attempts[0], evaluatorRevision: "000" },
+      fact.attempts[1],
+    ],
+  } as EvaluationFact;
+  const plan = buildArchivePlan(root, withSuperseded);
+  assert.equal(
+    plan.items.find((item) => item.destination === "revisions/000/eval-spec.md")
+      ?.source,
+    ".eval/revisions/000/eval-spec.md",
+  );
+  writeFileSync(join(root, ".eval/revisions/000/eval-spec.md"), "changed\n");
+  assert.throws(
+    () => buildArchivePlan(root, withSuperseded),
+    /revision 000 artifact is missing or changed/,
+  );
+  rmSync(join(root, ".eval/revisions/000/eval-spec.md"));
+  assert.throws(
+    () => buildArchivePlan(root, withSuperseded),
+    /revision 000 artifact is missing or changed/,
   );
 });
 
@@ -720,7 +773,7 @@ function archiveFixture(t: TestContext): {
   freeze: string;
 } {
   const root = scratch(t);
-  const spec = put(root, ".eval/eval-spec.md", "spec\n");
+  const spec = put(root, "eval-spec.md", "spec\n");
   const freeze = put(
     root,
     ".eval/freeze.json",
@@ -830,6 +883,113 @@ void test("014k AC07/AC08: terminal host state never degrades to NONTERMINAL whe
   assert.throws(
     () => deriveHostArchive(root, COMMIT, [hostAttempt(1, "PASS")]),
     /terminal evidence gap for attempt 1/,
+  );
+});
+
+void test("014n attempt-010 topology derives a complete archive from root-active and revision-scoped bundles", (t) => {
+  const root = scratch(t);
+  const oldCandidate = "04f2745558fa51432b6c4dffb219a611f00bd0df";
+  const priorCandidate = "c448eaa26d1b4205d54212bbe61939bdf67357dc";
+  const failedCandidate = "bb84849b635c4736786c4ab84f86906b9275f84a";
+  const currentCandidate = "6fa5ed9fc62077dbe4be144c6f8ec5e026cc6d67";
+  const revisionIdentities = new Map<string, string>();
+  for (const revision of ["001", "002", "003", "004", "005"]) {
+    const active = revision === "005";
+    const base = active ? "" : `.eval/revisions/${revision}/`;
+    const spec = put(root, `${base}eval-spec.md`, `revision ${revision}\n`);
+    const hidden = put(
+      root,
+      `${base}.hidden-test/case.test.ts`,
+      `case ${revision}\n`,
+    );
+    const freeze = put(
+      root,
+      active ? ".eval/freeze.json" : `${base}freeze.json`,
+      `${JSON.stringify({
+        evaluatorRevision: revision,
+        artifacts: {
+          "eval-spec.md": spec,
+          ".hidden-test/case.test.ts": hidden,
+        },
+      })}\n`,
+    );
+    revisionIdentities.set(revision, freeze);
+  }
+  const topology = [
+    [1, oldCandidate, "001", "BLOCKED"],
+    [2, oldCandidate, "002", "FAIL"],
+    [3, priorCandidate, "002", "BLOCKED"],
+    [4, priorCandidate, "003", "PASS"],
+    [5, failedCandidate, "004", undefined],
+    [6, failedCandidate, "004", undefined],
+    [7, failedCandidate, "004", undefined],
+    [8, failedCandidate, "004", "BLOCKED"],
+    [9, failedCandidate, "005", "FAIL"],
+    [10, currentCandidate, "005", "PASS"],
+  ] as const;
+  const attempts = topology.map(([attempt, candidate, revision, result]) => {
+    const id = String(attempt).padStart(3, "0");
+    const revisionIdentity = revisionIdentities.get(revision);
+    assert.ok(revisionIdentity);
+    const common = {
+      id,
+      implementation: `git:${candidate}`,
+      evaluatorRevision: revision,
+      evaluatorRevisionIdentity: revisionIdentity,
+    };
+    if (!result) return { ...common, status: "ALLOCATED" };
+    const resultIdentity = put(
+      root,
+      `.eval/attempts/${id}/eval-result.md`,
+      `${result}\n`,
+    );
+    return {
+      ...common,
+      resultPath: `.eval/attempts/${id}/eval-result.md`,
+      resultIdentity,
+      status: result,
+    };
+  });
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({ schemaVersion: 2, attempts })}\n`,
+  );
+  const allocations = topology.map(
+    ([attempt, candidate, revision, result]) => ({
+      ...hostAttempt(attempt, result),
+      candidate,
+      evaluatorRevision: revision,
+    }),
+  );
+  const plan = deriveHostArchive(root, currentCandidate, allocations);
+  const fact = JSON.parse(
+    plan.items.find((item) => item.destination === "evaluation-fact.json")
+      ?.content ?? "null",
+  ) as EvaluationFact;
+  assert.equal(fact.result, "PASS");
+  assert.equal(fact.candidate, currentCandidate);
+  assert.equal(fact.evaluatorRevision, "005");
+  assert.equal(fact.attempts.length, 10);
+  assert.deepEqual(
+    fact.attempts.slice(4, 7).map((entry) => entry.state),
+    ["NONTERMINAL", "NONTERMINAL", "NONTERMINAL"],
+  );
+  assert.equal(
+    plan.items.find((item) => item.destination === "revisions/005/eval-spec.md")
+      ?.source,
+    "eval-spec.md",
+  );
+  assert.equal(
+    plan.items.find(
+      (item) => item.destination === "revisions/005/.hidden-test/case.test.ts",
+    )?.source,
+    ".hidden-test/case.test.ts",
+  );
+  assert.equal(
+    plan.items.find((item) => item.destination === "revisions/004/eval-spec.md")
+      ?.source,
+    ".eval/revisions/004/eval-spec.md",
   );
 });
 

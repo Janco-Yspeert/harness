@@ -230,7 +230,7 @@ function revisionBundle(revision: string): Step[] {
       `.eval/revisions/${revision}/freeze.json`,
     ),
     // The active revision is archived directly from its canonical location.
-    ...freeze(".eval/eval-spec.md", ".eval/freeze.json"),
+    ...freeze("eval-spec.md", ".eval/freeze.json"),
   ];
 }
 
