@@ -146,11 +146,11 @@ export function roleInputs(
       ) {
         inputEvidence[rule.name] = event.evidence;
         const sourceRevision = event.evidence.sourceEvaluatorRevision;
-        if (typeof sourceRevision !== "string")
-          throw new Error(
-            "evaluator correction authority source revision is unavailable",
-          );
-        inputs.sourceEvaluatorRevision = sourceRevision;
+        // Finalized-source authorities bind the source revision directly.
+        // Legacy authority events may predate that field, in which case the
+        // existing contract input remains authoritative.
+        if (typeof sourceRevision === "string")
+          inputs.sourceEvaluatorRevision = sourceRevision;
       }
       if (rule.evidenceField) {
         const exposed = fieldAt(event?.evidence, rule.evidenceField);

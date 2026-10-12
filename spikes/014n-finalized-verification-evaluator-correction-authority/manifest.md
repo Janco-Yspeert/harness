@@ -174,3 +174,14 @@
 - Outputs: `verification-result.json`; `feedback.md`; `manifest.md`
 - Checks: frozen executable evaluation 20 of 20 pass; typecheck pass; methodology diff empty; differential full-suite comparison against the pre-implementation parent shows one new failure (a public kernel test covering the legacy evaluator-correction flow, reproduced in isolation); AC09 and AC17 not satisfied; AC18 (non-required manual step) not adjudicated
 - Measurement cutoff: immediately before this manifest update.
+
+## Implementation — attempt 4
+
+- Skill: implementation, contract version 5
+- Inputs: `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`); `design-map.md` (`sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`); `eval-requirements.md` (`sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`); `coverage-map.json` (`sha256:fbd6c25eecfa69e4406ab159c8a18e6b3cb90c8ccbf7cd6a7c944d224cf7d188`, evaluator revision `005`); retry feedback: verification attempt 9, `IMPLEMENTATION_FAILURE` (`sha256:318d5b1a99ee391b4df5152e4e8f898327bf15b875e84f2baa815fccb0768118`); base commit `39e9c3e68794cda23624891a01a9b6697cf787d7`
+- Result: `succeeded`
+- Change: evaluator-repair input projection now overrides the source revision only when the authority event binds one; legacy authority events without that newer field retain the source revision resolved by their existing public contract
+- Output (sha256): `src/kernel/resolver.ts` 99dac710564f738af7d75a9202823bdc5b88bb4c865661cb2d9a05d54cc34d72
+- Statistics: 1 file changed, 5 insertions, 5 deletions (source only, before this entry); pinned methodology and skill bytes unchanged
+- Checks: typecheck, targeted ESLint, targeted Prettier, and focused diff check pass; direct role-input compatibility exercise passes both the field-less legacy authority and finalized-authority override cases; `test/orchestration.test.ts` and `test/worker-context.test.ts` pass 35/35; focused public kernel tests are blocked during fixture setup by the worker sandbox (`spawnSync git EPERM`) before assertions; the broader visible suite produced no output for more than one minute and was terminated
+- Measurement cutoff: immediately before this manifest update.
