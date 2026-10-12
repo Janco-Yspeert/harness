@@ -833,6 +833,96 @@ void test("014k AC07/AC08: terminal host state never degrades to NONTERMINAL whe
   );
 });
 
+void test("014n topology: four host attempts join sparse private rows by explicit id across candidate and evaluator revisions", (t) => {
+  const { root } = archiveFixture(t);
+  const oldCandidate = "04f2745558fa51432b6c4dffb219a611f00bd0df";
+  const currentCandidate = "c448eaa26d1b4205d54212bbe61939bdf67357dc";
+  const rows = [
+    { attempt: 1, candidate: oldCandidate, revision: "001", result: "BLOCKED" },
+    { attempt: 2, candidate: oldCandidate, revision: "002", result: "FAIL" },
+    {
+      attempt: 3,
+      candidate: currentCandidate,
+      revision: "002",
+      result: "BLOCKED",
+    },
+    {
+      attempt: 4,
+      candidate: currentCandidate,
+      revision: "003",
+      result: "PASS",
+    },
+  ] as const;
+  const entries = rows.map((row) => {
+    const id = String(row.attempt).padStart(3, "0");
+    const resultIdentity = put(
+      root,
+      `.eval/attempts/${id}/eval-result.md`,
+      `${row.result.toLowerCase()}\n`,
+    );
+    return privateEntry(row.attempt, row.result, resultIdentity, {
+      implementation: `git:${row.candidate}`,
+      evaluatorRevision: row.revision,
+    });
+  });
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({
+      schemaVersion: 2,
+      attempts: [entries[3], entries[0], entries[2], entries[1]],
+    })}\n`,
+  );
+  put(
+    root,
+    ".eval/freeze.json",
+    `${JSON.stringify({
+      evaluatorRevision: "003",
+      artifacts: {
+        "eval-spec.md": put(root, ".eval/eval-spec.md", "revision 003\n"),
+      },
+    })}\n`,
+  );
+  for (const revision of ["001", "002"]) {
+    const base = `.eval/revisions/${revision}`;
+    const spec = put(root, `${base}/eval-spec.md`, `revision ${revision}\n`);
+    put(
+      root,
+      `${base}/freeze.json`,
+      `${JSON.stringify({
+        evaluatorRevision: revision,
+        artifacts: { "eval-spec.md": spec },
+      })}\n`,
+    );
+  }
+  const allocations = rows.map((row) => ({
+    ...hostAttempt(row.attempt, row.result),
+    candidate: row.candidate,
+    evaluatorRevision: row.revision,
+  }));
+  const plan = deriveHostArchive(root, currentCandidate, allocations);
+  const fact = JSON.parse(
+    plan.items.find((item) => item.destination === "evaluation-fact.json")
+      ?.content ?? "null",
+  ) as EvaluationFact;
+  assert.equal(fact.candidate, currentCandidate);
+  assert.equal(fact.evaluatorRevision, "003");
+  assert.deepEqual(
+    fact.attempts.map((entry) => [
+      entry.attempt,
+      entry.evaluatorRevision,
+      entry.state,
+      entry.state === "TERMINAL" ? entry.result : undefined,
+    ]),
+    [
+      [1, "001", "TERMINAL", "BLOCKED"],
+      [2, "002", "TERMINAL", "FAIL"],
+      [3, "002", "TERMINAL", "BLOCKED"],
+      [4, "003", "TERMINAL", "PASS"],
+    ],
+  );
+});
+
 void test("014k AC07/AC08: recorded-then-missing is LOST; never-produced stays NONTERMINAL", (t) => {
   const { root } = archiveFixture(t);
   const pass = put(root, ".eval/attempts/003/eval-result.md", "pass\n");

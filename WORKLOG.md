@@ -11,3 +11,7 @@
 - 2026-10-04 — The first real revision-003 E5 subject launch exposed Git-quoted
   Unicode paths in full candidate export; switched the existing exporter to
   binary-safe NUL-delimited enumeration and added a reproducing regression.
+- 2026-10-12 — Rebased the 014n operator-runtime maintenance onto accepted
+  post-014k runtime `eee149a2`, preserving its host-derived sparse attempt
+  archive and replaying only the missing evidence binding, finalized-source
+  correction, repair-context projection, and exact gate-discharge semantics.

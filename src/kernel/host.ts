@@ -673,17 +673,40 @@ export class GovernedHost {
           throw new Error("evaluator correction authority requires POST");
         if (typeof body.attempt !== "number")
           throw new Error("evaluator correction attempt is required");
+        const common = {
+          classification: text(body.classification),
+          sourceEvaluatorRevision: text(body.sourceEvaluatorRevision),
+          attempt: body.attempt,
+          execution: text(body.execution),
+          reason: text(body.reason),
+        };
+        if (body.source === undefined) {
+          send(201, {
+            authority: this.kernel.authorizeEvaluatorCorrection(workflow, {
+              ...common,
+              rejectionEvent: text(body.rejectionEvent),
+              evidenceCommit: text(body.evidenceCommit),
+              evidencePath: text(body.evidencePath),
+              evidenceIdentity: text(body.evidenceIdentity),
+            }),
+          });
+          return;
+        }
+        if (body.source !== "finalized-verification")
+          throw new Error("unsupported evaluator correction source");
         send(201, {
           authority: this.kernel.authorizeEvaluatorCorrection(workflow, {
-            classification: text(body.classification),
-            sourceEvaluatorRevision: text(body.sourceEvaluatorRevision),
-            attempt: body.attempt,
-            execution: text(body.execution),
-            rejectionEvent: text(body.rejectionEvent),
-            evidenceCommit: text(body.evidenceCommit),
-            evidencePath: text(body.evidencePath),
-            evidenceIdentity: text(body.evidenceIdentity),
-            reason: text(body.reason),
+            ...common,
+            source: "finalized-verification",
+            finalizedEvent: text(body.finalizedEvent),
+            commit: text(body.commit),
+            roleGrant: text(body.roleGrant),
+            semanticResult: text(body.semanticResult),
+            result: text(body.result),
+            recordedClassification: text(body.recordedClassification),
+            artifactCommit: text(body.artifactCommit),
+            artifactPath: text(body.artifactPath),
+            artifactIdentity: text(body.artifactIdentity),
           }),
         });
         return;

@@ -14,6 +14,7 @@ import { PtyBackend } from "./pty-backend.ts";
 import { GovernedHost, type GovernedHostOptions } from "./kernel/host.ts";
 import { loadProject } from "./kernel/configuration.ts";
 import { harnessValidators } from "./methodologies/harness-public.ts";
+import { hostEvidenceBinders } from "./executors/evidence-bindings.ts";
 import { validateProductionExecutors } from "./executors/adapters.ts";
 import type {
   HarnessErrorMessage,
@@ -762,6 +763,7 @@ if (import.meta.main) {
             process.env.HARNESS_PROJECT_CONFIG ?? "harness.project.json",
           ),
           validators: harnessValidators,
+          evidenceBinders: hostEvidenceBinders,
           ...(process.env.HARNESS_PRIVATE_DATA_ROOT
             ? { privateDataRoot: process.env.HARNESS_PRIVATE_DATA_ROOT }
             : {}),

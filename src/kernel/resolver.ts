@@ -285,8 +285,78 @@ export function resolveAuthority(
   )
     candidates.push([override.role, required(definition.roles[override.role])]);
   if (!override) {
-    const gate = definition.policy.gates.find((g) =>
-      predicate(g.when, effectiveEvents, definition.policy),
+    const latestFinalized = effectiveEvents.findLast(
+      (event) => event.transition === "verification-finalized",
+    );
+    const authorityIndex = effectiveEvents.findLastIndex(
+      (event) => event.transition === "human-evaluator-correction-authorized",
+    );
+    const authority = effectiveEvents[authorityIndex];
+    const authorityLiftsVerificationGate =
+      latestFinalized !== undefined &&
+      authority !== undefined &&
+      candidates.length === 1 &&
+      candidates[0]?.[0] === "evaluator-repair" &&
+      authority.evidence.source === "finalized-verification" &&
+      authority.evidence.sourceClassification === "INFRASTRUCTURE_FAILURE" &&
+      authority.evidence.finalizedEvent === latestFinalized.id &&
+      effectiveEvents.indexOf(latestFinalized) < authorityIndex &&
+      !effectiveEvents
+        .slice(authorityIndex + 1)
+        .some((event) => event.transition === "evaluator-repair-recorded");
+    const currentEvents = scopedEvents(effectiveEvents, definition.policy);
+    const sourceIndex = currentEvents.findLastIndex(
+      (event) => event.transition === "verification-finalized",
+    );
+    const source = currentEvents[sourceIndex];
+    const matchingAuthorities = currentEvents.filter(
+      (event, index) =>
+        index > sourceIndex &&
+        event.transition === "human-evaluator-correction-authorized" &&
+        event.evidence.source === "finalized-verification" &&
+        event.evidence.classification === "EVALUATOR_COVERAGE_DEFECT" &&
+        event.evidence.sourceClassification === "INFRASTRUCTURE_FAILURE" &&
+        event.evidence.finalizedEvent === source?.id,
+    );
+    const recoveryAuthority =
+      matchingAuthorities.length === 1 ? matchingAuthorities[0] : undefined;
+    const recoveryAuthorityIndex = recoveryAuthority
+      ? currentEvents.indexOf(recoveryAuthority)
+      : -1;
+    const matchingRepairs = recoveryAuthority
+      ? currentEvents.filter((event, index) => {
+          if (
+            index <= recoveryAuthorityIndex ||
+            event.transition !== "evaluator-repair-recorded"
+          )
+            return false;
+          const inputs = event.evidence.inputs;
+          return (
+            inputs !== null &&
+            typeof inputs === "object" &&
+            !Array.isArray(inputs) &&
+            "repairTrigger" in inputs &&
+            inputs.repairTrigger === recoveryAuthority.evidence.semanticResult
+          );
+        })
+      : [];
+    const repairDischargesInfrastructureGate =
+      source !== undefined &&
+      source.evidence.result === "BLOCKED" &&
+      source.evidence.classification === "INFRASTRUCTURE_FAILURE" &&
+      candidates.length === 1 &&
+      candidates[0]?.[0] === "evaluator-verify" &&
+      recoveryAuthority !== undefined &&
+      matchingRepairs.length === 1;
+    const gate = definition.policy.gates.find(
+      (gate) =>
+        !(
+          (authorityLiftsVerificationGate ||
+            repairDischargesInfrastructureGate) &&
+          "event" in gate.when &&
+          gate.when.event === "verification-finalized" &&
+          gate.when.fields?.classification === "INFRASTRUCTURE_FAILURE"
+        ) && predicate(gate.when, effectiveEvents, definition.policy),
     );
     if (gate) return { kind: "gate", reason: gate.reason };
     if (effectiveEvents.some((e) => workflow.stopAfter.includes(e.transition)))

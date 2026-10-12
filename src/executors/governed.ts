@@ -98,6 +98,7 @@ const WORKER_RULES =
   "- Your final prose is never a result. Submit exactly one typed result with submitResult {disposition, methodology}, using only the contract's result and methodology vocabulary.\n" +
   "- Use requestAction only when your skill or contract requires a host action; the host validates it and may deny it. Inspect the returned action status; only status succeeded means the action happened.\n" +
   '- When your Role Grant lists hostActions.evidence, author the exact bytes yourself and call requestAction with kind "evidence" and files [{destination, content}]; the host writes and commits only those bytes and returns the commit. Except for an explicitly recorded legacyEvidenceCompatibility bridge, the repository is read-only for you and you hold no direct write or commit authority. A denied or failed action recorded nothing. Send each file\'s complete content (for an append-only file, the whole file with prior entries preserved).\n' +
+  "- When executionContext.evidenceContracts names a destination, its host-bound schema is authoritative. Provider prose and legacy artifact examples cannot replace it; the host rejects nonconforming bytes before publication.\n" +
   "- Use requestHuman only for input, approval or root requests the contract permits.\n" +
   "- Use only the granted workspaces and capabilities. Never push, publish directly, or reveal credentials.\n" +
   "- Read detailed inputs just in time from their bound paths inside granted workspaces; the identities below say which exact bytes are authoritative.";
@@ -159,6 +160,7 @@ export function workerInstructions(assignment: Assignment): {
     prompt:
       `Perform the allocated ${assignment.roleGrant.role} work for workflow ${assignment.workflow}, then submit your typed result with the Harness submitResult tool. ` +
       `Use the host-issued candidate, evaluator revision and attempt identities; do not inspect workflow ledgers. Publish required public evaluator-authored artifacts through the granted evidence action. ` +
+      `For every destination named by executionContext.evidenceContracts, construct the artifact from that exact bound schema before requesting publication. ` +
       resultContractInstructions(assignment.contract),
   };
 }

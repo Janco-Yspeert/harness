@@ -73,6 +73,7 @@ function assignment(n: string): Assignment {
       attempt: Number(n),
       publicArtifactRoot: `spikes/workflow-${n}`,
       permittedEvidenceDestinations: [],
+      evidenceContracts: {},
       privateWorkspaceIds: [],
       terminalOutcomes: [
         {

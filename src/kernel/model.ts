@@ -262,7 +262,7 @@ export interface PreimplementationRecoveryAuthority {
     identity: string;
   }>;
 }
-export interface HumanEvaluatorCorrectionAuthority {
+interface HumanEvaluatorCorrectionBase {
   schemaVersion: 1;
   id: string;
   project: string;
@@ -272,13 +272,32 @@ export interface HumanEvaluatorCorrectionAuthority {
   sourceEvaluatorRevision: string;
   attempt: number;
   execution: string;
+  reason: string;
+  semanticResult: string;
+}
+// The rejected variant is the original shape and deliberately has no `source`.
+export interface RejectedEvaluatorCorrectionAuthority extends HumanEvaluatorCorrectionBase {
   rejectionEvent: string;
   evidenceCommit: string;
   evidencePath: string;
   evidenceIdentity: string;
-  reason: string;
-  semanticResult: string;
 }
+// Layered over an exact canonical BLOCKED verification; never rewrites it.
+export interface FinalizedEvaluatorCorrectionAuthority extends HumanEvaluatorCorrectionBase {
+  source: "finalized-verification";
+  cycle: string;
+  finalizedEvent: string;
+  sourceCommit: string;
+  sourceRoleGrant: string;
+  sourceSemanticResult: string;
+  sourceResult: "BLOCKED";
+  sourceClassification: "INFRASTRUCTURE_FAILURE";
+  sourceArtifactCommit: string;
+  sourceArtifactPath: string;
+  sourceArtifactIdentity: string;
+}
+export type HumanEvaluatorCorrectionAuthority =
+  RejectedEvaluatorCorrectionAuthority | FinalizedEvaluatorCorrectionAuthority;
 // A canonical PASS is not a failed execution, so it cannot use the narrowly
 // scoped evaluator-correction authority above. This record opens one explicit
 // successor correction cycle while retaining the exact PASS it responds to.
@@ -407,6 +426,23 @@ export interface TerminalOutcome {
   requiredMethodology: string[];
   allowedMethodology: Record<string, string[]>;
 }
+export interface EvaluatorRepairTriggerContext {
+  transition:
+    | "verification-finalized"
+    | "human-evaluator-correction-authorized"
+    | "human-correction-cycle-authorized";
+  semanticResult: string;
+  classification?: string;
+  reason?: string;
+  sourceEvaluatorRevision: string;
+  sourceExecution: string;
+  sourceAttempt: number;
+  sourceResult?: string;
+  sourceClassification?: string;
+  sourceCommit: string;
+  finalizedEvent?: string;
+  sourceArtifactIdentity: string;
+}
 export interface WorkerExecutionContext {
   workflow: string;
   execution: string;
@@ -415,8 +451,18 @@ export interface WorkerExecutionContext {
   attempt?: number;
   publicArtifactRoot: string;
   permittedEvidenceDestinations: string[];
+  evidenceContracts: Record<
+    string,
+    {
+      validator: string;
+      validatorIdentity: string;
+      bindingIdentity: string;
+      schema: Data;
+    }
+  >;
   privateWorkspaceIds: string[];
   terminalOutcomes: TerminalOutcome[];
+  repairTriggerContext?: EvaluatorRepairTriggerContext;
 }
 export interface Execution {
   schemaVersion: 1;
@@ -625,5 +671,20 @@ export type ArtifactValidators = Record<
         result: Data;
       },
     ) => void;
+  }
+>;
+export type ArtifactBinders = Record<
+  string,
+  {
+    identity: string;
+    bind: (context: {
+      projectRoot: string;
+      workflowDirectory: string;
+      inputs: Record<string, string>;
+      terminalOutcomes: TerminalOutcome[];
+    }) => {
+      schema: Data;
+      validate: (document: unknown) => void;
+    };
   }
 >;

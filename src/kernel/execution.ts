@@ -88,6 +88,9 @@ import type {
   PublicationActionResult,
   HumanCorrectionCycleAuthority,
   HumanEvaluatorCorrectionAuthority,
+  RejectedEvaluatorCorrectionAuthority,
+  FinalizedEvaluatorCorrectionAuthority,
+  EvaluatorRepairTriggerContext,
   HumanRequest,
   LedgerEvent,
   MethodologyDefinition,
@@ -103,6 +106,7 @@ import type {
   WorkerExecutionContext,
   WorkflowGrant,
   ArtifactValidators,
+  ArtifactBinders,
 } from "./model.ts";
 
 export interface KernelOptions {
@@ -112,6 +116,7 @@ export interface KernelOptions {
   selectExecutor?: ExecutorSelector;
   privateDataRoot?: string;
   validators?: ArtifactValidators;
+  evidenceBinders?: ArtifactBinders;
   // Called with the freshly loaded definition before any new Workflow
   // Execution Grant is recorded. The governed host always installs the
   // trust-equivalence gate here; it is not caller configuration.
@@ -145,6 +150,37 @@ function boundedPath(root: string, path: string): string {
     throw new Error("action path escapes its configured boundary");
   return absolute;
 }
+export interface RejectedEvaluatorCorrectionRequest {
+  source?: undefined;
+  classification: string;
+  sourceEvaluatorRevision: string;
+  attempt: number;
+  execution: string;
+  rejectionEvent: string;
+  evidenceCommit: string;
+  evidencePath: string;
+  evidenceIdentity: string;
+  reason: string;
+}
+export interface FinalizedEvaluatorCorrectionRequest {
+  source: "finalized-verification";
+  classification: string;
+  sourceEvaluatorRevision: string;
+  attempt: number;
+  execution: string;
+  finalizedEvent: string;
+  commit: string;
+  roleGrant: string;
+  semanticResult: string;
+  result: string;
+  recordedClassification: string;
+  artifactCommit: string;
+  artifactPath: string;
+  artifactIdentity: string;
+  reason: string;
+}
+export type EvaluatorCorrectionRequest =
+  RejectedEvaluatorCorrectionRequest | FinalizedEvaluatorCorrectionRequest;
 // One host owns a project's executions. Synchronous ledger transactions serialize
 // request races; the on-disk lock also rejects competing host/CLI writers.
 export class ExecutionKernel {
@@ -550,19 +586,14 @@ export class ExecutionKernel {
   }
   authorizeEvaluatorCorrection(
     workflow: string,
-    request: {
-      classification: string;
-      sourceEvaluatorRevision: string;
-      attempt: number;
-      execution: string;
-      rejectionEvent: string;
-      evidenceCommit: string;
-      evidencePath: string;
-      evidenceIdentity: string;
-      reason: string;
-    },
+    request: EvaluatorCorrectionRequest,
   ): HumanEvaluatorCorrectionAuthority {
     return this.#transaction(workflow, () => {
+      if (request.source !== undefined) {
+        if ((request.source as string) !== "finalized-verification")
+          throw new Error("invalid evaluator correction authority");
+        return this.#authorizeFinalizedCorrection(workflow, request);
+      }
       if (
         request.classification !== "EVALUATOR_COVERAGE_DEFECT" ||
         !/^\d{3}$/.test(request.sourceEvaluatorRevision) ||
@@ -645,7 +676,10 @@ export class ExecutionKernel {
         throw new Error(
           "evaluator correction artifact does not bind the rejected allocation",
         );
-      const decision = {
+      const decision: Omit<
+        RejectedEvaluatorCorrectionAuthority,
+        "semanticResult"
+      > = {
         schemaVersion: 1 as const,
         id: randomUUID(),
         project: this.project.id,
@@ -661,7 +695,7 @@ export class ExecutionKernel {
         evidenceIdentity: request.evidenceIdentity,
         reason: request.reason,
       };
-      const authority: HumanEvaluatorCorrectionAuthority = {
+      const authority: RejectedEvaluatorCorrectionAuthority = {
         ...decision,
         semanticResult: contentId(decision),
       };
@@ -672,6 +706,193 @@ export class ExecutionKernel {
       );
       return authority;
     });
+  }
+  #authorizeFinalizedCorrection(
+    workflow: string,
+    request: FinalizedEvaluatorCorrectionRequest,
+  ): FinalizedEvaluatorCorrectionAuthority {
+    const sha = /^[a-f0-9]{40,64}$/;
+    if (
+      request.classification !== "EVALUATOR_COVERAGE_DEFECT" ||
+      !/^\d{3}$/.test(request.sourceEvaluatorRevision) ||
+      !Number.isSafeInteger(request.attempt) ||
+      request.attempt < 1 ||
+      !request.execution ||
+      !request.finalizedEvent ||
+      !sha.test(request.commit) ||
+      !request.roleGrant ||
+      !request.semanticResult ||
+      request.result !== "BLOCKED" ||
+      request.recordedClassification !== "INFRASTRUCTURE_FAILURE" ||
+      !sha.test(request.artifactCommit) ||
+      !request.artifactPath ||
+      !/^sha256:[a-f0-9]{64}$/.test(request.artifactIdentity) ||
+      typeof request.reason !== "string" ||
+      !request.reason.trim()
+    )
+      throw new Error("invalid evaluator correction authority");
+    const events = this.events(workflow);
+    if (
+      events.some(
+        (event) =>
+          event.transition === "human-evaluator-correction-authorized" &&
+          event.evidence.execution === request.execution &&
+          event.evidence.attempt === request.attempt,
+      )
+    )
+      throw new Error("evaluator correction authority already recorded");
+    const finalizedIndex = events.findIndex(
+      (event) =>
+        event.id === request.finalizedEvent &&
+        event.transition === "verification-finalized",
+    );
+    const exact = events[finalizedIndex]?.evidence;
+    if (
+      !exact ||
+      exact.result !== "BLOCKED" ||
+      exact.classification !== request.recordedClassification ||
+      exact.execution !== request.execution ||
+      exact.roleGrant !== request.roleGrant ||
+      exact.semanticResult !== request.semanticResult ||
+      exact.commit !== request.commit ||
+      exact.evaluatorRevision !== request.sourceEvaluatorRevision ||
+      exact.attempt !== request.attempt ||
+      exact.artifactCommit !== request.artifactCommit ||
+      exact.path !== request.artifactPath ||
+      exact.identity !== request.artifactIdentity
+    )
+      throw new Error(
+        "evaluator correction authority lacks exact canonical finalized verification",
+      );
+    const staleness = new Set([
+      "implementation-handoff",
+      "evaluation-prepared",
+      "evaluator-repair-recorded",
+      "verification-allocated",
+      "verification-finalized",
+      "correction-cycle-opened",
+      "human-correction-cycle-authorized",
+      "human-evaluator-correction-authorized",
+    ]);
+    if (
+      events
+        .slice(finalizedIndex + 1)
+        .some((event) => staleness.has(event.transition))
+    )
+      throw new Error("finalized verification is stale or superseded");
+    const openedCycle = events
+      .filter((event) => event.transition === "correction-cycle-opened")
+      .map((event) => String(event.evidence.cycle))
+      .at(-1);
+    const cycle = exact.cycle ?? "001";
+    if (typeof cycle !== "string" || cycle !== (openedCycle ?? "001"))
+      throw new Error("finalized verification is not in the current cycle");
+    const handoff = events.findLast(
+      (event) => event.transition === "implementation-handoff",
+    );
+    const allocations = events.filter(
+      (event) =>
+        event.transition === "verification-allocated" &&
+        event.evidence.execution === request.execution &&
+        event.evidence.attempt === request.attempt,
+    );
+    const allocation = allocations.length === 1 ? allocations[0] : undefined;
+    if (
+      !handoff ||
+      handoff.evidence.commit !== request.commit ||
+      !allocation ||
+      allocation.evidence.commit !== request.commit ||
+      allocation.evidence.evaluatorRevision !==
+        request.sourceEvaluatorRevision ||
+      allocation.evidence.roleGrant !== request.roleGrant
+    )
+      throw new Error(
+        "evaluator correction authority does not bind the verification allocation",
+      );
+    const allocatedGrant = events
+      .filter((event) => event.transition === "kernel.allocation")
+      .map((event) => object(event.evidence.grant))
+      .find((grant) => grant.id === request.roleGrant);
+    const allocationKey =
+      typeof allocation.evidence.allocationKey === "string"
+        ? allocation.evidence.allocationKey
+        : allocatedGrant?.allocationKey;
+    if (typeof allocationKey !== "string")
+      throw new Error("verification allocation identity is unavailable");
+    if (
+      exact.allocationKey !== undefined &&
+      exact.allocationKey !== allocationKey
+    )
+      throw new Error("finalized verification allocation identity mismatch");
+    const directory = required(this.project.workflows[workflow]).directory;
+    const artifact = inside(
+      resolve(this.project.root, directory),
+      request.artifactPath,
+    );
+    let bytes: Buffer;
+    try {
+      bytes = execFileSync(
+        "git",
+        [
+          "show",
+          `${request.artifactCommit}:${relative(this.project.root, artifact)}`,
+        ],
+        { cwd: this.project.root },
+      );
+    } catch {
+      throw new Error("evaluator correction artifact commit is unavailable");
+    }
+    if (identity(bytes) !== request.artifactIdentity)
+      throw new Error("evaluator correction artifact identity mismatch");
+    const result = object(JSON.parse(bytes.toString("utf8")));
+    if (
+      (result.workflow !== undefined && result.workflow !== workflow) ||
+      (result.execution !== undefined &&
+        result.execution !== request.execution) ||
+      (result.attempt !== request.attempt &&
+        result.attempt !== String(request.attempt).padStart(3, "0")) ||
+      result.commit !== request.commit ||
+      result.evaluatorRevision !== request.sourceEvaluatorRevision ||
+      result.result !== request.result ||
+      result.classification !== request.recordedClassification ||
+      (result.allocationKey !== undefined &&
+        result.allocationKey !== allocationKey)
+    )
+      throw new Error(
+        "evaluator correction artifact does not bind the finalized verification",
+      );
+    const decision: Omit<
+      FinalizedEvaluatorCorrectionAuthority,
+      "semanticResult"
+    > = {
+      schemaVersion: 1,
+      id: randomUUID(),
+      project: this.project.id,
+      workflow,
+      origin: "human",
+      source: "finalized-verification",
+      classification: "EVALUATOR_COVERAGE_DEFECT",
+      sourceEvaluatorRevision: request.sourceEvaluatorRevision,
+      attempt: request.attempt,
+      execution: request.execution,
+      cycle,
+      reason: request.reason,
+      finalizedEvent: request.finalizedEvent,
+      sourceCommit: request.commit,
+      sourceRoleGrant: request.roleGrant,
+      sourceSemanticResult: request.semanticResult,
+      sourceResult: "BLOCKED",
+      sourceClassification: request.recordedClassification,
+      sourceArtifactCommit: request.artifactCommit,
+      sourceArtifactPath: request.artifactPath,
+      sourceArtifactIdentity: request.artifactIdentity,
+    };
+    const authority: FinalizedEvaluatorCorrectionAuthority = {
+      ...decision,
+      semanticResult: contentId(decision),
+    };
+    this.#append(workflow, "human-evaluator-correction-authorized", authority);
+    return authority;
   }
   authorizeCorrectionCycle(
     workflow: string,
@@ -1029,6 +1250,94 @@ export class ExecutionKernel {
       `submitted result violates the cross-field contract or does not match an allowed terminal outcome; submit exactly one of: ${legal}. disposition reports protocol completion, not the evaluator verdict; a successfully reported evaluator BLOCKED verdict still uses disposition=succeeded`,
     );
   }
+  #evaluatorRepairTriggerContext(
+    workflow: string,
+    repairTrigger: string,
+  ): EvaluatorRepairTriggerContext {
+    const transitions = new Set<EvaluatorRepairTriggerContext["transition"]>([
+      "verification-finalized",
+      "human-evaluator-correction-authorized",
+      "human-correction-cycle-authorized",
+    ]);
+    const matches = this.events(workflow).filter(
+      (event) =>
+        transitions.has(
+          event.transition as EvaluatorRepairTriggerContext["transition"],
+        ) && event.evidence.semanticResult === repairTrigger,
+    );
+    if (matches.length !== 1)
+      throw new Error(
+        "evaluator repair trigger must resolve to exactly one canonical event",
+      );
+    const event = required(matches[0]);
+    const evidence = event.evidence;
+    const requiredString = (field: string): string => {
+      const value = evidence[field];
+      if (typeof value !== "string" || !value)
+        throw new Error(`evaluator repair trigger lacks ${field}`);
+      return value;
+    };
+    const optionalString = (field: string): string | undefined => {
+      const value = evidence[field];
+      return typeof value === "string" && value ? value : undefined;
+    };
+    const requiredNumber = (field: string): number => {
+      const value = evidence[field];
+      if (!Number.isSafeInteger(value) || Number(value) < 1)
+        throw new Error(`evaluator repair trigger lacks ${field}`);
+      return Number(value);
+    };
+    const transition =
+      event.transition as EvaluatorRepairTriggerContext["transition"];
+    if (transition === "verification-finalized") {
+      const classification = requiredString("classification");
+      return {
+        transition,
+        semanticResult: repairTrigger,
+        classification,
+        sourceEvaluatorRevision: requiredString("evaluatorRevision"),
+        sourceExecution: requiredString("execution"),
+        sourceAttempt: requiredNumber("attempt"),
+        sourceResult: requiredString("result"),
+        sourceClassification: classification,
+        sourceCommit: requiredString("commit"),
+        sourceArtifactIdentity: requiredString("identity"),
+      };
+    }
+    if (transition === "human-correction-cycle-authorized")
+      return {
+        transition,
+        semanticResult: repairTrigger,
+        classification: requiredString("classification"),
+        reason: requiredString("reason"),
+        sourceEvaluatorRevision: requiredString("sourceEvaluatorRevision"),
+        sourceExecution: requiredString("sourceExecution"),
+        sourceAttempt: requiredNumber("sourceAttempt"),
+        sourceCommit: requiredString("sourceCommit"),
+        sourceArtifactIdentity: requiredString("sourceArtifactIdentity"),
+      };
+    const artifactIdentity =
+      optionalString("sourceArtifactIdentity") ??
+      requiredString("evidenceIdentity");
+    const sourceResult = optionalString("sourceResult");
+    const sourceClassification = optionalString("sourceClassification");
+    const finalizedEvent = optionalString("finalizedEvent");
+    return {
+      transition,
+      semanticResult: repairTrigger,
+      classification: requiredString("classification"),
+      reason: requiredString("reason"),
+      sourceEvaluatorRevision: requiredString("sourceEvaluatorRevision"),
+      sourceExecution: requiredString("execution"),
+      sourceAttempt: requiredNumber("attempt"),
+      ...(sourceResult ? { sourceResult } : {}),
+      ...(sourceClassification ? { sourceClassification } : {}),
+      sourceCommit:
+        optionalString("sourceCommit") ?? requiredString("evidenceCommit"),
+      ...(finalizedEvent ? { finalizedEvent } : {}),
+      sourceArtifactIdentity: artifactIdentity,
+    };
+  }
   workerExecutionContext(
     workflow: string,
     executionId: string,
@@ -1049,6 +1358,31 @@ export class ExecutionKernel {
     const attempt = attemptField
       ? allocation?.evidence[attemptField]
       : undefined;
+    const terminalOutcomes = this.terminalOutcomes(workflow, grant);
+    const evidenceContracts: WorkerExecutionContext["evidenceContracts"] = {};
+    for (const outcome of role.policy.outcomes) {
+      const artifact = outcome.evidence?.artifact;
+      const validatorName = outcome.evidence?.validator;
+      if (!artifact || !validatorName || evidenceContracts[artifact]) continue;
+      const validator = required(
+        this.options.validators?.[validatorName],
+        "pinned validator unavailable",
+      );
+      const binder = this.options.evidenceBinders?.[validatorName];
+      if (!binder) continue;
+      const bound = binder.bind({
+        projectRoot: this.project.root,
+        workflowDirectory: required(this.project.workflows[workflow]).directory,
+        inputs: grant.inputs,
+        terminalOutcomes,
+      });
+      evidenceContracts[artifact] = {
+        validator: validatorName,
+        validatorIdentity: validator.identity,
+        bindingIdentity: binder.identity,
+        schema: bound.schema,
+      };
+    }
     return {
       workflow,
       execution: executionId,
@@ -1060,10 +1394,22 @@ export class ExecutionKernel {
       publicArtifactRoot: required(this.project.workflows[workflow]).directory,
       permittedEvidenceDestinations:
         grant.hostActions.evidence?.destinations ?? [],
+      evidenceContracts,
       privateWorkspaceIds: grant.workspaces
         .filter((workspace) => workspace.exposure !== "public")
         .map((workspace) => workspace.id),
-      terminalOutcomes: this.terminalOutcomes(workflow, grant),
+      terminalOutcomes,
+      ...(grant.role === "evaluator-repair"
+        ? {
+            repairTriggerContext: this.#evaluatorRepairTriggerContext(
+              workflow,
+              required(
+                grant.inputs.repairTrigger,
+                "evaluator repair trigger input is unavailable",
+              ),
+            ),
+          }
+        : {}),
     };
   }
   select(
@@ -2311,6 +2657,45 @@ export class ExecutionKernel {
             )
           )
             throw new Error("evidence destination outside role contract");
+        const role = required(
+          this.definition(workflow, grant.methodology).roles[grant.role],
+        );
+        const terminalOutcomes = this.terminalOutcomes(workflow, grant);
+        for (const file of files) {
+          const bindings = role.policy.outcomes
+            .filter(
+              (outcome) => outcome.evidence?.artifact === file.destination,
+            )
+            .map((outcome) => outcome.evidence?.validator)
+            .filter((name): name is string => name !== undefined);
+          if (bindings.length === 0) continue;
+          if (new Set(bindings).size !== 1)
+            throw new Error(
+              "evidence artifact has ambiguous validator binding",
+            );
+          required(
+            this.options.validators?.[required(bindings[0])],
+            "pinned validator unavailable",
+          );
+          const binder = this.options.evidenceBinders?.[required(bindings[0])];
+          if (!binder)
+            throw new Error("evidence artifact validator is not pre-bindable");
+          let document: unknown;
+          try {
+            document = JSON.parse(file.content);
+          } catch {
+            throw new Error("bound evidence artifact must be valid JSON");
+          }
+          binder
+            .bind({
+              projectRoot: this.project.root,
+              workflowDirectory: required(this.project.workflows[workflow])
+                .directory,
+              inputs: grant.inputs,
+              terminalOutcomes,
+            })
+            .validate(document);
+        }
         const workspace =
           this.project.workflows[workflow]?.workspaces?.[allowed.workspace] ??
           this.project.workspaces[allowed.workspace];

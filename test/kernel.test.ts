@@ -18,6 +18,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { startHarnessHost } from "../src/index.ts";
 import { trustFixtureMethodology } from "./support/trusted-fixture.ts";
 import { harnessValidators } from "../src/methodologies/harness-public.ts";
+import { buildMethodologyManifest } from "../src/methodology-evolution.ts";
 import { ExecutionKernel } from "../src/kernel/execution.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
 import { authorityBasis } from "../src/kernel/resolver.ts";
@@ -709,6 +710,7 @@ void test("014a: human evaluator correction authority binds rejected verificatio
   assert.equal(authority.sourceEvaluatorRevision, "002");
   assert.equal(authority.attempt, 4);
   assert.equal(authority.execution, "verify-004");
+  assert.ok("rejectionEvent" in authority);
   assert.equal(authority.rejectionEvent, rejected.id);
   assert.equal(authority.evidenceIdentity, evidenceIdentity);
   assert.match(authority.semanticResult, /^sha256:[a-f0-9]{64}$/);
@@ -3810,4 +3812,896 @@ void test("014f: host retirement operation is root-only and lists evidence", asy
   });
   assert.equal(cont.status, 409);
   assert.equal(f.kernel.executions(f.workflow).length, 0);
+});
+void test("014n: human authority classifies a finalized BLOCKED verification without altering it", (t) => {
+  const f = fixture(t, "014n-finalized-authority");
+  const real = JSON.parse(
+    readFileSync("methodologies/harness/policy.json", "utf8"),
+  ) as WorkflowPolicy;
+  const candidate = "c".repeat(40);
+  const attempt = 3;
+  const fixtureRole = structuredClone(required(f.policy.roles.produce));
+  f.policy.roles = Object.fromEntries(
+    ["implementation", "evaluator-verify", "evaluator-repair"].map((name) => [
+      name,
+      {
+        ...structuredClone(fixtureRole),
+        when: structuredClone(required(real.roles[name]).when),
+      },
+    ]),
+  );
+  f.policy.gates = structuredClone(real.gates);
+  f.contract.inputs.push({
+    name: "repairTrigger",
+    event: [
+      "verification-finalized",
+      "human-evaluator-correction-authorized",
+      "human-correction-cycle-authorized",
+    ],
+    field: "semanticResult",
+  });
+  json(join(f.root, "contracts/produce.json"), f.contract);
+  json(join(f.root, "policy.json"), f.policy);
+  f.trust();
+  const artifactPath = "verification-result.json";
+  const artifactBytes = `${JSON.stringify({
+    schemaVersion: 1,
+    workflow: f.workflow,
+    attempt,
+    commit: candidate,
+    evaluatorRevision: "003",
+    result: "BLOCKED",
+    classification: "INFRASTRUCTURE_FAILURE",
+  })}\n`;
+  writeFileSync(join(f.root, "items", f.workflow, artifactPath), artifactBytes);
+  git(f.root, ["init", "-b", "candidate"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "finalized verification artifact"]);
+  const artifactCommit = git(f.root, ["rev-parse", "HEAD"]);
+  const artifactIdentity = identity(Buffer.from(artifactBytes));
+  f.event("brief-frozen");
+  f.event("design-map-frozen");
+  f.event("evaluation-prepared");
+  f.event("implementation-handoff", { commit: candidate, attempt: 1 });
+  f.event("verification-allocated", {
+    execution: "verify-003",
+    roleGrant: "role-grant-003",
+    allocationKey: "sha256:attempt-003",
+    commit: candidate,
+    evaluatorRevision: "003",
+    attempt,
+  });
+  const finalized = f.event("verification-finalized", {
+    execution: "verify-003",
+    roleGrant: "role-grant-003",
+    semanticResult: "semantic-blocked-003",
+    commit: candidate,
+    evaluatorRevision: "003",
+    attempt,
+    result: "BLOCKED",
+    classification: "INFRASTRUCTURE_FAILURE",
+    artifactCommit,
+    path: artifactPath,
+    identity: artifactIdentity,
+  });
+  const request = {
+    source: "finalized-verification" as const,
+    classification: "EVALUATOR_COVERAGE_DEFECT",
+    sourceEvaluatorRevision: "003",
+    attempt,
+    execution: "verify-003",
+    finalizedEvent: required(finalized.id),
+    commit: candidate,
+    roleGrant: "role-grant-003",
+    semanticResult: "semantic-blocked-003",
+    result: "BLOCKED",
+    recordedClassification: "INFRASTRUCTURE_FAILURE",
+    artifactCommit,
+    artifactPath,
+    artifactIdentity,
+    reason: "evidence unavailable in isolation is an evaluator design defect",
+  };
+  const eligible = (role: string) =>
+    predicate(
+      required(real.roles[role]).when,
+      f.kernel.events(f.workflow),
+      real,
+    );
+  const ledger = () => readFileSync(f.kernel.path(f.workflow), "utf8");
+  const refused = (patch: object, pattern: RegExp) => {
+    const before = ledger();
+    assert.throws(
+      () =>
+        f.kernel.authorizeEvaluatorCorrection(f.workflow, {
+          ...request,
+          ...patch,
+        }),
+      pattern,
+    );
+    assert.equal(ledger(), before, "refusal appends nothing");
+  };
+
+  assert.equal(eligible("evaluator-repair"), false);
+  refused({ commit: "d".repeat(40) }, /exact canonical finalized/);
+  refused({ sourceEvaluatorRevision: "002" }, /exact canonical finalized/);
+  refused({ attempt: 4 }, /exact canonical finalized/);
+  refused({ execution: "other" }, /exact canonical finalized/);
+  refused({ finalizedEvent: "other" }, /exact canonical finalized/);
+  refused({ roleGrant: "other" }, /exact canonical finalized/);
+  refused({ semanticResult: "other" }, /exact canonical finalized/);
+  refused({ recordedClassification: "OTHER" }, /invalid evaluator correction/);
+  refused({ artifactCommit: "d".repeat(40) }, /exact canonical finalized/);
+  refused({ artifactPath: "other.json" }, /exact canonical finalized/);
+  refused({ artifactIdentity: `sha256:${"0".repeat(64)}` }, /exact canonical/);
+  refused({ result: "PASS" }, /invalid evaluator correction/);
+  refused({ reason: " " }, /invalid evaluator correction/);
+  refused({ source: "other" as never }, /invalid evaluator correction/);
+
+  const before = ledger();
+  const authority = f.kernel.authorizeEvaluatorCorrection(f.workflow, request);
+  assert.ok(ledger().startsWith(before), "original events are unchanged");
+  assert.equal(f.kernel.events(f.workflow).length, before.split("\n").length);
+  assert.equal(authority.classification, "EVALUATOR_COVERAGE_DEFECT");
+  assert.ok("source" in authority);
+  assert.equal(authority.sourceClassification, "INFRASTRUCTURE_FAILURE");
+  assert.equal(authority.sourceSemanticResult, "semantic-blocked-003");
+  assert.notEqual(authority.semanticResult, authority.sourceSemanticResult);
+  const resolvedGrant = f.kernel.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached", "spawned"],
+    maxAllocations: 8,
+    inline: true,
+  });
+  const resolvedSession = f.kernel.register(f.workflow, "fixture");
+  const resolved = f.kernel.inspect(
+    f.workflow,
+    resolvedGrant.id,
+    "evaluator-repair",
+    resolvedSession.session.id,
+  );
+  assert.notEqual(resolved.kind, "gate", JSON.stringify(resolved));
+  assert.equal(resolved.kind, "grant", JSON.stringify(resolved));
+  assert.deepEqual(resolved.grant.capabilities, f.contract.capabilities);
+  assert.deepEqual(resolved.grant.workspaces, [
+    f.project.workspaces.repository,
+  ]);
+  assert.equal(eligible("evaluator-repair"), true);
+  assert.equal(eligible("implementation"), false);
+  assert.equal(eligible("evaluator-verify"), false);
+  const repairInputs = structuredClone(resolved.grant.inputs);
+  const repairExecution = f.kernel.allocate(f.workflow, resolvedGrant.id, {
+    mode: "attached",
+    session: resolvedSession.session.id,
+    role: "evaluator-repair",
+  }).execution;
+  const repairContext = f.kernel.workerExecutionContext(
+    f.workflow,
+    repairExecution.id,
+  );
+  assert.deepEqual(
+    "repairTriggerContext" in repairContext
+      ? repairContext.repairTriggerContext
+      : undefined,
+    {
+      transition: "human-evaluator-correction-authorized",
+      semanticResult: authority.semanticResult,
+      classification: "EVALUATOR_COVERAGE_DEFECT",
+      reason: request.reason,
+      sourceEvaluatorRevision: "003",
+      sourceExecution: "verify-003",
+      sourceAttempt: 3,
+      sourceResult: "BLOCKED",
+      sourceClassification: "INFRASTRUCTURE_FAILURE",
+      sourceCommit: candidate,
+      finalizedEvent: finalized.id,
+      sourceArtifactIdentity: artifactIdentity,
+    },
+  );
+  assert.deepEqual(
+    f.kernel.roleGrant(f.workflow, repairExecution.roleGrant).inputs,
+    repairInputs,
+    "runtime delivery does not mutate authoritative Role Grant inputs",
+  );
+  for (const role of ["implementation", "evaluator-verify"]) {
+    const gated = f.kernel.inspect(
+      f.workflow,
+      resolvedGrant.id,
+      role,
+      resolvedSession.session.id,
+    );
+    assert.equal(gated.kind, "gate", `${role}: ${JSON.stringify(gated)}`);
+    assert.match(gated.reason, /infrastructure failure/);
+  }
+  assert.throws(
+    () => f.kernel.authorizeEvaluatorCorrection(f.workflow, request),
+    /already recorded/,
+  );
+  f.event("evaluator-repair-recorded", {
+    inputs: { repairTrigger: authority.semanticResult },
+  });
+  assert.equal(eligible("evaluator-repair"), false, "repair consumes it");
+  assert.equal(eligible("implementation"), false);
+  assert.equal(eligible("evaluator-verify"), true);
+  const consumed = f.kernel.inspect(
+    f.workflow,
+    resolvedGrant.id,
+    "evaluator-repair",
+    resolvedSession.session.id,
+  );
+  assert.equal(consumed.kind, "gate", JSON.stringify(consumed));
+  assert.match(consumed.reason, /infrastructure failure/);
+  const verify = f.kernel.inspect(
+    f.workflow,
+    resolvedGrant.id,
+    "evaluator-verify",
+    resolvedSession.session.id,
+  );
+  assert.equal(verify.kind, "grant", JSON.stringify(verify));
+});
+
+void test("014n: only an exact current authorized repair discharges its infrastructure gate", (t) => {
+  const real = JSON.parse(
+    readFileSync("methodologies/harness/policy.json", "utf8"),
+  ) as WorkflowPolicy;
+  const candidate = "c".repeat(40);
+  const setup = (
+    name: string,
+    mutate: (
+      f: ReturnType<typeof fixture>,
+      sourceId: string,
+      trigger: string,
+    ) => void,
+  ) => {
+    const f = fixture(t, `014n-gate-${name}`);
+    const fixtureRole = structuredClone(required(f.policy.roles.produce));
+    f.policy.roles = Object.fromEntries(
+      ["implementation", "evaluator-verify", "evaluator-repair"].map((role) => [
+        role,
+        {
+          ...structuredClone(fixtureRole),
+          when: structuredClone(required(real.roles[role]).when),
+        },
+      ]),
+    );
+    f.policy.gates = structuredClone(real.gates);
+    f.policy.scopeEvent = structuredClone(required(real.scopeEvent));
+    json(join(f.root, "policy.json"), f.policy);
+    f.trust();
+    f.event("brief-frozen");
+    f.event("design-map-frozen");
+    f.event("evaluation-prepared", { evaluatorRevision: "002" });
+    f.event("implementation-handoff", { commit: candidate, attempt: 1 });
+    const source = f.event("verification-finalized", {
+      execution: "verify-003",
+      roleGrant: "verify-grant-003",
+      semanticResult: "blocked-result-003",
+      commit: candidate,
+      evaluatorRevision: "002",
+      attempt: 3,
+      result: "BLOCKED",
+      classification: "INFRASTRUCTURE_FAILURE",
+      identity: `sha256:${"1".repeat(64)}`,
+    });
+    const trigger = `sha256:${"2".repeat(64)}`;
+    mutate(f, required(source.id), trigger);
+    const grant = f.kernel.authorize(f.workflow, {
+      continuation: true,
+      delegation: ["attached"],
+      maxAllocations: 8,
+      inline: true,
+    });
+    const session = f.kernel.register(f.workflow, "fixture").session;
+    return {
+      f,
+      inspect: (role: string) =>
+        f.kernel.inspect(f.workflow, grant.id, role, session.id),
+    };
+  };
+  const authority = (
+    f: ReturnType<typeof fixture>,
+    sourceId: string,
+    trigger: string,
+    cycle?: string,
+  ) =>
+    f.event("human-evaluator-correction-authorized", {
+      semanticResult: trigger,
+      source: "finalized-verification",
+      classification: "EVALUATOR_COVERAGE_DEFECT",
+      sourceClassification: "INFRASTRUCTURE_FAILURE",
+      finalizedEvent: sourceId,
+      ...(cycle ? { cycle } : {}),
+    });
+  const repair = (
+    f: ReturnType<typeof fixture>,
+    trigger: string,
+    cycle?: string,
+  ) =>
+    f.event("evaluator-repair-recorded", {
+      inputs: { repairTrigger: trigger },
+      ...(cycle ? { cycle } : {}),
+    });
+  const expectInfrastructureGate = (
+    result: ReturnType<ReturnType<typeof setup>["inspect"]>,
+  ) => {
+    assert.equal(result.kind, "gate", JSON.stringify(result));
+    assert.match(result.reason, /infrastructure failure/);
+  };
+
+  const beforeRepair = setup("before-repair", (f, sourceId, trigger) => {
+    authority(f, sourceId, trigger);
+  });
+  expectInfrastructureGate(beforeRepair.inspect("evaluator-verify"));
+
+  const wrongTrigger = setup("wrong-trigger", (f, sourceId, trigger) => {
+    authority(f, sourceId, trigger);
+    repair(f, `${trigger}-other`);
+  });
+  expectInfrastructureGate(wrongTrigger.inspect("evaluator-verify"));
+
+  const repairBeforeAuthority = setup(
+    "repair-before-authority",
+    (f, sourceId, trigger) => {
+      repair(f, trigger);
+      authority(f, sourceId, trigger);
+    },
+  );
+  expectInfrastructureGate(repairBeforeAuthority.inspect("evaluator-verify"));
+
+  const stale = setup("stale-scope", (f, sourceId, trigger) => {
+    authority(f, sourceId, trigger);
+    repair(f, trigger);
+    f.event("correction-cycle-opened", { cycle: "002" });
+    f.event("evaluation-prepared", { cycle: "002", evaluatorRevision: "003" });
+    f.event("implementation-handoff", {
+      cycle: "002",
+      commit: candidate,
+      attempt: 2,
+    });
+    f.event("verification-finalized", {
+      cycle: "002",
+      result: "BLOCKED",
+      classification: "INFRASTRUCTURE_FAILURE",
+    });
+  });
+  expectInfrastructureGate(stale.inspect("evaluator-verify"));
+
+  const freshFailure = setup("fresh-failure", (f, sourceId, trigger) => {
+    authority(f, sourceId, trigger);
+    repair(f, trigger);
+    f.event("verification-finalized", {
+      result: "BLOCKED",
+      classification: "INFRASTRUCTURE_FAILURE",
+    });
+  });
+  expectInfrastructureGate(freshFailure.inspect("evaluator-verify"));
+
+  const unrelated = setup("unrelated-repair", (f, sourceId, trigger) => {
+    authority(f, sourceId, trigger);
+    repair(f, `sha256:${"3".repeat(64)}`);
+  });
+  expectInfrastructureGate(unrelated.inspect("evaluator-verify"));
+
+  const exact = setup("exact", (f, sourceId, trigger) => {
+    authority(f, sourceId, trigger);
+    repair(f, trigger);
+  });
+  assert.equal(exact.inspect("evaluator-verify").kind, "grant");
+  assert.notEqual(exact.inspect("implementation").kind, "grant");
+
+  const otherGate = setup("other-gate", (f, sourceId, trigger) => {
+    authority(f, sourceId, trigger);
+    repair(f, trigger);
+    f.policy.gates.push({
+      when: { event: "other-blocker" },
+      reason: "other gate",
+    });
+    json(join(f.root, "policy.json"), f.policy);
+    f.trust();
+    f.event("other-blocker");
+  });
+  const other = otherGate.inspect("evaluator-verify");
+  assert.equal(other.kind, "gate", JSON.stringify(other));
+  assert.equal(other.reason, "other gate");
+});
+
+void test("014n: evaluator repair trigger delivery is exact, closed, and fail-closed", (t) => {
+  const trigger = `sha256:${"a".repeat(64)}`;
+  const other = `sha256:${"b".repeat(64)}`;
+  const authority = {
+    semanticResult: trigger,
+    classification: "EVALUATOR_COVERAGE_DEFECT",
+    reason: "repair the frozen evidence topology",
+    sourceEvaluatorRevision: "002",
+    attempt: 3,
+    execution: "verify-003",
+    sourceResult: "BLOCKED",
+    sourceClassification: "INFRASTRUCTURE_FAILURE",
+    sourceCommit: "c".repeat(40),
+    finalizedEvent: "finalized-003",
+    sourceArtifactIdentity: `sha256:${"c".repeat(64)}`,
+    unrelatedSecret: "must not escape",
+  };
+  const prepared = (
+    name: string,
+    role = "evaluator-repair",
+    transition = "human-evaluator-correction-authorized",
+    evidence: Data = authority,
+  ) => {
+    const f = fixture(t, name);
+    f.contract.inputs.push({
+      name: "repairTrigger",
+      event: [
+        "verification-finalized",
+        "human-evaluator-correction-authorized",
+        "human-correction-cycle-authorized",
+      ],
+      field: "semanticResult",
+    });
+    const base = required(f.policy.roles.produce);
+    f.policy.roles = {
+      [role]: {
+        ...base,
+        when: { event: transition },
+      },
+    };
+    json(join(f.root, "contracts/produce.json"), f.contract);
+    json(join(f.root, "policy.json"), f.policy);
+    f.trust();
+    f.event(transition, evidence);
+    const grant = f.kernel.authorize(f.workflow, {
+      continuation: true,
+      delegation: ["attached"],
+      maxAllocations: 4,
+      roles: [role],
+      inline: true,
+    });
+    const session = f.kernel.register(f.workflow, "fixture").session;
+    const execution = f.kernel.allocate(f.workflow, grant.id, {
+      mode: "attached",
+      session: session.id,
+      role,
+    }).execution;
+    return { f, execution };
+  };
+  const context = (
+    name: string,
+    transition = "human-evaluator-correction-authorized",
+    evidence: Data = authority,
+  ) => {
+    const preparedFixture = prepared(
+      name,
+      "evaluator-repair",
+      transition,
+      evidence,
+    );
+    return {
+      ...preparedFixture,
+      read: () =>
+        preparedFixture.f.kernel.workerExecutionContext(
+          preparedFixture.f.workflow,
+          preparedFixture.execution.id,
+        ),
+    };
+  };
+  const rewrite = (
+    f: ReturnType<typeof fixture>,
+    change: (events: Data[]) => Data[],
+  ) => {
+    const path = f.kernel.path(f.workflow);
+    const events = readFileSync(path, "utf8")
+      .trimEnd()
+      .split("\n")
+      .map((line) => JSON.parse(line) as Data);
+    writeFileSync(
+      path,
+      `${change(events)
+        .map((event) => JSON.stringify(event))
+        .join("\n")}\n`,
+    );
+  };
+
+  const exact = context("014n-repair-context-exact").read();
+  const projected =
+    "repairTriggerContext" in exact ? exact.repairTriggerContext : undefined;
+  assert.deepEqual(projected, {
+    transition: "human-evaluator-correction-authorized",
+    semanticResult: trigger,
+    classification: authority.classification,
+    reason: authority.reason,
+    sourceEvaluatorRevision: authority.sourceEvaluatorRevision,
+    sourceExecution: authority.execution,
+    sourceAttempt: authority.attempt,
+    sourceResult: authority.sourceResult,
+    sourceClassification: authority.sourceClassification,
+    sourceCommit: authority.sourceCommit,
+    finalizedEvent: authority.finalizedEvent,
+    sourceArtifactIdentity: authority.sourceArtifactIdentity,
+  });
+  assert.ok(!JSON.stringify(projected).includes(authority.unrelatedSecret));
+
+  const rejected = {
+    semanticResult: `sha256:${"d".repeat(64)}`,
+    classification: "EVALUATOR_COVERAGE_DEFECT",
+    reason: "the rejected execution exposed a fixture defect",
+    sourceEvaluatorRevision: "004",
+    attempt: 4,
+    execution: "verify-004",
+    evidenceCommit: "e".repeat(40),
+    evidenceIdentity: `sha256:${"e".repeat(64)}`,
+  };
+  const rejectedContext = context(
+    "014n-repair-context-rejected",
+    "human-evaluator-correction-authorized",
+    rejected,
+  ).read();
+  assert.deepEqual(rejectedContext.repairTriggerContext, {
+    transition: "human-evaluator-correction-authorized",
+    semanticResult: rejected.semanticResult,
+    classification: rejected.classification,
+    reason: rejected.reason,
+    sourceEvaluatorRevision: rejected.sourceEvaluatorRevision,
+    sourceExecution: rejected.execution,
+    sourceAttempt: rejected.attempt,
+    sourceCommit: rejected.evidenceCommit,
+    sourceArtifactIdentity: rejected.evidenceIdentity,
+  });
+
+  const finalized = {
+    semanticResult: `sha256:${"f".repeat(64)}`,
+    classification: "EVALUATOR_DEFECT",
+    evaluatorRevision: "005",
+    attempt: 5,
+    execution: "verify-005",
+    result: "BLOCKED",
+    commit: "f".repeat(40),
+    identity: `sha256:${"0".repeat(64)}`,
+  };
+  const finalizedContext = context(
+    "014n-repair-context-finalized",
+    "verification-finalized",
+    finalized,
+  ).read();
+  assert.deepEqual(finalizedContext.repairTriggerContext, {
+    transition: "verification-finalized",
+    semanticResult: finalized.semanticResult,
+    classification: finalized.classification,
+    sourceEvaluatorRevision: finalized.evaluatorRevision,
+    sourceExecution: finalized.execution,
+    sourceAttempt: finalized.attempt,
+    sourceResult: finalized.result,
+    sourceClassification: finalized.classification,
+    sourceCommit: finalized.commit,
+    sourceArtifactIdentity: finalized.identity,
+  });
+
+  const cycle = {
+    semanticResult: `sha256:${"1".repeat(64)}`,
+    classification: "IMPLEMENTATION_AND_EVALUATOR_DEFECT",
+    reason: "the accepted cycle exposed incomplete evaluator coverage",
+    sourceEvaluatorRevision: "006",
+    sourceExecution: "verify-006",
+    sourceAttempt: 6,
+    sourceCommit: "1".repeat(40),
+    sourceArtifactIdentity: `sha256:${"1".repeat(64)}`,
+  };
+  const cycleContext = context(
+    "014n-repair-context-cycle",
+    "human-correction-cycle-authorized",
+    cycle,
+  ).read();
+  assert.deepEqual(cycleContext.repairTriggerContext, {
+    transition: "human-correction-cycle-authorized",
+    semanticResult: cycle.semanticResult,
+    classification: cycle.classification,
+    reason: cycle.reason,
+    sourceEvaluatorRevision: cycle.sourceEvaluatorRevision,
+    sourceExecution: cycle.sourceExecution,
+    sourceAttempt: cycle.sourceAttempt,
+    sourceCommit: cycle.sourceCommit,
+    sourceArtifactIdentity: cycle.sourceArtifactIdentity,
+  });
+
+  const changed = context("014n-repair-context-changed");
+  rewrite(changed.f, (events) => {
+    const allocation = required(
+      events.find((event) => event.transition === "kernel.allocation"),
+    );
+    const grant = (allocation.evidence as Data).grant as Data;
+    (grant.inputs as Data).repairTrigger = other;
+    return events;
+  });
+  assert.throws(changed.read, /exactly one canonical event/);
+
+  const missing = context("014n-repair-context-missing");
+  rewrite(missing.f, (events) =>
+    events.filter(
+      (event) => event.transition !== "human-evaluator-correction-authorized",
+    ),
+  );
+  assert.throws(missing.read, /exactly one canonical event/);
+
+  const ambiguous = context("014n-repair-context-ambiguous");
+  ambiguous.f.event("verification-finalized", {
+    semanticResult: trigger,
+    execution: "other",
+    attempt: 9,
+    evaluatorRevision: "009",
+    result: "BLOCKED",
+    classification: "EVALUATOR_DEFECT",
+    commit: "d".repeat(40),
+    identity: `sha256:${"d".repeat(64)}`,
+  });
+  assert.throws(ambiguous.read, /exactly one canonical event/);
+
+  const nonRepair = prepared("014n-repair-context-other-role", "produce");
+  const nonRepairContext = nonRepair.f.kernel.workerExecutionContext(
+    nonRepair.f.workflow,
+    nonRepair.execution.id,
+  );
+  assert.equal("repairTriggerContext" in nonRepairContext, false);
+});
+
+void test("014n: artifact execution is optional but exact when present", (t) => {
+  const cases: Array<[string, string, string, boolean, RegExp | undefined]> = [
+    ["matching-artifact", "verify-003", "verify-003", true, undefined],
+    [
+      "mismatched-artifact",
+      "other-execution",
+      "verify-003",
+      false,
+      /artifact does not bind/,
+    ],
+    [
+      "mismatched-finalized-event",
+      "verify-003",
+      "other-execution",
+      false,
+      /exact canonical finalized/,
+    ],
+  ];
+  for (const [
+    name,
+    artifactExecution,
+    finalizedExecution,
+    accepted,
+    refusal,
+  ] of cases) {
+    const f = fixture(t, `014n-${name}`);
+    const candidate = "c".repeat(40);
+    const artifactPath = "verification-result.json";
+    const artifactBytes = `${JSON.stringify({
+      schemaVersion: 1,
+      execution: artifactExecution,
+      attempt: 3,
+      commit: candidate,
+      evaluatorRevision: "003",
+      result: "BLOCKED",
+      classification: "INFRASTRUCTURE_FAILURE",
+    })}\n`;
+    writeFileSync(
+      join(f.root, "items", f.workflow, artifactPath),
+      artifactBytes,
+    );
+    git(f.root, ["init", "-b", "candidate"]);
+    git(f.root, ["add", "."]);
+    git(f.root, ["commit", "-m", "verification artifact"]);
+    const artifactCommit = git(f.root, ["rev-parse", "HEAD"]);
+    const artifactIdentity = identity(Buffer.from(artifactBytes));
+    f.event("implementation-handoff", { commit: candidate, attempt: 1 });
+    f.event("verification-allocated", {
+      execution: "verify-003",
+      roleGrant: "role-grant-003",
+      allocationKey: "sha256:attempt-003",
+      commit: candidate,
+      evaluatorRevision: "003",
+      attempt: 3,
+    });
+    const finalized = f.event("verification-finalized", {
+      execution: finalizedExecution,
+      roleGrant: "role-grant-003",
+      semanticResult: "semantic-blocked-003",
+      commit: candidate,
+      evaluatorRevision: "003",
+      attempt: 3,
+      result: "BLOCKED",
+      classification: "INFRASTRUCTURE_FAILURE",
+      artifactCommit,
+      path: artifactPath,
+      identity: artifactIdentity,
+    });
+    const request = {
+      source: "finalized-verification" as const,
+      classification: "EVALUATOR_COVERAGE_DEFECT",
+      sourceEvaluatorRevision: "003",
+      attempt: 3,
+      execution: "verify-003",
+      finalizedEvent: required(finalized.id),
+      commit: candidate,
+      roleGrant: "role-grant-003",
+      semanticResult: "semantic-blocked-003",
+      result: "BLOCKED",
+      recordedClassification: "INFRASTRUCTURE_FAILURE",
+      artifactCommit,
+      artifactPath,
+      artifactIdentity,
+      reason: "human coverage diagnosis",
+    };
+    if (accepted) {
+      const authority = f.kernel.authorizeEvaluatorCorrection(
+        f.workflow,
+        request,
+      );
+      assert.equal(authority.execution, "verify-003");
+      continue;
+    }
+    assert.throws(
+      () => f.kernel.authorizeEvaluatorCorrection(f.workflow, request),
+      required(refusal),
+      name,
+    );
+    assert.equal(
+      f.kernel
+        .events(f.workflow)
+        .filter(
+          (event) =>
+            event.transition === "human-evaluator-correction-authorized",
+        ).length,
+      0,
+    );
+  }
+});
+
+void test("014n: stale and inadmissible finalized sources are refused", (t) => {
+  const real = JSON.parse(
+    readFileSync("methodologies/harness/policy.json", "utf8"),
+  ) as WorkflowPolicy;
+  const cases: Array<
+    [string, string | undefined, string, string, RegExp, boolean?]
+  > = [
+    [
+      "stale-attempt",
+      "verification-allocated",
+      "BLOCKED",
+      "INFRASTRUCTURE_FAILURE",
+      /stale/,
+    ],
+    [
+      "stale-handoff",
+      "implementation-handoff",
+      "BLOCKED",
+      "INFRASTRUCTURE_FAILURE",
+      /stale/,
+    ],
+    [
+      "stale-cycle",
+      "correction-cycle-opened",
+      "BLOCKED",
+      "INFRASTRUCTURE_FAILURE",
+      /stale/,
+    ],
+    [
+      "pass",
+      undefined,
+      "PASS",
+      "INFRASTRUCTURE_FAILURE",
+      /invalid evaluator correction/,
+    ],
+    [
+      "specification-ambiguity",
+      undefined,
+      "BLOCKED",
+      "SPECIFICATION_AMBIGUITY",
+      /invalid evaluator correction/,
+    ],
+    [
+      "specification-drift",
+      undefined,
+      "BLOCKED",
+      "SPECIFICATION_DRIFT",
+      /invalid evaluator correction/,
+    ],
+    [
+      "implementation-failure",
+      undefined,
+      "BLOCKED",
+      "IMPLEMENTATION_FAILURE",
+      /invalid evaluator correction/,
+    ],
+    [
+      "evaluator-defect",
+      undefined,
+      "BLOCKED",
+      "EVALUATOR_DEFECT",
+      /invalid evaluator correction/,
+      true,
+    ],
+  ];
+  for (const [
+    name,
+    later,
+    result,
+    classification,
+    pattern,
+    ordinaryRepairEligible,
+  ] of cases) {
+    const f = fixture(t, `014n-${name}`);
+    const candidate = "c".repeat(40);
+    const artifact = `${JSON.stringify({
+      workflow: f.workflow,
+      execution: "v",
+      attempt: 1,
+      commit: candidate,
+      evaluatorRevision: "001",
+      result,
+      classification,
+    })}\n`;
+    writeFileSync(join(f.root, "items", f.workflow, "r.json"), artifact);
+    git(f.root, ["init", "-b", "candidate"]);
+    git(f.root, ["add", "."]);
+    git(f.root, ["commit", "-m", "artifact"]);
+    const artifactCommit = git(f.root, ["rev-parse", "HEAD"]);
+    f.event("brief-frozen");
+    f.event("design-map-frozen");
+    f.event("implementation-handoff", { commit: candidate, attempt: 1 });
+    f.event("verification-allocated", {
+      execution: "v",
+      roleGrant: "g",
+      allocationKey: "k",
+      commit: candidate,
+      evaluatorRevision: "001",
+      attempt: 1,
+    });
+    const finalized = f.event("verification-finalized", {
+      execution: "v",
+      roleGrant: "g",
+      semanticResult: "s",
+      commit: candidate,
+      evaluatorRevision: "001",
+      attempt: 1,
+      result,
+      classification,
+      artifactCommit,
+      path: "r.json",
+      identity: identity(Buffer.from(artifact)),
+    });
+    if (later) f.event(later, { cycle: "002", commit: candidate });
+    assert.equal(
+      predicate(
+        required(real.roles["evaluator-repair"]).when,
+        f.kernel.events(f.workflow),
+        real,
+      ),
+      ordinaryRepairEligible ?? false,
+      `${name}: ordinary evaluator-repair eligibility`,
+    );
+    assert.throws(
+      () =>
+        f.kernel.authorizeEvaluatorCorrection(f.workflow, {
+          source: "finalized-verification",
+          classification: "EVALUATOR_COVERAGE_DEFECT",
+          sourceEvaluatorRevision: "001",
+          attempt: 1,
+          execution: "v",
+          finalizedEvent: required(finalized.id),
+          commit: candidate,
+          roleGrant: "g",
+          semanticResult: "s",
+          result,
+          recordedClassification: classification,
+          artifactCommit,
+          artifactPath: "r.json",
+          artifactIdentity: identity(Buffer.from(artifact)),
+          reason: "diagnosis",
+        }),
+      pattern,
+      name,
+    );
+  }
+});
+
+void test("014n: runtime maintenance preserves trusted sequence 6 methodology bytes", () => {
+  assert.equal(
+    buildMethodologyManifest(process.cwd(), "HEAD").manifest.id,
+    "sha256:da22079f636de3a498ec853dc6dd8785f3aa8daa387130c96ac9927b377301f2",
+  );
 });
