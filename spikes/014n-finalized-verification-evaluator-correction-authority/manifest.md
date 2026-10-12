@@ -185,3 +185,12 @@
 - Statistics: 1 file changed, 5 insertions, 5 deletions (source only, before this entry); pinned methodology and skill bytes unchanged
 - Checks: typecheck, targeted ESLint, targeted Prettier, and focused diff check pass; direct role-input compatibility exercise passes both the field-less legacy authority and finalized-authority override cases; `test/orchestration.test.ts` and `test/worker-context.test.ts` pass 35/35; focused public kernel tests are blocked during fixture setup by the worker sandbox (`spawnSync git EPERM`) before assertions; the broader visible suite produced no output for more than one minute and was terminated
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator verify — attempt 10 (evaluator revision 005)
+
+- Skill: evaluator (verify), contract version 14
+- Inputs: candidate `6fa5ed9fc62077dbe4be144c6f8ec5e026cc6d67`; evaluator revision `005`; `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`); `design-map.md` (`sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`); `eval-requirements.md` (`sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`); `coverage-map.json` (`sha256:fbd6c25eecfa69e4406ab159c8a18e6b3cb90c8ccbf7cd6a7c944d224cf7d188`); frozen identities matched
+- Result: `succeeded`; verification `PASS`
+- Outputs: `verification-result.json`; `manifest.md`
+- Checks: frozen executable evaluation 20 of 20 pass; typecheck pass; methodology diff empty; differential full-suite comparison against the pre-implementation parent shows an identical failing set (22 environment-dependent containment tests) and no new failure; AC18 (non-required manual step) not adjudicated
+- Measurement cutoff: immediately before this manifest update.

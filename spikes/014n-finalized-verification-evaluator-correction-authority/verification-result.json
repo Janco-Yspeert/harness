@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "commit": "bb84849b635c4736786c4ab84f86906b9275f84a",
+  "commit": "6fa5ed9fc62077dbe4be144c6f8ec5e026cc6d67",
   "evaluatorRevision": "005",
-  "attempt": 9,
-  "result": "FAIL",
-  "classification": "IMPLEMENTATION_FAILURE",
+  "attempt": 10,
+  "result": "PASS",
   "coverageResults": {
     "AC01": "SATISFIED",
     "AC02": "SATISFIED",
@@ -14,7 +13,7 @@
     "AC06": "SATISFIED",
     "AC07": "SATISFIED",
     "AC08": "SATISFIED",
-    "AC09": "NOT_SATISFIED",
+    "AC09": "SATISFIED",
     "AC10": "SATISFIED",
     "AC11": "SATISFIED",
     "AC12": "SATISFIED",
@@ -22,14 +21,8 @@
     "AC14": "SATISFIED",
     "AC15": "SATISFIED",
     "AC16": "SATISFIED",
-    "AC17": "NOT_SATISFIED",
+    "AC17": "SATISFIED",
     "AC18": "NOT_ADJUDICATED"
   },
-  "feedback": {
-    "violatedRequirement": "Existing behavior must not regress: the legacy human evaluator-correction flow must remain compatible, and every public test that passes at the pre-implementation parent must still pass at the candidate.",
-    "expected": "The public kernel test 'TR2/TR3: all eight bundled roles resolve pinned public inputs; damaged evaluator readiness and frozen input drift deny allocation' passes at the candidate as it does at the parent; resolving the evaluator-repair role after a human evaluator-correction authority recorded without a source evaluator revision field (the pre-existing event shape) yields a grant.",
-    "observed": "At the candidate the same resolution is denied with 'evaluator correction authority source revision is unavailable' (the test asserts a grant for evaluator-repair and receives 'denied'). The failure is deterministic and reproduces in isolation at the candidate; the same test passes in isolation at the parent.",
-    "safeDiagnostics": "Frozen executable evaluation passes 20 of 20. Typecheck passes. Methodology/skill diff against the base is empty. Differential full-suite comparison in clean clones: parent 298 pass / 22 fail, candidate 297 pass / 23 fail; the single candidate-only failure is the test above. The 22 other failures are containment-dependent and identical at both commits. Likely area: input projection for the repair trigger in the role input resolver requires the source revision field of the authority event unconditionally."
-  },
-  "notes": "Candidate evaluation completed against frozen evaluator revision 005; all frozen identities matched. AC18 is a non-required post-acceptance step and is not adjudicated."
+  "notes": "Candidate evaluation completed against frozen evaluator revision 005; all frozen identities matched. Frozen executable evaluation passes 20 of 20; typecheck passes; methodology/skill diff against base is empty; differential full-suite comparison shows identical failing sets at parent and candidate. AC18 is a non-required post-acceptance step and is not adjudicated."
 }
