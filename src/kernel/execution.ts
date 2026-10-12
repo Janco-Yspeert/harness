@@ -1823,14 +1823,10 @@ export class ExecutionKernel {
         for (const [field, input] of Object.entries(allocation.fromInputs))
           evidence[field] = required(grant.inputs[input]);
         if (allocation.counterField)
-          evidence[allocation.counterField] = scopedEvents(
-            this.events(workflow),
-            definition.policy,
-          ).filter(
-            (event) =>
-              event.transition === "kernel.allocation" &&
-              (event.evidence.grant as RoleGrant).role === grant.role,
-          ).length;
+          evidence[allocation.counterField] =
+            this.events(workflow).filter(
+              (event) => event.transition === allocation.transition,
+            ).length + 1;
         const scope = definition.policy.scopeEvent;
         if (scope)
           evidence[scope.field] =
@@ -3876,10 +3872,10 @@ export class ExecutionKernel {
           if (!sourceWorkspace)
             throw new Error("archive source workspace is outside role grant");
           const allHistory = this.events(workflow);
-          const history = scopedEvents(
-            allHistory,
-            this.definition(workflow, grant.methodology).policy,
-          );
+          // Correction cycles scope authority, eligibility and inputs. They do
+          // not scope durable verification attempt identity or archival
+          // history, both of which remain workflow-global.
+          const history = allHistory;
           const semanticVerdict = (
             value: unknown,
           ): "PASS" | "FAIL" | "BLOCKED" => {
