@@ -181,8 +181,9 @@ function parseFreeze(bytes: Buffer, revision: string): Record<string, string> {
 
 // Derives the archive plan from trusted policy (this function) and the exact
 // evidence identities (the fact and the frozen revisions). There is no
-// evaluator eligibility judgment. The active revision is archived directly
-// from its canonical `.eval/` location; superseded revisions from
+// evaluator eligibility judgment. Active freeze metadata lives under `.eval/`,
+// while the active frozen payload remains at the evaluator workspace root.
+// Superseded revision metadata and payloads live under
 // `.eval/revisions/<id>/`. Any missing or changed required byte fails.
 export function buildArchivePlan(
   evaluatorRoot: string,
@@ -231,7 +232,7 @@ export function buildArchivePlan(
     for (const [path, expected] of Object.entries(
       parseFreeze(freeze, revision),
     )) {
-      const source = `.eval/${base}${path}`;
+      const source = active ? path : `.eval/${base}${path}`;
       const bytes = readRegular(evaluatorRoot, source);
       if (bytes === null || identity(bytes) !== expected)
         throw new Error(

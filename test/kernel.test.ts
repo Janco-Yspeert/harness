@@ -2716,7 +2716,7 @@ async function hostArchiveFixture(
     const attemptPath = join(root, resultPath);
     mkdirSync(dirname(attemptPath), { recursive: true });
     writeFileSync(attemptPath, result);
-    writeFileSync(join(root, ".eval/eval-spec.md"), spec);
+    writeFileSync(join(root, "eval-spec.md"), spec);
     writeFileSync(
       join(root, ".eval/freeze.json"),
       `${JSON.stringify({ evaluatorRevision, artifacts: { "eval-spec.md": identity(spec) } })}\n`,
