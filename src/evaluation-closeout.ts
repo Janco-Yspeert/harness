@@ -360,7 +360,7 @@ interface PrivateAttempt {
   readonly resultIdentity?: string;
 }
 
-function privateAttempts(value: unknown): PrivateAttempt[] {
+export function privateAttempts(value: unknown): PrivateAttempt[] {
   if (value === null || typeof value !== "object" || Array.isArray(value))
     throw new Error("attempt ledger must be an object");
   const ledger = value as Record<string, unknown>;
@@ -418,6 +418,51 @@ function privateAttempts(value: unknown): PrivateAttempt[] {
       resultIdentity: entry.resultIdentity,
     };
   });
+}
+
+export function validatePrivateAttemptFinalization(
+  evaluatorRoot: string,
+  expected: {
+    readonly attempt: number;
+    readonly candidate: string;
+    readonly evaluatorRevision: string;
+    readonly result: Verdict;
+  },
+): void {
+  const ledgerBytes = readRegular(evaluatorRoot, ".eval/attempt-ledger.json");
+  if (ledgerBytes === null) throw new Error("attempt ledger is missing");
+  const entries = privateAttempts(JSON.parse(ledgerBytes.toString("utf8")));
+  const entry = entries.find((item) => item.attempt === expected.attempt);
+  if (!entry)
+    throw new Error(
+      `terminal evidence gap for attempt ${String(expected.attempt)}: canonical private entry is unavailable`,
+    );
+  if (entry.implementation !== `git:${expected.candidate}`)
+    throw new Error(
+      `private attempt ${String(expected.attempt)} candidate conflicts`,
+    );
+  if (entry.evaluatorRevision !== expected.evaluatorRevision)
+    throw new Error(
+      `private attempt ${String(expected.attempt)} revision conflicts`,
+    );
+  if (entry.status !== expected.result)
+    throw new Error(
+      `private attempt ${String(expected.attempt)} result conflicts`,
+    );
+  const resultPath = `.eval/attempts/${String(expected.attempt).padStart(3, "0")}/eval-result.md`;
+  if (entry.resultPath !== resultPath || entry.resultIdentity === undefined)
+    throw new Error(
+      `terminal private attempt ${String(expected.attempt)} cannot be bound to exact evidence`,
+    );
+  const resultBytes = readRegular(evaluatorRoot, resultPath);
+  if (resultBytes === null || identity(resultBytes) !== entry.resultIdentity)
+    throw new Error(
+      `terminal attempt ${String(expected.attempt)} artifact is missing or changed`,
+    );
+  const freeze = readRegular(evaluatorRoot, ".eval/freeze.json");
+  if (freeze === null || identity(freeze) !== entry.evaluatorRevisionIdentity)
+    throw new Error("active evaluator revision identity mismatch");
+  parseFreeze(freeze, expected.evaluatorRevision);
 }
 
 // Host derivation of the post-PASS archive from the private attempt ledger and

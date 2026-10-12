@@ -67,6 +67,10 @@ import {
   trustedDefinition,
   type TrustOptions,
 } from "./trust.ts";
+import {
+  build014nLedgerMigrationArchive,
+  RECOVERY_014N,
+} from "./014n-ledger-migration.ts";
 
 // Programmatic-only seams for deterministic adapter tests (mocked provider
 // discovery and event streams). The production entrypoint never sets them.
@@ -1238,6 +1242,66 @@ export class GovernedHost {
               text(body.evaluatorRevision),
               Number(body.attempt),
               parsed,
+            ),
+          );
+          return;
+        }
+        if (sub === "promote-014n-ledger-migration") {
+          needRoot();
+          if (Object.keys(body).length !== 0)
+            throw new Error("014n ledger migration accepts no caller input");
+          this.#assertRuntime();
+          if (
+            workflow !== RECOVERY_014N.workflow ||
+            execution.id !== RECOVERY_014N.successfulExecution
+          )
+            throw new Error("014n ledger migration binding differs");
+          const grant = this.kernel.roleGrant(workflow, execution.roleGrant);
+          const promotion = required(grant.hostActions.promotion);
+          const configured =
+            this.kernel.project.workflows[workflow]?.workspaces?.[
+              promotion.sourceWorkspace
+            ] ?? this.kernel.project.workspaces[promotion.sourceWorkspace];
+          const source = grant.workspaces.find(
+            (workspace) =>
+              configured !== undefined &&
+              workspace.id === configured.id &&
+              workspace.path === configured.path,
+          );
+          if (!source)
+            throw new Error("014n evaluator workspace is outside Role Grant");
+          const runtimeRoot =
+            this.#external?.runtimeRoot ?? installedRuntimeRoot();
+          const runtime = runtimeCommit(runtimeRoot);
+          const recovery = build014nLedgerMigrationArchive(
+            realpathSync(source.path),
+            workflow,
+            this.kernel.events(workflow),
+            runtime.commit,
+          );
+          send(
+            200,
+            this.kernel.promote(
+              workflow,
+              execution.id,
+              RECOVERY_014N.candidate,
+              RECOVERY_014N.evaluatorRevision,
+              RECOVERY_014N.successfulAttempt,
+              recovery.artifacts,
+              undefined,
+              undefined,
+              undefined,
+              recovery.generated,
+              {
+                kind: "014n-historical-ledger-migration",
+                runtimeCommit: runtime.commit,
+                historicalLedgerIdentity: RECOVERY_014N.privateLedgerIdentity,
+                archiveCompleteness: "complete",
+                bytesReconstructed: false,
+                bytesOmitted: false,
+                lostAttempts: [],
+                unboundAttempts: [],
+              },
             ),
           );
           return;

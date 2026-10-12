@@ -28,7 +28,11 @@ import {
   validatePreparedObservationRecord,
   type PreparedObservationRecord,
 } from "../candidate-observation.ts";
-import { deriveHostArchive, type ArchiveItem } from "../evaluation-closeout.ts";
+import {
+  deriveHostArchive,
+  validatePrivateAttemptFinalization,
+  type ArchiveItem,
+} from "../evaluation-closeout.ts";
 import {
   MAX_ACTION_ARTIFACTS,
   MAX_EVIDENCE_BYTES,
@@ -2157,6 +2161,39 @@ export class ExecutionKernel {
             this.definition(workflow, grant.methodology).policy,
           ).filter((e) => e.transition === rule.transition).length + 1;
       let artifactCommit: string | undefined;
+      if (
+        grant.role === "evaluator-verify" &&
+        rule.transition === "verification-finalized"
+      ) {
+        const promotion = required(
+          grant.hostActions.promotion,
+          "verification finalization lacks its private evidence contract",
+        );
+        const configured =
+          this.project.workflows[workflow]?.workspaces?.[
+            promotion.sourceWorkspace
+          ] ?? this.project.workspaces[promotion.sourceWorkspace];
+        const evaluatorWorkspace = grant.workspaces.find(
+          (workspace) =>
+            configured !== undefined &&
+            workspace.id === configured.id &&
+            workspace.path === configured.path,
+        );
+        if (!evaluatorWorkspace)
+          throw new Error(
+            "verification private evidence workspace is outside Role Grant",
+          );
+        validatePrivateAttemptFinalization(
+          realpathSync(evaluatorWorkspace.path),
+          {
+            attempt: Number(evidence.attempt),
+            candidate: required(grant.inputs.candidate),
+            evaluatorRevision: required(grant.inputs.evaluatorRevision),
+            result: required(result.methodology.result) as
+              "PASS" | "FAIL" | "BLOCKED",
+          },
+        );
+      }
       if (rule.evidence?.artifact || rule.evidence?.commitHead) {
         artifactCommit = execFileSync("git", ["rev-parse", "HEAD"], {
           cwd: this.project.root,
@@ -3700,6 +3737,9 @@ export class ExecutionKernel {
       PromotionActionRequest["unboundArchiveRecovery"]
     >,
     recoveryItems?: ArchiveItem[],
+    operator014nRecovery?: NonNullable<
+      PromotionActionRequest["operator014nRecovery"]
+    >,
   ): PromotionActionResult {
     return this.#transaction(workflow, () => {
       let artifacts = suppliedArtifacts;
@@ -3712,7 +3752,8 @@ export class ExecutionKernel {
         grant.hostActions.promotion?.derive === "host-archive" &&
         archiveLoss === undefined &&
         archiveRecovery === undefined &&
-        unboundArchiveRecovery === undefined;
+        unboundArchiveRecovery === undefined &&
+        operator014nRecovery === undefined;
       let items: ArchiveItem[] | undefined = recoveryItems;
       if (derive) {
         try {
@@ -3820,6 +3861,7 @@ export class ExecutionKernel {
         ...(archiveLoss ? { archiveLoss } : {}),
         ...(archiveRecovery ? { archiveRecovery } : {}),
         ...(unboundArchiveRecovery ? { unboundArchiveRecovery } : {}),
+        ...(operator014nRecovery ? { operator014nRecovery } : {}),
       };
       this.#append(workflow, "kernel.action-request", { ...request });
       const action: PromotionActionResult = {
@@ -3988,6 +4030,7 @@ export class ExecutionKernel {
                 ...(archiveLoss ? { archiveLoss } : {}),
                 ...(archiveRecovery ? { archiveRecovery } : {}),
                 ...(unboundArchiveRecovery ? { unboundArchiveRecovery } : {}),
+                ...(operator014nRecovery ? { operator014nRecovery } : {}),
               },
               result: {
                 artifacts: action.artifacts,
@@ -4058,6 +4101,7 @@ export class ExecutionKernel {
           ...(archiveLoss ? { archiveLoss } : {}),
           ...(archiveRecovery ? { archiveRecovery } : {}),
           ...(unboundArchiveRecovery ? { unboundArchiveRecovery } : {}),
+          ...(operator014nRecovery ? { operator014nRecovery } : {}),
         });
       this.#transition(workflow, id);
       this.#telemetry("host-action", execution, action.id);

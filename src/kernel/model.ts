@@ -592,6 +592,16 @@ export interface PromotionActionRequest {
     closeoutAuthorized: true;
     evidenceReconstructed: false;
   };
+  operator014nRecovery?: {
+    kind: "014n-historical-ledger-migration";
+    runtimeCommit: string;
+    historicalLedgerIdentity: string;
+    archiveCompleteness: "complete";
+    bytesReconstructed: false;
+    bytesOmitted: false;
+    lostAttempts: readonly [];
+    unboundAttempts: readonly [];
+  };
 }
 export interface EvidenceFileRecord {
   destination: string;
