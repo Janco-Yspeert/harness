@@ -67,6 +67,12 @@ import {
   type UnboundArchiveRecoveryDeclaration,
 } from "./unbound-archive-recovery.ts";
 import {
+  ATTEMPT_NAMESPACE_014N,
+  derive014nAttemptNamespaceArchive,
+  exact014nNamespaceMigration,
+  validate014nAttemptNamespaceState,
+} from "./014n-attempt-namespace-migration.ts";
+import {
   authorityBasis,
   recoveryScopedAuthorityBasis,
   resolveAuthority,
@@ -1675,7 +1681,7 @@ export class ExecutionKernel {
           evidence[field] = required(grant.inputs[input]);
         if (allocation.counterField)
           evidence[allocation.counterField] =
-            scopedEvents(this.events(workflow), definition.policy).filter(
+            this.events(workflow).filter(
               (e) => e.transition === allocation.transition,
             ).length + 1;
         const scope = definition.policy.scopeEvent;
@@ -2042,12 +2048,19 @@ export class ExecutionKernel {
           event.evidence.semanticResult === request.semanticResult,
       );
       if (existing) {
+        const recovered014n =
+          workflow === ATTEMPT_NAMESPACE_014N.workflow &&
+          request.execution === ATTEMPT_NAMESPACE_014N.execution &&
+          request.attempt === ATTEMPT_NAMESPACE_014N.legacyAttempt &&
+          existing.evidence.attempt ===
+            ATTEMPT_NAMESPACE_014N.recoveredAttempt &&
+          existing.evidence.legacyAttempt === request.attempt;
         if (
           existing.evidence.execution !== request.execution ||
           existing.evidence.roleGrant !== request.roleGrant ||
           existing.evidence.commit !== request.candidate ||
           existing.evidence.evaluatorRevision !== request.evaluatorRevision ||
-          existing.evidence.attempt !== request.attempt ||
+          (!recovered014n && existing.evidence.attempt !== request.attempt) ||
           existing.evidence.result !== request.result ||
           existing.evidence.artifactCommit !== request.artifactCommit ||
           existing.evidence.path !== request.artifactPath ||
@@ -2092,6 +2105,62 @@ export class ExecutionKernel {
             event.evidence.semanticResult === request.semanticResult,
         ),
         "transition recovery validation did not finalize",
+      );
+    });
+  }
+  record014nAttemptNamespaceMigration(
+    workflow: string,
+    runtimeCommit: string,
+  ): LedgerEvent {
+    return this.#transaction(workflow, () => {
+      if (!/^[a-f0-9]{40}$/.test(runtimeCommit))
+        throw new Error("014n attempt namespace migration runtime is invalid");
+      const execution = this.execution(
+        workflow,
+        ATTEMPT_NAMESPACE_014N.execution,
+      );
+      const grant = this.roleGrant(workflow, execution.roleGrant);
+      const promotion = required(
+        grant.hostActions.promotion,
+        "014n migration execution lacks its private evidence contract",
+      );
+      const configured =
+        this.project.workflows[workflow]?.workspaces?.[
+          promotion.sourceWorkspace
+        ] ?? this.project.workspaces[promotion.sourceWorkspace];
+      const evaluatorWorkspace = grant.workspaces.find(
+        (workspace) =>
+          configured !== undefined &&
+          workspace.id === configured.id &&
+          workspace.path === configured.path,
+      );
+      if (!evaluatorWorkspace)
+        throw new Error("014n evaluator workspace is outside Role Grant");
+      const events = this.events(workflow);
+      const evidence = validate014nAttemptNamespaceState(
+        this.project.root,
+        realpathSync(evaluatorWorkspace.path),
+        workflow,
+        events,
+      );
+      const existing = exact014nNamespaceMigration(events);
+      if (existing) {
+        const recorded = { ...existing.evidence };
+        delete recorded.runtimeCommit;
+        if (canonical(recorded) !== canonical(evidence))
+          throw new Error("014n attempt namespace migration provenance drift");
+        return existing;
+      }
+      this.#append(workflow, "kernel.attempt-namespace-migrated", {
+        ...evidence,
+        runtimeCommit,
+      });
+      return required(
+        this.events(workflow).findLast(
+          (event) =>
+            event.transition === "kernel.attempt-namespace-migrated" &&
+            event.evidence.kind === "014n-attempt-namespace-migration",
+        ),
       );
     });
   }
@@ -2183,16 +2252,54 @@ export class ExecutionKernel {
           throw new Error(
             "verification private evidence workspace is outside Role Grant",
           );
-        validatePrivateAttemptFinalization(
-          realpathSync(evaluatorWorkspace.path),
-          {
+        const evaluatorRoot = realpathSync(evaluatorWorkspace.path);
+        const namespaceMigration =
+          workflow === ATTEMPT_NAMESPACE_014N.workflow &&
+          id === ATTEMPT_NAMESPACE_014N.execution
+            ? exact014nNamespaceMigration(events)
+            : undefined;
+        if (namespaceMigration) {
+          const derived = validate014nAttemptNamespaceState(
+            this.project.root,
+            evaluatorRoot,
+            workflow,
+            events,
+          );
+          const recorded = { ...namespaceMigration.evidence };
+          delete recorded.runtimeCommit;
+          if (canonical(recorded) !== canonical(derived))
+            throw new Error(
+              "014n attempt namespace migration provenance drift",
+            );
+          if (
+            evidence.attempt !== ATTEMPT_NAMESPACE_014N.legacyAttempt ||
+            grant.inputs.candidate !== ATTEMPT_NAMESPACE_014N.candidate ||
+            grant.inputs.evaluatorRevision !==
+              ATTEMPT_NAMESPACE_014N.evaluatorRevision ||
+            result.methodology.result !== ATTEMPT_NAMESPACE_014N.result ||
+            result.methodology.classification !==
+              ATTEMPT_NAMESPACE_014N.classification
+          )
+            throw new Error("014n migrated finalization binding drift");
+          evidence.legacyAttempt = ATTEMPT_NAMESPACE_014N.legacyAttempt;
+          evidence.attempt = ATTEMPT_NAMESPACE_014N.recoveredAttempt;
+          evidence.attemptNamespaceMigration = required(namespaceMigration.id);
+          evidence.allocationEvent = "002539fe-e303-4d1d-8fa3-7135ba9513bd";
+          evidence.privateResultPath = ATTEMPT_NAMESPACE_014N.privateResultPath;
+          evidence.privateResultIdentity =
+            ATTEMPT_NAMESPACE_014N.privateResultIdentity;
+          evidence.evaluatorRevisionIdentity =
+            ATTEMPT_NAMESPACE_014N.evaluatorRevisionIdentity;
+          evidence.attemptIdentityOrigin = "namespace-migration";
+        } else {
+          validatePrivateAttemptFinalization(evaluatorRoot, {
             attempt: Number(evidence.attempt),
             candidate: required(grant.inputs.candidate),
             evaluatorRevision: required(grant.inputs.evaluatorRevision),
             result: required(result.methodology.result) as
               "PASS" | "FAIL" | "BLOCKED",
-          },
-        );
+          });
+        }
       }
       if (rule.evidence?.artifact || rule.evidence?.commitHead) {
         artifactCommit = execFileSync("git", ["rev-parse", "HEAD"], {
@@ -3770,10 +3877,11 @@ export class ExecutionKernel {
           if (!sourceWorkspace)
             throw new Error("archive source workspace is outside role grant");
           const allHistory = this.events(workflow);
-          const history = scopedEvents(
-            allHistory,
-            this.definition(workflow, grant.methodology).policy,
-          );
+          // Durable verification attempt identities are workflow-global. The
+          // archive therefore follows the complete host allocation history;
+          // correction scoping still governs role eligibility and inputs, but
+          // must not truncate attempt provenance at a cycle boundary.
+          const history = allHistory;
           const semanticVerdict = (
             value: unknown,
           ): "PASS" | "FAIL" | "BLOCKED" => {
@@ -3785,53 +3893,82 @@ export class ExecutionKernel {
               throw new Error("host semantic result has no unique verdict");
             return required(verdicts[0]);
           };
-          items = [
-            ...deriveHostArchive(
-              realpathSync(sourceWorkspace.path),
-              candidate,
-              history
+          const namespaceMigration = exact014nNamespaceMigration(allHistory);
+          const recoveredAttempts = new Map<string, number>();
+          if (namespaceMigration) {
+            const mappings = namespaceMigration.evidence.mappings;
+            if (!Array.isArray(mappings))
+              throw new Error("attempt namespace migration mapping is invalid");
+            for (const raw of mappings) {
+              const mapping = object(raw);
+              if (
+                typeof mapping.allocationEvent !== "string" ||
+                typeof mapping.recoveredAttempt !== "number"
+              )
+                throw new Error(
+                  "attempt namespace migration mapping is invalid",
+                );
+              recoveredAttempts.set(
+                mapping.allocationEvent,
+                mapping.recoveredAttempt,
+              );
+            }
+          }
+          const allocations = history
+            .filter(
+              (event) =>
+                event.transition ===
+                grant.hostActions.promotion?.allocationEvent,
+            )
+            .map((event) => ({
+              attempt:
+                (event.id ? recoveredAttempts.get(event.id) : undefined) ??
+                Number(event.evidence.attempt),
+              execution: String(event.evidence.execution),
+              candidate: String(event.evidence.commit),
+              evaluatorRevision: String(event.evidence.evaluatorRevision),
+              semanticResults: allHistory
                 .filter(
-                  (event) =>
-                    event.transition ===
-                    grant.hostActions.promotion?.allocationEvent,
+                  (candidate) =>
+                    candidate.transition === "kernel.result" &&
+                    candidate.evidence.execution === event.evidence.execution,
                 )
-                .map((event) => ({
-                  attempt: Number(event.evidence.attempt),
-                  execution: String(event.evidence.execution),
-                  candidate: String(event.evidence.commit),
-                  evaluatorRevision: String(event.evidence.evaluatorRevision),
-                  semanticResults: allHistory
-                    .filter(
-                      (candidate) =>
-                        candidate.transition === "kernel.result" &&
-                        candidate.evidence.execution ===
-                          event.evidence.execution,
-                    )
-                    .map((candidate) => ({
-                      execution: String(candidate.evidence.execution),
-                      result: semanticVerdict(candidate.evidence.methodology),
-                    })),
-                  finalizations: allHistory
-                    .filter(
-                      (candidate) =>
-                        candidate.transition === "verification-finalized" &&
-                        candidate.evidence.attempt === event.evidence.attempt &&
-                        candidate.evidence.execution ===
-                          event.evidence.execution,
-                    )
-                    .map((candidate) => ({
-                      attempt: Number(candidate.evidence.attempt),
-                      execution: String(candidate.evidence.execution),
-                      candidate: String(candidate.evidence.commit),
-                      evaluatorRevision: String(
-                        candidate.evidence.evaluatorRevision,
-                      ),
-                      result: String(candidate.evidence.result) as
-                        "PASS" | "FAIL" | "BLOCKED",
-                    })),
+                .map((candidate) => ({
+                  execution: String(candidate.evidence.execution),
+                  result: semanticVerdict(candidate.evidence.methodology),
                 })),
-            ).items,
-          ];
+              finalizations: allHistory
+                .filter(
+                  (candidate) =>
+                    candidate.transition === "verification-finalized" &&
+                    candidate.evidence.execution === event.evidence.execution,
+                )
+                .map((candidate) => ({
+                  attempt: Number(candidate.evidence.attempt),
+                  execution: String(candidate.evidence.execution),
+                  candidate: String(candidate.evidence.commit),
+                  evaluatorRevision: String(
+                    candidate.evidence.evaluatorRevision,
+                  ),
+                  result: String(candidate.evidence.result) as
+                    "PASS" | "FAIL" | "BLOCKED",
+                })),
+            }));
+          const plan = namespaceMigration
+            ? derive014nAttemptNamespaceArchive(
+                this.project.root,
+                realpathSync(sourceWorkspace.path),
+                workflow,
+                allHistory,
+                candidate,
+                allocations,
+              )
+            : deriveHostArchive(
+                realpathSync(sourceWorkspace.path),
+                candidate,
+                allocations,
+              );
+          items = [...plan.items];
           artifacts = items.map((item) => ({
             source: item.source ?? `host:${item.destination}`,
             destination: item.destination,

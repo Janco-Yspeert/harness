@@ -984,6 +984,100 @@ void test("implementation feedback input binds only the current post-handoff imp
   assert.equal(nextCycle.grant.inputs.implementationFeedback, undefined);
 });
 
+void test("allocation counters remain workflow-global while role eligibility remains correction-scoped", (t) => {
+  const f = fixture(t, "global-allocation-counter");
+  f.policy.scopeEvent = {
+    transition: "correction-cycle-opened",
+    field: "cycle",
+    initial: "001",
+  };
+  const role = required(f.policy.roles.produce);
+  role.when = {
+    all: [
+      { event: "ready", current: true },
+      { not: { event: "produced", current: true } },
+    ],
+  };
+  role.onAllocate = {
+    transition: "verification-allocated",
+    fromInputs: {},
+    counterField: "attempt",
+  };
+  json(join(f.root, "policy.json"), f.policy);
+
+  f.event("ready", { cycle: "001" });
+  f.event("produced", { cycle: "000" });
+  const authority = f.authorize();
+  const session = f.kernel.register(f.workflow, "fixture").session;
+  const first = f.kernel.allocate(f.workflow, authority.id, {
+    mode: "attached",
+    session: session.id,
+    role: "produce",
+  });
+  f.kernel.process(f.workflow, first.execution.id, "running");
+  f.kernel.result(f.workflow, first.execution.id, "failed", {});
+  f.kernel.process(f.workflow, first.execution.id, "exited");
+  const second = f.kernel.allocate(f.workflow, authority.id, {
+    mode: "attached",
+    session: session.id,
+    role: "produce",
+    predecessor: first.execution.id,
+  });
+  const initialAllocations = f.kernel
+    .events(f.workflow)
+    .filter((event) => event.transition === "verification-allocated");
+  assert.deepEqual(
+    initialAllocations.map((event) => [
+      event.evidence.attempt,
+      event.evidence.cycle,
+    ]),
+    [
+      [1, "001"],
+      [2, "001"],
+    ],
+  );
+  f.kernel.process(f.workflow, second.execution.id, "running");
+  f.kernel.result(f.workflow, second.execution.id, "failed", {});
+  f.kernel.process(f.workflow, second.execution.id, "exited");
+
+  f.event("correction-cycle-opened", { cycle: "002" });
+  assert.notEqual(
+    f.kernel.inspect(f.workflow, authority.id).kind,
+    "grant",
+    "the earlier-cycle readiness event must not become current",
+  );
+  f.event("ready", { cycle: "002" });
+  const third = f.kernel.allocate(f.workflow, authority.id, {
+    mode: "attached",
+    session: session.id,
+    role: "produce",
+    predecessor: second.execution.id,
+  });
+  const current = required(
+    f.kernel
+      .events(f.workflow)
+      .findLast(
+        (event) =>
+          event.transition === "verification-allocated" &&
+          event.evidence.execution === third.execution.id,
+      ),
+  );
+  assert.equal(current.evidence.attempt, 3);
+  assert.equal(current.evidence.cycle, "002");
+});
+
+void test("only evaluator verification configures a durable allocation counter", () => {
+  const policy = JSON.parse(
+    readFileSync("methodologies/harness/policy.json", "utf8"),
+  ) as WorkflowPolicy;
+  assert.deepEqual(
+    Object.entries(policy.roles)
+      .filter(([, role]) => role.onAllocate?.counterField !== undefined)
+      .map(([name, role]) => [name, role.onAllocate?.counterField]),
+    [["evaluator-verify", "attempt"]],
+  );
+});
+
 void test("TR3: bounded workflow authority, immutable Role Grants and non-consuming observation; prompt text cannot authorize", async (t) => {
   const f = fixture(t);
   const host = await startHarnessHost(0, {
@@ -2614,9 +2708,12 @@ async function hostArchiveFixture(
   const f = fixture(t, name);
   const candidate = "a".repeat(40);
   const evaluatorRevision = "001";
+  const activeAttempt = cycle === undefined ? 1 : 2;
+  const activeId = String(activeAttempt).padStart(3, "0");
   const tree = (root: string, result: string, ledger = true) => {
     const spec = "spec\n";
-    const attemptPath = join(root, ".eval/attempts/001/eval-result.md");
+    const resultPath = `.eval/attempts/${activeId}/eval-result.md`;
+    const attemptPath = join(root, resultPath);
     mkdirSync(dirname(attemptPath), { recursive: true });
     writeFileSync(attemptPath, result);
     writeFileSync(join(root, ".eval/eval-spec.md"), spec);
@@ -2631,13 +2728,13 @@ async function hostArchiveFixture(
           schemaVersion: 2,
           attempts: [
             {
-              id: "001",
+              id: activeId,
               implementation: `git:${candidate}`,
               evaluatorRevision,
               evaluatorRevisionIdentity: identity(
                 `${JSON.stringify({ evaluatorRevision, artifacts: { "eval-spec.md": identity(spec) } })}\n`,
               ),
-              resultPath: ".eval/attempts/001/eval-result.md",
+              resultPath,
               resultIdentity: identity(result),
               status: "PASS",
             },
@@ -2672,7 +2769,9 @@ async function hostArchiveFixture(
     f.event("verification-allocated", {
       attempt: 1,
       execution: "earlier-cycle-execution",
-      evaluatorRevision: "000",
+      commit: "b".repeat(40),
+      evaluatorRevision,
+      cycle: "001",
     });
     f.event("correction-cycle-opened", { cycle });
   }
@@ -2737,7 +2836,7 @@ async function hostArchiveFixture(
   const promoted = await api<{ status: string; reason: string | null }>(
     host.url,
     `executions/${allocation.execution.id}/promote`,
-    { candidate, evaluatorRevision, attempt: 1 },
+    { candidate, evaluatorRevision, attempt: activeAttempt },
   );
   return { f, promoted };
 }

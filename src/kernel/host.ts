@@ -1069,6 +1069,26 @@ export class GovernedHost {
         });
         return;
       }
+      if (operation === "014n-attempt-namespace-migration") {
+        needRoot();
+        if (get)
+          throw new Error("014n attempt namespace migration requires POST");
+        if (Object.keys(body).length !== 0)
+          throw new Error(
+            "014n attempt namespace migration accepts no caller input",
+          );
+        this.#assertRuntime();
+        const runtimeRoot =
+          this.#external?.runtimeRoot ?? installedRuntimeRoot();
+        const runtime = runtimeCommit(runtimeRoot);
+        send(201, {
+          migration: this.kernel.record014nAttemptNamespaceMigration(
+            workflow,
+            runtime.commit,
+          ),
+        });
+        return;
+      }
       if (operation === "grant-retirements") {
         needRoot();
         if (get) {
