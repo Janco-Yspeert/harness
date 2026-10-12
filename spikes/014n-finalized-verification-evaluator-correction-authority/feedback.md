@@ -63,3 +63,14 @@ Candidate `04f2745558fa51432b6c4dffb219a611f00bd0df`. Result: `FAIL`, classifica
 - **Expected:** after the authority is recorded, the resolver selects `evaluator-repair` (trigger = authority semantic result, source revision = bound revision); `implementation` and `evaluator-verify` stay ineligible; a recorded repair consumes the authority.
 - **Observed:** the authority is accepted, but the resolver still returns the gate "infrastructure failure requires recovery before continuation"; `evaluator-repair` never becomes eligible and consumption cannot happen.
 - **Safe diagnostics:** reproduced in isolation; legacy-flow controls and an arbitrary-classification source pass. Affected: AC01, AC03, AC04, AC08, AC10, AC11, AC12. Typecheck passes; methodology diff is empty.
+
+---
+
+# Verification feedback — attempt 9 (evaluator revision 005)
+
+Candidate `bb84849b635c4736786c4ab84f86906b9275f84a`. Result: `FAIL`, classification `IMPLEMENTATION_FAILURE`.
+
+- **Violated requirement:** existing behavior must not regress; the legacy human evaluator-correction flow stays compatible and every public test passing at the pre-implementation parent still passes (AC09, AC17).
+- **Expected:** public kernel test `TR2/TR3: all eight bundled roles resolve pinned public inputs; ...` passes; resolving `evaluator-repair` after a human evaluator-correction authority lacking a source evaluator revision field (the pre-existing event shape) yields a grant.
+- **Observed:** resolution is denied with `evaluator correction authority source revision is unavailable`; deterministic, reproduced in isolation at the candidate, while the same test passes at the parent.
+- **Safe diagnostics:** frozen executable evaluation 20 of 20 pass; typecheck passes; methodology diff empty; differential full suite parent 298 pass / 22 fail vs candidate 297 pass / 23 fail, the one candidate-only failure being this test. Likely area: the role input resolver requires the authority's source revision field unconditionally.

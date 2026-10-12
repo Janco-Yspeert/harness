@@ -1,29 +1,35 @@
 {
   "schemaVersion": 1,
   "commit": "bb84849b635c4736786c4ab84f86906b9275f84a",
-  "evaluatorRevision": "004",
-  "attempt": 4,
-  "result": "BLOCKED",
-  "classification": "EVALUATOR_DEFECT",
+  "evaluatorRevision": "005",
+  "attempt": 9,
+  "result": "FAIL",
+  "classification": "IMPLEMENTATION_FAILURE",
   "coverageResults": {
-    "AC01": "NOT_ADJUDICATED",
+    "AC01": "SATISFIED",
     "AC02": "SATISFIED",
     "AC03": "SATISFIED",
     "AC04": "SATISFIED",
     "AC05": "SATISFIED",
     "AC06": "SATISFIED",
     "AC07": "SATISFIED",
-    "AC08": "NOT_ADJUDICATED",
-    "AC09": "NOT_ADJUDICATED",
-    "AC10": "NOT_ADJUDICATED",
-    "AC11": "NOT_ADJUDICATED",
+    "AC08": "SATISFIED",
+    "AC09": "NOT_SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
     "AC12": "SATISFIED",
     "AC13": "SATISFIED",
     "AC14": "SATISFIED",
     "AC15": "SATISFIED",
     "AC16": "SATISFIED",
-    "AC17": "NOT_ADJUDICATED",
+    "AC17": "NOT_SATISFIED",
     "AC18": "NOT_ADJUDICATED"
   },
-  "notes": "Candidate evaluation began; 17 of 20 frozen executable checks passed. The three failing checks (covering AC01, AC08, AC10, AC11) build the evaluator-repair completion event in a shape the host never records (the host records the repair's bound grant inputs under an inputs record). The candidate binds a repair to its authority through that recorded shape, so those checks cannot observe a bound repair. This is an evaluator fixture defect, not an implementation failure; the affected criteria are not adjudicated. Public regression and typecheck were not run after the evaluator defect was established, so AC17 and the AC09 regression leg are not adjudicated; AC16 methodology diff is empty. AC18 is a non-required post-acceptance step. Correction of the evaluator requires fresh repair authority."
+  "feedback": {
+    "violatedRequirement": "Existing behavior must not regress: the legacy human evaluator-correction flow must remain compatible, and every public test that passes at the pre-implementation parent must still pass at the candidate.",
+    "expected": "The public kernel test 'TR2/TR3: all eight bundled roles resolve pinned public inputs; damaged evaluator readiness and frozen input drift deny allocation' passes at the candidate as it does at the parent; resolving the evaluator-repair role after a human evaluator-correction authority recorded without a source evaluator revision field (the pre-existing event shape) yields a grant.",
+    "observed": "At the candidate the same resolution is denied with 'evaluator correction authority source revision is unavailable' (the test asserts a grant for evaluator-repair and receives 'denied'). The failure is deterministic and reproduces in isolation at the candidate; the same test passes in isolation at the parent.",
+    "safeDiagnostics": "Frozen executable evaluation passes 20 of 20. Typecheck passes. Methodology/skill diff against the base is empty. Differential full-suite comparison in clean clones: parent 298 pass / 22 fail, candidate 297 pass / 23 fail; the single candidate-only failure is the test above. The 22 other failures are containment-dependent and identical at both commits. Likely area: input projection for the repair trigger in the role input resolver requires the source revision field of the authority event unconditionally."
+  },
+  "notes": "Candidate evaluation completed against frozen evaluator revision 005; all frozen identities matched. AC18 is a non-required post-acceptance step and is not adjudicated."
 }
