@@ -6,9 +6,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "finalized BLOCKED verification with explicit human diagnosis yields one authority and makes evaluator-repair the resolved role; the full authorize, one bound repair, reverify lifecycle resolves for several arbitrary non-repair-eligible source classes"
     },
     {
@@ -16,9 +14,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "each bound field (candidate, revision, attempt, execution, artifact identity/commit/path, finalized event, grant, semantic result, result, recorded classification, missing field) is varied and every variant is refused with the ledger unchanged, after a twin fixture proves the exact request is accepted; the committed artifact's execution may be omitted, a matching present value is accepted and a mismatching one refused, while canonical execution stays mandatory"
     },
     {
@@ -26,9 +22,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "ledger bytes before authorization are a strict prefix afterward, exactly one event is appended and the source finalized event keeps its result and classification"
     },
     {
@@ -36,9 +30,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "empty/blank reason and any classification other than EVALUATOR_COVERAGE_DEFECT are refused; the recorded authority carries the diagnosis classification"
     },
     {
@@ -46,9 +38,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "PASS, FAIL and BLOCKED/EVALUATOR_DEFECT sources are each refused; an arbitrary other recorded class is admitted, showing the rule is result/eligibility based"
     },
     {
@@ -56,9 +46,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "each of the six enumerated later-event conditions is appended in its own fixture and the otherwise valid request is refused, after a twin proves the unstaled request is accepted"
     },
     {
@@ -66,9 +54,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "a second request over the route returns 409 'already recorded' with ledger unchanged, and a legacy authority for the same lineage blocks the finalized variant"
     },
     {
@@ -76,9 +62,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "a failed allocation leaves evaluator-repair eligible; a recorded repair removes eligibility and a second authorization is refused; after the one bound repair evaluator-verify resolves with only the source gate discharged and an unbound repair does not discharge it"
     },
     {
@@ -86,10 +70,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1",
-        "E2"
-      ],
+      "procedures": ["E1", "E2"],
       "sufficiency": "legacy request yields an authority with no source field, the exact legacy field set, a content-derived semantic result recomputed independently, and legacy mismatch refusals; E2 runs the existing suite differentially against the pre-implementation parent"
     },
     {
@@ -97,9 +78,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "the resolved repair grant's repairTrigger equals the authority semantic result, differs from the source's, and its source revision equals the bound revision; the repair worker alone receives a typed host-derived context carrying the human diagnosis and bound source identities"
     },
     {
@@ -107,9 +86,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "the resolved role after authorization is evaluator-repair and never implementation or evaluator-verify; pending suppression and post-repair discharge touch only the exact source-classification gate, unrelated gates stay active and implementation stays ineligible"
     },
     {
@@ -117,9 +94,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "the repair grant's workspace modes/exposure, capabilities, host actions, executor constraints, contract and skill identities equal those of an ordinary EVALUATOR_DEFECT-triggered repair grant"
     },
     {
@@ -127,9 +102,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "an arbitrary unlisted recorded classification is admitted and resolves identically, while the INFRASTRUCTURE_FAILURE case is the main positive path, so no class-specific branch is needed or tolerated"
     },
     {
@@ -137,9 +110,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "the route returns 403 without root credentials and 201 with them"
     },
     {
@@ -147,9 +118,7 @@
       "frozenAuthority": "spike.md Required behavior / Verification requirements; design-map.md",
       "mode": "HIDDEN_EXECUTABLE",
       "required": true,
-      "procedures": [
-        "E1"
-      ],
+      "procedures": ["E1"],
       "sufficiency": "exactly one event is appended and no verification-finalized event is created, so the ledger-derived automatic correction count is untouched"
     },
     {
@@ -157,9 +126,7 @@
       "frozenAuthority": "spike.md Required behavior / Design Map Eligibility and consumption seam (methodology identity unchanged)",
       "mode": "PUBLIC_REGRESSION",
       "required": true,
-      "procedures": [
-        "E2"
-      ],
+      "procedures": ["E2"],
       "sufficiency": "a git diff of the pinned methodology and skill paths between the frozen Design Map commit and the candidate must be empty, which is exactly the unchanged-identity requirement"
     },
     {
@@ -167,9 +134,7 @@
       "frozenAuthority": "spike.md Verification requirements (existing flow unchanged)",
       "mode": "PUBLIC_REGRESSION",
       "required": true,
-      "procedures": [
-        "E2"
-      ],
+      "procedures": ["E2"],
       "sufficiency": "the repository typecheck passes and every full-suite test that passes at the pre-implementation parent also passes at the candidate when both are run in the same governed environment, so no existing behavior regressed; tests needing unavailable nested containment are not adjudicated as candidate behavior and may be supplemented by a host-prepared observation"
     },
     {
@@ -177,31 +142,23 @@
       "frozenAuthority": "spike.md Current-lineage application after acceptance",
       "mode": "MANUAL_PUBLIC_EVIDENCE",
       "required": false,
-      "procedures": [
-        "E3"
-      ],
+      "procedures": ["E3"],
       "sufficiency": "the recorded authority identity and resolver output for the named workflow are the brief's own acceptance evidence for the application; it is a post-acceptance operator step"
     }
   ],
   "readiness": {
-    "evaluatorRevision": "004",
-    "evaluatorRevisionIdentity": "sha256:5bbc58b528dc5312b5021e4fd5c4c86ec1aab367699c2c9e854415641cd8e04f",
-    "privateInventoryIdentity": "sha256:a3321a9082d4acc2872a1dff8196eed018da5a8f0d1eda45ac1b5078a7707c31",
-    "validatorResultBinding": "sha256:fe70e0718b931c7ab7adf2968ba716beb628a8d1e699328f2bead1bb28b49272",
+    "evaluatorRevision": "005",
+    "evaluatorRevisionIdentity": "sha256:1f074b457b9ab4f02e227b6f1aeb86afd61e9563620d6020ee6a1b7450d351de",
+    "privateInventoryIdentity": "sha256:03418e6c13af1d01cd249d306df32cda9a8e335f626372fa73b83339afb906ac",
+    "validatorResultBinding": "sha256:3eb12fc0d226c4f2b8ee534e059a7480b342f5003bdc4f55fe5667c21000e8f8",
     "integrityValidation": "PASS"
   },
   "repair": {
-    "sourceEvaluatorRevision": "003",
-    "sourceEvaluatorRevisionIdentity": "sha256:14c099c7689a75985bb7a9f927f2ae409d16fe200e6cf4c1e2f944b451b6d145",
-    "resultingEvaluatorRevision": "004",
-    "trigger": "sha256:98c4eef325088531f3ab8682c46e9cafd70191ceb1f0f56daea10fb854027c1a",
-    "affectedCriteria": [
-      "AC01",
-      "AC02",
-      "AC08",
-      "AC10",
-      "AC11"
-    ],
+    "sourceEvaluatorRevision": "004",
+    "sourceEvaluatorRevisionIdentity": "sha256:5bbc58b528dc5312b5021e4fd5c4c86ec1aab367699c2c9e854415641cd8e04f",
+    "resultingEvaluatorRevision": "005",
+    "trigger": "40f8ce68-0c54-42d1-904c-5b69bbca3e9e",
+    "affectedCriteria": ["AC01", "AC08", "AC10", "AC11"],
     "briefIdentity": "sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d",
     "designMapIdentity": "sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9",
     "evaluationRequirementsIdentity": "sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4",

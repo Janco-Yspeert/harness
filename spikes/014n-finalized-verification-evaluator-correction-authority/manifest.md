@@ -156,3 +156,12 @@
 - Outputs: `verification-result.json`; `manifest.md`
 - Checks: frozen executable evaluation 17 of 20 pass; the three failures share one evaluator fixture defect (a synthetic repair-completion event in a shape the host does not record), so the affected criteria are not adjudicated; methodology diff empty; regression suite not run after the defect was established
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator repair — revision 005
+
+- Skill: evaluator (repair), contract version 14
+- Inputs: `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`); `design-map.md` (`sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`); `eval-requirements.md` (`sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`); source evaluator revision `004`; trigger finalized verification `40f8ce68-0c54-42d1-904c-5b69bbca3e9e` (attempt 8, BLOCKED, EVALUATOR_DEFECT)
+- Result: `succeeded`; resulting evaluator revision `005` (`sha256:1f074b457b9ab4f02e227b6f1aeb86afd61e9563620d6020ee6a1b7450d351de`); `coverage-map.json` `sha256:fbd6c25eecfa69e4406ab159c8a18e6b3cb90c8ccbf7cd6a7c944d224cf7d188`
+- Changes: the executable evaluator's synthetic repair-completion events now carry the record shape the host writes; affected criteria AC01, AC08, AC10, AC11; acceptance semantics unchanged
+- Checks: structural integrity validation PASS; executable evaluation passes 20 of 20 including controls
+- Measurement cutoff: immediately before this manifest update.
