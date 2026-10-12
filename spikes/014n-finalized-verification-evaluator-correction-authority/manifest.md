@@ -147,3 +147,12 @@
 - Statistics: 3 files changed, 108 insertions, 17 deletions (source and test, before this entry); pinned methodology and skill bytes unchanged
 - Checks: typecheck, ESLint, focused Prettier and focused diff check pass; `test/orchestration.test.ts` and `test/worker-context.test.ts` pass (2/2); kernel suite reaches 15/46 passes, while 31 tests—including both 014n tests—are blocked during fixture setup by the worker sandbox (`spawnSync git EPERM` or `listen EPERM`) before their assertions; the broader npm suite was not completed because it encounters the same containment restrictions
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator verify — attempt 4 (evaluator revision 004)
+
+- Skill: evaluator (verify), contract version 14
+- Inputs: candidate `bb84849b635c4736786c4ab84f86906b9275f84a`; evaluator revision `004`; `spike.md` (`sha256:8b5d3b4036306a225ff6de46dbd586a71b7d12a623a9fcd25207b4ae13d5263d`); `design-map.md` (`sha256:f1bb0c21072fd1890c6494962e6a0b1be2ee4aa45983bf5382e738cdad48f3e9`); `eval-requirements.md` (`sha256:a389c69ea16d870abdb1c70a5625724f5826b299dc0a802b15565bd842a815f4`); `coverage-map.json` (`sha256:715ec419d82e2369465363361857d4bfb112714667ef3bd5f15bbf5e8fc84a50`); frozen identities matched
+- Result: `succeeded`; verification `BLOCKED`, classification `EVALUATOR_DEFECT`
+- Outputs: `verification-result.json`; `manifest.md`
+- Checks: frozen executable evaluation 17 of 20 pass; the three failures share one evaluator fixture defect (a synthetic repair-completion event in a shape the host does not record), so the affected criteria are not adjudicated; methodology diff empty; regression suite not run after the defect was established
+- Measurement cutoff: immediately before this manifest update.
