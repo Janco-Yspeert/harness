@@ -28,6 +28,12 @@ import {
   validatePreparedObservationRecord,
   type PreparedObservationRecord,
 } from "../candidate-observation.ts";
+import {
+  apply014mLedgerMigration,
+  derive014mLedgerMigration,
+  exact014mLedgerMigration,
+  LEDGER_MIGRATION_014M,
+} from "./014m-ledger-migration.ts";
 import { deriveHostArchive, type ArchiveItem } from "../evaluation-closeout.ts";
 import {
   MAX_ACTION_ARTIFACTS,
@@ -2258,6 +2264,86 @@ export class ExecutionKernel {
         ),
         "transition recovery validation did not finalize",
       );
+    });
+  }
+  record014mAttemptLedgerMigration(
+    workflow: string,
+    runtimeCommit: string,
+  ): LedgerEvent {
+    return this.#transaction(workflow, () => {
+      if (!/^[a-f0-9]{40}$/.test(runtimeCommit))
+        throw new Error("014m attempt ledger migration runtime is invalid");
+      const execution = this.execution(
+        workflow,
+        LEDGER_MIGRATION_014M.grantExecution,
+      );
+      const grant = this.roleGrant(workflow, execution.roleGrant);
+      const promotion = required(
+        grant.hostActions.promotion,
+        "014m migration execution lacks its private evidence contract",
+      );
+      const configured =
+        this.project.workflows[workflow]?.workspaces?.[
+          promotion.sourceWorkspace
+        ] ?? this.project.workspaces[promotion.sourceWorkspace];
+      const evaluatorWorkspace = grant.workspaces.find(
+        (workspace) =>
+          configured !== undefined &&
+          workspace.id === configured.id &&
+          workspace.path === configured.path,
+      );
+      if (!evaluatorWorkspace)
+        throw new Error("014m evaluator workspace is outside Role Grant");
+      const evaluatorRoot = realpathSync(evaluatorWorkspace.path);
+      const events = this.events(workflow);
+      const existing = exact014mLedgerMigration(events);
+      const ledgerPath = resolve(evaluatorRoot, ".eval/attempt-ledger.json");
+      const current = readFileSync(ledgerPath);
+      if (existing) {
+        if (identity(current) !== existing.evidence.activeLedgerIdentity)
+          throw new Error("014m attempt ledger migration provenance drift");
+        const recorded = { ...existing.evidence };
+        delete recorded.runtimeCommit;
+        const history = resolve(
+          evaluatorRoot,
+          LEDGER_MIGRATION_014M.historyDirectory,
+          "provenance.json",
+        );
+        const preserved = object(JSON.parse(readFileSync(history, "utf8")));
+        delete preserved.activeLedger;
+        if (canonical(recorded) !== canonical(preserved))
+          throw new Error("014m attempt ledger migration provenance drift");
+        return existing;
+      }
+      const historyPath = resolve(
+        evaluatorRoot,
+        LEDGER_MIGRATION_014M.historyDirectory,
+        "attempt-ledger.legacy.json",
+      );
+      // A partial earlier run already swapped the ledger: re-derive against
+      // the preserved legacy bytes, which must still hash to the bound identity.
+      const legacyBytes =
+        identity(current) === LEDGER_MIGRATION_014M.legacyLedgerIdentity ||
+        !existsSync(historyPath)
+          ? current
+          : readFileSync(historyPath);
+      const derived = derive014mLedgerMigration(
+        evaluatorRoot,
+        workflow,
+        events,
+        legacyBytes,
+      );
+      if (
+        legacyBytes !== current &&
+        identity(current) !== derived.evidence.activeLedgerIdentity
+      )
+        throw new Error("014m attempt ledger is in an unrecognized state");
+      apply014mLedgerMigration(evaluatorRoot, derived);
+      this.#append(workflow, "kernel.attempt-ledger-migrated", {
+        ...derived.evidence,
+        runtimeCommit,
+      });
+      return required(exact014mLedgerMigration(this.events(workflow)));
     });
   }
   #transition(workflow: string, id: string): void {
