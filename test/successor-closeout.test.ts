@@ -29,6 +29,8 @@ import {
   closeoutPermitted,
   deriveHostArchive,
   evaluationFactIdentity,
+  privateAttempts,
+  validatePrivateAttemptFinalization,
   executeArchive,
   type EvaluationFact,
 } from "../src/evaluation-closeout.ts";
@@ -991,6 +993,125 @@ void test("014n attempt-010 topology derives a complete archive from root-active
       ?.source,
     ".eval/revisions/004/eval-spec.md",
   );
+});
+
+void test("evaluator terminalization accepts the exact canonical allocated row and preserves earlier candidate/revision history", (t) => {
+  const { root, freeze } = archiveFixture(t);
+  const first = put(root, ".eval/attempts/001/eval-result.md", "blocked\n");
+  const second = put(root, ".eval/attempts/002/eval-result.md", "pass\n");
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({
+      schemaVersion: 2,
+      attempts: [
+        privateEntry(1, "BLOCKED", first, {
+          implementation: `git:${"1".repeat(40)}`,
+          evaluatorRevision: "000",
+          evaluatorRevisionIdentity: SHA("0"),
+        }),
+        privateEntry(2, "PASS", second, {
+          evaluatorRevisionIdentity: freeze,
+        }),
+      ],
+    })}\n`,
+  );
+  assert.doesNotThrow(() => {
+    validatePrivateAttemptFinalization(root, {
+      attempt: 2,
+      candidate: COMMIT,
+      evaluatorRevision: "001",
+      result: "PASS",
+    });
+  });
+  const ledger = JSON.parse(
+    readFileSync(join(root, ".eval/attempt-ledger.json"), "utf8"),
+  ) as { attempts: Array<Record<string, unknown>> };
+  assert.equal(ledger.attempts[0]?.implementation, `git:${"1".repeat(40)}`);
+  assert.equal(ledger.attempts[0].evaluatorRevision, "000");
+});
+
+void test("evaluator finalization refuses allocated, malformed, incomplete, mismatched and changed terminal rows", (t) => {
+  const { root, freeze } = archiveFixture(t);
+  const path = ".eval/attempts/001/eval-result.md";
+  const resultIdentity = put(root, path, "pass\n");
+  const check = (): void => {
+    validatePrivateAttemptFinalization(root, {
+      attempt: 1,
+      candidate: COMMIT,
+      evaluatorRevision: "001",
+      result: "PASS",
+    });
+  };
+  const write = (entry: Record<string, unknown>): void => {
+    put(
+      root,
+      ".eval/attempt-ledger.json",
+      `${JSON.stringify({ schemaVersion: 2, attempts: [entry] })}\n`,
+    );
+  };
+  const canonical = privateEntry(1, "PASS", resultIdentity, {
+    evaluatorRevisionIdentity: freeze,
+  });
+  write({
+    ...canonical,
+    status: "ALLOCATED",
+    resultIdentity: null,
+  });
+  assert.throws(check, /result conflicts/);
+  write({ attempt: 1, status: "PASS" });
+  assert.throws(check, /canonical id/);
+  const { resultIdentity: omitted, ...incomplete } = canonical;
+  void omitted;
+  write(incomplete);
+  assert.throws(check, /exact evidence/);
+  write({ ...canonical, implementation: `git:${"2".repeat(40)}` });
+  assert.throws(check, /candidate conflicts/);
+  write({ ...canonical, evaluatorRevision: "002" });
+  assert.throws(check, /revision conflicts/);
+  write(canonical);
+  writeFileSync(join(root, path), "changed\n");
+  assert.throws(check, /missing or changed/);
+});
+
+void test("evaluator finalization fails when result bytes are removed and an empty canonical ledger accepts its first attempt", (t) => {
+  const { root, freeze } = archiveFixture(t);
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({ schemaVersion: 2, attempts: [] })}\n`,
+  );
+  assert.deepEqual(
+    privateAttempts(
+      JSON.parse(readFileSync(join(root, ".eval/attempt-ledger.json"), "utf8")),
+    ),
+    [],
+  );
+  const path = ".eval/attempts/001/eval-result.md";
+  const resultIdentity = put(root, path, "pass\n");
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({
+      schemaVersion: 2,
+      attempts: [
+        privateEntry(1, "PASS", resultIdentity, {
+          evaluatorRevisionIdentity: freeze,
+        }),
+      ],
+    })}\n`,
+  );
+  const check = (): void => {
+    validatePrivateAttemptFinalization(root, {
+      attempt: 1,
+      candidate: COMMIT,
+      evaluatorRevision: "001",
+      result: "PASS",
+    });
+  };
+  assert.doesNotThrow(check);
+  rmSync(join(root, path));
+  assert.throws(check, /missing or changed/);
 });
 
 void test("014k AC07/AC08: recorded-then-missing is LOST; never-produced stays NONTERMINAL", (t) => {
