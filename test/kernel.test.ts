@@ -4441,6 +4441,38 @@ void test("014n: human authority classifies a finalized BLOCKED verification wit
     resolvedSession.session.id,
   );
   assert.equal(afterRepair.kind, "grant", JSON.stringify(afterRepair));
+
+  const recoveryGrant = f.kernel.authorize(f.workflow, {
+    continuation: false,
+    delegation: ["attached"],
+    roles: ["produce"],
+    maxAllocations: 1,
+    inline: true,
+  });
+  const root = f.kernel.root(
+    f.workflow,
+    recoveryGrant.id,
+    "produce",
+    "repair the successor evaluator revision",
+    1,
+  );
+  const recovered = f.kernel.inspect(
+    f.workflow,
+    recoveryGrant.id,
+    "produce",
+    resolvedSession.session.id,
+  );
+  assert.equal(recovered.kind, "grant", JSON.stringify(recovered));
+  assert.equal(
+    recovered.grant.inputs.sourceEvaluatorRevision,
+    "999",
+    "root re-entry repairs the current frozen revision rather than replaying the old authority source",
+  );
+  assert.equal(recovered.grant.rootAuthority, root.id);
+  assert.equal(
+    recovered.grant.inputEvidence?.rootAuthority?.reason,
+    "repair the successor evaluator revision",
+  );
 });
 
 void test("014n: stale and inadmissible finalized sources are refused", (t) => {

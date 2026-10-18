@@ -96,6 +96,7 @@ export function roleInputs(
   definition: MethodologyDefinition,
   validators: ArtifactValidators = {},
   inputEvidence: Record<string, Data> = {},
+  options: { preserveResolvedSourceEvaluatorRevision?: boolean } = {},
 ): Record<string, string> {
   const directory = project.workflows[workflow]?.directory;
   if (!directory) throw new Error("unknown workflow");
@@ -149,7 +150,10 @@ export function roleInputs(
         // Finalized-source authorities bind the source revision directly.
         // Legacy authority events may predate that field, in which case the
         // existing contract input remains authoritative.
-        if (typeof sourceRevision === "string")
+        if (
+          typeof sourceRevision === "string" &&
+          !options.preserveResolvedSourceEvaluatorRevision
+        )
           inputs.sourceEvaluatorRevision = sourceRevision;
       }
       if (rule.evidenceField) {
@@ -421,6 +425,9 @@ export function resolveAuthority(
       definition,
       validators,
       inputEvidence,
+      {
+        preserveResolvedSourceEvaluatorRevision: override !== undefined,
+      },
     );
     // A bounded root recovery is already the authority that admits the role.
     // Project only its own closed human reason into the worker assignment so
