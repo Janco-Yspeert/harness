@@ -57,6 +57,8 @@ const MECHANICS = new Set([
   "kernel.workflow-grant-revoked",
   "kernel.workflow-grant-retired",
   "kernel.allocation",
+  "kernel.launch-attempt",
+  "kernel.readiness-consumed",
   "kernel.session",
   "kernel.exposure",
   "kernel.process",

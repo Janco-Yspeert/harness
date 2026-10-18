@@ -1275,6 +1275,14 @@ void test("TR8: bounded generic root authority permits forward recovery without 
     "bounded corrective action",
     1,
   );
+  f.event("kernel.launch-attempt", {
+    launchIntent: "readiness-intent",
+    outcome: "ready",
+  });
+  f.event("kernel.readiness-consumed", {
+    launchAttempt: "readiness-attempt",
+    launchIntent: "readiness-intent",
+  });
   assert.equal(root.schemaVersion, 1);
   const session = f.kernel.register(f.workflow, "fixture").session;
   const next = f.kernel.allocate(f.workflow, parent.id, {
