@@ -334,3 +334,21 @@
   post-acceptance deferral of AC13/AC14 are preserved.
 - Boundaries: candidate not run; frozen brief, Design Map and public evaluation
   requirements unchanged; containment not weakened.
+
+## Evaluator verification — attempt 15
+
+- Skill/mode: evaluator v14, `verify`
+- Candidate: `3e753a4a732c87fc5b42e9e3cf771482aba6a522`; evaluator revision
+  `005` (`sha256:a69d0f41571f4302143145fed3f51f420f4b46104a4dea13d8e694d1d1546134`);
+  frozen identities matched.
+- Result: succeeded; verification result `PASS`. Output:
+  `verification-result.json`; `manifest.md`.
+- Checks: evaluator helper self-check passed; the frozen authorization/contract
+  case passed on the exact candidate; the differential full-suite case showed no
+  candidate failure absent from the pre-candidate baseline; the bootstrap
+  boundary (trusted sequence 6 governs the verdict; candidate does not govern or
+  adopt itself) was confirmed. AC01–AC12 satisfied; AC13/AC14 are deferred to
+  post-acceptance adoption and cutover.
+- Limitations: no live provider exercised; adoption and cutover evidence is a
+  later gate.
+- Measurement cutoff: immediately before this manifest update.

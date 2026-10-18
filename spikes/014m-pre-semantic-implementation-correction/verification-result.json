@@ -1,12 +1,11 @@
 {
   "schemaVersion": 1,
   "workflow": "014m-pre-semantic-implementation-correction",
-  "execution": "84f7b735-63e3-46d2-ac12-88e115b26a7d",
-  "attempt": 14,
+  "execution": "ef48f69b-1a04-43de-96d2-0c2e801d04b6",
+  "attempt": 15,
   "commit": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
-  "evaluatorRevision": "003",
-  "result": "BLOCKED",
-  "classification": "INFRASTRUCTURE_FAILURE",
+  "evaluatorRevision": "005",
+  "result": "PASS",
   "candidateEvaluationBegan": true,
   "coverageResults": {
     "AC01": "SATISFIED",
@@ -16,20 +15,20 @@
     "AC05": "SATISFIED",
     "AC06": "SATISFIED",
     "AC07": "SATISFIED",
-    "AC08": "NOT_ADJUDICATED",
-    "AC09": "NOT_ADJUDICATED",
-    "AC10": "NOT_ADJUDICATED",
-    "AC11": "NOT_ADJUDICATED",
-    "AC12": "NOT_ADJUDICATED",
-    "AC13": "NOT_ADJUDICATED",
-    "AC14": "NOT_ADJUDICATED"
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "DEFERRED_POST_ACCEPTANCE",
+    "AC14": "DEFERRED_POST_ACCEPTANCE"
   },
-  "reason": "The frozen authorization/contract case passed on the exact candidate. The full-suite case could not be adjudicated: its only failures (22, none for this spike) are in governed-launch and nested-containment cases that need real provider launch and nested sandboxing, which this verification environment denies. Trusted-N adoption and cutover evidence was not available. No implementation failure is claimed.",
+  "reason": "The frozen authorization/contract case passed on the exact candidate. The differential full-suite case showed no failure on the candidate that the pre-candidate baseline does not also exhibit. The bootstrap boundary holds: the verifier's assignment methodology equals the trusted sequence-6 methodology at the pre-candidate baseline, differs from the candidate's own methodology content, and the candidate adopts no trust record and does not alter evaluator bindings. Adoption and cutover (AC13, AC14) are post-acceptance obligations and are deferred, not failed.",
   "diagnostics": [
     "evaluator helper self-check passed",
     "frozen contract case passed",
-    "full suite 296/318; all failures outside this spike and attributable to operational retry exhaustion or refused nested containment",
-    "trusted-N evidence absent"
+    "differential full-suite case passed against the pre-candidate baseline",
+    "assignment methodology identity matched trusted sequence 6; candidate methodology identity differs"
   ],
-  "evaluatorIntegrity": "frozen revision 003 identities matched and the revision was not mutated"
+  "evaluatorIntegrity": "frozen revision 005 identities matched and the revision was not mutated"
 }
