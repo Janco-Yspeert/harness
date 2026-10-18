@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "request": {
+    "id": "7b970e98-a4b0-425d-8b90-66859d0583fb",
+    "execution": "ef48f69b-1a04-43de-96d2-0c2e801d04b6",
+    "roleGrant": "sha256:0a52712ee80f393ecb5bc0df3927649928c2d8cef8fa5e22d79f4d449847a0f0",
+    "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+    "evaluatorRevision": "005",
+    "attempt": 15,
+    "destination": "evaluation",
+    "artifacts": [
+      {
+        "source": ".eval/promotion-plan.json",
+        "destination": "promotion-plan.json",
+        "identity": "sha256:4857cc4af996c10af0e5ce8dae7cf9c38d2067b95074d1848d8f1a7a71cb5390"
+      },
+      {
+        "source": ".eval/attempts/015/eval-result.md",
+        "destination": "attempts/015/eval-result.md",
+        "identity": "sha256:18e50ae2650a74cdeb97cca9ad56537eef2e4ec970005f95e165f7512d4f3968"
+      },
+      {
+        "source": ".eval/freeze.json",
+        "destination": "freeze/005.json",
+        "identity": "sha256:a69d0f41571f4302143145fed3f51f420f4b46104a4dea13d8e694d1d1546134"
+      },
+      {
+        "source": "eval-spec.md",
+        "destination": "revisions/005/eval-spec.md",
+        "identity": "sha256:547f6ab33e22b3df86533a0b700bf4746f2290b631df37418a20955b861ea08a"
+      },
+      {
+        "source": ".hidden-test/manifest.json",
+        "destination": "revisions/005/.hidden-test/manifest.json",
+        "identity": "sha256:51e734545088a4332c9f2ad11e5e1e22072ea759ee10f293d2c4549265a73d56"
+      },
+      {
+        "source": ".hidden-test/contract-surface.test.mjs",
+        "destination": "revisions/005/.hidden-test/contract-surface.test.mjs",
+        "identity": "sha256:f672d9203b7b9e8911c9cc89499ffc74ddfcc8ee8ddf6c9ba25b4f8ced133be6"
+      },
+      {
+        "source": ".hidden-test/full-regression.test.mjs",
+        "destination": "revisions/005/.hidden-test/full-regression.test.mjs",
+        "identity": "sha256:71355f0ce948e27b9b4a61614fbb755018343e590e41cfa0bd3d0bb429bf066d"
+      },
+      {
+        "source": ".hidden-test/support.mjs",
+        "destination": "revisions/005/.hidden-test/support.mjs",
+        "identity": "sha256:6fe04aac1b54e92d1f013163225ab54447188d2a1a7c97f7d754e4dd2a07ca2e"
+      },
+      {
+        "source": ".hidden-test/oracle.selfcheck.test.mjs",
+        "destination": "revisions/005/.hidden-test/oracle.selfcheck.test.mjs",
+        "identity": "sha256:c8a8f27637620517b68a8b93bb531c570db8144c5824ab0211ecf785a7b74538"
+      },
+      {
+        "source": ".hidden-test/procedures.md",
+        "destination": "revisions/005/.hidden-test/procedures.md",
+        "identity": "sha256:c13d2c5be81fd856f6774e82f8e6ddddb48d22669b7d25897590137ab3d0422a"
+      },
+      {
+        "source": ".eval/integrity-input.json",
+        "destination": "revisions/005/.eval/integrity-input.json",
+        "identity": "sha256:1eabf79dd7fe40f133f8164d4a5491d577f3f5b595155395c97ad268bbe49cf6"
+      },
+      {
+        "source": ".eval/pre-freeze-integrity.json",
+        "destination": "revisions/005/.eval/pre-freeze-integrity.json",
+        "identity": "sha256:a9a33ebab7d8d1a214a45336ad28842912c6c4f3ee841d6109ac328f377a0120"
+      }
+    ],
+    "archiveLoss": {
+      "archiveCompleteness": "incomplete-known-loss",
+      "authority": "75f1e6b4-8df6-4173-8e11-06d37c0ea76c",
+      "declarationPath": "recovery/archive-loss-declaration.json",
+      "declarationIdentity": "sha256:0f2b4ad91ad14a3e68734c45b4391ed8b2513520750946f06d4cf9b8a15fbc40",
+      "normalValidation": "INELIGIBLE",
+      "normalValidationReason": "The attempt history contains a known historical terminal-evidence loss for attempt 007; ordinary complete promotion is unavailable."
+    }
+  },
+  "result": {
+    "artifacts": {
+      "promotion-plan.json": "sha256:4857cc4af996c10af0e5ce8dae7cf9c38d2067b95074d1848d8f1a7a71cb5390",
+      "attempts/015/eval-result.md": "sha256:18e50ae2650a74cdeb97cca9ad56537eef2e4ec970005f95e165f7512d4f3968",
+      "freeze/005.json": "sha256:a69d0f41571f4302143145fed3f51f420f4b46104a4dea13d8e694d1d1546134",
+      "revisions/005/eval-spec.md": "sha256:547f6ab33e22b3df86533a0b700bf4746f2290b631df37418a20955b861ea08a",
+      "revisions/005/.hidden-test/manifest.json": "sha256:51e734545088a4332c9f2ad11e5e1e22072ea759ee10f293d2c4549265a73d56",
+      "revisions/005/.hidden-test/contract-surface.test.mjs": "sha256:f672d9203b7b9e8911c9cc89499ffc74ddfcc8ee8ddf6c9ba25b4f8ced133be6",
+      "revisions/005/.hidden-test/full-regression.test.mjs": "sha256:71355f0ce948e27b9b4a61614fbb755018343e590e41cfa0bd3d0bb429bf066d",
+      "revisions/005/.hidden-test/support.mjs": "sha256:6fe04aac1b54e92d1f013163225ab54447188d2a1a7c97f7d754e4dd2a07ca2e",
+      "revisions/005/.hidden-test/oracle.selfcheck.test.mjs": "sha256:c8a8f27637620517b68a8b93bb531c570db8144c5824ab0211ecf785a7b74538",
+      "revisions/005/.hidden-test/procedures.md": "sha256:c13d2c5be81fd856f6774e82f8e6ddddb48d22669b7d25897590137ab3d0422a",
+      "revisions/005/.eval/integrity-input.json": "sha256:1eabf79dd7fe40f133f8164d4a5491d577f3f5b595155395c97ad268bbe49cf6",
+      "revisions/005/.eval/pre-freeze-integrity.json": "sha256:a9a33ebab7d8d1a214a45336ad28842912c6c4f3ee841d6109ac328f377a0120"
+    },
+    "integrityIdentity": "sha256:bffa18c375087ff1b4f3f8b41c116de5f9dc605f31dc5bceab0019b59bff860e"
+  }
+}
