@@ -170,6 +170,7 @@ async function runProviderReadiness(input: {
     const command = checkedCommand(input.adapter, input.program, {
       shape: input.shape,
       workspaces,
+      workerOperations: ["readiness"],
       scratch,
       relay: { port: 9, key: "readiness" },
       nodePath: process.execPath,
@@ -230,7 +231,7 @@ async function runProviderReadiness(input: {
             if (event.kind === "tool-confirmed" && event.tool === "readiness")
               toolConnected = true;
             if (event.kind === "permission-denied")
-              failure = "authentication-failure";
+              failure = "pre-allocation-readiness-failure";
             if (
               event.kind === "provider-error" ||
               event.kind === "rate-limited"

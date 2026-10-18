@@ -1838,6 +1838,37 @@ void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is l
       detail: "Harness worker tool server is not connected (unknown)",
     },
   );
+  const readinessArgs = ADAPTERS.claude.command({
+    ...input,
+    workerToolsPath: "/repo/src/executors/readiness-tools.ts",
+    workerOperations: ["readiness"],
+  });
+  const readinessAllowed =
+    readinessArgs[readinessArgs.indexOf("--allowedTools") + 1] ?? "";
+  assert.match(readinessAllowed, /mcp__harness__readiness/);
+  assert.doesNotMatch(readinessAllowed, /mcp__harness__submitResult/);
+  assert.deepEqual(
+    ADAPTERS.claude.parse(
+      JSON.stringify({
+        type: "user",
+        tool_use_result: {
+          structuredContent: { ready: true },
+        },
+      }),
+    ),
+    [{ kind: "tool-confirmed", tool: "readiness" }],
+  );
+  assert.deepEqual(
+    ADAPTERS.claude.parse(
+      JSON.stringify({
+        type: "user",
+        tool_use_result: {
+          structuredContent: { ready: false },
+        },
+      }),
+    ),
+    [],
+  );
   assert.deepEqual(
     ADAPTERS.codex.parse(
       JSON.stringify({

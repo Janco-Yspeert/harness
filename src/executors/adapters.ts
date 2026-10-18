@@ -55,6 +55,10 @@ export type ProviderEvent =
 export interface AdapterCommandInput {
   readonly shape: CanonicalExecutionShape;
   readonly workspaces: readonly Workspace[];
+  // The host may substitute a smaller, purpose-built MCP surface for a
+  // pre-allocation probe. Governed workers omit this and retain the normal
+  // protocol operations.
+  readonly workerOperations?: readonly string[];
   readonly scratch: string;
   // Per-execution loopback relay and its relay-only key (never a host
   // credential). Both reach only the Harness tool server's environment.
@@ -134,7 +138,7 @@ const claude: ProviderAdapter = {
         mode: workspace.mode,
       })),
       capabilities: input.shape.capabilities,
-      workerOperations: WORKER_OPERATIONS,
+      workerOperations: input.workerOperations ?? WORKER_OPERATIONS,
       scratch: input.scratch,
       mcpConfig: JSON.stringify({
         mcpServers: {
@@ -214,6 +218,21 @@ const claude: ProviderAdapter = {
           detail: `provider result ${stringValue(event.subtype) ?? "error"}`,
         });
     }
+    const toolResult =
+      event.type === "user" &&
+      event.tool_use_result !== null &&
+      typeof event.tool_use_result === "object" &&
+      !Array.isArray(event.tool_use_result)
+        ? (event.tool_use_result as Json)
+        : undefined;
+    const structured =
+      toolResult?.structuredContent !== null &&
+      typeof toolResult?.structuredContent === "object" &&
+      !Array.isArray(toolResult.structuredContent)
+        ? (toolResult.structuredContent as Json)
+        : undefined;
+    if (structured?.ready === true)
+      events.push({ kind: "tool-confirmed", tool: "readiness" });
     return events;
   },
 };
