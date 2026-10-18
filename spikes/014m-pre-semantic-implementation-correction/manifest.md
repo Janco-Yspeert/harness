@@ -352,3 +352,35 @@
 - Limitations: no live provider exercised; adoption and cutover evidence is a
   later gate.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-18 — As-Built
+
+- Execution: `c32b10b2-7f44-4480-8887-0111724ccdd5`.
+- Skill: `as-built`, contract version 4
+  (`sha256:dc3c422691fb36a292b49db411ff9aefd5199f8602b73ef87428fd0a09ea534b`).
+- Role Grant:
+  `sha256:5356c4fef0fe7ae220d43d43fd1e0713da6a33014a4841302cad6d6efc8fc892`.
+- Inspected implementation: `3e753a4a732c87fc5b42e9e3cf771482aba6a522`.
+- Inputs: `spike.md`
+  `sha256:d0623b61c859a4eb4ec9b11d2894cd26ea66a2f2228a89de6e1b2a83b1bdf224`;
+  `design-map.md`
+  `sha256:a07c99f8c8fb4bac61896fec343ab87b89b6dad287be7e4bbd41ee3f456e973d`;
+  `verification-result.json`
+  `sha256:42841121dec71ee874556c70404c46cb31e9a6a9650b3e87430bbfb8ee615239`;
+  and `evaluation/promotion.json`
+  `sha256:d7b79ae595a50db5e50d6015faead025b3dbfea14b80d439a6c86da38e2cfbdc`.
+- Promotion checkpoint: `874395c9`; the bound promotion record identity
+  matched before it was committed separately.
+- Result: succeeded. The implemented human-authorized pre-semantic correction
+  path, exact host-evidence resolver, Role Grant evidence projection, preserved
+  input lineage, retry retention, and successful-handoff consumption were
+  reconstructed. No Missing, Contradictory, or Extra contract discrepancy was
+  found. AC13 and AC14 remain the contract's later post-acceptance steps.
+- Output: `as-built.md`
+  `sha256:263c3b97ced97e7f82cc622cedad6ea8f438090191b6d0cb50b60705226074f4`.
+- Checks: bound input and promotion identities matched; the exact candidate
+  diff and relevant source, methodology, contract, skill, and visible tests
+  were inspected; the promoted final result and archive record were inspected;
+  scoped `git diff --check` passed. Evaluation was not rerun.
+- Measurement cutoff: immediately before this manifest update; runtime token,
+  call, and wall-clock statistics were unavailable.
