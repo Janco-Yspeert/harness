@@ -115,12 +115,12 @@
     {
       "id": "AC12",
       "frozenAuthority": "spike.md acceptance criterion AC12",
-      "mode": "POST_ACCEPTANCE_HOST_EVIDENCE",
-      "required": false,
+      "mode": "PUBLIC_HOST_EVIDENCE",
+      "required": true,
       "procedures": [
-        "E3"
+        "E4"
       ],
-      "sufficiency": "E3 post-acceptance review of the exact trusted-sequence-6 evaluation and closeout evidence establishes that candidate sequence 7 did not govern its own verdict; it is deferred at candidate verification because closeout and acceptance follow the candidate PASS."
+      "sufficiency": "E4 checks, at candidate verification and from the verifier's own host-issued assignment and the exact candidate commit, that the trusted sequence-6 methodology governs the verdict and that candidate sequence 7 neither adopts nor governs itself; it requires no closeout, acceptance, adoption, or cutover."
     },
     {
       "id": "AC13",
@@ -144,22 +144,18 @@
     }
   ],
   "readiness": {
-    "evaluatorRevision": "004",
-    "evaluatorRevisionIdentity": "sha256:3326fe1dd7b560b892d67f041eb9b3094680d0d7a4cf8ea830759e9eef66a39d",
+    "evaluatorRevision": "005",
+    "evaluatorRevisionIdentity": "sha256:a69d0f41571f4302143145fed3f51f420f4b46104a4dea13d8e694d1d1546134",
     "privateInventoryIdentity": "sha256:4775c4391c3d7c491bc7e92a9ece5cfda3cc9e62d3b922be866735bc5714aea8",
-    "validatorResultBinding": "sha256:37aed888eb55c3893c8ee45eada7f2e1e56a180bc60312f9ac87c9ca4a312f75",
+    "validatorResultBinding": "sha256:ff1737ed0c090a4fdbfb9ce4dd2d24eec2300532c1ee8d013da6004419a8a840",
     "integrityValidation": "PASS"
   },
   "repair": {
-    "sourceEvaluatorRevision": "003",
-    "sourceEvaluatorRevisionIdentity": "sha256:a53faa7ba3ea909376cbbdb6e9e7226691120d63d64cc8bb09eac29a7e6e252d",
-    "resultingEvaluatorRevision": "004",
+    "sourceEvaluatorRevision": "004",
+    "sourceEvaluatorRevisionIdentity": "sha256:3326fe1dd7b560b892d67f041eb9b3094680d0d7a4cf8ea830759e9eef66a39d",
+    "resultingEvaluatorRevision": "005",
     "trigger": "758e2875-134f-447c-ac10-26e484a4fe99",
     "affectedCriteria": [
-      "AC08",
-      "AC09",
-      "AC10",
-      "AC11",
       "AC12",
       "AC13",
       "AC14"

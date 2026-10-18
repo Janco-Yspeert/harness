@@ -316,3 +316,21 @@
   candidate PASS.
 - Boundaries: candidate not run; frozen brief, Design Map and public evaluation
   requirements unchanged; attempt 14 remains as finalized.
+
+## Evaluator repair — evaluator revision 005
+
+- Skill/mode: evaluator v14, `repair`
+- Trigger: human-authorized `EVALUATOR_COVERAGE_DEFECT`
+  (`758e2875-134f-447c-ac10-26e484a4fe99`) under bounded root authority
+  `d32e065b-d601-46b5-8152-60f65235a47a`.
+- Lineage: source revision `004`
+  (`sha256:3326fe1dd7b560b892d67f041eb9b3094680d0d7a4cf8ea830759e9eef66a39d`)
+  to revision `005`
+  (`sha256:a69d0f41571f4302143145fed3f51f420f4b46104a4dea13d8e694d1d1546134`)
+- Result: structural integrity validation PASS; acceptance semantics preserved;
+  no new public seam adopted. AC12 is again required and adjudicable during
+  candidate verification (trusted sequence 6 governs the verdict; candidate
+  sequence 7 does not govern itself). Revision 004 changes for AC08–AC11 and the
+  post-acceptance deferral of AC13/AC14 are preserved.
+- Boundaries: candidate not run; frozen brief, Design Map and public evaluation
+  requirements unchanged; containment not weakened.
