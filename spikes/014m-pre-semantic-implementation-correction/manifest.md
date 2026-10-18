@@ -299,3 +299,20 @@
   provider launch, plus trusted-N evidence. No implementation failure is
   claimed; the frozen evaluator was not modified.
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator repair — evaluator revision 004
+
+- Skill/mode: evaluator v14, `repair`
+- Trigger: human-authorized `EVALUATOR_COVERAGE_DEFECT` from finalized attempt 14
+  (`758e2875-134f-447c-ac10-26e484a4fe99`).
+- Lineage: source revision `003`
+  (`sha256:a53faa7ba3ea909376cbbdb6e9e7226691120d63d64cc8bb09eac29a7e6e252d`)
+  to revision `004` (`sha256:3326fe1dd7b560b892d67f041eb9b3094680d0d7a4cf8ea830759e9eef66a39d`)
+- Result: structural integrity validation PASS; acceptance semantics preserved;
+  no new public seam adopted. Regression evidence is now judged differentially
+  against the pre-candidate baseline in the same environment (containment is not
+  weakened), and the post-acceptance adoption/cutover criteria (AC12–AC14) are
+  deferred at candidate verification rather than being prerequisites for the
+  candidate PASS.
+- Boundaries: candidate not run; frozen brief, Design Map and public evaluation
+  requirements unchanged; attempt 14 remains as finalized.
