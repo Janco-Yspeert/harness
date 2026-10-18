@@ -362,7 +362,7 @@ export function resolveAuthority(
     const laterRepairs = effectiveEvents
       .slice(authorityIndex + 1)
       .filter((e) => e.transition === "evaluator-repair-recorded");
-    const boundRepair = laterRepairs.find((event) => {
+    const boundRepairs = laterRepairs.filter((event) => {
       const value = event.evidence.inputs;
       if (value === null || typeof value !== "object" || Array.isArray(value))
         return false;
@@ -373,14 +373,53 @@ export function resolveAuthority(
           authority?.evidence.sourceEvaluatorRevision
       );
     });
+    const rootCorrectedRepair = (() => {
+      if (
+        laterRepairs.length !== 2 ||
+        boundRepairs.length !== 1 ||
+        laterRepairs[0] !== boundRepairs[0]
+      )
+        return false;
+      const correction = required(laterRepairs[1]);
+      const value = correction.evidence.inputs;
+      if (value === null || typeof value !== "object" || Array.isArray(value))
+        return false;
+      if ((value as Data).repairTrigger !== authority?.evidence.semanticResult)
+        return false;
+      const allocation = effectiveEvents.find(
+        (event) =>
+          event.transition === "kernel.allocation" &&
+          (event.evidence.grant as RoleGrant | undefined)?.id ===
+            correction.evidence.roleGrant,
+      );
+      const grant = allocation?.evidence.grant as RoleGrant | undefined;
+      const root = effectiveEvents.find(
+        (event) =>
+          event.transition === "kernel.root" &&
+          event.evidence.id === grant?.rootAuthority,
+      );
+      return (
+        grant !== undefined &&
+        root !== undefined &&
+        root.evidence.role === grant.role &&
+        root.evidence.workflowGrant === grant.workflowGrant &&
+        effectiveEvents.indexOf(required(laterRepairs[0])) <
+          effectiveEvents.indexOf(root) &&
+        effectiveEvents.indexOf(root) < effectiveEvents.indexOf(correction)
+      );
+    })();
+    const onlyCandidate = candidates.length === 1 ? candidates[0]?.[0] : null;
     const authorityLiftsVerificationGate =
       latestFinalized !== undefined &&
       authority !== undefined &&
       authority.evidence.source === "finalized-verification" &&
       authority.evidence.finalizedEvent === latestFinalized.id &&
       effectiveEvents.indexOf(latestFinalized) < authorityIndex &&
-      (laterRepairs.length === 0 ||
-        (laterRepairs.length === 1 && boundRepair !== undefined));
+      ((laterRepairs.length === 0 && onlyCandidate !== null) ||
+        (laterRepairs.length === 1 &&
+          boundRepairs.length === 1 &&
+          onlyCandidate !== null) ||
+        (rootCorrectedRepair && onlyCandidate !== null));
     const gate = definition.policy.gates.find((g) => {
       const when = object(g.when);
       const value = when.fields;
