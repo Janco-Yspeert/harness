@@ -422,6 +422,22 @@ export function resolveAuthority(
       validators,
       inputEvidence,
     );
+    // A bounded root recovery is already the authority that admits the role.
+    // Project only its own closed human reason into the worker assignment so
+    // the worker can perform the authorized correction rather than guessing
+    // from an opaque root-authority id. No other ledger state is exposed and
+    // this evidence does not participate in eligibility or input resolution.
+    if (override)
+      inputEvidence.rootAuthority = {
+        schemaVersion: 1,
+        transition: "kernel.root",
+        id: override.id,
+        workflowGrant: override.workflowGrant,
+        role: override.role,
+        reason: override.reason,
+        change: override.change,
+        uses: override.uses,
+      };
   } catch (e) {
     return { kind: "denied", reason: (e as Error).message };
   }

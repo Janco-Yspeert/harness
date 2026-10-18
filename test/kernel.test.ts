@@ -1286,6 +1286,16 @@ void test("TR8: bounded generic root authority permits forward recovery without 
   assert.notEqual(next.execution.id, prior.execution.id);
   assert.equal(next.execution.predecessor, prior.execution.id);
   assert.equal(next.grant.rootAuthority, root.id);
+  assert.deepEqual(next.grant.inputEvidence?.rootAuthority, {
+    schemaVersion: 1,
+    transition: "kernel.root",
+    id: root.id,
+    workflowGrant: parent.id,
+    role: "produce",
+    reason: "bounded corrective action",
+    change: "permit-role",
+    uses: 1,
+  });
   assert.ok(readFileSync(f.kernel.path(f.workflow), "utf8").startsWith(prefix));
   assert.deepEqual(f.kernel.execution(f.workflow, prior.execution.id), old);
   assert.deepEqual(f.kernel.roleGrant(f.workflow, prior.grant.id), prior.grant);
