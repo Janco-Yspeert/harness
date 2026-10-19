@@ -138,7 +138,7 @@ function operationalFailure(error: unknown): OperationalFailureClass {
     return "launch-shape-incompatibility";
   return "pre-allocation-readiness-failure";
 }
-async function runProviderReadiness(input: {
+export async function runProviderReadiness(input: {
   shape: CanonicalExecutionShape;
   adapter: ProviderAdapter;
   program: string;
@@ -222,8 +222,6 @@ async function runProviderReadiness(input: {
         pending = lines.pop() ?? "";
         for (const line of lines)
           for (const event of input.adapter.parse(line)) {
-            if (event.kind === "confirmed" && input.adapter.id === "claude")
-              toolConnected = true;
             if (event.kind === "tools-unavailable") {
               failure = "required-connectivity-tool-failure";
               toolConnected = false;

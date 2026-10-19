@@ -135,3 +135,32 @@
   not inspected. Unrelated worktree/runtime residue was preserved and excluded
   from the candidate.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-19 — Implementation attempt 2 (pre-semantic correction)
+
+- Skill: implementation, contract version 6.
+- Inputs: brief `sha256:de56e997…e803`, design `sha256:11fddfcd…c00d`,
+  coverage `sha256:4ba8570c…7cec`, requirements `sha256:3359c649…cbdb`, and
+  pre-semantic correction authorization `sha256:7e2f767b…f2e2` (candidate
+  `11334109`). Its preserved input lineage matches the other grant inputs and
+  it carries a non-empty reason and three defects.
+- Result: succeeded. Defects 1 and 2 (readiness tool absent from the Claude
+  allowlist; permission denial normalized to authentication-failure) were
+  already corrected on this branch by `0383e0c8`. Defect 3 is fixed here:
+  Claude readiness no longer passes on provider init/connection alone;
+  `runProviderReadiness` now requires a positive `tool-confirmed` readiness
+  event. `runProviderReadiness` is exported for testing.
+- Output content identity before this entry:
+  `sha256:71c3c650b9031c8da214a9eb7036e52862bf2144ec5116c77ae5f29457eff5d6`
+  over `git diff --binary` of `src/kernel/host.ts` and
+  `test/readiness-evidence.test.ts` (2 paths), excluding this manifest.
+- Visible verification: new `test/readiness-evidence.test.ts` 3 passed, 0
+  failed (connection-only fails, confirmed call passes, denial is a
+  pre-allocation-readiness-failure); `node test/orchestration.test.ts`,
+  typecheck and `format:check` passed. `test/governed-executors.test.ts` shows
+  4 failing cases (014h AC11, 014j AC10/AC11, AC04/AC13, AC14), apparently
+  environment-related; not fixed here.
+- Limitations: no live provider exercised; workflow ledgers and
+  evaluator-private material not inspected; unrelated worktree residue
+  preserved and excluded.
+- Measurement cutoff: immediately before this manifest update.
