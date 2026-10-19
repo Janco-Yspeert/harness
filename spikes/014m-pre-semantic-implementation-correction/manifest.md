@@ -384,3 +384,20 @@
   scoped `git diff --check` passed. Evaluation was not rerun.
 - Measurement cutoff: immediately before this manifest update; runtime token,
   call, and wall-clock statistics were unavailable.
+
+## 2026-10-19 — Outcome
+
+- Execution: `b5e37655-dc4b-4907-a8ec-6f9c873bd14d`.
+- Skill: `outcome`, contract version 5
+  (`sha256:2ab64cee141d06a88ff04dc540ddfa7a15c364e07bb717b7fab70c15460b7e82`).
+- Role Grant: `sha256:72f6dbc40ad1755b46562e19db02c8e455624cd516a03e4af7e4993da40304ba`.
+- Completion mode: `STANDARD`. Candidate
+  `3e753a4a732c87fc5b42e9e3cf771482aba6a522`; promotion
+  `sha256:d7b79ae595a50db5e50d6015faead025b3dbfea14b80d439a6c86da38e2cfbdc`;
+  As-Built `sha256:263c3b97ced97e7f82cc622cedad6ea8f438090191b6d0cb50b60705226074f4`.
+- Result: succeeded; `outcome.md` records the spike as complete with
+  independently evaluated PASS (attempt 015, revision 005).
+- Checks: identities confirmed against manifest, As-Built, evaluation result,
+  adoption and cutover evidence; no tests run.
+- Limitations: runtime token and wall-clock statistics unavailable.
+- Measurement cutoff: immediately before this manifest update.
