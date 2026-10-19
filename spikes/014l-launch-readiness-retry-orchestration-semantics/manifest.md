@@ -212,3 +212,21 @@
   workflow ledgers not inspected; unrelated worktree residue preserved and
   excluded.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-19 — Evaluator Verify (attempt 5)
+
+- Skill: `evaluator`, mode `verify`, contract version 14
+  (`sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b`).
+- Execution: `d44c7829-0fc1-4e51-a365-41253c09da64`; candidate
+  `4f0560165a14c44f76c6fdd540f4bc456ef208ae`; evaluator revision `001`
+  (`sha256:6293e45e5cb22a6449fec4315cc5440cc031e98e0ca3b93983798c8236f543cc`).
+- Inputs: brief, design, requirements and coverage identities matched their
+  frozen values; evaluator revision matched its freeze.
+- Result: succeeded; verdict `PASS`. Typecheck, lint and format check passed;
+  fresh-clone suite 331 tests, 330 passing; the one failure is an
+  environment-sensitive containment test that also fails at the pre-014l
+  baseline and passes in the project checkout. All 33 required tests present.
+- Outputs: `verification-result.json`, `manifest.md`.
+- Limitations: no live provider exercised; evidence rests on visible tests and
+  diff reading per the frozen plan.
+- Measurement cutoff: immediately before this manifest update.
