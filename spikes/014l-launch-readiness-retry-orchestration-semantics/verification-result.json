@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "workflow": "014l-launch-readiness-retry-orchestration-semantics",
+  "execution": "31a2873f-3bd5-4f71-ae9d-e74136351017",
+  "attempt": 4,
+  "commit": "212e12e4a99ead07329685ec5142347acf41f897",
+  "evaluatorRevision": "001",
+  "evaluatorRevisionIdentity": "sha256:6293e45e5cb22a6449fec4315cc5440cc031e98e0ca3b93983798c8236f543cc",
+  "result": "FAIL",
+  "classification": "IMPLEMENTATION_FAILURE",
+  "candidateEvaluationBegan": true,
+  "coverageResults": {
+    "AC1": "NOT_ADJUDICATED",
+    "AC2": "NOT_ADJUDICATED",
+    "AC3": "NOT_ADJUDICATED",
+    "AC4": "NOT_ADJUDICATED",
+    "AC5": "NOT_ADJUDICATED",
+    "AC6": "NOT_ADJUDICATED",
+    "AC7": "NOT_ADJUDICATED",
+    "AC8": "NOT_ADJUDICATED",
+    "AC9": "NOT_ADJUDICATED",
+    "AC10": "NOT_ADJUDICATED",
+    "AC11": "NOT_ADJUDICATED",
+    "AC12": "NOT_ADJUDICATED",
+    "AC13": "NOT_ADJUDICATED",
+    "AC14": "NOT_ADJUDICATED",
+    "AC15": "NOT_ADJUDICATED",
+    "AC16": "NOT_ADJUDICATED",
+    "AC17": "NOT_ADJUDICATED",
+    "AC18": "NOT_ADJUDICATED",
+    "AC19": "NOT_ADJUDICATED",
+    "AC20": "NOT_ADJUDICATED",
+    "AC21": "NOT_ADJUDICATED",
+    "AC22": "NOT_ADJUDICATED",
+    "AC23": "NOT_ADJUDICATED",
+    "AC24": "NOT_SATISFIED",
+    "AC25": "NOT_SATISFIED"
+  },
+  "accounting": {
+    "criteria": 25,
+    "satisfied": 0,
+    "notSatisfied": 2,
+    "notAdjudicated": 23,
+    "note": "The frozen evidence plan requires the repository's own full check to pass for every case. It does not at this commit, so no case can be satisfied. Criteria other than AC24 and AC25 were not individually adjudicated after that gate failed."
+  },
+  "failures": [
+    {
+      "requirement": "AC25 and AC24: existing normal attached and spawned workflows and the repository regression remain intact (brief required tests 32-33)",
+      "expected": "typecheck, lint, format check and the full visible test suite all pass at the candidate commit.",
+      "observed": "typecheck, lint and format check pass. The full suite ran 331 tests: 311 passed, 20 failed. Existing real-role spawned workflow tests fail because a normal start is refused with an operational-retry-exhaustion stop; the shared provider fixture used by those tests never produces the positive readiness confirmation the readiness probe now requires. Existing containment-refusal tests now observe operational-retry-exhaustion where they previously observed permission-denied. Existing tests for trusted-history length still assert 6 entries while the repository holds 7.",
+      "classification": "IMPLEMENTATION_FAILURE",
+      "diagnostics": "Failure set is deterministic and identical at the candidate and at its immediate parent. The pre-014l baseline fails only one environment-sensitive containment test. Bubblewrap works in the evaluation session. The new 014l orchestration and readiness suites pass."
+    }
+  ],
+  "regression": {
+    "command": "npm run typecheck; npm run lint; npm run format:check; npm test",
+    "environment": "fresh local clone checked out at the candidate commit with the project's installed dependencies",
+    "typecheck": "pass",
+    "lint": "pass",
+    "formatCheck": "pass",
+    "tests": 331,
+    "passed": 311
+  },
+  "evaluatorIntegrity": {
+    "frozenEvaluationModified": false,
+    "specificationDrift": false,
+    "evaluatorDefects": 0,
+    "candidateEvaluationBegan": true
+  },
+  "routing": "Retry implementation against the same frozen evaluator revision 001: update the shared provider fixture and the existing tests so that normal spawned workflows and containment refusals pass with the readiness probe, keep the pre-allocation refusal categories the existing tests assert unless the brief says otherwise, and update the stale trusted-history assertion. Then rerun verification.",
+  "regressionRecommendations": [
+    {
+      "requirement": "AC25 existing normal spawned workflows",
+      "behaviorClass": "a normal real-role spawned start must pass readiness and reach allocation",
+      "test": "maintain the existing real-role host flow tests green with a fixture that confirms the readiness tool"
+    }
+  ]
+}

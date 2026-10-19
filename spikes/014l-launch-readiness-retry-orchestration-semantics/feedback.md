@@ -79,3 +79,18 @@ than independently reconstructed.
   checkpointing.
 
 **Ready to freeze**
+
+---
+
+# Verification feedback — attempt 4 (candidate 212e12e4)
+
+Result: FAIL, classification IMPLEMENTATION_FAILURE, evaluator revision 001.
+
+- Violated public requirement: AC25 / AC24 (existing normal attached and spawned workflows and the repository regression remain intact; brief required tests 32-33).
+- Expected: `npm run typecheck`, `lint`, `format:check` and `npm test` all pass at the candidate commit.
+- Observed: typecheck, lint and format pass. `npm test`: 331 tests, 311 pass, 20 fail.
+  - Existing real-role spawned workflow tests (011 skill-fidelity family) are refused at start with operational-retry-exhaustion, because the shared provider fixture never produces the positive readiness confirmation the probe now requires.
+  - Existing containment-refusal tests (014h AC11, 014j AC10/AC11, AC04/AC13, 014e D4) observe operational-retry-exhaustion where they asserted permission-denied or similar pre-allocation refusals.
+  - The 014k trusted-history test asserts 6 entries; the repository holds 7.
+- Safe diagnostics: deterministic and identical at the candidate's parent; the pre-014l baseline fails only one environment-sensitive containment test; bubblewrap works in the evaluation session; new 014l suites pass.
+- Retry guidance: keep the existing visible suite green with the readiness probe, preserving existing refusal categories unless the brief states otherwise, then re-verify against the same frozen evaluator.

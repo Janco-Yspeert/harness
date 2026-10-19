@@ -164,3 +164,20 @@
   evaluator-private material not inspected; unrelated worktree residue
   preserved and excluded.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-19 — Evaluator Verify (attempt 4)
+
+- Skill: `evaluator`, mode `verify`, contract version 14
+  (`sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b`).
+- Execution: `31a2873f-3bd5-4f71-ae9d-e74136351017`; candidate
+  `212e12e4a99ead07329685ec5142347acf41f897`; evaluator revision `001`
+  (`sha256:6293e45e5cb22a6449fec4315cc5440cc031e98e0ca3b93983798c8236f543cc`).
+- Inputs: brief, design, requirements and coverage identities matched their
+  frozen values; evaluator revision matched its freeze.
+- Result: succeeded; verdict `FAIL`, classification `IMPLEMENTATION_FAILURE`.
+  Typecheck, lint and format check passed; the full visible suite ran 331
+  tests with 311 passing and 20 failing.
+- Outputs: `verification-result.json`, `feedback.md`, `manifest.md`.
+- Limitations: no live provider exercised; criteria other than AC24 and AC25
+  were not individually adjudicated after the full-check gate failed.
+- Measurement cutoff: immediately before this manifest update.
