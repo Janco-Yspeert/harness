@@ -49,6 +49,7 @@ import type {
   WorkflowGrant,
 } from "../src/kernel/model.ts";
 import type { CanonicalExecutionShape } from "../src/kernel/orchestration.ts";
+import type { ReadinessProbeInput } from "../src/kernel/orchestration.ts";
 import { roleInputs } from "../src/kernel/resolver.ts";
 import { normalizeOrigin } from "../src/kernel/roots.ts";
 import { trustedBinding, trustedDefinition } from "../src/kernel/trust.ts";
@@ -248,6 +249,10 @@ function hostOptions(
           (grant.role === "smoke-codex" ? "codex" : "claude"),
       ) ?? profiles[0],
     providerRuntime: {
+      readinessProbe: (input: ReadinessProbeInput) => ({
+        state: "passed" as const,
+        effective: input.expectedEffective,
+      }),
       runtimeRoot: extra.runtimeRoot ?? f.harness,
       ...(extra.bwrap ? { bwrap: extra.bwrap } : {}),
       locate: (program: string) => ({
@@ -337,10 +342,10 @@ void test("014e AC01/TR1: the unchanged Harness config and an external config bi
   assert.equal(other.id, self.id);
   const binding = trustedBinding(externalProject);
   assert.deepEqual(binding.trusted, {
-    sequence: 6,
+    sequence: 7,
     manifest:
-      "sha256:da22079f636de3a498ec853dc6dd8785f3aa8daa387130c96ac9927b377301f2",
-    revision: "f64b55286e2d2c06d4bd1fd1f815b1b9d09a5330",
+      "sha256:bea2ae256165b900a40e4cefd0fa98cfad665b5511bf2107f02b785f3fe00eea",
+    revision: "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
   });
   assert.equal(binding.methodologyRepository, realpathSync(repository));
   // Nothing methodology-shaped exists in the external project.

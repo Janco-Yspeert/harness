@@ -181,3 +181,34 @@
 - Limitations: no live provider exercised; criteria other than AC24 and AC25
   were not individually adjudicated after the full-check gate failed.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-19 — Implementation attempt 3 (implementation-failure retry)
+
+- Skill: implementation, contract version 6
+  (`sha256:f41e0d0c335b8123a47590bf1cd9364c1473209064d74c542e16de25600c9e9e`).
+- Execution: `00e8e26f-e8bb-4650-a710-f86864ca0129`.
+- Inputs: brief `sha256:de56e997…e803`, design `sha256:11fddfcd…c00d`,
+  coverage `sha256:4ba8570c…7cec`, requirements `sha256:3359c649…cbdb`, and
+  IMPLEMENTATION_FAILURE feedback `sha256:383efc37…dde8` (attempt 4 of the
+  evaluator, candidate `212e12e4`: AC24/AC25, 20 visible-suite failures).
+- Result: succeeded. Deterministic host configuration refusals (no adapter,
+  provider not installed, containment/provider-config invalid, adapter
+  refusals) are still recorded as a failed launch attempt but now keep their
+  specific category instead of looping to `operational-retry-exhaustion`.
+  Existing spawned-role fixtures (`skill-fidelity`, `external-project`) inject
+  the material-free readiness probe boundary. Tests updated for the additive
+  `orchestration` resolve projection and for trusted history sequence 7.
+- Output content identity before this entry:
+  `sha256:0902265811d644ee9b6dc20d2f99f9622c8547747a5a1a652740c51421809c17`
+  over `git diff --binary` of 4 paths (`src/kernel/host.ts` and three tests),
+  excluding this manifest.
+- Visible verification: typecheck, eslint, prettier pass. `npm test`: 331
+  tests, 321 pass, 10 fail. The 10 remaining failures all read canonical
+  `workflow.jsonl` ledgers that are unreadable in this execution environment
+  (EACCES / character-device placeholders), unrelated to this change; the
+  governed-executors, orchestration, readiness-evidence, skill-fidelity and
+  external-project suites otherwise pass.
+- Limitations: no live provider exercised; evaluator-private material and
+  workflow ledgers not inspected; unrelated worktree residue preserved and
+  excluded.
+- Measurement cutoff: immediately before this manifest update.

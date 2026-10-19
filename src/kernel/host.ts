@@ -13,6 +13,7 @@ import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import {
+  AdapterRefusal,
   checkedCommand,
   locateProvider,
   planLaunch,
@@ -130,7 +131,10 @@ class HostRefusal extends Error {
   }
 }
 function operationalFailure(error: unknown): OperationalFailureClass {
-  const category = error instanceof HostRefusal ? error.category : undefined;
+  const category =
+    error instanceof HostRefusal || error instanceof AdapterRefusal
+      ? error.category
+      : undefined;
   if (category === "provider-not-installed" || category === "no-adapter")
     return "provider-unavailable";
   if (category === "permission-denied") return "authentication-failure";
@@ -1228,6 +1232,7 @@ export class GovernedHost {
           provider = undefined;
           let failure: OperationalFailureClass | null = null;
           let probeResult: ReadinessProbeResult | undefined;
+          let refusal: HostRefusal | undefined;
           try {
             if (this.#external && profile.command?.length)
               throw new HostRefusal(
@@ -1307,6 +1312,9 @@ export class GovernedHost {
             else assertEffectiveShape(shape, probeResult.effective);
           } catch (error) {
             failure = operationalFailure(error);
+            if (error instanceof HostRefusal) refusal = error;
+            else if (error instanceof AdapterRefusal)
+              refusal = new HostRefusal(error.category, error.message);
           }
           const ordinal =
             operationalAttempts(this.kernel.events(workflow), launchIntent)
@@ -1335,6 +1343,9 @@ export class GovernedHost {
             consumed: false,
           });
           this.kernel.recordLaunchAttempt(workflow, attempt);
+          // Deterministic host configuration refusals keep their specific
+          // category; retrying them cannot change the outcome.
+          if (refusal) throw refusal;
           if (!failure) successfulAttempt = attempt;
         }
         const registration = this.kernel.register(workflow, profile.id);

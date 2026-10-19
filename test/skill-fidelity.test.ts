@@ -40,6 +40,7 @@ import type {
   RoleContract,
   WorkflowGrant,
 } from "../src/kernel/model.ts";
+import type { ReadinessProbeInput } from "../src/kernel/orchestration.ts";
 import { harnessValidators } from "../src/methodologies/harness-public.ts";
 import { buildMethodologyManifest } from "../src/methodology-evolution.ts";
 import { WORKER_OPERATIONS } from "../src/executors/protocol.ts";
@@ -480,6 +481,12 @@ async function harness(t: TestContext, roles: Record<string, Step[]>) {
       validators: harnessValidators,
       privateDataRoot: join(dir, "host-private"),
       providerRuntime: {
+        // The shared fake provider is a governed-role fixture; readiness is
+        // exercised through the injectable material-free probe boundary.
+        readinessProbe: (input: ReadinessProbeInput) => ({
+          state: "passed" as const,
+          effective: input.expectedEffective,
+        }),
         locate: (program: string) => ({
           ok: true as const,
           path: join(bin, program),
@@ -570,8 +577,17 @@ async function harness(t: TestContext, roles: Record<string, Step[]>) {
   };
   const resolved = async (
     id: string,
-  ): Promise<{ kind: string; reason?: string }> =>
-    (await api(`resolve/${id}`)).value as { kind: string; reason?: string };
+  ): Promise<{ kind: string; reason?: string }> => {
+    // The additive 014l `orchestration` projection is asserted by its own
+    // suite; these tests judge the resolution itself.
+    const resolution = (await api(`resolve/${id}`)).value as {
+      kind: string;
+      reason?: string;
+      orchestration?: unknown;
+    };
+    delete resolution.orchestration;
+    return resolution;
+  };
   const providerRecords = (role: string) =>
     readdirSync(dir)
       .filter(
