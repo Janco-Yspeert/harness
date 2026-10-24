@@ -230,3 +230,21 @@
 - Limitations: no live provider exercised; evidence rests on visible tests and
   diff reading per the frozen plan.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-24 — As-Built
+
+- Skill: `as-built`, contract version 4
+  (`sha256:dc3c422691fb36a292b49db411ff9aefd5199f8602b73ef87428fd0a09ea534b`).
+- Execution: `74d3f8da-0fcc-4a27-b738-3a5e9161f51f`; inspected candidate
+  `4f0560165a14c44f76c6fdd540f4bc456ef208ae`.
+- Inputs: brief `sha256:de56e9970b339a55dc8d3024458769445e10474f73cdc1e1917afd6a2102e803`;
+  design `sha256:11fddfcd3eef9294a6d899e21b403cf65537f4623c5a8be71fb89a7a4ffac00d`;
+  verification `sha256:6e1606d7e3b4e360ab1d979154ab348cf96f9a871ef4b8267555c567e0234ca6`;
+  promotion `sha256:8fc2898181b5c66b367a0652bbbcc948245eaa42c978ebe60aef3bd382c0f9f2`
+  (validated against `evaluation/promotion.json` bytes and committed as a separate checkpoint).
+- Result: succeeded. No Missing or Contradictory discrepancies; three Extra items recorded.
+- Outputs: `as-built.md`, `manifest.md`.
+- Statistics: candidate diff from design freeze 22 files, +4193/−181.
+- Limitations: evaluation not rerun; code read selectively (orchestration module, host retry,
+  allocation and status paths, adapters, methodology diff), not line-by-line.
+- Measurement cutoff: immediately before this manifest update.
