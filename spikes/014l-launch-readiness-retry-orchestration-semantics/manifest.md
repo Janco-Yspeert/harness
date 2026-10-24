@@ -248,3 +248,17 @@
 - Limitations: evaluation not rerun; code read selectively (orchestration module, host retry,
   allocation and status paths, adapters, methodology diff), not line-by-line.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-10-24 — Outcome
+
+- Skill: `outcome`, contract version 5
+  (`sha256:2ab64cee141d06a88ff04dc540ddfa7a15c364e07bb717b7fab70c15460b7e82`).
+- Execution: `6accff04-4f53-4092-917b-b61108110068`; accepted candidate
+  `4f0560165a14c44f76c6fdd540f4bc456ef208ae`.
+- Inputs: brief, design, As-Built `sha256:20534fff…9b04`, promotion `sha256:8fc28981…f9f2`
+  (standard path).
+- Result: succeeded; completion mode `STANDARD` (evaluator attempt 5 PASS).
+- Output: `outcome.md`
+  `sha256:07faeba81ba36acc10895e2d91d1a6c76b031e8030d079f7a56ed279338a66a6`; `manifest.md`.
+- Limitations: no live provider; token/time cost not recorded in prior entries, so not stated.
+- Measurement cutoff: immediately before this manifest update.
