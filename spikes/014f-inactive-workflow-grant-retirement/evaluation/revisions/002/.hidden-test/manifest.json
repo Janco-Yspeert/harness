@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "002",
+  "run": "HARNESS_EVAL_ROOT=<candidate root> node --test .hidden-test/e*.test.ts",
+  "support": [".hidden-test/package.json", ".hidden-test/support.ts"],
+  "cases": [
+    { "id": "E1.1", "procedure": "E1", "criteria": ["AC01", "AC02", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e1-kernel-retirement.test.ts"], "title": "E1: an inactive terminal grant is retired by one durable event bound to the exact grant" },
+    { "id": "E1.2", "procedure": "E1", "criteria": ["AC01", "AC02", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e1-kernel-retirement.test.ts"], "title": "E1: binding and input refusals append nothing" },
+    { "id": "E2.1", "procedure": "E2", "criteria": ["AC04", "AC05", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e2-eligibility.test.ts"], "title": "E2: a grant with an allocated or running execution cannot be retired" },
+    { "id": "E2.2", "procedure": "E2", "criteria": ["AC04", "AC05", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e2-eligibility.test.ts"], "title": "E2: an unresolved human request fails closed until it is answered" },
+    { "id": "E2.3", "procedure": "E2", "criteria": ["AC04", "AC05", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e2-eligibility.test.ts"], "title": "E2: repeat retirement is a deterministic refusal that appends no second event" },
+    { "id": "E3.1", "procedure": "E3", "criteria": ["AC03", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e3-effects.test.ts"], "title": "E3: a retired grant is denied for inspection, allocation, retry, replacement and spawned work" },
+    { "id": "E3.2", "procedure": "E3", "criteria": ["AC03", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e3-effects.test.ts"], "title": "E3: the unused budget of a retired grant stays unused and unusable" },
+    { "id": "E4.1", "procedure": "E4", "criteria": ["AC01", "AC03", "AC05", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e4-host.test.ts"], "title": "E4: the host operation is root-only, records one bound event and lists it" },
+    { "id": "E4.2", "procedure": "E4", "criteria": ["AC01", "AC03", "AC05", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e4-host.test.ts"], "title": "E4: manual, spawned, retry and automatic-continuation requests are refused before any work exists, across restart" },
+    { "id": "E5.1", "procedure": "E5", "criteria": ["AC04", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e5-host-active.test.ts"], "title": "E5: the host refuses retirement while work is active or a human decision is unresolved" },
+    { "id": "E6.1", "procedure": "E6", "criteria": ["AC02", "AC06", "AC08"], "mandatory": true, "mode": "EXECUTABLE", "tests": [".hidden-test/e6-successor.test.ts"], "title": "E6: history is unchanged and a fresh successor grant operates normally after retirement" },
+    { "id": "R1", "procedure": "R1", "criteria": ["AC07"], "mandatory": true, "mode": "PUBLIC_REGRESSION", "tests": [], "reason": "Existing supersession, recovery, correction, continuation and allocation-limit regressions are authoritative public tests; a hidden duplicate adds no falsifiability. Evidence plan is the differential procedure in eval-spec.md R1." },
+    { "id": "P1", "procedure": "P1", "criteria": ["AC08"], "mandatory": true, "mode": "PROVENANCE", "tests": [], "reason": "Identity and clean-commit binding is mechanical and has no executable product seam; evidence plan is eval-spec.md P1." }
+  ]
+}

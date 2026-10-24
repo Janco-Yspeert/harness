@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "002",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 13,
+    "identity": "sha256:0baace2d74de2c7f9768c2f7d46c4fab67d034f6ecb73da6c86dd18342e3de80",
+    "path": "skills/evaluator/SKILL.md",
+    "delivery": "pinned bytes from Role Grant sha256:2c588152332ec5091d6b07e211d7ca3c56a8fd5db8567b331756ba63245527bd (execution 1f5d8020-262c-499e-a651-cace0b9af4c9)"
+  },
+  "authority": {
+    "methodology": "sha256:f03608ba101fcca72ca061a8674c1070276848198e9bb2b9baa3647c18391b92",
+    "trustedRecord": {
+      "sequence": 4,
+      "methodology": "sha256:5fc66acdc6e2701ded4f729aa987b1db119845ae1bfca5f385725ba34f42ac48",
+      "revision": "0a3dafe8e103cc7376bdd7fae32493710613d0c0"
+    }
+  },
+  "inputs": {
+    "brief": "sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d",
+    "briefCommit": "047daacb683203bbd3ebb2bd808cff3404e60042",
+    "designMap": "sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e",
+    "designMapCommit": "a429ecd17fd0d8e33e0e54b02a83505d21905458",
+    "evaluationRequirements": "sha256:c47e49c8c478ff4c77fdf908eb8105d9c2d7ce6c728f9d594af845054d88691a",
+    "preImplementationBaseline": "a429ecd17fd0d8e33e0e54b02a83505d21905458",
+    "preImplementationRecovery": "d86c645e-d06c-4717-906e-439c0dfb7d83"
+  },
+  "predecessorRevision": {
+    "evaluatorRevision": "001",
+    "identity": "sha256:d03975365d8e1a624854a305d494c7018125849ea560070be4c03fff56cc80f5",
+    "archive": ".eval/revisions/001/",
+    "status": "invalidated before implementation with its Design Map; never used by a verification attempt"
+  },
+  "artifacts": {
+    "eval-spec.md": "sha256:3aadfd178c5f4c2eb52233e2a47d955a2af2181144f79a4f1f55e48576c8f9ed",
+    "case-manifest.json": "sha256:d5029031366ccddcdde47367210042931cf38392eda8a5abdf5d9770831079f8",
+    ".hidden-test/manifest.json": "sha256:dbe3f1d47e40944172f2972cefda39b0df3b00e781a073889487ff2328a9ef56",
+    ".hidden-test/support/repo.ts": "sha256:7ad891b0b1a3e7e96e9407d9a411cc5f5200298ea9f8d039a2ea4c2185273881",
+    ".hidden-test/e1-promotion-binding.test.ts": "sha256:9819a8e1714654a71acc3044f307a52a98ece9b31f6cc7ea19b86769dafa1f6d",
+    ".hidden-test/e2-stable-context-prefix.test.ts": "sha256:bb4ae6f38414628321a520e47232b3c81b97ad74fdf7401f050b9d637dba7c57",
+    ".hidden-test/e3-archive-plan-refusals.test.ts": "sha256:4d2a0e8e18a809b4ef87e29aab420f1395c5c481351b84ba73f429244422018a",
+    ".hidden-test/e4-trusted-grant-resolution.test.ts": "sha256:6ae8d9be160697be24ae2aa7800fd9d596a03977adb06d8fd59565dc18746fba",
+    ".hidden-test/e5-authority-history-static.test.ts": "sha256:9606940737c33f09118d3f985506fd1b6855257a2227dbb078a93272c110c840",
+    ".hidden-test/e6-artifact-bound.test.ts": "sha256:763d3945b2df1ce497af4d1f3f1eadf3e6ecf2e3ce50961cd53d375257e0626b"
+  },
+  "freezeInventory": [
+    "eval-spec.md",
+    "case-manifest.json",
+    ".hidden-test/manifest.json",
+    ".hidden-test/support/repo.ts",
+    ".hidden-test/e1-promotion-binding.test.ts",
+    ".hidden-test/e2-stable-context-prefix.test.ts",
+    ".hidden-test/e3-archive-plan-refusals.test.ts",
+    ".hidden-test/e4-trusted-grant-resolution.test.ts",
+    ".hidden-test/e5-authority-history-static.test.ts",
+    ".hidden-test/e6-artifact-bound.test.ts"
+  ],
+  "preparationRecords": {
+    ".eval/prepare/validate.ts": "sha256:ba557595f2d69e21b152fc8ede01e3fd52420b452e13df9fcc8a67a80b3684fa",
+    ".eval/prepare/bundle.json": "sha256:39d3eac07146d95ca12a79ebeef76ed3906780de85d78675c5158c6b9bad4c0a",
+    ".eval/prepare/integrity-result.json": "sha256:44f64439cbed69bbfaa7a1865906b16550cf6e0cb694c1b305a6701f424ae31b",
+    ".eval/prepare/e3-wellformed.ts": "sha256:6f387221d344f6e9670e2e7cddd187fc4db2aaff0df00ebe5d9d6aaf114fa03a"
+  },
+  "integrityChecks": [
+    "validatePreparedEvaluatorBundle / prepareEvaluatorBundle (tools/evaluator-integrity.ts at a429ecd, loaded from a clean clone) over the bundle derived mechanically from case-manifest.json, .hidden-test/manifest.json, the file system and the public coverage-map.json: PASS, 0 diagnostics (13 criteria, 12 procedures, 52 mandatory cases, 11 executable)",
+    "additional structural checks (.eval/prepare/validate.ts): exactly one public record per AC01-AC13; no BLOCKED mode; every procedure has a concrete procedure, decision rule and at least one case; every non-executable procedure lists no tests and records its no-hidden-test reason; hidden manifest and case manifest agree on files, cases and criteria for every executable procedure; case ids unique; every inventory file exists; every hidden test inventoried; revision 002 agreed by hidden manifest, case manifest and public map; public per-criterion procedures equal private mappings; eval-spec.md references every procedure: PASS, 0 diagnostics",
+    "controlled pre-implementation exercise with final test bytes, in disposable clones of committed baseline a429ecd (the shared working tree was never evaluated): baseline fails E1, E2, E4a for the intended reasons and passes E3, E4b, E5a-e, E6; evaluator-authored positive control passes all 11 cases on two consecutive runs; negative control A fails E3 (all 10 refusal cases), E4b, E5a, E5b, E5c; negative control B fails E5e (no bump; no history entry; history entry not the prior bytes), E5d (orchestrator configured in policy), E6 (enforced bound looser than published; published looser than enforced; B = 16 < 38) and passes E6 with one definition raised to 128; no candidate implementation existed or was executed",
+    "E3 fixture well-formedness (.eval/prepare/e3-wellformed.ts): the baseline utility accepts the unmodified eligible plan (4 mappings)",
+    "teardown: no disposable clone or workspace remained after runs; control clones' git status clean apart from the dependency symlink",
+    "tsc --ignoreConfig --noEmit --strict (project TypeScript, nodenext) over all hidden test and support files: 0 errors; all private artifacts Prettier-formatted before identity",
+    "revision 001 archived byte-exact under .eval/revisions/001/ before any change (every archived file's sha256 equals the frozen original, freeze.json sha256:d03975365d8e1a624854a305d494c7018125849ea560070be4c03fff56cc80f5)"
+  ],
+  "preFreezeIntegrityValidation": {
+    "status": "PASS",
+    "diagnostics": [],
+    "privateInventoryIdentity": "sha256:3b53050650f05741cb3ef745a7e23be54d8d5e8126c8439a7bba4d85ddb3d484",
+    "validatorResultBinding": "sha256:24b66965dd4e286abcef876bc411e08311e1e0cb605e311060ce75b1e58f8de0"
+  }
+}

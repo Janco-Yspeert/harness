@@ -1,0 +1,297 @@
+{
+  "spike": "014-kernel-consolidation-authority-role-grants",
+  "evaluationRequirements": "sha256:0502c53027824586c18f6711e77774c5f34105363f3834633e5d9597974041b1",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 11,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:9efea74e2a35deac7bdf256e961394f5622fb0ecca10a1f6622167918d03257f",
+    "privateInventoryIdentity": "sha256:20b75b2ef9500bd4244744a62f5375ec6c3041a605343bca384a7069ec986fd8",
+    "validatorResultBinding": "sha256:f70e36ad1f4d6f07fe580f2084fc0deb5fe6b37736cff7c66ab48b1c4cb11abc",
+    "integrityValidation": "PASS",
+    "integrityValidatedAt": "3543159",
+    "criterionRecordCount": 35
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; \"Scope\" §1; Design Map \"Shared contracts\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR1"],
+      "sufficiency": "PR1 requires the implementation's own visible npm-test suite to demonstrate exactly one authority-resolution path reads the canonical ledger; the Authority Resolver's internal shape, storage, and API/transport are explicit Design Map implementation freedom, so no pre-implementation hidden-test seam is justified beyond that obligation."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; \"Scope\" §1-§2 \"Required consequence\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR1"],
+      "sufficiency": "PR1 requires the visible suite to reproduce spike.md's own R2 regression scenario (delete/recreate local .workflow state; assert the next legally eligible role is unchanged); the local-state file layout and the query surface used to observe eligibility are Design Map freedom, so the decision rule is reviewed against the implementation's own reproduction rather than a pre-authored fixture that would have to invent that surface."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03; \"Scope\" §2",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR1"],
+      "sufficiency": "PR1 requires the visible suite to demonstrate a fresh runner instance (no local operational history) derives the correct next action from canonical authority and configured methodology alone, without fabricating dispatch history it never performed."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; \"Required regression scenarios\" R1; \"Primary scars\" #1",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR1"],
+      "sufficiency": "PR1 requires the visible suite to reproduce spike.md's own R1 scenario verbatim (canonical verification PASS + promotion complete, operational evaluator run blocked by publication transport, local runner state absent/stale) and assert As-Built eligibility still derives from canonical authority and policy. This is the exact Spike 013a scar the brief names; the implementation's own fixture is reviewed against that literal decision rule."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; \"Scope\" §3",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR2"],
+      "sufficiency": "PR2 requires the visible suite to assert a running Workflow Execution Grant binds one exact content-addressed Methodology Definition; the definition's storage representation is Design Map freedom (\"exact storage representation is Design Map freedom\")."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; \"Scope\" §4; \"Simplification requirements\" #2",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["PR2"],
+      "sufficiency": "PR2 combines the visible suite (role ordering/eligibility is data-driven for at least one non-trivial transition) with a manual source-inspection component confirming the kernel path used by the configured Harness workflow contains no literal phase-name conditionals (e.g. `if role === \"as-built\"`) outside declared configuration data, per spike.md's own negative example."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07; \"Scope\" §5; \"Simplification requirements\" #3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["PR2"],
+      "sufficiency": "PR2's manual-inspection component additionally confirms no kernel-level `ROLE_CONTRACTS`-shaped constant table (such as the hardcoded `phases` array and `bootstrapAuthority` spike-path checks in the current `tools/workflow.ts`) survives in the normal kernel path for the eight migrated roles; contract identities must instead resolve through methodology/project configuration."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08; \"Scope\" §3",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR2"],
+      "sufficiency": "PR2 requires the visible suite to assert that changing workflow policy, a contract, or a governing skill creates a new Methodology Definition for future execution without altering the definition identity already bound to an existing Workflow Execution Grant."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09; \"Scope\" §7",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR3"],
+      "sufficiency": "PR3 requires the visible suite to assert a human instruction to run/continue a workflow creates or binds an explicit Workflow Execution Grant with bounded continuation/stopping scope; the grant's storage/API shape is Design Map freedom."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10; \"Scope\" §7",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR3"],
+      "sufficiency": "PR3 requires the visible suite to assert an observation/inspection/status request (e.g. \"What happened?\") does not create execution authority or allocate a role."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11; \"Scope\" §8",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR3"],
+      "sufficiency": "PR3 requires the visible suite to assert every governed execution is bound to one exact immutable, inspectable Role Grant derived from canonical authority and the pinned methodology."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12; \"Scope\" §8",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR3"],
+      "sufficiency": "PR3 requires the visible suite to assert provider or orchestrator prompt text cannot itself grant a governed role; only a mechanically resolved Role Grant authorizes execution."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; \"Scope\" §9 \"Spawned execution\"; \"Live-provider evidence\" #2",
+      "mode": "LIVE_BOUNDARY_PROOF",
+      "required": true,
+      "procedures": ["LB1"],
+      "sufficiency": "LB1 is the mandatory real spawned-execution proof spike.md's \"Live-provider evidence\" section reserves; only a newly spawned executor actually running under an inspectable Role Grant, observed through the real supported host boundary, establishes this, per the brief's own \"Static inspection alone is not sufficient\" and \"Minimum reproducible proof protocol.\""
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md AC14; \"Scope\" §9 \"Attached execution\" and \"Minimum reproducible proof protocol\"; \"Live-provider evidence\" #1",
+      "mode": "LIVE_BOUNDARY_PROOF",
+      "required": true,
+      "procedures": ["LB1"],
+      "sufficiency": "LB1 is the mandatory real attached-execution proof; spike.md fixes the fixture's required properties (a real external OS process or equivalent independently running executor, started before the Role Grant, connected through the actual supported host boundary, long-lived enough to receive a later Role Grant, incapable of satisfying the proof through an in-memory callback or direct test-only invocation) before implementation, so this criterion is evaluated against durable evidence corroborating those exact properties rather than a pre-authored mock."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md AC15; \"Scope\" §10 \"Required proof\"; \"Required regression scenarios\" R4",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR4"],
+      "sufficiency": "PR4 requires the visible suite to reproduce spike.md's own R4 scenario: a session/execution identity mechanically granted evaluator-private material has that exposure fact recorded against it; the provenance representation itself is Design Map freedom (\"workspace identity... as needed\")."
+    },
+    {
+      "id": "AC16",
+      "frozenAuthority": "spike.md AC16; \"Scope\" §10",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR4"],
+      "sufficiency": "PR4 requires the visible suite to assert removing the private workspace grant afterward does not erase the previously recorded exposure fact."
+    },
+    {
+      "id": "AC17",
+      "frozenAuthority": "spike.md AC17; \"Scope\" §10 \"Required proof\"; \"Required regression scenarios\" R4",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR4"],
+      "sufficiency": "PR4's same R4 reproduction additionally asserts a clean session (no exposure) may be implementation-eligible while a session that has seen evaluator-private material is mechanically denied the same implementation Role Grant regardless of prompt wording."
+    },
+    {
+      "id": "AC18",
+      "frozenAuthority": "spike.md AC18; \"Scope\" §13; \"Required regression scenarios\" R5",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR5"],
+      "sufficiency": "PR5 requires the visible suite to reproduce spike.md's own R5 scenario: process state, semantic Role Result, methodology result, and Host Action Result stay independently observable and inspectable for the same execution; the exact result schema/vocabulary is explicit Design Map freedom."
+    },
+    {
+      "id": "AC19",
+      "frozenAuthority": "spike.md AC19; \"Scope\" §13; \"Required regression scenarios\" R5",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR5"],
+      "sufficiency": "PR5's same R5 reproduction asserts a later host-action failure (e.g. publication) recorded after a successful semantic role result does not retroactively change that already-recorded semantic result."
+    },
+    {
+      "id": "AC20",
+      "frozenAuthority": "spike.md AC20; \"Scope\" §12 \"Required bounded publication environment\"; \"Live-provider evidence\" #3",
+      "mode": "LIVE_BOUNDARY_PROOF",
+      "required": true,
+      "procedures": ["LB2"],
+      "sufficiency": "LB2 is the mandatory host-mediated publication proof spike.md concretely specifies: a host-controlled local bare-remote publication proof outside every executor workspace grant, where the executor holds no remote credentials and the Role Grant permits only the structured host publication action, with durable evidence of the requested commit identity, target ref, pre/post remote ref identity, and the host action/result that caused the advance. A unit mock of `git push` is explicitly insufficient per spike.md."
+    },
+    {
+      "id": "AC21",
+      "frozenAuthority": "spike.md AC21; \"Scope\" §12",
+      "mode": "LIVE_BOUNDARY_PROOF",
+      "required": true,
+      "procedures": ["LB2"],
+      "sufficiency": "LB2's same durable evidence additionally establishes the executor's grant/profile did not contain direct remote-publication authority, so the proof succeeds without the role executor ever holding direct Git network credentials, per spike.md's explicit requirement that a provider sandbox denying direct `git push` must not fail an otherwise substantively successful host-mediated role."
+    },
+    {
+      "id": "AC22",
+      "frozenAuthority": "spike.md AC22; \"Scope\" §15; \"Required regression scenarios\" R7",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR6"],
+      "sufficiency": "PR6 requires the visible suite to reproduce spike.md's own R7 scenario: a bounded human-root authority record, interpreted generically by the resolver (no `if spike === \"014\"`-shaped code), changes what may happen next without editing old ledger events, rewriting a blocked run, or mutating an existing immutable Role Grant."
+    },
+    {
+      "id": "AC23",
+      "frozenAuthority": "spike.md AC23; \"Scope\" §15; Design Map \"Invariants\"",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 directly and mechanically falsifies AC23 by pinning the exact Git tree identity of every already-adjudicated prior spike directory and asserting those identities remain unchanged at verify time; a root-authority decision (or any other Spike 014 mechanism) that mutated, deleted, or rewrote a prior Role Grant, blocked run, or semantic result under those paths would change the pinned tree identity and fail the test."
+    },
+    {
+      "id": "AC24",
+      "frozenAuthority": "spike.md AC24; \"Scope\" §14 \"Required bounded proof\"; \"Live-provider evidence\" #4; \"Required regression scenarios\" R6",
+      "mode": "LIVE_BOUNDARY_PROOF",
+      "required": true,
+      "procedures": ["LB3"],
+      "sufficiency": "LB3 is the mandatory human-wait/resume proof: a real governed execution enters a structured WAITING_FOR_HUMAN state, remains the same execution identity, and does not consume a replacement execution merely because human input was needed, per spike.md's bounded proof list."
+    },
+    {
+      "id": "AC25",
+      "frozenAuthority": "spike.md AC25; \"Scope\" §14 \"Required bounded proof\"; \"Required regression scenarios\" R6",
+      "mode": "LIVE_BOUNDARY_PROOF",
+      "required": true,
+      "procedures": ["LB3"],
+      "sufficiency": "LB3's same real cycle asserts the same execution identity resumes after a permitted human response and reaches a later terminal semantic result."
+    },
+    {
+      "id": "AC26",
+      "frozenAuthority": "spike.md AC26; \"Scope\" §14 \"Authority rule\"",
+      "mode": "LIVE_BOUNDARY_PROOF",
+      "required": true,
+      "procedures": ["LB3"],
+      "sufficiency": "LB3's same real cycle asserts that if the human response changes what the execution is permitted to do, that permission is recorded in canonical authority before the execution uses it; conversation text alone is insufficient."
+    },
+    {
+      "id": "AC27",
+      "frozenAuthority": "spike.md AC27; \"Scope\" §16; \"Required regression scenarios\" R3",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR7"],
+      "sufficiency": "PR7 requires the visible suite to reproduce spike.md's own R3 scenario (two continue requests against the same canonical authority basis, including concurrently) and assert exactly one allocation/Role Grant results; the allocation-keying mechanism is Design Map freedom."
+    },
+    {
+      "id": "AC28",
+      "frozenAuthority": "spike.md AC28; \"Scope\" §16",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR7"],
+      "sufficiency": "PR7 requires the visible suite to assert that where policy permits a retry/replacement, the new execution carries a distinct identity with explicit predecessor lineage rather than overwriting the prior one."
+    },
+    {
+      "id": "AC29",
+      "frozenAuthority": "spike.md AC29; \"Scope\" §18",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR7"],
+      "sufficiency": "PR7 requires the visible suite to assert a caller can later inspect or await the same execution by stable identity after the initiating caller disconnects; the durable identity's transport/API is Design Map freedom."
+    },
+    {
+      "id": "AC30",
+      "frozenAuthority": "spike.md AC30; \"Scope\" §18 \"Restart boundary\"",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR7"],
+      "sufficiency": "PR7 requires the visible suite to assert the data model represents an execution Harness cannot reattach to after host recovery as interrupted/lost rather than nonexistent, without requiring full provider-process restoration."
+    },
+    {
+      "id": "AC31",
+      "frozenAuthority": "spike.md AC31; \"Scope\" §24; \"Simplification requirements\"",
+      "mode": "MANUAL_REVIEW",
+      "required": true,
+      "procedures": ["PR8"],
+      "sufficiency": "PR8 is a manual source-inspection procedure over the files the implementation's own As-Built/implementation report identifies as the normal kernel path, confirming the absence of intrinsic dependence on `spikes/<id>` layout, hard-coded `ROLE_CONTRACTS`, fixed `skills/<role>/SKILL.md` locations, Spike-specific bootstrap branches, or hard-coded Harness development-phase names; the exact kernel file layout is Design Map/implementation freedom, so no pre-authored hidden test can target a specific path."
+    },
+    {
+      "id": "AC32",
+      "frozenAuthority": "spike.md AC32; \"Scope\" §20",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR9"],
+      "sufficiency": "PR9 requires the visible suite to assert kernel lifecycle and host-action operations emit or expose telemetry correlated to stable Workflow Execution Grant / Role Grant / execution identities through a seam that is not itself consulted for authority decisions."
+    },
+    {
+      "id": "AC33",
+      "frozenAuthority": "spike.md AC33; \"Scope\" §20",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR9"],
+      "sufficiency": "PR9 requires the visible suite to assert an unavailable/failed telemetry collection (e.g. provider usage returning \"unavailable\") does not invalidate an otherwise successful governed role."
+    },
+    {
+      "id": "AC34",
+      "frozenAuthority": "spike.md AC34; \"Scope\" §21",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR10"],
+      "sufficiency": "PR10 requires the visible suite, plus manual inspection of the Role Grant/execution data model, to confirm an explicit executor-selection seam exists (capable of later considering provider/model/reasoning/isolation/availability/usage/cost) without requiring a change to methodology authority semantics; full provider-selection policy is explicitly out of scope for Spike 014."
+    },
+    {
+      "id": "AC35",
+      "frozenAuthority": "spike.md AC35; \"Scope\" §25",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": ["PR11"],
+      "sufficiency": "PR11 requires the visible suite, plus manual inspection of each new persisted structure Spike 014 introduces (Methodology Definition, Workflow Execution Grant, Role Grant, structured role result, root-authority record, host-action request/result), to confirm each carries explicit schema/version information where persisted as a distinct artifact."
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "attempt": "006",
+  "execution": "9539f28b-5cb6-4dbc-b903-b57dbacafb05",
+  "roleGrant": "sha256:20f08b9e422787ddeb25430f731aa8ec66c86bf66f6f726751b2eb111891522c",
+  "commit": "dee86d2314bffa7cc2da0d8ac72004250a06debb",
+  "evaluatorRevision": "001",
+  "evaluatorRevisionIdentity": "sha256:12c99f0a8f8d9a97ee6a5e2df07fb696d0ec3692b0ffb33506d208affaa0c731",
+  "inputs": {
+    "brief": "sha256:e228070ac2030685c8f725a2aacc16980790c95b9b797d93c0ffcd659874d417",
+    "design": "sha256:aeb1eafba99ff258859488ad4ccc77030096cbc1ee45d1ba8c75a64510d0aedf",
+    "evaluationRequirements": "sha256:e865df63af3cb5d0a371a25cad370679f145ce13f7623e6311bcc1b9f339a6a1",
+    "coverage": "sha256:e932bc07decfc8df7142c1dac1afe1583b2c82844daabdeb6be0b859324d1ccd"
+  },
+  "result": "PASS",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "SATISFIED",
+    "AC14": "SATISFIED"
+  },
+  "accounting": {
+    "criteria": 14,
+    "satisfied": 14,
+    "notSatisfied": 0,
+    "notAdjudicated": 0,
+    "procedures": 9,
+    "executableCases": 4,
+    "executablePassed": 4,
+    "failedProcedures": [],
+    "blockedProcedures": [],
+    "partialProcedures": [],
+    "note": "All frozen executable cases pass against the exact committed candidate. Public regression and manual reviews pass. AC06 chronology was reviewed from public manifest evidence and committed artifacts; workflow ledgers were not inspected by this execution."
+  },
+  "regression": {
+    "command": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "environment": "clean checkout of the candidate outside the system temporary directory, installed dependencies",
+    "typecheck": "pass",
+    "lint": "pass",
+    "formatCheck": "pass",
+    "tests": 219,
+    "passed": 219
+  },
+  "evaluatorIntegrity": {
+    "frozenEvaluationModified": false,
+    "specificationDrift": false,
+    "evaluatorDefects": 0,
+    "postImplementationCorrections": 0,
+    "candidateEvaluationBegan": true
+  },
+  "environmentNote": "A first full-suite run with the checkout placed under the system temporary directory failed one existing 014e test because the checkout sat inside the contained process's private tmpfs; the same suite passed fully from a checkout elsewhere. This is checkout placement, not a candidate or evaluator defect.",
+  "promotionPlan": {
+    "identity": "sha256:ab1d0cea667aff7e7ea493e7f9e032086179e52969ff302edb13e979098368e5",
+    "decision": "INELIGIBLE"
+  },
+  "humanAcceptance": "Not applicable: machine-verifiable PASS only. Archival is not requested because the plan is ineligible (attempt history incomplete in the private workspace)."
+}

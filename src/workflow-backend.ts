@@ -1,4 +1,8 @@
-import { spawn, type ChildProcessByStdio } from "node:child_process";
+import {
+  spawn,
+  type ChildProcess,
+  type ChildProcessByStdio,
+} from "node:child_process";
 import { accessSync, constants, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
@@ -29,9 +33,66 @@ const TERMINATE_GRACE_MS = 2_000;
 // record; this default is bounded.
 const FORBIDDEN_EXECUTOR_FLAGS = [
   "--dangerously-bypass-approvals-and-sandbox",
+  "--dangerously-bypass-hook-trust",
   "--dangerously-skip-permissions",
+  "--allow-dangerously-skip-permissions",
   "bypassPermissions",
+  "danger-full-access",
 ];
+
+// Shared by legacy and governed launch paths: a bounded provider command
+// never carries an unrestricted-host bypass, whatever capability is missing.
+export function assertBoundedExecutorCommand(command: readonly string[]): void {
+  const forbidden = command.find((argument) =>
+    FORBIDDEN_EXECUTOR_FLAGS.includes(argument),
+  );
+  if (forbidden !== undefined) {
+    throw new Error(
+      `Bounded workflow profile must not pass ${forbidden} to the executor`,
+    );
+  }
+}
+
+// The one Codex non-interactive command shape, shared by the legacy backend
+// and the governed Codex adapter. Callers add mode-specific options.
+export function codexExecCommand(
+  primary: string,
+  extraWorkspaces: readonly string[],
+  sandbox: "read-only" | "workspace-write",
+  options: readonly string[],
+  prompt: string,
+): string[] {
+  return [
+    "codex",
+    "exec",
+    "--cd",
+    primary,
+    "--sandbox",
+    sandbox,
+    ...extraWorkspaces.flatMap((workspace) => ["--add-dir", workspace]),
+    ...options,
+    prompt,
+  ];
+}
+
+// Terminate a provider child: SIGTERM, then SIGKILL after a bounded grace.
+export async function stopChild(
+  child: ChildProcess,
+  graceMs = TERMINATE_GRACE_MS,
+): Promise<void> {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  const exited = new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => {
+      resolve(false);
+    }, graceMs);
+    child.once("exit", () => {
+      clearTimeout(timer);
+      resolve(true);
+    });
+  });
+  child.kill("SIGTERM");
+  if (!(await exited)) child.kill("SIGKILL");
+}
 
 const RESULT_PREFIX = "HARNESS_ROLE_RESULT ";
 
@@ -99,30 +160,20 @@ export function buildExecutorCommand(
   if (spec.executor === "codex") {
     // `workspace-write` keeps writes inside the declared workspace(s). Current
     // Codex releases reject `--approve-for-me` when a sandbox is selected.
-    command = [
-      "codex",
-      "exec",
-      "--cd",
+    command = codexExecCommand(
       primary,
-      "--sandbox",
+      extraWorkspaces,
       "workspace-write",
-      ...extraWorkspaces.flatMap((workspace) => ["--add-dir", workspace]),
+      [],
       prompt,
-    ];
+    );
   } else if (spec.executor === "claude") {
     command = buildClaudeWorkflowCommand(spec, prompt, scratchWorkspace);
   } else {
     throw new Error(`Unsupported workflow executor: ${spec.executor}`);
   }
 
-  const forbidden = command.find((argument) =>
-    FORBIDDEN_EXECUTOR_FLAGS.includes(argument),
-  );
-  if (forbidden !== undefined) {
-    throw new Error(
-      `Bounded workflow profile must not pass ${forbidden} to the executor`,
-    );
-  }
+  assertBoundedExecutorCommand(command);
   return command;
 }
 
@@ -301,17 +352,7 @@ class LocalWorkflowBackend implements WorkflowRunBackend {
 
   async #stop(): Promise<void> {
     if (this.#settled) return;
-    this.#child.kill("SIGTERM");
-    const exited = await new Promise<boolean>((resolve) => {
-      const timer = setTimeout(() => {
-        resolve(false);
-      }, TERMINATE_GRACE_MS);
-      this.#child.once("exit", () => {
-        clearTimeout(timer);
-        resolve(true);
-      });
-    });
-    if (!exited) this.#child.kill("SIGKILL");
+    await stopChild(this.#child);
   }
 }
 

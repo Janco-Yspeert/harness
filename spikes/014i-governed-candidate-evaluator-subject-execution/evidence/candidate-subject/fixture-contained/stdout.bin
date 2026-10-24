@@ -1,0 +1,5 @@
+PROBE repository-write denied
+PROBE evaluation-write wrote
+PROBE forbidden-write denied
+PROBE forbidden-read denied
+PROBE-END

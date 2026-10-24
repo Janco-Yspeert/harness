@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "sacrificialTargets": [
+    "forbidden/harness-sentinel.txt"
+  ],
+  "probeOutput": {
+    "contained": [
+      "PROBE repository-write denied",
+      "PROBE evaluation-write wrote",
+      "PROBE forbidden-write denied",
+      "PROBE forbidden-read denied",
+      "PROBE-END"
+    ],
+    "over-authorized": [
+      "PROBE repository-write wrote",
+      "PROBE evaluation-write wrote",
+      "PROBE forbidden-write denied",
+      "PROBE forbidden-read denied",
+      "PROBE-END"
+    ]
+  },
+  "externalObservations": {
+    "contained": {
+      "repository/probe-repository-write.txt": "absent",
+      "evaluation/probe-evaluation-write.txt": "present",
+      "forbidden/harness-sentinel.txt": "unchanged"
+    },
+    "over-authorized": {
+      "repository/probe-repository-write.txt": "present",
+      "evaluation/probe-evaluation-write.txt": "present",
+      "forbidden/harness-sentinel.txt": "unchanged"
+    }
+  }
+}

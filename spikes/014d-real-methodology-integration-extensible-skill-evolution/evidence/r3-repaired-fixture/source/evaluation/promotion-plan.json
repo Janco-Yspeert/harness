@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 2,
+  "kind": "evaluator-promotion-plan",
+  "decision": "ELIGIBLE",
+  "candidate": "2ff9921c764ab7d959f462052d4857b739e4b1b4",
+  "evaluatorRevision": "001",
+  "attempt": 1,
+  "attempts": [{ "attempt": 1, "evaluatorRevision": "001", "result": "PASS" }],
+  "revisions": [
+    {
+      "evaluatorRevision": "001",
+      "eligible": false,
+      "reason": "The revision bundle contains exact hidden evaluator test bytes and grader mechanics; publishing them requires a separate explicit human disclosure decision, which PASS does not imply."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "attempt-ledger",
+      "eligible": true,
+      "source": ".eval/attempt-ledger.json",
+      "destination": "attempt-ledger.json",
+      "identity": "sha256:29babfc57760e2df6bfe4c8dd52698bd154fd93cf13a35d6a4b2651695002442"
+    },
+    {
+      "kind": "terminal-attempt",
+      "eligible": true,
+      "attempt": 1,
+      "source": ".eval/attempts/001/eval-result.md",
+      "destination": "attempts/001/eval-result.md",
+      "identity": "sha256:012f9218aa385a2787c2660834b6cf9cfd5cd0cce82d9827809c3cb4d433def6"
+    }
+  ]
+}

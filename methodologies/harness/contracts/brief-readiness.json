@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "workspaces": ["repository"],
+  "capabilities": [
+    "repository-read",
+    "repository-write",
+    "local-computation",
+    "git-inspect",
+    "git-commit"
+  ],
+  "forbiddenExposure": ["evaluator-private"],
+  "protected": false,
+  "inputs": [
+    {
+      "name": "brief",
+      "path": "spike.md"
+    }
+  ],
+  "results": ["succeeded", "blocked", "refused", "failed"],
+  "methodology": {
+    "verdict": ["READY", "NOT_READY"]
+  },
+  "human": ["input", "approval", "root"],
+  "postconditions": ["feedback.md", "manifest.md"]
+}

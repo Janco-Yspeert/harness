@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "request": {
+    "id": "b82d1a86-f895-471b-8a63-bb30d86b2a9e",
+    "execution": "9539f28b-5cb6-4dbc-b903-b57dbacafb05",
+    "roleGrant": "sha256:20f08b9e422787ddeb25430f731aa8ec66c86bf66f6f726751b2eb111891522c",
+    "candidate": "dee86d2314bffa7cc2da0d8ac72004250a06debb",
+    "evaluatorRevision": "001",
+    "attempt": 6,
+    "destination": "evaluation",
+    "artifacts": [
+      {
+        "source": ".eval/promotion-plan.json",
+        "destination": "promotion-plan.json",
+        "identity": "sha256:ab1d0cea667aff7e7ea493e7f9e032086179e52969ff302edb13e979098368e5"
+      },
+      {
+        "source": ".eval/attempts/006/eval-result.md",
+        "destination": "attempts/006/eval-result.md",
+        "identity": "sha256:d2d91bdc7011ec623024eb38b8ffa9953ccddd19927784ac27b80580be33d9d5"
+      },
+      {
+        "source": ".eval/freeze.json",
+        "destination": "freeze/001.json",
+        "identity": "sha256:12c99f0a8f8d9a97ee6a5e2df07fb696d0ec3692b0ffb33506d208affaa0c731"
+      },
+      {
+        "source": ".hidden-test/artifact-selftest.test.ts",
+        "destination": "revisions/001/.hidden-test/artifact-selftest.test.ts",
+        "identity": "sha256:8d1a2188e0c35c776862a58c9b54ea4baa90eb459cb5c857bac1505adf64c14d"
+      },
+      {
+        "source": ".hidden-test/artifact.test.ts",
+        "destination": "revisions/001/.hidden-test/artifact.test.ts",
+        "identity": "sha256:911c2826170e11dc729e49c8b21bb9f27e8ef7533bbe413de5aa62828415a72a"
+      },
+      {
+        "source": ".hidden-test/containment.test.ts",
+        "destination": "revisions/001/.hidden-test/containment.test.ts",
+        "identity": "sha256:a0a16fe3918237cbcf6fd427e5e5800b3c3a96830c5df4e4fc5d7c18fb73e14e"
+      },
+      {
+        "source": ".hidden-test/manifest.json",
+        "destination": "revisions/001/.hidden-test/manifest.json",
+        "identity": "sha256:a5a0d37439f442d3c33e5d42e17ce4805c72dbd5a1657e90f5b6b39053a4a07d"
+      },
+      {
+        "source": ".hidden-test/static.test.ts",
+        "destination": "revisions/001/.hidden-test/static.test.ts",
+        "identity": "sha256:c0c18a5e9a08aa8b14c6a4d04cb9e02f4b7462d826512ea1cecc046a94a90273"
+      },
+      {
+        "source": ".hidden-test/support/artifact-check.ts",
+        "destination": "revisions/001/.hidden-test/support/artifact-check.ts",
+        "identity": "sha256:b6fe184e8b91a0d9c47c5b6eef4c3a4cc0b607c60b471d68619bf5cf70537b01"
+      },
+      {
+        "source": ".hidden-test/support/fixture.ts",
+        "destination": "revisions/001/.hidden-test/support/fixture.ts",
+        "identity": "sha256:746498bba51e1605e9c3a33cf544ba88db9f091b1a23c14d078a80d010a67e95"
+      },
+      {
+        "source": ".hidden-test/support/leaky.ts",
+        "destination": "revisions/001/.hidden-test/support/leaky.ts",
+        "identity": "sha256:6f0c15be325080bf692e1403b0fe26d4599253cb9fff2729fbe03b480534bc8d"
+      },
+      {
+        "source": ".hidden-test/support/run-controls.ts",
+        "destination": "revisions/001/.hidden-test/support/run-controls.ts",
+        "identity": "sha256:f4eab312667be9f46a74fa7166c087fd59d236bff80dca960f7489af9843f0fa"
+      },
+      {
+        "source": "eval-spec.md",
+        "destination": "revisions/001/eval-spec.md",
+        "identity": "sha256:ce483f77e27f8d9a8ee48e88759bee933257fda1d95d01064c488fa289d3f6da"
+      }
+    ],
+    "archiveLoss": {
+      "archiveCompleteness": "incomplete-known-loss",
+      "authority": "0156bf91-98e0-453e-92e7-59bcf379d54f",
+      "declarationPath": "archive-loss.json",
+      "declarationIdentity": "sha256:6edda889cd830bc6e089776d4ba362a5739a074d0f60d0609ce0889b0b3e250e",
+      "normalValidation": "INELIGIBLE",
+      "normalValidationReason": "The attempt history of this cycle is not fully present in the private workspace, so a complete archive cannot be built truthfully."
+    }
+  },
+  "result": {
+    "artifacts": {
+      "promotion-plan.json": "sha256:ab1d0cea667aff7e7ea493e7f9e032086179e52969ff302edb13e979098368e5",
+      "attempts/006/eval-result.md": "sha256:d2d91bdc7011ec623024eb38b8ffa9953ccddd19927784ac27b80580be33d9d5",
+      "freeze/001.json": "sha256:12c99f0a8f8d9a97ee6a5e2df07fb696d0ec3692b0ffb33506d208affaa0c731",
+      "revisions/001/.hidden-test/artifact-selftest.test.ts": "sha256:8d1a2188e0c35c776862a58c9b54ea4baa90eb459cb5c857bac1505adf64c14d",
+      "revisions/001/.hidden-test/artifact.test.ts": "sha256:911c2826170e11dc729e49c8b21bb9f27e8ef7533bbe413de5aa62828415a72a",
+      "revisions/001/.hidden-test/containment.test.ts": "sha256:a0a16fe3918237cbcf6fd427e5e5800b3c3a96830c5df4e4fc5d7c18fb73e14e",
+      "revisions/001/.hidden-test/manifest.json": "sha256:a5a0d37439f442d3c33e5d42e17ce4805c72dbd5a1657e90f5b6b39053a4a07d",
+      "revisions/001/.hidden-test/static.test.ts": "sha256:c0c18a5e9a08aa8b14c6a4d04cb9e02f4b7462d826512ea1cecc046a94a90273",
+      "revisions/001/.hidden-test/support/artifact-check.ts": "sha256:b6fe184e8b91a0d9c47c5b6eef4c3a4cc0b607c60b471d68619bf5cf70537b01",
+      "revisions/001/.hidden-test/support/fixture.ts": "sha256:746498bba51e1605e9c3a33cf544ba88db9f091b1a23c14d078a80d010a67e95",
+      "revisions/001/.hidden-test/support/leaky.ts": "sha256:6f0c15be325080bf692e1403b0fe26d4599253cb9fff2729fbe03b480534bc8d",
+      "revisions/001/.hidden-test/support/run-controls.ts": "sha256:f4eab312667be9f46a74fa7166c087fd59d236bff80dca960f7489af9843f0fa",
+      "revisions/001/eval-spec.md": "sha256:ce483f77e27f8d9a8ee48e88759bee933257fda1d95d01064c488fa289d3f6da"
+    },
+    "integrityIdentity": "sha256:6e867594a7f693dfc699be865c84ed3bf9472b2f15c3b4959044989ad63b1492"
+  }
+}

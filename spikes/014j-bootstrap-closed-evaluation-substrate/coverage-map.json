@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "spike": "014j-bootstrap-closed-evaluation-substrate",
+  "evaluationRequirements": "sha256:64f5c7f773c19d8fbd4e6dc842ef49a3d1ceab30b251eb250c6d3a46a574c658",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 14,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:0fc74dfc962243b48b5e048960857bb22299d9fa37d8ca74c91ed7737042d16e",
+    "privateInventoryIdentity": "sha256:da6015fa578cebbca71aabb3bc66b7f002043a9e26a01b0548546e561f113cc1",
+    "validatorResultBinding": "sha256:9b15fecdccd1c1213245ab1afff153cc6c59042ad303e9d649fd7e89bf6df0e8",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 13
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; bootstrap-closure invariant",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "E3",
+        "M1"
+      ],
+      "sufficiency": "E1 shows the candidate changes no skill, methodology or contract authority and no preserved history; E3 shows the frozen evaluator imports no candidate source, reads no prepared-observation storage and calls no governed action; M1 reviews that each AC01 procedure is executable under predecessor trusted authority, so no procedure depends on a capability introduced by the spike."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02; design-map.md shared contract 1",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2",
+        "R1",
+        "M1"
+      ],
+      "sufficiency": "E2 shows the operation is named in source and absent from the worker protocol and worker tool surface; R1 requires and runs tests that candidate or provider output cannot authorize it and that valid host/root authority can; M1 reviews that the single production entry is a host operation for an authenticated human/root caller."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03; design-map.md shared contract 2",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M2"
+      ],
+      "sufficiency": "R1 requires and runs tests that a synthetic committed candidate evaluator is reconstructed and observed through the existing candidate-subject and containment path; M2 reviews that no second loader, relay or containment implementation exists."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; design-map.md shared contract 3 and invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M2"
+      ],
+      "sufficiency": "R1 requires and runs tests that wrong candidate, revision, inventory, procedure or material identity and caller-supplied paths or contents fail closed; M2 reviews that selection is by bounded identity-bearing references resolved by the host."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05; design-map.md shared contract 3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M3"
+      ],
+      "sufficiency": "R1 requires and runs tests that sealed evidence records host-created, subject-visible, subject-writable and host-observed state separately; M3 reviews the evidence binding so host-created topology is not treated as subject exposure."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06; design-map.md shared contract 4 and invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2",
+        "R1",
+        "M3"
+      ],
+      "sufficiency": "E2 shows added public spike content names no private workspace mechanics; R1 requires and runs tests that private bytes stay out of the public tree and ledger and that tampering invalidates the bundle; M3 reviews sealing location, canonical record contents and the absence of verdict, trust, promotion or workflow effects."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07; design-map.md shared contract 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "R1",
+        "M1",
+        "M3"
+      ],
+      "sufficiency": "E1 shows no evaluator contract or methodology permission was added; R1 requires and runs a test that the sealed bundle resolves from the safe record identity using only existing evaluator-private workspace, repository read, local computation and Git inspect; M1 and M3 review that consumption needs no new worker permission or host action."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08; design-map.md shared contract 6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2",
+        "R1",
+        "M4"
+      ],
+      "sufficiency": "E2 shows the exactModel name exists in source; R1 requires and runs tests that profile, launch selector, exact constraint and attested model are distinct in provenance; M4 reviews the runtime model types."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09; design-map.md shared contract 6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2",
+        "R1",
+        "M4"
+      ],
+      "sufficiency": "E2 shows no source file pairs a quoted selector with a concrete model id as an alias table; R1 requires and runs a test that a selector launch records a different attested model without failing; M4 reviews that no string comparison or family inference occurs without an exact constraint."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10; design-map.md shared contract 6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M4"
+      ],
+      "sufficiency": "R1 requires and runs tests that an explicit exact-model mismatch fails and that unavailable required attestation does not confirm; M4 reviews that the exact constraint overrides the selector for launch and is compared literally."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11; design-map.md design decisions",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M4"
+      ],
+      "sufficiency": "R1 requires and runs tests over at least two provider or profile shapes; M4 reviews that the abstraction contains no Claude-specific exception."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12; design-map.md invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "R1",
+        "M5"
+      ],
+      "sufficiency": "R1 runs typecheck, lint, format check and the full suite, which contain the existing containment, candidate-subject, evaluator-private, governed execution and executor-selection regressions; M5 reviews that only assertions superseded by the corrected model semantics changed."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; explicit non-goals",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "M5"
+      ],
+      "sufficiency": "E1 shows no preserved 014g path and no revision 004 is changed or created; M5 reviews that no 014g PASS, acceptance, As-Built or outcome is produced."
+    }
+  ]
+}

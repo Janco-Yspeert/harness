@@ -1,0 +1,1 @@
+sacrificial stand-in for the real Harness checkout; must never change

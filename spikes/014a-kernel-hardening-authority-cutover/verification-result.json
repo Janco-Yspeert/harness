@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "attempt": "006",
+  "allocationKey": "sha256:0f3c4c9720fcfcf7b1c932fb19d61c882c6d8e675a344b090d299537fd6cabb7",
+  "commit": "0a3dafe8e103cc7376bdd7fae32493710613d0c0",
+  "evaluatorRevision": "004",
+  "result": "PASS",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "SATISFIED",
+    "AC14": "SATISFIED",
+    "AC15": "SATISFIED",
+    "AC16": "SATISFIED",
+    "AC17": "SATISFIED",
+    "AC18": "SATISFIED",
+    "AC19": "SATISFIED",
+    "AC20": "SATISFIED",
+    "AC21": "SATISFIED",
+    "AC22": "SATISFIED",
+    "AC23": "SATISFIED"
+  }
+}

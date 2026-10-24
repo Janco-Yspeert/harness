@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "workflow": "014m-pre-semantic-implementation-correction",
+  "execution": "ef48f69b-1a04-43de-96d2-0c2e801d04b6",
+  "attempt": 15,
+  "commit": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+  "evaluatorRevision": "005",
+  "result": "PASS",
+  "candidateEvaluationBegan": true,
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "DEFERRED_POST_ACCEPTANCE",
+    "AC14": "DEFERRED_POST_ACCEPTANCE"
+  },
+  "reason": "The frozen authorization/contract case passed on the exact candidate. The differential full-suite case showed no failure on the candidate that the pre-candidate baseline does not also exhibit. The bootstrap boundary holds: the verifier's assignment methodology equals the trusted sequence-6 methodology at the pre-candidate baseline, differs from the candidate's own methodology content, and the candidate adopts no trust record and does not alter evaluator bindings. Adoption and cutover (AC13, AC14) are post-acceptance obligations and are deferred, not failed.",
+  "diagnostics": [
+    "evaluator helper self-check passed",
+    "frozen contract case passed",
+    "differential full-suite case passed against the pre-candidate baseline",
+    "assignment methodology identity matched trusted sequence 6; candidate methodology identity differs"
+  ],
+  "evaluatorIntegrity": "frozen revision 005 identities matched and the revision was not mutated"
+}

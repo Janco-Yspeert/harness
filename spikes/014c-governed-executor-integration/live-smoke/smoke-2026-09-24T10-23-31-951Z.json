@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-09-24T10:23:31.951Z",
+  "fixture": "fixtures/governed-smoke",
+  "trustRoot": {
+    "schemaVersion": 1,
+    "sequence": 1,
+    "methodology": "sha256:726fbff1504b533104c1230a55bfea71885c5e6c8534f0dc79c5cb1716006161",
+    "revision": "098b89934a3fbdf3ee18b02b9ac84e39365a4270",
+    "previous": null,
+    "authority": {
+      "kind": "human",
+      "evidence": "fac5c1cf98b4d27b685abebe41e5f91f26c61947:spikes/014c-governed-executor-integration/fixture-trust-root.md",
+      "evaluation": {
+        "kind": "human-bootstrap",
+        "evidence": "fac5c1cf98b4d27b685abebe41e5f91f26c61947:spikes/014c-governed-executor-integration/fixture-trust-root.md"
+      }
+    }
+  },
+  "providers": {
+    "claude": {
+      "located": "/home/velveteen/.local/bin/claude",
+      "version": "2.1.280 (Claude Code)"
+    },
+    "codex": {
+      "located": "/home/velveteen/.local/bin/codex",
+      "version": "codex-cli 0.155.1"
+    }
+  },
+  "executions": {
+    "smoke-codex": {
+      "process": "failed",
+      "category": "missing-result",
+      "failure": "missing semantic result handshake",
+      "diagnostics": [
+        {
+          "schemaVersion": 1,
+          "execution": "f5854944-f817-404f-900c-65b0100cfe4e",
+          "category": "missing-result",
+          "detail": "missing semantic result handshake"
+        }
+      ],
+      "executor": {
+        "requested": {},
+        "confirmed": {
+          "model": null,
+          "reasoning": null
+        }
+      },
+      "result": null,
+      "actions": [],
+      "transition": null
+    },
+    "smoke-claude-promotion": {
+      "process": "failed",
+      "category": "assignment-not-delivered",
+      "failure": "missing semantic result handshake",
+      "diagnostics": [
+        {
+          "schemaVersion": 1,
+          "execution": "3c64bf7f-de02-4c0e-b353-fb4f6a2bbf6e",
+          "category": "assignment-not-delivered",
+          "detail": "Harness worker tool server is not connected"
+        },
+        {
+          "schemaVersion": 1,
+          "execution": "3c64bf7f-de02-4c0e-b353-fb4f6a2bbf6e",
+          "category": "assignment-not-delivered",
+          "detail": "missing semantic result handshake"
+        }
+      ],
+      "executor": {
+        "requested": {},
+        "confirmed": {
+          "model": "claude-opus-5-5",
+          "reasoning": null
+        }
+      },
+      "result": null,
+      "actions": [],
+      "transition": null
+    }
+  },
+  "events": [
+    "kernel.definition",
+    "kernel.workflow-grant",
+    "kernel.session",
+    "kernel.session",
+    "kernel.allocation",
+    "kernel.automatic-work",
+    "kernel.process",
+    "kernel.process",
+    "kernel.diagnostic",
+    "kernel.workflow-grant",
+    "kernel.session",
+    "kernel.exposure",
+    "kernel.session",
+    "kernel.allocation",
+    "kernel.automatic-work",
+    "smoke-allocated",
+    "kernel.process",
+    "kernel.executor-confirmed",
+    "kernel.diagnostic",
+    "kernel.process",
+    "kernel.diagnostic"
+  ],
+  "promotedBytes": null,
+  "ledger": {
+    "file": "/home/velveteen/vk-code/harness/spikes/014c-governed-executor-integration/live-smoke/smoke-2026-09-24T10-23-31-951Z-workflow.jsonl",
+    "identity": "sha256:656004987c8091696ae2f09b75e55b2c65f45d9f6aea43da80cc2e583facde54"
+  },
+  "generatedExecutables": []
+}

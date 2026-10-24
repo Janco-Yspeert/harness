@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "workspaces": ["repository"],
+  "capabilities": [
+    "repository-read",
+    "repository-write",
+    "local-computation",
+    "git-inspect",
+    "git-commit"
+  ],
+  "forbiddenExposure": ["evaluator-private"],
+  "protected": false,
+  "inputs": [
+    {
+      "name": "brief",
+      "event": "brief-frozen",
+      "committed": true
+    },
+    {
+      "name": "design",
+      "event": "design-map-frozen",
+      "committed": true
+    },
+    {
+      "name": "coverage",
+      "event": ["evaluation-prepared", "evaluator-repair-recorded"],
+      "committed": true,
+      "validator": "prepared-coverage"
+    },
+    {
+      "name": "requirements",
+      "path": "eval-requirements.md",
+      "identityBinding": {
+        "input": "coverage",
+        "field": "evaluationRequirements"
+      }
+    },
+    {
+      "name": "implementationFeedback",
+      "event": "verification-finalized",
+      "eventFields": {
+        "classification": "IMPLEMENTATION_FAILURE"
+      },
+      "current": true,
+      "after": "implementation-handoff",
+      "committed": true,
+      "optional": true,
+      "jsonChecks": {
+        "classification": "IMPLEMENTATION_FAILURE"
+      }
+    },
+    {
+      "name": "preSemanticImplementationCorrection",
+      "event": "pre-semantic-implementation-correction-authorized",
+      "current": true,
+      "after": "implementation-handoff",
+      "field": "authorization",
+      "optional": true,
+      "evidenceField": "feedback",
+      "preserveInputsField": "implementationInputs"
+    }
+  ],
+  "results": ["succeeded", "blocked", "refused", "failed"],
+  "methodology": {},
+  "human": ["input", "approval", "root"],
+  "postconditions": ["manifest.md"]
+}

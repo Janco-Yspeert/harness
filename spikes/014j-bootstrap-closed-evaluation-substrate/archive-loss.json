@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "kind": "evaluator-archive-loss",
+  "archiveCompleteness": "incomplete-known-loss",
+  "spike": "014j-bootstrap-closed-evaluation-substrate",
+  "candidate": "93ade31b1dcb6487798b27e812dc443fce30af43",
+  "evaluatorRevision": "001",
+  "successfulExecution": "3a077861-616c-44eb-a2c2-bb85b1d89ccd",
+  "authoritativeVerificationResult": "PASS",
+  "attempts": [
+    {
+      "attempt": 1,
+      "execution": "48086f7e-0041-4454-9707-63f2e7bdf408",
+      "candidate": "b1e505d48c6dfe7f40f3525093b65cdf9fa2a8ee",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:missing semantic result handshake",
+      "expectedPrivateArtifact": ".eval/attempts/001/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 2,
+      "execution": "b8742fa5-ce30-4ad6-a59e-6e4953bdde97",
+      "candidate": "b1e505d48c6dfe7f40f3525093b65cdf9fa2a8ee",
+      "evaluatorRevision": "001",
+      "publicOutcome": "FAIL",
+      "expectedPrivateArtifact": ".eval/attempts/002/eval-result.md",
+      "privateArtifact": "present"
+    },
+    {
+      "attempt": 3,
+      "execution": "462a1935-85e5-4221-8c68-143782492dfe",
+      "candidate": "09da7b866dbd1a0a8c68f44efb42985feb897c49",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/003/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 4,
+      "execution": "284b9c6e-0613-4ac5-84ae-f591ddce239f",
+      "candidate": "09da7b866dbd1a0a8c68f44efb42985feb897c49",
+      "evaluatorRevision": "001",
+      "publicOutcome": "FAIL",
+      "expectedPrivateArtifact": ".eval/attempts/004/eval-result.md",
+      "privateArtifact": "present"
+    },
+    {
+      "attempt": 5,
+      "execution": "3a077861-616c-44eb-a2c2-bb85b1d89ccd",
+      "candidate": "93ade31b1dcb6487798b27e812dc443fce30af43",
+      "evaluatorRevision": "001",
+      "publicOutcome": "PASS",
+      "expectedPrivateArtifact": ".eval/attempts/005/eval-result.md",
+      "privateArtifact": "present"
+    }
+  ],
+  "successfulAttempt": {
+    "attempt": 5,
+    "resultPath": ".eval/attempts/005/eval-result.md",
+    "resultIdentity": "sha256:e358327af15fcd2dd56f8534194b1ee8d5c3b13e001a63d826b26f5c09ee93bd"
+  },
+  "promotionPlan": {
+    "path": ".eval/promotion-plan.json",
+    "identity": "sha256:ea3f37867ec169e12f9466bc19f77dd21b223af8cd9c9eb28e5996545adbca0d",
+    "ordinaryValidation": "INELIGIBLE",
+    "reason": "Attempt history is incomplete: an earlier allocated attempt has no terminal result, so the cycle cannot be archived as a complete terminal history."
+  },
+  "missingArtifactsReconstructed": false,
+  "authorization": "root-supervisor-bootstrap",
+  "bootstrapRuntimeCommit": "161f4a80d5855106f70768ad1251e21ed7863a9a",
+  "reason": "Attempts 001 and 003 were nonterminal infrastructure executions and never produced terminal evaluator results. The legacy recovery schema records their expected terminal paths as missing compatibility markers; it does not declare produced evidence lost. Evaluator revision 001 remains complete and identity-valid at its canonical active location, and attempt 005 PASS remains authoritative and unchanged.",
+  "followUpDefect": "Evaluator-v14 archival must distinguish nonterminal verification allocations from lost terminal evidence and must accept an identity-valid active frozen revision without requiring a redundant historical snapshot."
+}

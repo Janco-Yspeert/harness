@@ -1,0 +1,186 @@
+{
+  "revision": "001",
+  "note": "AC01-AC35 are grouped into 15 evaluation procedures. E1 is the sole evaluator-authored executable hidden test; it is a pre-authored, implementation-independent regression control (pinned Git tree identities of prior, already-adjudicated spike directories) rather than a test of any new Spike 014 mechanism. PR1-PR11 are visible-regression obligations (some combined with a manual source-inspection component, mode COMPOSITE/MANUAL_REVIEW) placed on the implementation because the frozen Design Map's 'Implementation freedom' section deliberately leaves the Authority Resolver, Methodology Definition, Role Grant, execution-binding, provenance, result-schema, host-action, root-authority, telemetry, and executor-policy representations, storage, and API/transport as implementation choices. LB1-LB3 are the four mandatory real-boundary proofs spike.md's own 'Live-provider evidence' section reserves (attached execution, spawned execution, host-mediated publication, human-wait/resume); their fixture/proof properties are fixed by spike.md itself ('Minimum reproducible proof protocol', 'Required bounded publication environment', 'Required bounded proof') before implementation, so they are evaluated against durable primary evidence corroborating those exact properties, not against a pre-authored mock or hidden test file.",
+  "cases": [
+    {
+      "id": "E1",
+      "criteria": ["AC23"],
+      "verifies": ["ER23"],
+      "mode": "executable regression (evaluator-authored, pre-authored regression control)",
+      "executable": true,
+      "tests": [
+        ".hidden-test/prior-spike-history-and-011-boundary-preserved.test.ts"
+      ],
+      "procedure": "Pin the `git rev-parse HEAD:<path>` tree identity of spikes/010-workflow-authority, 010a-evaluation-coverage-human-rejection-recovery, 010b-evaluator-preparation-integrity, 010c-evaluator-integrity-enforcement, 011-host-owned-workflow-runs, 012-correction-cycles-evaluator-repair, 013-Workflow-execution-friction, and 013a-Workflow-execution-friction at Spike 014 evaluator-preparation time; at verify time, re-derive each tree identity from the candidate's HEAD and assert byte-for-byte equality to the pinned value.",
+      "decisionRule": "Any pinned tree identity that no longer matches (addition, removal, or edit anywhere beneath that path) is a FAIL for AC23. The spikes/011-host-owned-workflow-runs check additionally corroborates spike.md's 'Spike 011 Cycle 002' non-advancement boundary, though that boundary is not itself a numbered acceptance criterion."
+    },
+    {
+      "id": "PR1",
+      "criteria": ["AC01", "AC02", "AC03", "AC04"],
+      "verifies": ["ER01", "ER02", "ER03", "ER04"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC01-AC04, Scope §1-§2, \"Required regression scenarios\" R1-R2)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenarios: (a) exactly one authority-resolution path reads the canonical Authority Ledger for a governed transition; (b) spike.md's own R2 fixture (delete/recreate local `.workflow` operational state; assert the next legally eligible role is unchanged and no historical dispatch is fabricated); (c) a fresh runner instance with no local operational history derives the correct next action from canonical authority and configured methodology alone; (d) spike.md's own R1 fixture (canonical verification PASS + promotion complete; operational evaluator run blocked by publication transport; local runner state absent/stale) still permits As-Built via canonical authority and policy.",
+      "decisionRule": "A second/parallel authority-interpretation path that can disagree with the primary one, local-state deletion changing the next eligible role, fabricated historical dispatch, or the R1 fixture failing to reach As-Built eligibility, is a FAIL for AC01/AC02/AC03/AC04."
+    },
+    {
+      "id": "PR2",
+      "criteria": ["AC05", "AC06", "AC07", "AC08"],
+      "verifies": ["ER05", "ER06", "ER07", "ER08"],
+      "mode": "public executable regression + manual source inspection",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC05-AC08, Scope §3-§4, \"Simplification requirements\" #2-#3) plus evaluator inspection of the implementation-identified kernel path",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenarios: a running Workflow Execution Grant binds exactly one content-addressed Methodology Definition; role availability/eligibility for at least one non-trivial transition is demonstrably data-driven rather than hard-coded; changing workflow policy/a contract/a governing skill produces a new definition identity without reinterpreting an already-bound execution grant. Manual component (reviewed at verify time against the implementation's own As-Built/implementation-report kernel-path identification): grep the identified kernel-path source for literal phase-name conditionals (e.g. `role === \"as-built\"`, `spike === \"013a\"`) and for a `ROLE_CONTRACTS`-shaped constant table or hardcoded `skills/<role>/SKILL.md` path resolution outside declared configuration data, mirroring the current `tools/workflow.ts` `phases` array / `bootstrapAuthority` spike-path checks this spike must supersede within the normal kernel path.",
+      "decisionRule": "No pinned Methodology Definition identity, role ordering encoded only as kernel conditionals, a surviving kernel-level ROLE_CONTRACTS-shaped table or hardcoded skill path outside configuration, or an old Workflow Execution Grant silently reinterpreted after a definition change, is a FAIL for AC05/AC06/AC07/AC08."
+    },
+    {
+      "id": "PR3",
+      "criteria": ["AC09", "AC10", "AC11", "AC12"],
+      "verifies": ["ER09", "ER10", "ER11", "ER12"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC09-AC12, Scope §7-§8)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenarios: a human instruction to run/continue a workflow creates or binds an explicit Workflow Execution Grant with bounded scope; an observation/status request does not create execution authority or allocate a role; every governed execution is bound to one exact immutable, inspectable Role Grant; prompt/provider text alone cannot grant a role.",
+      "decisionRule": "Observation consuming execution authority, a governed execution proceeding without an inspectable Role Grant, or a role executing merely because a prompt claims it, is a FAIL for AC09/AC10/AC11/AC12."
+    },
+    {
+      "id": "LB1",
+      "criteria": ["AC13", "AC14"],
+      "verifies": ["ER13", "ER14"],
+      "mode": "live boundary proof",
+      "executable": false,
+      "fixture": {
+        "spawned": "a newly spawned executor process started specifically to perform the resolved Role Grant, inspectable end to end through the real supported host boundary",
+        "attached": "a pre-existing, independently running, repository-controlled OS process or equivalent executor started BEFORE the Role Grant is issued, connected through the actual supported host boundary, long-lived enough to receive a later Role Grant, incapable of satisfying the proof through an in-memory callback or direct test-only method invocation, per spike.md 'Minimum reproducible proof protocol'",
+        "durableIdentities": "existing session/executor identity; Workflow Execution Grant identity; Role Grant identity; execution/run identity or Execution Handle; semantic Role Result",
+        "boundary": "must cross the actual supported Harness host boundary, not a mocked adapter, same-process fake, or a test that bypasses the supported host operation",
+        "cleanup": "fixture artifacts removed or left in a disposable, clearly-marked location; no mutation of any real spike's canonical authority ledger"
+      },
+      "procedure": "Confirm one real spawned-execution Role Grant reaching a semantic terminal result through the real host boundary, AND one real attached-execution Role Grant bound to a pre-existing eligible session/executor (meeting every fixture property above) reaching a semantic terminal result, with every required durable identity persisted/exposed.",
+      "decisionRule": "A mock-only or same-process fake standing in for either proof, a fixture started only after the Role Grant was issued (for the attached case), or a missing durable identity, is a FAIL for AC13/AC14. Bootstrap-era evidence produced by the pre-implementation Codex/Claude preparation tooling for this very spike does not satisfy either proof, per spike.md 'Process-execution bootstrap'."
+    },
+    {
+      "id": "PR4",
+      "criteria": ["AC15", "AC16", "AC17"],
+      "verifies": ["ER15", "ER16", "ER17"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC15-AC17, Scope §10, \"Required regression scenarios\" R4)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario reproducing spike.md's own R4 fixture: session A (no evaluator-private exposure, otherwise implementation-eligible) receives an implementation Role Grant; session B (identical otherwise, but mechanically granted evaluator-private material earlier) is denied the same implementation Role Grant even after the private workspace grant is later revoked, regardless of prompt wording.",
+      "decisionRule": "A session recovering implementation eligibility after its private-material grant is revoked, or prompt wording overriding the denial, is a FAIL for AC15/AC16/AC17."
+    },
+    {
+      "id": "PR5",
+      "criteria": ["AC18", "AC19"],
+      "verifies": ["ER18", "ER19"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC18-AC19, Scope §13, \"Required regression scenarios\" R5)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario reproducing spike.md's own R5 fixture: an execution with semantic Role Result = succeeded, methodology result = PASS, and a subsequently failed publication host action; assert all three facts remain independently inspectable and the semantic PASS is never rewritten by the later host-action failure.",
+      "decisionRule": "A representation that collapses these into one overloaded flag, or that alters the already-recorded semantic result because of the later host-action failure, is a FAIL for AC18/AC19."
+    },
+    {
+      "id": "LB2",
+      "criteria": ["AC20", "AC21"],
+      "verifies": ["ER20", "ER21"],
+      "mode": "live boundary proof",
+      "executable": false,
+      "fixture": {
+        "remote": "a host-controlled temporary/local bare Git repository created and controlled by the Harness host/test environment, living outside every executor workspace grant",
+        "executorGrant": "the executor receives no remote credentials and no direct publication/network capability merely because host-mediated publication is allowed; the Role Grant permits only the structured host publication action",
+        "request": "the executor requests publication of one exact commit/ref update through the supported Harness host boundary",
+        "hostValidation": "Harness validates the request against the Role Grant, repository identity, branch/ref, commit identity, and required ancestry/base constraints, then performs the actual ref advance itself",
+        "durableEvidence": "requested commit identity; target ref/branch; remote ref identity before publication; remote ref identity after publication; the exact host action/result that caused the advance; confirmation the executor's grant/profile lacked direct remote-publication authority"
+      },
+      "procedure": "Exercise the bounded local bare-remote publication proof exactly as spike.md 'Required bounded publication environment' specifies; independently corroborate every required piece of durable evidence listed above from primary sources (not provider narrative).",
+      "decisionRule": "A unit mock of `git push`, a successful direct executor push, or missing any one of the required durable-evidence items, is a FAIL for AC20/AC21, per spike.md's explicit 'A unit mock of git push is insufficient' and 'A successful direct executor push is not acceptable proof.' A provider sandbox denying direct git push must not by itself fail this criterion if the host-mediated path succeeds."
+    },
+    {
+      "id": "PR6",
+      "criteria": ["AC22"],
+      "verifies": ["ER22"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC22, Scope §15, \"Required regression scenarios\" R7)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario reproducing spike.md's own R7 fixture: a bounded root-authority record, interpreted generically by the resolver from data (not spike-specific kernel code), changes what may happen next without editing old ledger events, rewriting a blocked run, or mutating an existing immutable Role Grant.",
+      "decisionRule": "Root-authority handling implemented via spike-specific kernel conditionals, or a root-authority event that mutates prior history, is a FAIL for AC22."
+    },
+    {
+      "id": "LB3",
+      "criteria": ["AC24", "AC25", "AC26"],
+      "verifies": ["ER24", "ER25", "ER26"],
+      "mode": "live boundary proof",
+      "executable": false,
+      "fixture": {
+        "trigger": "a real governed execution legitimately requests permitted human input mid-execution",
+        "waiting": "the execution enters a structured WAITING_FOR_HUMAN state without being cancelled, terminated, or replaced",
+        "response": "a permitted human response is recorded against the exact same execution/request identity through the supported Harness host boundary",
+        "authorityGate": "if the response changes what the execution may do, that permission is recorded canonically before delivery/resume; conversation text alone must not be treated as authority",
+        "resume": "the same execution identity resumes and reaches a later terminal semantic result",
+        "durableIdentities": "human-request identity and response identity/reference, in addition to the execution/session, grant, and run identities LB1 already requires"
+      },
+      "procedure": "Exercise one real bounded human-wait/resume cycle through the actual supported Harness host boundary end to end, from request through WAITING_FOR_HUMAN, response, and terminal resume; independently corroborate every required durable identity.",
+      "decisionRule": "A worker that dies and is replaced merely because interactive input was needed, an authority-changing response used before being recorded canonically, or a missing required durable identity, is a FAIL for AC24/AC25/AC26."
+    },
+    {
+      "id": "PR7",
+      "criteria": ["AC27", "AC28", "AC29", "AC30"],
+      "verifies": ["ER27", "ER28", "ER29", "ER30"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC27-AC30, Scope §16-§18, \"Required regression scenarios\" R3)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenarios: spike.md's own R3 fixture (two continue requests, including concurrent ones, against the same canonical authority basis) results in exactly one allocation/Role Grant; a policy-permitted retry/replacement produces a distinct execution identity with explicit predecessor lineage rather than overwriting the prior one; a caller can inspect/await the same execution by stable identity after disconnecting and reconnecting; an execution Harness cannot reattach to after host recovery is represented as interrupted/lost, not silently absent.",
+      "decisionRule": "Duplicate equivalent Role Grants/executions for one authority basis, retry silently overwriting the prior execution's identity/lineage, an execution that becomes uninspectable after caller disconnect, or unrecoverable work becoming indistinguishable from work that never happened, is a FAIL for AC27/AC28/AC29/AC30."
+    },
+    {
+      "id": "PR8",
+      "criteria": ["AC31"],
+      "verifies": ["ER31"],
+      "mode": "manual source inspection",
+      "executable": false,
+      "procedure": "At verify time, using the implementation's own As-Built/implementation report to identify which files constitute 'the normal kernel path', inspect those files for intrinsic dependence on `spikes/<id>` layout, hard-coded `ROLE_CONTRACTS`, fixed `skills/<role>/SKILL.md` locations, Spike-specific bootstrap branches, or hard-coded Harness development-phase names, and confirm project/methodology configuration supplies those instead.",
+      "decisionRule": "Any surviving intrinsic dependency of the normal kernel path on a Harness-repository-specific assumption from spike.md's own negative list is a FAIL for AC31. A full installer or a real second-project pilot is explicitly out of scope and is not required for this criterion."
+    },
+    {
+      "id": "PR9",
+      "criteria": ["AC32", "AC33"],
+      "verifies": ["ER32", "ER33"],
+      "mode": "public executable regression",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC32-AC33, Scope §20)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenarios: kernel lifecycle and host-action operations emit/expose telemetry correlated to stable Workflow Execution Grant/Role Grant/execution identities through a seam distinct from authority decisions; a failed/unavailable telemetry collection does not invalidate an otherwise successful governed role.",
+      "decisionRule": "Telemetry absence blocking an otherwise valid role, or telemetry silently participating in an authority decision, is a FAIL for AC32/AC33."
+    },
+    {
+      "id": "PR10",
+      "criteria": ["AC34"],
+      "verifies": ["ER34"],
+      "mode": "public executable regression + manual data-model inspection",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC34, Scope §21)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario plus manual inspection of the Role Grant/execution data model: confirm an explicit executor-selection seam exists that could later incorporate provider/model/reasoning/isolation/availability/usage/cost without requiring a change to the authority/methodology model itself.",
+      "decisionRule": "Executor selection baked as an unextendable fixed assumption into Role Grant semantics is a FAIL for AC34. Full policy/negotiation implementation is explicitly out of scope."
+    },
+    {
+      "id": "PR11",
+      "criteria": ["AC35"],
+      "verifies": ["ER35"],
+      "mode": "public executable regression + manual schema inspection",
+      "executable": true,
+      "materializedBy": "implementation (spike.md AC35, Scope §25)",
+      "tests": ["test/*.test.ts (visible suite via npm test)"],
+      "procedure": "npm test scenario plus manual inspection of each new persisted structure (Methodology Definition, Workflow Execution Grant, Role Grant, structured role result, root-authority record, host-action request/result) that Spike 014 introduces as a distinct artifact: confirm each carries explicit schema/version information.",
+      "decisionRule": "A new persisted structure introduced by Spike 014 with no schema/version identity is a FAIL for AC35. A generalized migration framework is explicitly out of scope."
+    }
+  ]
+}

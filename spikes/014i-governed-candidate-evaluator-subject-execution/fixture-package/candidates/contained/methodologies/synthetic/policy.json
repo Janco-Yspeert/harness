@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 1,
+  "scopeEvent": {
+    "transition": "correction-cycle-opened",
+    "field": "cycle",
+    "initial": "001"
+  },
+  "humanDecisions": {
+    "accept": {
+      "transition": "human-accepted",
+      "when": {
+        "all": [
+          {
+            "event": "verification-finalized",
+            "current": true,
+            "latest": true,
+            "fields": {
+              "result": "PASS"
+            }
+          },
+          {
+            "event": "promotion-recorded",
+            "current": true
+          },
+          {
+            "event": "as-built-recorded",
+            "current": true
+          },
+          {
+            "not": {
+              "event": "human-accepted",
+              "current": true
+            }
+          },
+          {
+            "not": {
+              "event": "human-rejected",
+              "current": true
+            }
+          }
+        ]
+      },
+      "bindings": {
+        "candidate": {
+          "event": "implementation-handoff",
+          "field": "commit",
+          "current": true
+        },
+        "verification": {
+          "event": "verification-finalized",
+          "field": "semanticResult",
+          "current": true
+        },
+        "promotion": {
+          "event": "promotion-recorded",
+          "field": "promotionIdentity",
+          "current": true
+        },
+        "asBuilt": {
+          "event": "as-built-recorded",
+          "field": "semanticResult",
+          "current": true
+        },
+        "cycle": {
+          "scope": true
+        }
+      }
+    },
+    "reject": {
+      "transition": "human-rejected",
+      "when": {
+        "all": [
+          {
+            "event": "verification-finalized",
+            "current": true,
+            "latest": true,
+            "fields": {
+              "result": "PASS"
+            }
+          },
+          {
+            "event": "promotion-recorded",
+            "current": true
+          },
+          {
+            "event": "as-built-recorded",
+            "current": true
+          },
+          {
+            "not": {
+              "event": "human-accepted",
+              "current": true
+            }
+          },
+          {
+            "not": {
+              "event": "human-rejected",
+              "current": true
+            }
+          }
+        ]
+      },
+      "bindings": {
+        "candidate": {
+          "event": "implementation-handoff",
+          "field": "commit",
+          "current": true
+        },
+        "verification": {
+          "event": "verification-finalized",
+          "field": "semanticResult",
+          "current": true
+        },
+        "promotion": {
+          "event": "promotion-recorded",
+          "field": "promotionIdentity",
+          "current": true
+        },
+        "asBuilt": {
+          "event": "as-built-recorded",
+          "field": "semanticResult",
+          "current": true
+        },
+        "cycle": {
+          "scope": true
+        }
+      },
+      "requiredStrings": [
+        "classification"
+      ],
+      "requiredStringArrays": [
+        "findings"
+      ]
+    }
+  },
+  "gates": [
+    {
+      "when": {
+        "all": [
+          {
+            "event": "readiness-blocked"
+          },
+          {
+            "not": {
+              "event": "brief-frozen"
+            }
+          }
+        ]
+      },
+      "reason": "brief readiness is NOT_READY; revise the brief and re-review it only on explicit human authority"
+    },
+    {
+      "when": {
+        "event": "verification-finalized",
+        "current": true,
+        "fields": {
+          "classification": "EVALUATOR_DEFECT"
+        },
+        "atLeast": 3
+      },
+      "reason": "two evaluator corrections exhausted; classify the remaining issue and use successor authority"
+    },
+    {
+      "when": {
+        "all": [
+          {
+            "event": "verification-finalized",
+            "current": true,
+            "latest": true,
+            "fields": {
+              "result": "PASS"
+            }
+          },
+          {
+            "not": {
+              "event": "promotion-recorded",
+              "current": true
+            }
+          },
+          {
+            "not": {
+              "event": "process-exception-authorized",
+              "current": true
+            }
+          }
+        ]
+      },
+      "reason": "verified PASS has no host-confirmed evaluator evidence promotion; archival is incomplete and needs recovery or an explicit process exception"
+    },
+    {
+      "when": {
+        "all": [
+          {
+            "event": "as-built-recorded",
+            "current": true
+          },
+          {
+            "not": {
+              "event": "human-accepted",
+              "current": true
+            }
+          }
+        ]
+      },
+      "reason": "human acceptance required"
+    },
+    {
+      "when": {
+        "event": "human-rejected",
+        "current": true
+      },
+      "reason": "human rejection requires bounded correction or successor authority"
+    },
+    {
+      "when": {
+        "event": "readiness-blocked",
+        "after": "brief-frozen"
+      },
+      "reason": "readiness requires a corrected brief and explicit forward authority"
+    },
+    {
+      "when": {
+        "event": "verification-finalized",
+        "current": true,
+        "latest": true,
+        "fields": {
+          "classification": "SPECIFICATION_AMBIGUITY"
+        }
+      },
+      "reason": "specification ambiguity requires new brief authority"
+    },
+    {
+      "when": {
+        "event": "verification-finalized",
+        "current": true,
+        "latest": true,
+        "fields": {
+          "classification": "SPECIFICATION_DRIFT"
+        }
+      },
+      "reason": "specification drift requires restored or successor authority"
+    },
+    {
+      "when": {
+        "event": "verification-finalized",
+        "current": true,
+        "latest": true,
+        "fields": {
+          "classification": "INFRASTRUCTURE_FAILURE"
+        }
+      },
+      "reason": "infrastructure failure requires recovery before continuation"
+    }
+  ],
+  "maxAllocations": 32,
+  "roles": {
+    "evaluator-verify": {
+      "contract": "methodologies/synthetic/contracts/evaluator-verify.json",
+      "skill": "skills/evaluator/SKILL.md",
+      "when": {
+        "all": [
+          {
+            "event": "evaluation-prepared"
+          },
+          {
+            "event": "implementation-handoff",
+            "current": true
+          },
+          {
+            "any": [
+              {
+                "not": {
+                  "event": "verification-finalized",
+                  "current": true,
+                  "after": "implementation-handoff"
+                }
+              },
+              {
+                "event": "evaluator-repair-recorded",
+                "current": true,
+                "after": "verification-finalized"
+              }
+            ]
+          },
+          {
+            "not": {
+              "event": "verification-finalized",
+              "latest": true,
+              "current": true,
+              "fields": {
+                "result": "PASS"
+              },
+              "after": "implementation-handoff"
+            }
+          }
+        ]
+      },
+      "retry": {
+        "dispositions": [
+          "failed",
+          "interrupted"
+        ],
+        "limit": 2
+      },
+      "outcomes": [
+        {
+          "disposition": "succeeded",
+          "methodology": {
+            "result": "PASS"
+          },
+          "transition": "verification-finalized",
+          "evidence": {
+            "artifact": "verification-result.json",
+            "validator": "verification-accounting",
+            "allocation": "verification-allocated"
+          }
+        },
+        {
+          "disposition": "succeeded",
+          "methodology": {
+            "result": "FAIL"
+          },
+          "transition": "verification-finalized",
+          "evidence": {
+            "artifact": "verification-result.json",
+            "validator": "verification-accounting",
+            "allocation": "verification-allocated"
+          }
+        },
+        {
+          "disposition": "succeeded",
+          "methodology": {
+            "result": "BLOCKED"
+          },
+          "transition": "verification-finalized",
+          "evidence": {
+            "artifact": "verification-result.json",
+            "validator": "verification-accounting",
+            "allocation": "verification-allocated"
+          }
+        }
+      ],
+      "onAllocate": {
+        "transition": "verification-allocated",
+        "fromInputs": {
+          "commit": "candidate",
+          "evaluatorRevision": "evaluatorRevision"
+        },
+        "counterField": "attempt"
+      }
+    }
+  }
+}

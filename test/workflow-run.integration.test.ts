@@ -193,6 +193,7 @@ async function startHarness(
       ? testHiddenEvidenceRoot
       : options.hiddenEvidenceRoot;
   const host = await startHarnessHost(0, {
+    legacyWorkflowExecution: true,
     createBackend: () => new NoopSessionBackend(),
     createWorkflowBackend,
     ...(options.evaluatorWorkspace === undefined
@@ -314,7 +315,7 @@ void test("a host-owned run outlives its client and is inspectable by identity",
     assert.equal(run.executionAttempt, 1);
     assert.equal(run.role, "implementation");
     assert.equal(run.skill, "skills/implementation/SKILL.md");
-    assert.equal(run.skillVersion, "3");
+    assert.equal(run.skillVersion, "6");
     assert.match(run.contractIdentity as string, /^sha256:[a-f0-9]{64}$/);
     assert.equal(run.contractDeliveryMode, "host-directed-repository-load");
     assert.equal(run.executor, "claude");
@@ -380,7 +381,7 @@ void test("governed roles resolve their repository contract instead of trusting 
     });
     assert.equal(omitted.status, 201, omitted.error);
     assert.equal(omitted.run.skill, "skills/implementation/SKILL.md");
-    assert.equal(omitted.run.skillVersion, "3");
+    assert.equal(omitted.run.skillVersion, "6");
     assert.equal(
       omitted.run.contractIdentity,
       `sha256:${createHash("sha256")
@@ -461,7 +462,7 @@ void test("canonical evaluator delegation is derived from the requesting workflo
     `${JSON.stringify({
       evaluatorSkill: {
         name: "evaluator",
-        contractVersion: 11,
+        contractVersion: 12,
         sourceCommit,
         sourcePath,
         identity,
@@ -580,7 +581,7 @@ void test("canonical evaluator delegation is derived from the requesting workflo
       allocation.run.skill,
       `spikes/${fixtureName}/bootstrap/evaluator-skill.md`,
     );
-    assert.equal(allocation.run.skillVersion, "11");
+    assert.equal(allocation.run.skillVersion, "12");
     assert.equal(allocation.run.contractDeliveryMode, "claude-system-contract");
     const context = contexts[0];
     assert.ok(context);
@@ -933,7 +934,7 @@ void test("repository fixtures resolve from candidate bytes without caller-shape
     executor: "claude",
     contract: {
       name: "evaluator",
-      version: 11,
+      version: 12,
       identity: contractIdentity,
       deliveryMode: "claude-system-contract",
     },
@@ -977,7 +978,7 @@ void test("repository fixtures resolve from candidate bytes without caller-shape
     `${JSON.stringify({
       evaluatorSkill: {
         name: "evaluator",
-        contractVersion: 11,
+        contractVersion: 12,
         sourceCommit,
         sourcePath,
         identity: contractIdentity,
@@ -1149,7 +1150,7 @@ void test("a fixture whose declared permissionProfile disagrees with its resolve
     executor: "claude",
     contract: {
       name: "evaluator",
-      version: 11,
+      version: 12,
       identity: contractIdentity,
       deliveryMode: "claude-system-contract",
     },
@@ -1193,7 +1194,7 @@ void test("a fixture whose declared permissionProfile disagrees with its resolve
     `${JSON.stringify({
       evaluatorSkill: {
         name: "evaluator",
-        contractVersion: 11,
+        contractVersion: 12,
         sourceCommit,
         sourcePath,
         identity: contractIdentity,
@@ -2158,7 +2159,12 @@ void test("the workflow-run surface belongs to the existing Harness host", async
     );
     assert.doesNotMatch(runnerSource, /detached/);
     assert.doesNotMatch(runnerSource, /from "node:process"/);
-    assert.match(runnerSource, /\/workflow-runs/);
+    assert.match(runnerSource, /\/governed\//);
+    const legacySource = readFileSync(
+      new URL("../tools/legacy-workflow.ts", import.meta.url),
+      "utf8",
+    );
+    assert.match(legacySource, /\/workflow-runs/);
   } finally {
     if (events.readyState === WebSocket.OPEN) events.close();
     await host.close();
@@ -2204,7 +2210,11 @@ async function startToolFixture(
     rmSync(spikePath, { recursive: true, force: true });
     await host.close();
   });
-  const env: NodeJS.ProcessEnv = { ...process.env, HARNESS_HOST_URL: host.url };
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    HARNESS_HOST_URL: host.url,
+    HARNESS_LEGACY_WORKFLOW: "1",
+  };
   delete env.NODE_TEST_CONTEXT;
   return { host, created, spike, spikePath, env };
 }

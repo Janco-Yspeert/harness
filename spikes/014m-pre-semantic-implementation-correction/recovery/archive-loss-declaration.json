@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "kind": "evaluator-archive-loss",
+  "archiveCompleteness": "incomplete-known-loss",
+  "spike": "014m-pre-semantic-implementation-correction",
+  "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+  "evaluatorRevision": "005",
+  "successfulExecution": "ef48f69b-1a04-43de-96d2-0c2e801d04b6",
+  "authoritativeVerificationResult": "PASS",
+  "attempts": [
+    {
+      "attempt": 1,
+      "execution": "9e828cc5-6014-4c66-bef3-864deb9aa956",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/001/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 2,
+      "execution": "1f6cebdd-4ca3-45ae-8ca0-a08c0da01120",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/002/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 3,
+      "execution": "ccb789e7-2d6e-4db0-aa56-4d9f0a2eb710",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/003/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 4,
+      "execution": "5f87b369-94c8-4a11-8f05-032bd4e9241b",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/004/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 5,
+      "execution": "ca880f3a-0349-4ebf-9f25-760b24eddb9e",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/005/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 6,
+      "execution": "3b7c15a7-95f9-4284-bc8e-80953db87f97",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/006/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 7,
+      "execution": "93599c1e-3e91-4d2a-b013-b853a7805122",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "exited:no-finalized-verdict",
+      "expectedPrivateArtifact": ".eval/attempts/007/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 8,
+      "execution": "ee73fbbf-eabe-4103-9a49-6c474daed8bb",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/008/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 9,
+      "execution": "f07436d1-50de-49f9-940a-825fd8d7b593",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/009/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 10,
+      "execution": "aba44aa9-bc28-4630-a8ab-7e8225ddd96a",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/010/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 11,
+      "execution": "8428406a-791a-418b-8667-d3693563743d",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "failed:provider process failed",
+      "expectedPrivateArtifact": ".eval/attempts/011/eval-result.md",
+      "privateArtifact": "missing"
+    },
+    {
+      "attempt": 12,
+      "execution": "0daa0b4d-85a2-4401-8c47-d587616a7efa",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "001",
+      "publicOutcome": "BLOCKED",
+      "expectedPrivateArtifact": ".eval/attempts/012/eval-result.md",
+      "privateArtifact": "present"
+    },
+    {
+      "attempt": 13,
+      "execution": "20c6dae8-67ca-462d-a525-84d9b8d1f47d",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "002",
+      "publicOutcome": "BLOCKED",
+      "expectedPrivateArtifact": ".eval/attempts/013/eval-result.md",
+      "privateArtifact": "present"
+    },
+    {
+      "attempt": 14,
+      "execution": "84f7b735-63e3-46d2-ac12-88e115b26a7d",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "003",
+      "publicOutcome": "BLOCKED",
+      "expectedPrivateArtifact": ".eval/attempts/014/eval-result.md",
+      "privateArtifact": "present"
+    },
+    {
+      "attempt": 15,
+      "execution": "ef48f69b-1a04-43de-96d2-0c2e801d04b6",
+      "candidate": "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
+      "evaluatorRevision": "005",
+      "publicOutcome": "PASS",
+      "expectedPrivateArtifact": ".eval/attempts/015/eval-result.md",
+      "privateArtifact": "present"
+    }
+  ],
+  "successfulAttempt": {
+    "attempt": 15,
+    "resultPath": ".eval/attempts/015/eval-result.md",
+    "resultIdentity": "sha256:18e50ae2650a74cdeb97cca9ad56537eef2e4ec970005f95e165f7512d4f3968"
+  },
+  "promotionPlan": {
+    "path": ".eval/promotion-plan.json",
+    "identity": "sha256:4857cc4af996c10af0e5ce8dae7cf9c38d2067b95074d1848d8f1a7a71cb5390",
+    "ordinaryValidation": "INELIGIBLE",
+    "reason": "The attempt history contains a known historical terminal-evidence loss for attempt 007; ordinary complete promotion is unavailable."
+  },
+  "missingArtifactsReconstructed": false,
+  "authorization": "root-supervisor-bootstrap",
+  "bootstrapRuntimeCommit": "a4b14ed7f25e8c7564c28a0419f46fe15c36f55d",
+  "reason": "Attempt 007 reached a semantic evaluator result, but its exact private terminal artifact is genuinely unavailable. No missing bytes are reconstructed or relabelled.",
+  "followUpDefect": "Move canonical attempt identity and terminal evidence bookkeeping to host ownership so evaluator-private retention failures are detected at finalization rather than promotion."
+}

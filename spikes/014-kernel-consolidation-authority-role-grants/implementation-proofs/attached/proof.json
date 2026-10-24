@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "processStartedBeforeGrant": 3451139,
+  "registration": {
+    "session": "a2645021-0322-4298-9880-a5e992152a3a",
+    "registeredAt": "2026-09-20T09:09:55.382Z"
+  },
+  "workflowGrant": {
+    "schemaVersion": 1,
+    "id": "618b75ff-a785-4b12-82ad-f9443ff9125f",
+    "project": "project-attached-publication-wait",
+    "workflow": "work-item",
+    "methodology": "sha256:d16e8e4c0cff82b086da8ec7ef0d4770163f2af29bea4818d0d53f8b908a4d1b",
+    "authorityBasis": "sha256:676248e64f29db6634ce17ebefb04701302a6ac5c0159aed3854b323d08a2de6",
+    "origin": "human",
+    "continuation": false,
+    "delegation": [
+      "attached"
+    ],
+    "roles": [
+      "produce"
+    ],
+    "stopAfter": [],
+    "maxAllocations": 1
+  },
+  "waiting": {
+    "schemaVersion": 1,
+    "id": "1c93a4c6-9cb3-4162-a2d3-7bd3eea56cf7",
+    "workflowGrant": "618b75ff-a785-4b12-82ad-f9443ff9125f",
+    "roleGrant": "sha256:abe12d3644b418758852ca48763eb30f0bb2b302a856e2ffcc474121f2053342",
+    "session": "a2645021-0322-4298-9880-a5e992152a3a",
+    "mode": "attached",
+    "process": "running",
+    "attention": "WAITING_FOR_HUMAN",
+    "failure": null,
+    "pid": 3451139,
+    "predecessor": null,
+    "result": null,
+    "actions": [],
+    "requests": [
+      {
+        "schemaVersion": 1,
+        "id": "23cc8352-973b-4d02-8f23-2936c4f48e50",
+        "execution": "1c93a4c6-9cb3-4162-a2d3-7bd3eea56cf7",
+        "kind": "root",
+        "question": "May this execution finish the bounded proof?",
+        "permission": "finish-proof",
+        "response": null
+      }
+    ]
+  },
+  "final": {
+    "execution": {
+      "schemaVersion": 1,
+      "id": "1c93a4c6-9cb3-4162-a2d3-7bd3eea56cf7",
+      "workflowGrant": "618b75ff-a785-4b12-82ad-f9443ff9125f",
+      "roleGrant": "sha256:abe12d3644b418758852ca48763eb30f0bb2b302a856e2ffcc474121f2053342",
+      "session": "a2645021-0322-4298-9880-a5e992152a3a",
+      "mode": "attached",
+      "process": "exited",
+      "attention": "terminal",
+      "failure": null,
+      "pid": 3451139,
+      "predecessor": null,
+      "result": {
+        "schemaVersion": 1,
+        "id": "42bce16b-3b03-4200-ab82-f63891c55e33",
+        "execution": "1c93a4c6-9cb3-4162-a2d3-7bd3eea56cf7",
+        "roleGrant": "sha256:abe12d3644b418758852ca48763eb30f0bb2b302a856e2ffcc474121f2053342",
+        "disposition": "succeeded",
+        "methodology": {
+          "verification": "PASS"
+        }
+      },
+      "actions": [
+        {
+          "schemaVersion": 1,
+          "id": "ae531ab7-d87c-4e61-9f88-e20804c3787f",
+          "request": {
+            "schemaVersion": 1,
+            "id": "b9ca6e65-9865-44d0-a5d2-e4759ddaba89",
+            "execution": "1c93a4c6-9cb3-4162-a2d3-7bd3eea56cf7",
+            "roleGrant": "sha256:abe12d3644b418758852ca48763eb30f0bb2b302a856e2ffcc474121f2053342",
+            "kind": "publication",
+            "workspace": "repository",
+            "commit": "29948520890cb8056463225c25b761776af9dac4",
+            "ref": "refs/heads/proof"
+          },
+          "status": "succeeded",
+          "before": "ae5ef15e9cb7f15d1dfa6d5c02a98a7833ff25d0",
+          "after": "29948520890cb8056463225c25b761776af9dac4",
+          "reason": null,
+          "directPublication": false,
+          "execution": "1c93a4c6-9cb3-4162-a2d3-7bd3eea56cf7"
+        }
+      ],
+      "requests": [
+        {
+          "schemaVersion": 1,
+          "id": "23cc8352-973b-4d02-8f23-2936c4f48e50",
+          "execution": "1c93a4c6-9cb3-4162-a2d3-7bd3eea56cf7",
+          "kind": "root",
+          "question": "May this execution finish the bounded proof?",
+          "permission": "finish-proof",
+          "response": {
+            "schemaVersion": 1,
+            "id": "3e9af7e2-cd64-41ae-a877-e6d1842e5358",
+            "value": "yes",
+            "authority": "5ffacadd-4c6c-4946-bfef-d538e287212f"
+          }
+        }
+      ],
+      "transition": {
+        "status": "recorded",
+        "reason": null
+      }
+    },
+    "grant": {
+      "schemaVersion": 1,
+      "id": "sha256:abe12d3644b418758852ca48763eb30f0bb2b302a856e2ffcc474121f2053342",
+      "allocationKey": "sha256:5fd8d3e5eb2c74c0a3a63496b2e2763308d8672713255f871a0708bceebd3aa4",
+      "workflowGrant": "618b75ff-a785-4b12-82ad-f9443ff9125f",
+      "authorityBasis": "sha256:676248e64f29db6634ce17ebefb04701302a6ac5c0159aed3854b323d08a2de6",
+      "methodology": "sha256:d16e8e4c0cff82b086da8ec7ef0d4770163f2af29bea4818d0d53f8b908a4d1b",
+      "role": "produce",
+      "contractIdentity": "sha256:baf15f08ce47943be94d777e4e49b929f1b3d946fb52f3a1f33264e430b67a30",
+      "skillIdentity": "sha256:9b9ad13affaa664b6d8a1895fb54ad9c4b32d4867b1f9f9f35c522c84da93f65",
+      "inputs": {
+        "input": "sha256:2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+        "candidate": "29948520890cb8056463225c25b761776af9dac4",
+        "base": "ae5ef15e9cb7f15d1dfa6d5c02a98a7833ff25d0"
+      },
+      "workspaces": [
+        {
+          "id": "repo",
+          "path": "/tmp/harness-014-proofs-AQtlSw/kernel-attached-publication-wait-DYAjuJ/project",
+          "mode": "write",
+          "exposure": "public"
+        }
+      ],
+      "capabilities": [
+        "repository-read",
+        "repository-write"
+      ],
+      "hostActions": {
+        "publication": {
+          "workspace": "repository",
+          "remote": "publication",
+          "ref": "refs/heads/proof",
+          "commit": "29948520890cb8056463225c25b761776af9dac4",
+          "base": "ae5ef15e9cb7f15d1dfa6d5c02a98a7833ff25d0"
+        }
+      },
+      "executorConstraints": {
+        "forbiddenExposure": [],
+        "protected": false
+      },
+      "predecessor": null,
+      "rootAuthority": null
+    }
+  },
+  "ledgerIdentity": "sha256:8f57c180e999276b4d57981088b18390c70a47586d6b81ab8857af627e65382e",
+  "executorEvidenceIdentity": "sha256:9c31e2ce269dc6f0abafe0d0235ddc257a798c93958d6451e706907528dbe873"
+}

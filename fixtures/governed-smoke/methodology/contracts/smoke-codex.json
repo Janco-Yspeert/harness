@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "workspaces": ["repository"],
+  "capabilities": ["repository-read", "local-computation", "git-inspect"],
+  "forbiddenExposure": [],
+  "protected": false,
+  "inputs": [{ "name": "marker", "path": "marker.txt" }],
+  "results": ["succeeded", "blocked", "refused", "failed"],
+  "methodology": { "smoke": ["PASS", "FAIL"] },
+  "human": [],
+  "postconditions": []
+}

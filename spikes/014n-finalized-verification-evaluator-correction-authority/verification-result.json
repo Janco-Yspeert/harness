@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "commit": "6fa5ed9fc62077dbe4be144c6f8ec5e026cc6d67",
+  "evaluatorRevision": "005",
+  "attempt": 10,
+  "result": "PASS",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "SATISFIED",
+    "AC14": "SATISFIED",
+    "AC15": "SATISFIED",
+    "AC16": "SATISFIED",
+    "AC17": "SATISFIED",
+    "AC18": "NOT_ADJUDICATED"
+  },
+  "notes": "Candidate evaluation completed against frozen evaluator revision 005; all frozen identities matched. Frozen executable evaluation passes 20 of 20; typecheck passes; methodology/skill diff against base is empty; differential full-suite comparison shows identical failing sets at parent and candidate. AC18 is a non-required post-acceptance step and is not adjudicated."
+}

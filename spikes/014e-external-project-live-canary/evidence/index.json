@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "candidate": "eb6a06e5bd808918e958103fd63589b4e67d8ce3",
+    "methodology": {
+      "sequence": 5,
+      "manifest": "sha256:47296d5c73c7833002c482ed7ed75d67ecf21c7aec6fa62a5c84aeeab954effb",
+      "revision": "9169ccf7d4543c214e7b7890ee29e428a5f8c01a"
+    }
+  },
+  "stockdif": {
+    "origin": "github.com/Janco-Yspeert/stockdif",
+    "baseline": "d1bb593fd0b56e58e384a07e8971d6bd75541ac0",
+    "branch": "feat/spike-001",
+    "commits": [],
+    "identities": {
+      "brief": "sha256:59b194e6b47cd5961bdb17e2b4cf4927dc4f93f3ffea6fd7b72f91253c227ba2",
+      "designMap": null,
+      "evaluatorRevision": null,
+      "verification": null,
+      "promotion": null,
+      "asBuilt": null,
+      "outcome": null
+    },
+    "workflowGrant": "a5fa0c8f-3117-4caf-827d-dcc5cedfc70e",
+    "ledgerIdentity": "sha256:2791b8ad3671a51b974e7ca93c95b095b39229738b6bf7643e89da9c1dbbc9de",
+    "allocations": 4
+  },
+  "canary": {
+    "status": "blocked",
+    "ledgerState": {
+      "transition": "kernel.process",
+      "event": "d9f80774-f8f0-461b-9f6a-a0e4451340a7",
+      "execution": "0676c9f8-1849-47dd-b7f5-bbaa7e92722c",
+      "process": "interrupted",
+      "reason": "host recovery could not reattach executor"
+    },
+    "blocker": "H3 let the real Codex worker complete the READY review in the worktree, but the nested sandbox kept repository Git metadata read-only, so the granted git-commit capability could not create the required checkpoint."
+  },
+  "provider": {
+    "public": {
+      "provider": "codex",
+      "configuredModel": "gpt-5.6-luna",
+      "configuredReasoning": "medium",
+      "confirmedModel": null,
+      "confirmedReasoning": null,
+      "observation": "adapter does not attest effective model or reasoning; provider completed repository review but could not write .git/index.lock"
+    },
+    "protected": "not-allocated",
+    "usage": "unavailable"
+  },
+  "artifacts": [
+    {
+      "path": "live-canary.md",
+      "identity": "sha256:b5dc4f2c44735bbb586311bf5d1e9341e6c353af1ffc9dd09231696651a0ef5d"
+    }
+  ]
+}

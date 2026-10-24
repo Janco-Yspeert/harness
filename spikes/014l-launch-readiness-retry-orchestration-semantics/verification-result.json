@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "workflow": "014l-launch-readiness-retry-orchestration-semantics",
+  "execution": "d44c7829-0fc1-4e51-a365-41253c09da64",
+  "attempt": 5,
+  "commit": "4f0560165a14c44f76c6fdd540f4bc456ef208ae",
+  "evaluatorRevision": "001",
+  "evaluatorRevisionIdentity": "sha256:6293e45e5cb22a6449fec4315cc5440cc031e98e0ca3b93983798c8236f543cc",
+  "result": "PASS",
+  "candidateEvaluationBegan": true,
+  "coverageResults": {
+    "AC1": "SATISFIED",
+    "AC2": "SATISFIED",
+    "AC3": "SATISFIED",
+    "AC4": "SATISFIED",
+    "AC5": "SATISFIED",
+    "AC6": "SATISFIED",
+    "AC7": "SATISFIED",
+    "AC8": "SATISFIED",
+    "AC9": "SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "SATISFIED",
+    "AC14": "SATISFIED",
+    "AC15": "SATISFIED",
+    "AC16": "SATISFIED",
+    "AC17": "SATISFIED",
+    "AC18": "SATISFIED",
+    "AC19": "SATISFIED",
+    "AC20": "SATISFIED",
+    "AC21": "SATISFIED",
+    "AC22": "SATISFIED",
+    "AC23": "SATISFIED",
+    "AC24": "SATISFIED",
+    "AC25": "SATISFIED"
+  },
+  "accounting": {
+    "criteria": 25,
+    "satisfied": 25,
+    "notSatisfied": 0,
+    "notAdjudicated": 0,
+    "note": "Typecheck, lint and format check pass. Full suite in a fresh clone: 331 tests, 330 pass; the single failure is an environment-sensitive containment test that also fails at the pre-014l baseline and passes (18/18) when its suite is run in the project checkout. All 33 required deterministic tests are present as committed visible tests."
+  },
+  "regression": {
+    "command": "npm run typecheck; npm run lint; npm run format:check; npm test",
+    "environment": "fresh local clone at the candidate commit",
+    "typecheck": "pass",
+    "lint": "pass",
+    "formatCheck": "pass",
+    "tests": 331,
+    "passed": 330
+  },
+  "evaluatorIntegrity": {
+    "frozenEvaluationModified": false,
+    "specificationDrift": false,
+    "evaluatorDefects": 0,
+    "candidateEvaluationBegan": true
+  },
+  "regressionRecommendations": [
+    {
+      "requirement": "AC25 existing normal spawned workflows",
+      "behaviorClass": "a normal real-role spawned start must pass readiness and reach allocation",
+      "test": "keep the existing real-role host flow tests green with a fixture that confirms the readiness tool"
+    }
+  ]
+}

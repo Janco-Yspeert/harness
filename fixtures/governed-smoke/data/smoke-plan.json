@@ -1,0 +1,11 @@
+{
+  "revision": "001",
+  "attempt": 1,
+  "artifacts": [
+    {
+      "source": "promotion-bytes.txt",
+      "destination": "promotion-bytes.txt",
+      "identity": "sha256:3a802f27f93ad203c3913d832c213dac574157966201fe2816caba4337bfeffd"
+    }
+  ]
+}

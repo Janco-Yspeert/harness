@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "stage": "A",
+  "runtimeCommit": "bd08a3ed26bbb31746a421c506f9b18ec64c2336",
+  "containment": {
+    "mechanism": "bwrap",
+    "syntheticHome": true,
+    "result": "PASS"
+  },
+  "workspaceGrant": [
+    {
+      "id": "smoke-repository",
+      "mode": "write"
+    }
+  ],
+  "executor": {
+    "profile": "codex-sol-medium",
+    "provider": "codex",
+    "providerVersion": "codex-cli 0.157.1",
+    "requested": {
+      "model": "gpt-5.6-sol",
+      "reasoning": "medium"
+    },
+    "enforced": {
+      "model": true,
+      "reasoning": true
+    },
+    "confirmed": {
+      "model": null,
+      "reasoning": null
+    },
+    "attestation": {
+      "model": "unavailable",
+      "reasoning": "unavailable",
+      "note": "Launch settings were passed and enforced by the Codex CLI; its JSONL did not provider-attest the effective values."
+    }
+  },
+  "liveExecution": {
+    "execution": "e6cc062c-3e43-40ef-bc20-0497211b941d",
+    "roleGrant": "sha256:98315a50866858a14a8e143dee63ac61b47548e380e31a1248569cb46412f381",
+    "semanticResult": "PASS",
+    "process": "exited"
+  },
+  "checks": [
+    {
+      "kind": "deterministic",
+      "result": "PASS",
+      "evidence": "npm test on the repaired launcher: 218 passed, 0 failed; production-launcher fixtures cover granted read/write, scratch, private/sibling/home exclusion, and traversal refusal."
+    },
+    {
+      "kind": "live-provider",
+      "result": "PASS",
+      "evidence": "One Codex role used the production registered-adapter launcher, received the Harness worker tools, read its granted repository marker, and returned the required typed PASS result."
+    },
+    {
+      "kind": "filesystem-view",
+      "result": "PASS",
+      "evidence": "The public execution record reports bwrap, a single granted write workspace, and syntheticHome=true; the same launcher construction tested deterministically excludes known ungranted fixture roots."
+    }
+  ],
+  "source": {
+    "generatedAt": "2026-09-30T19:01:04.732Z",
+    "smokeLedgerIdentity": "sha256:5e95110ec05fd9f2cf63bf2952e609011e076782b2de564d2d1f5f9181014cdf"
+  }
+}

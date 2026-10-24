@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "request": {
+    "id": "95238a69-9313-4e85-a4c0-771fd9aaa2da",
+    "execution": "7b3daed7-6a33-4602-abde-1935c0757056",
+    "roleGrant": "sha256:4142f54d5a6ce7c4c143168608b8889019b3f0c98cfe1a37fd39b359f77b38da",
+    "candidate": "9169ccf7d4543c214e7b7890ee29e428a5f8c01a",
+    "evaluatorRevision": "002",
+    "attempt": 7,
+    "destination": "evaluation",
+    "artifacts": [
+      {
+        "source": ".eval/attempt-ledger.json",
+        "destination": "attempt-ledger.json",
+        "identity": "sha256:067829909fe66cb146c4e5fcfd8e3e20ea3fa782295038c7b1a1695c8a315266"
+      },
+      {
+        "source": ".eval/attempts/001/eval-result.md",
+        "destination": "attempts/001/eval-result.md",
+        "identity": "sha256:cfd09f3018b5583bc322b29bd40f55f78976f1dd52494b6ca97814e111848c92"
+      },
+      {
+        "source": ".eval/attempts/004/eval-result.md",
+        "destination": "attempts/004/eval-result.md",
+        "identity": "sha256:605a4d2494014e2131488596f1af8bfbcd9b286a2d0ce9f673e7ff1955774f2f"
+      },
+      {
+        "source": ".eval/attempts/005/eval-result.md",
+        "destination": "attempts/005/eval-result.md",
+        "identity": "sha256:3847107064ff1e097c131353874ed20af15d19dc88bd9f663f97eb27d74e9edd"
+      },
+      {
+        "source": ".eval/attempts/006/eval-result.md",
+        "destination": "attempts/006/eval-result.md",
+        "identity": "sha256:ad88717c7d54b17957461675210a10621ae3003d0160a20582a8038b4a331d61"
+      },
+      {
+        "source": ".eval/attempts/007/eval-result.md",
+        "destination": "attempts/007/eval-result.md",
+        "identity": "sha256:1bef15c8cb568729f31c4cfaacc8baaad3616133d4f276c7796ba55e20ea873c"
+      },
+      {
+        "source": ".eval/freeze.json",
+        "destination": "freeze/002.json",
+        "identity": "sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319"
+      },
+      {
+        "source": "eval-spec.md",
+        "destination": "revisions/002/eval-spec.md",
+        "identity": "sha256:3aadfd178c5f4c2eb52233e2a47d955a2af2181144f79a4f1f55e48576c8f9ed"
+      },
+      {
+        "source": "case-manifest.json",
+        "destination": "revisions/002/case-manifest.json",
+        "identity": "sha256:d5029031366ccddcdde47367210042931cf38392eda8a5abdf5d9770831079f8"
+      },
+      {
+        "source": ".hidden-test/manifest.json",
+        "destination": "revisions/002/.hidden-test/manifest.json",
+        "identity": "sha256:dbe3f1d47e40944172f2972cefda39b0df3b00e781a073889487ff2328a9ef56"
+      },
+      {
+        "source": ".hidden-test/support/repo.ts",
+        "destination": "revisions/002/.hidden-test/support/repo.ts",
+        "identity": "sha256:7ad891b0b1a3e7e96e9407d9a411cc5f5200298ea9f8d039a2ea4c2185273881"
+      },
+      {
+        "source": ".hidden-test/e1-promotion-binding.test.ts",
+        "destination": "revisions/002/.hidden-test/e1-promotion-binding.test.ts",
+        "identity": "sha256:9819a8e1714654a71acc3044f307a52a98ece9b31f6cc7ea19b86769dafa1f6d"
+      },
+      {
+        "source": ".hidden-test/e2-stable-context-prefix.test.ts",
+        "destination": "revisions/002/.hidden-test/e2-stable-context-prefix.test.ts",
+        "identity": "sha256:bb4ae6f38414628321a520e47232b3c81b97ad74fdf7401f050b9d637dba7c57"
+      },
+      {
+        "source": ".hidden-test/e3-archive-plan-refusals.test.ts",
+        "destination": "revisions/002/.hidden-test/e3-archive-plan-refusals.test.ts",
+        "identity": "sha256:4d2a0e8e18a809b4ef87e29aab420f1395c5c481351b84ba73f429244422018a"
+      },
+      {
+        "source": ".hidden-test/e4-trusted-grant-resolution.test.ts",
+        "destination": "revisions/002/.hidden-test/e4-trusted-grant-resolution.test.ts",
+        "identity": "sha256:6ae8d9be160697be24ae2aa7800fd9d596a03977adb06d8fd59565dc18746fba"
+      },
+      {
+        "source": ".hidden-test/e5-authority-history-static.test.ts",
+        "destination": "revisions/002/.hidden-test/e5-authority-history-static.test.ts",
+        "identity": "sha256:9606940737c33f09118d3f985506fd1b6855257a2227dbb078a93272c110c840"
+      },
+      {
+        "source": ".hidden-test/e6-artifact-bound.test.ts",
+        "destination": "revisions/002/.hidden-test/e6-artifact-bound.test.ts",
+        "identity": "sha256:763d3945b2df1ce497af4d1f3f1eadf3e6ecf2e3ce50961cd53d375257e0626b"
+      }
+    ]
+  },
+  "result": {
+    "artifacts": {
+      "attempt-ledger.json": "sha256:067829909fe66cb146c4e5fcfd8e3e20ea3fa782295038c7b1a1695c8a315266",
+      "attempts/001/eval-result.md": "sha256:cfd09f3018b5583bc322b29bd40f55f78976f1dd52494b6ca97814e111848c92",
+      "attempts/004/eval-result.md": "sha256:605a4d2494014e2131488596f1af8bfbcd9b286a2d0ce9f673e7ff1955774f2f",
+      "attempts/005/eval-result.md": "sha256:3847107064ff1e097c131353874ed20af15d19dc88bd9f663f97eb27d74e9edd",
+      "attempts/006/eval-result.md": "sha256:ad88717c7d54b17957461675210a10621ae3003d0160a20582a8038b4a331d61",
+      "attempts/007/eval-result.md": "sha256:1bef15c8cb568729f31c4cfaacc8baaad3616133d4f276c7796ba55e20ea873c",
+      "freeze/002.json": "sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319",
+      "revisions/002/eval-spec.md": "sha256:3aadfd178c5f4c2eb52233e2a47d955a2af2181144f79a4f1f55e48576c8f9ed",
+      "revisions/002/case-manifest.json": "sha256:d5029031366ccddcdde47367210042931cf38392eda8a5abdf5d9770831079f8",
+      "revisions/002/.hidden-test/manifest.json": "sha256:dbe3f1d47e40944172f2972cefda39b0df3b00e781a073889487ff2328a9ef56",
+      "revisions/002/.hidden-test/support/repo.ts": "sha256:7ad891b0b1a3e7e96e9407d9a411cc5f5200298ea9f8d039a2ea4c2185273881",
+      "revisions/002/.hidden-test/e1-promotion-binding.test.ts": "sha256:9819a8e1714654a71acc3044f307a52a98ece9b31f6cc7ea19b86769dafa1f6d",
+      "revisions/002/.hidden-test/e2-stable-context-prefix.test.ts": "sha256:bb4ae6f38414628321a520e47232b3c81b97ad74fdf7401f050b9d637dba7c57",
+      "revisions/002/.hidden-test/e3-archive-plan-refusals.test.ts": "sha256:4d2a0e8e18a809b4ef87e29aab420f1395c5c481351b84ba73f429244422018a",
+      "revisions/002/.hidden-test/e4-trusted-grant-resolution.test.ts": "sha256:6ae8d9be160697be24ae2aa7800fd9d596a03977adb06d8fd59565dc18746fba",
+      "revisions/002/.hidden-test/e5-authority-history-static.test.ts": "sha256:9606940737c33f09118d3f985506fd1b6855257a2227dbb078a93272c110c840",
+      "revisions/002/.hidden-test/e6-artifact-bound.test.ts": "sha256:763d3945b2df1ce497af4d1f3f1eadf3e6ecf2e3ce50961cd53d375257e0626b"
+    },
+    "integrityIdentity": "sha256:21227871d159a39293925ef2336bd060407a9d6ceedd601c37cd0533a7cc27ec"
+  }
+}

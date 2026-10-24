@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "evaluationRequirements": "sha256:ccc99e8ea39dd9cfccbf6fa920c9bb7b152beb25e4091dff6c6bc80336baab65",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 13,
+    "evaluatorRevision": "004",
+    "privateInventoryIdentity": "sha256:9130a4178dc0844ec1834498d40bab679dd138a77f4ba6126a11f6a1c8e6ce46",
+    "validatorResultBinding": "sha256:a06f8b4ac5194ab67b37220fdb014b2b6a29a89c070c8acc4c1c26f6ba7e3364",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 23,
+    "priorRevision": "003",
+    "priorRevisionIdentity": "sha256:d169cf26cb187c904697e6be6ca31d6d15ed8fbaf055404418d1aef3e57a8e4f"
+  },
+  "repair": {
+    "trigger": "human-correction-cycle-authorized",
+    "triggerSemanticResult": "sha256:4922ca6299f7c983cab8b3d6f808220303c328440fa558c6ecfd0e77d0119d53",
+    "classification": "IMPLEMENTATION_AND_EVALUATOR_DEFECT",
+    "sourceEvaluatorRevision": "003",
+    "resultEvaluatorRevision": "004",
+    "affectedCriteria": ["AC16", "AC17", "AC19"],
+    "acceptanceSemanticsPreserved": true,
+    "integrityValidation": "PASS",
+    "priorRepairs": [
+      {
+        "trigger": "human-evaluator-correction-authorized",
+        "sourceEvaluatorRevision": "002",
+        "resultEvaluatorRevision": "003",
+        "affectedCriteria": ["AC03"]
+      }
+    ]
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md#AC01",
+      "mode": "historical-provenance",
+      "required": true,
+      "procedures": ["P01"],
+      "sufficiency": "Committed predecessor evidence and the candidate diff establish that historical records were preserved rather than reclassified."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md#AC02",
+      "mode": "live-negative-and-positive",
+      "required": true,
+      "procedures": ["P02"],
+      "sufficiency": "Each configured evaluator classification is submitted through the governed result path, proving configuration—not a kernel special case—accepts and routes it."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md#AC03",
+      "mode": "live-negative-and-positive",
+      "required": true,
+      "procedures": ["P02"],
+      "sufficiency": "Invalid cross-field combinations are rejected before result acceptance and every valid combination reaches an explicit configured outcome."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md#AC04",
+      "mode": "live-concurrency",
+      "required": true,
+      "procedures": ["P03"],
+      "sufficiency": "Repeated equivalent allocation produces one execution under the same resolved grant."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md#AC05",
+      "mode": "live-negative",
+      "required": true,
+      "procedures": ["P03"],
+      "sufficiency": "Changed resolved authority is observed as conflict or a required reconciliation, never as an equivalent duplicate."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md#AC06",
+      "mode": "live-failure",
+      "required": true,
+      "procedures": ["P04"],
+      "sufficiency": "A forced continuation allocation failure leaves durable inspection evidence after the caller path ends."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md#AC07",
+      "mode": "deterministic-policy",
+      "required": true,
+      "procedures": ["P05"],
+      "sufficiency": "A bounded correction cycle reaches an inspectable human gate before another automatic allocation."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md#AC08",
+      "mode": "deterministic-policy",
+      "required": true,
+      "procedures": ["P05"],
+      "sufficiency": "A separately authorized WEG starts with fresh retry and semantic-work accounting."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md#AC09",
+      "mode": "live-conflict",
+      "required": true,
+      "procedures": ["P06"],
+      "sufficiency": "A live non-terminal governed execution blocks a second governed authority while an unadopted supervisor remains permissible."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md#AC10",
+      "mode": "real-process",
+      "required": true,
+      "procedures": ["P07"],
+      "sufficiency": "The ordered supersession proof records authority first, rejects late old-authority requests, reconciles the old process, then admits replacement work."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md#AC11",
+      "mode": "live-negative",
+      "required": true,
+      "procedures": ["P08"],
+      "sufficiency": "Skill discovery with ordinary continuation authority cannot create a worker grant or canonical role result."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md#AC12",
+      "mode": "real-attached-session",
+      "required": true,
+      "procedures": ["P09"],
+      "sufficiency": "The same attached session is permitted only by explicit or mechanically satisfied fallback authority and resumes supervision after terminal execution."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md#AC13",
+      "mode": "live-negative",
+      "required": true,
+      "procedures": ["P10"],
+      "sufficiency": "Recorded evaluator-private provenance prevents forbidden inline implementation adoption."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md#AC14",
+      "mode": "live-configuration",
+      "required": true,
+      "procedures": ["P11"],
+      "sufficiency": "Requested, host-enforced, and runtime-confirmed executor facts are distinguished, and unattestable exact constraints block allocation."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md#AC15",
+      "mode": "real-host-filesystem",
+      "required": true,
+      "procedures": ["P12"],
+      "sufficiency": "The same committed-looking artifact is denied without governed provenance and accepted only when the configured path binds the authorized execution and result."
+    },
+    {
+      "id": "AC16",
+      "frozenAuthority": "spike.md#AC16",
+      "mode": "real-host-filesystem",
+      "required": true,
+      "procedures": ["P13"],
+      "sufficiency": "A bounded evaluator request causes host validation and promotion with exact source/destination identities, without direct executor publication authority."
+    },
+    {
+      "id": "AC17",
+      "frozenAuthority": "spike.md#AC17",
+      "mode": "live-failure",
+      "required": true,
+      "procedures": ["P13"],
+      "sufficiency": "A denied or failed host action is recorded separately and leaves the already valid semantic PASS intact."
+    },
+    {
+      "id": "AC18",
+      "frozenAuthority": "spike.md#AC18",
+      "mode": "live-negative",
+      "required": true,
+      "procedures": ["P14"],
+      "sufficiency": "The historical reader remains observable while every post-cutover legacy mutation route is mechanically unavailable."
+    },
+    {
+      "id": "AC19",
+      "frozenAuthority": "spike.md#AC19",
+      "mode": "live-authority",
+      "required": true,
+      "procedures": ["P15"],
+      "sufficiency": "A new human decision is accepted only by the configured authority path and cannot be changed by legacy state."
+    },
+    {
+      "id": "AC20",
+      "frozenAuthority": "spike.md#AC20",
+      "mode": "deterministic-policy",
+      "required": true,
+      "procedures": ["P16"],
+      "sufficiency": "Direct predicate cases establish false without an anchor and true only after a matching anchor, with visible regression coverage."
+    },
+    {
+      "id": "AC21",
+      "frozenAuthority": "spike.md#AC21",
+      "mode": "repository-regression",
+      "required": true,
+      "procedures": ["P17"],
+      "sufficiency": "The complete supported visible suite establishes retained baseline behaviour and detects kernel-regression breakage."
+    },
+    {
+      "id": "AC22",
+      "frozenAuthority": "spike.md#AC22",
+      "mode": "real-process",
+      "required": true,
+      "procedures": ["P18"],
+      "sufficiency": "A real spawned clean exit without a result yields durable missing-result handling, while valid result delivery advances separately from process exit."
+    },
+    {
+      "id": "AC23",
+      "frozenAuthority": "spike.md#AC23",
+      "mode": "live-configuration-and-boundary",
+      "required": true,
+      "procedures": ["P19"],
+      "sufficiency": "A contradictory fixture is rejected and a governed Brief Readiness execution produces its declared artifact within its granted capability."
+    }
+  ]
+}

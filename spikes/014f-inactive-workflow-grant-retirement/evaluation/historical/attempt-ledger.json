@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 2,
+  "attempts": [
+    {
+      "attempt": 8,
+      "status": "BLOCKED",
+      "candidate": "af75b14d1847af02404a591a8829751dc8df2a2e",
+      "evaluatorRevision": "002",
+      "classification": "INFRASTRUCTURE_FAILURE",
+      "result": ".eval/attempts/008/eval-result.md"
+    },
+    {
+      "attempt": 9,
+      "status": "PASS",
+      "candidate": "af75b14d1847af02404a591a8829751dc8df2a2e",
+      "evaluatorRevision": "002",
+      "classification": null,
+      "result": ".eval/attempts/009/eval-result.md"
+    }
+  ]
+}
