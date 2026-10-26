@@ -147,6 +147,9 @@ function operationalFailure(error: unknown): OperationalFailureClass {
 
 const MAX_READINESS_DIAGNOSTIC_BYTES = 262_144;
 const MAX_READINESS_DIAGNOSTIC_LINE = 4_096;
+// A diagnostic file cap is not a memory cap. Keep enough for ordinary JSONL
+// provider events, then discard through the next newline without parsing it.
+const MAX_READINESS_PENDING_BYTES = 65_536;
 const REAP_GRACE_MS = 1_000;
 const DEFAULT_READINESS_TIMEOUT_MS: Readonly<Record<string, number>> = {
   // A readiness probe is a real provider turn, not a local health check.
@@ -164,6 +167,61 @@ export type ReadinessDiagnosticCause =
   | "permission-denied"
   | "missing-mcp-confirmation"
   | "spawn-error";
+
+function diagnosticField(
+  value: unknown,
+): string | number | boolean | undefined {
+  if (typeof value === "string") return redact(value).slice(0, 128);
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  return undefined;
+}
+
+function structuredDiagnosticFields(
+  line: string,
+): Record<string, unknown> | undefined {
+  try {
+    const parsed: unknown = JSON.parse(line);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
+      return undefined;
+    const event = parsed as Record<string, unknown>;
+    const fields: Record<string, unknown> = {};
+    for (const key of ["type", "subtype", "status", "code"] as const) {
+      const value = diagnosticField(event[key]);
+      if (value !== undefined) fields[key] = value;
+    }
+    const error =
+      event.error !== null &&
+      typeof event.error === "object" &&
+      !Array.isArray(event.error)
+        ? (event.error as Record<string, unknown>)
+        : undefined;
+    if (error) {
+      const summary: Record<string, unknown> = {};
+      for (const key of ["type", "code"] as const) {
+        const value = diagnosticField(error[key]);
+        if (value !== undefined) summary[key] = value;
+      }
+      if (Object.keys(summary).length) fields.error = summary;
+    }
+    const item =
+      event.item !== null &&
+      typeof event.item === "object" &&
+      !Array.isArray(event.item)
+        ? (event.item as Record<string, unknown>)
+        : undefined;
+    if (item) {
+      const summary: Record<string, unknown> = {};
+      for (const key of ["type", "status", "server", "tool"] as const) {
+        const value = diagnosticField(item[key]);
+        if (value !== undefined) summary[key] = value;
+      }
+      if (Object.keys(summary).length) fields.item = summary;
+    }
+    return Object.keys(fields).length ? fields : { kind: "json-event" };
+  } catch {
+    return undefined;
+  }
+}
 
 class ReadinessDiagnostics {
   #path: string | undefined;
@@ -194,10 +252,17 @@ class ReadinessDiagnostics {
   }
 
   line(stream: "stdout" | "stderr", line: string): void {
+    const event = structuredDiagnosticFields(line);
     this.write({
       stream,
-      line: redact(line).slice(0, MAX_READINESS_DIAGNOSTIC_LINE),
+      ...(event
+        ? { event }
+        : { line: redact(line).slice(0, MAX_READINESS_DIAGNOSTIC_LINE) }),
     });
+  }
+
+  oversized(stream: "stdout" | "stderr"): void {
+    this.write({ kind: "output-truncated", stream, reason: "line-too-large" });
   }
 
   event(kind: string): void {
@@ -233,15 +298,69 @@ export function readinessTimeoutMs(input: {
   return DEFAULT_READINESS_TIMEOUT_MS[input.provider] ?? 15_000;
 }
 
-function retainLines(
-  diagnostics: ReadinessDiagnostics,
-  stream: "stdout" | "stderr",
-  pending: string,
-): string {
-  const lines = pending.split(/\r?\n/);
-  const tail = lines.pop() ?? "";
-  for (const line of lines) diagnostics.line(stream, line);
-  return tail;
+class BoundedReadinessStream {
+  #parts: Buffer[] = [];
+  #bytes = 0;
+  #discarding = false;
+  readonly stream: "stdout" | "stderr";
+  readonly diagnostics: ReadinessDiagnostics;
+  readonly line: (line: string) => void;
+
+  constructor(
+    stream: "stdout" | "stderr",
+    diagnostics: ReadinessDiagnostics,
+    line: (line: string) => void,
+  ) {
+    this.stream = stream;
+    this.diagnostics = diagnostics;
+    this.line = line;
+  }
+
+  push(chunk: Buffer): void {
+    let offset = 0;
+    while (offset < chunk.length) {
+      if (this.#discarding) {
+        const newline = chunk.indexOf(0x0a, offset);
+        if (newline < 0) return;
+        this.#discarding = false;
+        offset = newline + 1;
+        continue;
+      }
+      const newline = chunk.indexOf(0x0a, offset);
+      const end = newline < 0 ? chunk.length : newline;
+      const part = chunk.subarray(offset, end);
+      if (this.#bytes + part.length > MAX_READINESS_PENDING_BYTES) {
+        this.#parts = [];
+        this.#bytes = 0;
+        this.#discarding = newline < 0;
+        this.diagnostics.oversized(this.stream);
+        offset = newline < 0 ? chunk.length : newline + 1;
+        continue;
+      }
+      if (part.length) {
+        this.#parts.push(Buffer.from(part));
+        this.#bytes += part.length;
+      }
+      if (newline < 0) return;
+      this.#flush();
+      offset = newline + 1;
+    }
+  }
+
+  end(): void {
+    if (!this.#discarding && this.#bytes) this.#flush();
+    this.#parts = [];
+    this.#bytes = 0;
+    this.#discarding = false;
+  }
+
+  #flush(): void {
+    let line = Buffer.concat(this.#parts, this.#bytes).toString("utf8");
+    if (line.endsWith("\r")) line = line.slice(0, -1);
+    this.#parts = [];
+    this.#bytes = 0;
+    this.line(line);
+  }
 }
 
 export async function runProviderReadiness(input: {
@@ -257,6 +376,14 @@ export async function runProviderReadiness(input: {
   };
   privateDiagnostics?: { root: string; attempt: string };
   spawnProvider?: typeof spawn;
+  // A deterministic clock is a test seam only; production uses host timers.
+  timers?: {
+    setTimeout(
+      callback: () => void,
+      delay: number,
+    ): ReturnType<typeof setTimeout>;
+    clearTimeout(handle: ReturnType<typeof setTimeout>): void;
+  };
 }): Promise<ReadinessProbeResult> {
   const root = mkdtempSync(join(tmpdir(), "harness-readiness-"));
   try {
@@ -325,58 +452,99 @@ export async function runProviderReadiness(input: {
       env: launch.env,
     });
     return await new Promise<ReadinessProbeResult>((resolveProbe) => {
+      const timers = input.timers ?? globalThis;
       let finished = false;
       let timedOut = false;
+      let exited = false;
+      let closed = false;
+      let exitCode: number | null = null;
+      let exitSignal: string | null = null;
       let failure: OperationalFailureClass | undefined;
       let cause: ReadinessDiagnosticCause | undefined;
       let toolConnected = false;
-      let stdoutPending = "";
-      let stderrPending = "";
-      let reapTimer: NodeJS.Timeout | undefined;
+      let reapTimer: ReturnType<typeof setTimeout> | undefined;
+      const observe = (line: string): void => {
+        diagnostics.line("stdout", line);
+        for (const event of input.adapter.parse(line)) {
+          diagnostics.event(event.kind);
+          if (event.kind === "tools-unavailable") {
+            failure = "required-connectivity-tool-failure";
+            cause = "missing-mcp-confirmation";
+            toolConnected = false;
+          }
+          if (event.kind === "tool-confirmed" && event.tool === "readiness")
+            toolConnected = true;
+          if (event.kind === "permission-denied") {
+            failure = "pre-allocation-readiness-failure";
+            cause = "permission-denied";
+          }
+          if (event.kind === "provider-error") {
+            failure = "pre-allocation-readiness-failure";
+            cause = "provider-error";
+          }
+          if (event.kind === "rate-limited") {
+            failure = "pre-allocation-readiness-failure";
+            cause = "rate-limited";
+          }
+        }
+      };
+      const stdout = new BoundedReadinessStream("stdout", diagnostics, observe);
+      const stderr = new BoundedReadinessStream(
+        "stderr",
+        diagnostics,
+        (line) => {
+          diagnostics.line("stderr", line);
+        },
+      );
       const finish = (result: ReadinessProbeResult): void => {
         if (finished) return;
         finished = true;
-        clearTimeout(timer);
-        if (reapTimer) clearTimeout(reapTimer);
+        timers.clearTimeout(timer);
+        if (reapTimer) timers.clearTimeout(reapTimer);
         resolveProbe(result);
       };
+      const finalize = (): void => {
+        if (finished || !exited || !closed) return;
+        stdout.end();
+        stderr.end();
+        if (timedOut) {
+          diagnostics.outcome("timeout", exitCode, exitSignal);
+          finish({
+            state: "failed",
+            failure: "pre-allocation-readiness-failure",
+          });
+          return;
+        }
+        if (
+          exitCode === 0 &&
+          exitSignal === null &&
+          !failure &&
+          toolConnected
+        ) {
+          diagnostics.outcome("passed", exitCode, exitSignal);
+          finish({ state: "passed", effective: effectiveShape(input.shape) });
+          return;
+        }
+        const exitCause =
+          cause ??
+          (exitCode !== 0 || exitSignal !== null
+            ? "provider-exit"
+            : "missing-mcp-confirmation");
+        diagnostics.outcome(exitCause, exitCode, exitSignal);
+        finish({
+          state: "failed",
+          failure: failure ?? "required-connectivity-tool-failure",
+        });
+      };
       child.stdout.on("data", (chunk: Buffer) => {
-        stdoutPending += chunk.toString("utf8");
-        const lines = stdoutPending.split(/\r?\n/);
-        stdoutPending = lines.pop() ?? "";
-        for (const line of lines) diagnostics.line("stdout", line);
-        for (const line of lines)
-          for (const event of input.adapter.parse(line)) {
-            diagnostics.event(event.kind);
-            if (event.kind === "tools-unavailable") {
-              failure = "required-connectivity-tool-failure";
-              cause = "missing-mcp-confirmation";
-              toolConnected = false;
-            }
-            if (event.kind === "tool-confirmed" && event.tool === "readiness")
-              toolConnected = true;
-            if (event.kind === "permission-denied") {
-              failure = "pre-allocation-readiness-failure";
-              cause = "permission-denied";
-            }
-            if (event.kind === "provider-error") {
-              failure = "pre-allocation-readiness-failure";
-              cause = "provider-error";
-            }
-            if (event.kind === "rate-limited") {
-              failure = "pre-allocation-readiness-failure";
-              cause = "rate-limited";
-            }
-          }
+        stdout.push(chunk);
       });
       child.stderr.on("data", (chunk: Buffer) => {
-        stderrPending = retainLines(
-          diagnostics,
-          "stderr",
-          stderrPending + chunk.toString("utf8"),
-        );
+        stderr.push(chunk);
       });
       child.once("error", () => {
+        // Spawn errors have no child to drain. A successfully spawned child
+        // reports exit/close and remains on that lifecycle path instead.
         diagnostics.outcome("spawn-error");
         finish({
           state: "failed",
@@ -384,34 +552,18 @@ export async function runProviderReadiness(input: {
         });
       });
       child.once("exit", (code, signal) => {
-        if (stdoutPending) diagnostics.line("stdout", stdoutPending);
-        if (stderrPending) diagnostics.line("stderr", stderrPending);
-        if (timedOut) {
-          diagnostics.outcome("timeout", code, signal);
-          finish({
-            state: "failed",
-            failure: "pre-allocation-readiness-failure",
-          });
-          return;
-        }
-        if (code === 0 && signal === null && !failure && toolConnected) {
-          diagnostics.outcome("passed", code, signal);
-          finish({ state: "passed", effective: effectiveShape(input.shape) });
-        } else {
-          const exitCause =
-            cause ??
-            (code !== 0 || signal !== null
-              ? "provider-exit"
-              : "missing-mcp-confirmation");
-          diagnostics.outcome(exitCause, code, signal);
-          finish({
-            state: "failed",
-            failure: failure ?? "required-connectivity-tool-failure",
-          });
-        }
+        exited = true;
+        exitCode = code;
+        exitSignal = signal;
+        finalize();
       });
-      const timer = setTimeout(
+      child.once("close", () => {
+        closed = true;
+        finalize();
+      });
+      const timer = timers.setTimeout(
         () => {
+          if (finished) return;
           timedOut = true;
           try {
             child.kill("SIGTERM");
@@ -425,7 +577,7 @@ export async function runProviderReadiness(input: {
           }
           // Do not remove the scratch tree until the child has exited. If it
           // ignores TERM, escalate while retaining the same public failure.
-          reapTimer = setTimeout(() => {
+          reapTimer = timers.setTimeout(() => {
             try {
               child.kill("SIGKILL");
             } catch {

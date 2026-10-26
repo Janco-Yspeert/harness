@@ -107,6 +107,23 @@ function parseJson(line: string): Json | undefined {
 function stringValue(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
+function explicitRateLimit(event: Json): boolean {
+  const error =
+    event.error !== null && typeof event.error === "object"
+      ? (event.error as Json)
+      : undefined;
+  // Only provider-supplied machine codes are evidence. In particular, do not
+  // classify an arbitrary error message containing the words "rate limit".
+  return [event.error, event.code, error?.code, error?.type].some((value) =>
+    [
+      "rate_limit",
+      "rate_limited",
+      "rate_limit_exceeded",
+      "rate_limit_error",
+      "slow_down",
+    ].includes(typeof value === "string" ? value.toLowerCase() : ""),
+  );
+}
 
 const claude: ProviderAdapter = {
   id: "claude",
@@ -384,8 +401,11 @@ const codex: ProviderAdapter = {
   parse(line) {
     const event = parseJson(line);
     if (!event) return [];
-    if (event.type === "turn.failed" || event.type === "error")
+    if (event.type === "turn.failed" || event.type === "error") {
+      if (explicitRateLimit(event))
+        return [{ kind: "rate-limited", detail: "provider rate limit" }];
       return [{ kind: "provider-error", detail: `provider ${event.type}` }];
+    }
     const item =
       event.item !== null && typeof event.item === "object"
         ? (event.item as Json)
