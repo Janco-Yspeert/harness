@@ -11,6 +11,8 @@ export function loadProject(path: string): Project {
   const raw = JSON.parse(readFileSync(path, "utf8")) as Project & {
     workflowDirectory?: string;
     ledgerName?: string;
+    workflowWorkspace?: string;
+    workflowOrigin?: string;
   };
   if (
     (raw.methodologyRoot !== undefined &&
@@ -19,6 +21,27 @@ export function loadProject(path: string): Project {
       (typeof raw.origin !== "string" || !ORIGIN.test(raw.origin)))
   )
     throw new Error("invalid project methodology root or origin declaration");
+  if (
+    (raw.workflowWorkspace !== undefined &&
+      (typeof raw.workflowWorkspace !== "string" || !raw.workflowWorkspace)) ||
+    (raw.workflowOrigin !== undefined &&
+      (typeof raw.workflowOrigin !== "string" ||
+        !ORIGIN.test(raw.workflowOrigin)))
+  )
+    throw new Error("invalid project workflow workspace or origin declaration");
+  const split =
+    raw.workflowWorkspace !== undefined &&
+    raw.workflowWorkspace !== "repository";
+  if (split && raw.workflowOrigin === undefined)
+    throw new Error("split workflow workspace requires workflowOrigin");
+  if (!split && raw.workflowOrigin !== undefined)
+    throw new Error("workflowOrigin requires a distinct workflow workspace");
+  if (
+    split &&
+    (!Object.hasOwn(raw.workspaces, raw.workflowWorkspace as string) ||
+      raw.workspaces[raw.workflowWorkspace as string]?.exposure !== "public")
+  )
+    throw new Error("workflow workspace must be a configured public workspace");
   if (object(raw).schemaVersion !== 1 || !raw.id || !raw.root || !raw.policy)
     throw new Error("invalid project configuration");
   if (
@@ -34,10 +57,18 @@ export function loadProject(path: string): Project {
     );
   const root = resolve(dirname(path), raw.root);
   const workflows = { ...raw.workflows };
+  // Workflow directory and ledger resolve against the workflow workspace root
+  // (the project root when not split).
+  const workflowBase = split
+    ? resolve(root, raw.workspaces[raw.workflowWorkspace as string]?.path ?? "")
+    : root;
   if (raw.workflowDirectory)
-    for (const entry of readdirSync(resolve(root, raw.workflowDirectory), {
-      withFileTypes: true,
-    }))
+    for (const entry of readdirSync(
+      resolve(workflowBase, raw.workflowDirectory),
+      {
+        withFileTypes: true,
+      },
+    ))
       if (entry.isDirectory())
         workflows[entry.name] ??= {
           directory: `${raw.workflowDirectory}/${entry.name}`,
@@ -87,6 +118,12 @@ export function loadProject(path: string): Project {
       ? { methodologyRoot: resolve(dirname(path), raw.methodologyRoot) }
       : {}),
     ...(raw.origin ? { origin: raw.origin } : {}),
+    ...(split
+      ? {
+          workflowWorkspace: raw.workflowWorkspace as string,
+          workflowOrigin: raw.workflowOrigin as string,
+        }
+      : {}),
     ...(raw.validatorSources
       ? { validatorSources: { ...raw.validatorSources } }
       : {}),

@@ -26,3 +26,13 @@
 - Outputs: `eval-requirements.md`, `coverage-map.json` (15 criterion records), `manifest.md`
 - Checks: input identities matched; structural integrity validation passed; controlled pre-implementation exercise of mandatory executable cases; candidate not executed
 - Measurement cutoff: immediately before this manifest update.
+
+## Implementation
+
+- Skill: implementation, contract version 6 (attempt 1)
+- Inputs: `spike.md` (`sha256:cd9485caa4689a2001521e45e3ed39edb8fc0e0b99fb90b90cc72f8348658010`), `design-map.md` (`sha256:0c4682d02c8b3cc74818000625bfe9a79f60a5b4561607b9c7dac1db5eaf5a5c`), `coverage-map.json` (`sha256:25774ad65316d4e8ec2c2e586ba4f526f74787e3390a39f063a293997304bc27`), `eval-requirements.md` (`sha256:bb09fe3bd974c337f97679a69ed43143a966d3c9426363520b498ac4ac31bcdd`)
+- Result: `succeeded` (partial scope, see limitations); not independently evaluated
+- Outputs: `workflowWorkspace`/`workflowOrigin` configuration and preflight, workflow-root routing of ledger/artifact/coverage lookups, split grant `access`/`gitCommit`/`commits` with fail-closed `assertSplitGrant`, `test/split-workflow.test.ts` (17 tests), `docs/split-workflow.md`, `examples/split-project.example.json`
+- Checks: `tsc`, eslint, prettier clean; `npm test` fails the same 11 pre-existing tests as the parent commit (no regressions); split tests pass
+- Limitations: no real-provider smoke (AC14) was run; no contract/skill changes or trust adoption (AC15); implementation's brokered docs-evidence channel, per-role dispatch integration through a real split ledger, and partial-checkpoint/promotion integration tests are not implemented
+- Measurement cutoff: immediately before this manifest update.

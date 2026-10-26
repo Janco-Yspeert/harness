@@ -45,6 +45,7 @@ import {
   type PreservationPlan,
 } from "./archive-preservation.ts";
 import { evidencePath, inside, loadDefinition } from "./methodology.ts";
+import { assertSplitGrant } from "./resolver.ts";
 import {
   buildKnownLossArtifacts,
   parseArchiveLossDeclaration,
@@ -80,6 +81,8 @@ import {
 } from "./orchestration.ts";
 import {
   DIAGNOSTIC_CATEGORIES,
+  splitWorkflow,
+  workflowRepositoryRoot,
   type Diagnostic,
   type DiagnosticCategory,
 } from "./model.ts";
@@ -350,7 +353,11 @@ export class ExecutionKernel {
   path(workflow: string): string {
     const config = this.project.workflows[workflow];
     if (!config) throw new Error("unknown configured workflow");
-    return resolve(this.project.root, config.directory, config.ledger);
+    return resolve(
+      workflowRepositoryRoot(this.project),
+      config.directory,
+      config.ledger,
+    );
   }
   events(workflow: string): LedgerEvent[] {
     return readLedger(this.path(workflow));
@@ -807,7 +814,7 @@ export class ExecutionKernel {
         throw new Error("verification allocation identity is unavailable");
       const directory = required(this.project.workflows[workflow]).directory;
       const artifact = inside(
-        resolve(this.project.root, directory),
+        resolve(workflowRepositoryRoot(this.project), directory),
         request.evidencePath,
       );
       let bytes: Buffer;
@@ -816,9 +823,9 @@ export class ExecutionKernel {
           "git",
           [
             "show",
-            `${request.evidenceCommit}:${relative(this.project.root, artifact)}`,
+            `${request.evidenceCommit}:${relative(workflowRepositoryRoot(this.project), artifact)}`,
           ],
-          { cwd: this.project.root },
+          { cwd: workflowRepositoryRoot(this.project) },
         );
       } catch {
         throw new Error("evaluator correction evidence commit is unavailable");
@@ -991,7 +998,7 @@ export class ExecutionKernel {
       throw new Error("finalized verification allocation identity mismatch");
     const directory = required(this.project.workflows[workflow]).directory;
     const artifact = inside(
-      resolve(this.project.root, directory),
+      resolve(workflowRepositoryRoot(this.project), directory),
       request.artifactPath,
     );
     let bytes: Buffer;
@@ -1000,9 +1007,9 @@ export class ExecutionKernel {
         "git",
         [
           "show",
-          `${request.artifactCommit}:${relative(this.project.root, artifact)}`,
+          `${request.artifactCommit}:${relative(workflowRepositoryRoot(this.project), artifact)}`,
         ],
-        { cwd: this.project.root },
+        { cwd: workflowRepositoryRoot(this.project) },
       );
     } catch {
       throw new Error("evaluator correction artifact commit is unavailable");
@@ -1703,6 +1710,7 @@ export class ExecutionKernel {
       if (resolution.kind !== "grant")
         throw new Error(`${resolution.kind}: ${resolution.reason}`);
       const grant = resolution.grant;
+      if (splitWorkflow(this.project)) assertSplitGrant(this.project, grant);
       const inFlight = this.executions(workflow).find((e) =>
         ["allocated", "running"].includes(e.process),
       );
@@ -2091,7 +2099,7 @@ export class ExecutionKernel {
         : [])
         inside(
           resolve(
-            this.project.root,
+            workflowRepositoryRoot(this.project),
             required(this.project.workflows[workflow]).directory,
           ),
           path,
@@ -2226,14 +2234,14 @@ export class ExecutionKernel {
         return existing;
       }
       const head = execFileSync("git", ["rev-parse", "HEAD"], {
-        cwd: this.project.root,
+        cwd: workflowRepositoryRoot(this.project),
         encoding: "utf8",
       }).trim();
       if (head !== request.artifactCommit)
         throw new Error("transition recovery artifact commit drift");
       const artifact = inside(
         resolve(
-          this.project.root,
+          workflowRepositoryRoot(this.project),
           required(this.project.workflows[workflow]).directory,
         ),
         request.artifactPath,
@@ -2246,9 +2254,9 @@ export class ExecutionKernel {
             "git",
             [
               "show",
-              `${request.artifactCommit}:${relative(this.project.root, artifact)}`,
+              `${request.artifactCommit}:${relative(workflowRepositoryRoot(this.project), artifact)}`,
             ],
-            { cwd: this.project.root },
+            { cwd: workflowRepositoryRoot(this.project) },
           ),
         ) !== request.artifactIdentity
       )
@@ -2365,7 +2373,7 @@ export class ExecutionKernel {
       }
       if (rule.evidence?.artifact || rule.evidence?.commitHead) {
         artifactCommit = execFileSync("git", ["rev-parse", "HEAD"], {
-          cwd: this.project.root,
+          cwd: workflowRepositoryRoot(this.project),
           encoding: "utf8",
         }).trim();
         if (evidence.commit === undefined) evidence.commit = artifactCommit;
@@ -2374,7 +2382,7 @@ export class ExecutionKernel {
       if (rule.evidence?.artifact) {
         const path = inside(
           resolve(
-            this.project.root,
+            workflowRepositoryRoot(this.project),
             required(this.project.workflows[workflow]).directory,
           ),
           rule.evidence.artifact,
@@ -2385,7 +2393,7 @@ export class ExecutionKernel {
             this.options.validators?.[rule.evidence.validator],
             "pinned validator unavailable",
           ).validate(JSON.parse(bytes.toString("utf8")), {
-            projectRoot: this.project.root,
+            projectRoot: workflowRepositoryRoot(this.project),
             workflowDirectory: required(this.project.workflows[workflow])
               .directory,
             inputs: grant.inputs,
@@ -2397,9 +2405,9 @@ export class ExecutionKernel {
               "git",
               [
                 "show",
-                `${required(artifactCommit)}:${relative(this.project.root, path)}`,
+                `${required(artifactCommit)}:${relative(workflowRepositoryRoot(this.project), path)}`,
               ],
-              { cwd: this.project.root },
+              { cwd: workflowRepositoryRoot(this.project) },
             ),
           ) !== identity(bytes)
         )
@@ -2886,7 +2894,7 @@ export class ExecutionKernel {
         repository = realpathSync(workspace.path);
         const workflowRoot = realpathSync(
           resolve(
-            this.project.root,
+            workflowRepositoryRoot(this.project),
             required(this.project.workflows[workflow]).directory,
           ),
         );
@@ -3059,7 +3067,7 @@ export class ExecutionKernel {
         throw new Error(
           "loss-aware promotion requires canonical finalized verification PASS",
         );
-      const repository = realpathSync(this.project.root);
+      const repository = realpathSync(workflowRepositoryRoot(this.project));
       const workflowRoot = realpathSync(
         resolve(
           repository,
@@ -3253,7 +3261,7 @@ export class ExecutionKernel {
         };
       }
 
-      const repository = realpathSync(this.project.root);
+      const repository = realpathSync(workflowRepositoryRoot(this.project));
       const workflowRoot = realpathSync(
         resolve(
           repository,
@@ -3663,7 +3671,7 @@ export class ExecutionKernel {
       )
         throw new Error("authoritative PASS already has a recorded promotion");
 
-      const repository = realpathSync(this.project.root);
+      const repository = realpathSync(workflowRepositoryRoot(this.project));
       const workflowRoot = realpathSync(
         resolve(
           repository,
@@ -4068,7 +4076,7 @@ export class ExecutionKernel {
         action.status = "failed";
         const workflowRoot = realpathSync(
           resolve(
-            this.project.root,
+            workflowRepositoryRoot(this.project),
             required(this.project.workflows[workflow]).directory,
           ),
         );

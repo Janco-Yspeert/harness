@@ -24,6 +24,8 @@ import type {
   WorkflowGrant,
   ArtifactValidators,
 } from "./model.ts";
+import { splitWorkflow, workflowRepositoryRoot } from "./model.ts";
+import type { CommitBinding, WorkspaceAccess } from "./model.ts";
 
 export type Resolution =
   | { kind: "grant"; grant: RoleGrant }
@@ -183,9 +185,15 @@ export function roleInputs(
       const name = rule.path ?? event?.evidence.path;
       if (typeof name !== "string")
         throw new Error(`missing input path: ${rule.name}`);
-      if (rule.optional && !existsSync(resolve(project.root, directory, name)))
+      if (
+        rule.optional &&
+        !existsSync(resolve(workflowRepositoryRoot(project), directory, name))
+      )
         continue;
-      const path = inside(resolve(project.root, directory), name);
+      const path = inside(
+        resolve(workflowRepositoryRoot(project), directory),
+        name,
+      );
       const bytes = readFileSync(path);
       inputs[rule.name] = identity(bytes);
       if (rule.validator)
@@ -218,8 +226,11 @@ export function roleInputs(
           throw new Error("input lacks committed provenance");
         const committed = execFileSync(
           "git",
-          ["show", `${commit}:${relative(project.root, path)}`],
-          { cwd: project.root },
+          [
+            "show",
+            `${commit}:${relative(workflowRepositoryRoot(project), path)}`,
+          ],
+          { cwd: workflowRepositoryRoot(project) },
         );
         if (identity(committed) !== inputs[rule.name])
           throw new Error("committed input mismatch");
@@ -490,6 +501,11 @@ export function resolveAuthority(
     return { kind: "denied", reason: (e as Error).message };
   }
   const evidence = role.contract.evidence;
+  const split = splitWorkflow(project);
+  const docsKey = project.workflowWorkspace ?? "";
+  let splitGrant:
+    | { access: Record<string, WorkspaceAccess>; gitCommit: string[] }
+    | undefined;
   const workspaces = role.contract.workspaces.map((key) => {
     const value =
       project.workflows[workflow.workflow]?.workspaces?.[key] ??
@@ -497,10 +513,53 @@ export function resolveAuthority(
     if (!value) throw new Error(`workspace not configured: ${key}`);
     // Evidence is written only by the host, so the role never holds write
     // access to the workspace it mediates, whatever the project configures.
-    return evidence?.workspace === key
+    return evidence?.workspace === key && !split
       ? { ...value, mode: "read" as const }
       : value;
   });
+  if (split) {
+    const maxima = SPLIT_ROLE_ACCESS[name];
+    const sourceIndex = role.contract.workspaces.indexOf("repository");
+    const docs = project.workspaces[docsKey];
+    if (!maxima || sourceIndex < 0 || !docs)
+      return { kind: "denied", reason: "split workflow role access undefined" };
+    const writes = role.contract.capabilities.includes("repository-write");
+    const commits = role.contract.capabilities.includes("git-commit");
+    const narrow = (
+      configured: string,
+      maximum: WorkspaceAccess,
+    ): WorkspaceAccess =>
+      maximum === "write" && configured === "write" && writes
+        ? "write"
+        : maximum === "none"
+          ? "none"
+          : "read";
+    const source = required(workspaces[sourceIndex]);
+    const sourceAccess = narrow(source.mode, maxima.source);
+    // Evidence is host-written, so the role itself holds docs read at most.
+    const docsAccess = evidence ? "read" : narrow(docs.mode, maxima.workflow);
+    workspaces[sourceIndex] = {
+      ...source,
+      mode: sourceAccess === "write" ? "write" : "read",
+    };
+    workspaces.push({
+      ...docs,
+      mode: docsAccess === "write" ? "write" : "read",
+    });
+    const access: Record<string, WorkspaceAccess> = {
+      repository: sourceAccess,
+      [docsKey]: docsAccess,
+    };
+    for (const [index, key] of role.contract.workspaces.entries())
+      if (key !== "repository") access[key] = workspaces[index]?.mode ?? "read";
+    splitGrant = {
+      access,
+      gitCommit: [
+        ...(commits && sourceAccess === "write" ? ["repository"] : []),
+        ...(commits && docsAccess === "write" ? [docsKey] : []),
+      ],
+    };
+  }
   if (
     role.contract.protected &&
     !workspaces.some((w) => w.exposure !== "public")
@@ -532,7 +591,10 @@ export function resolveAuthority(
   const promotionAction = promotion
     ? {
         sourceWorkspace: promotion.sourceWorkspace,
-        destinationWorkspace: promotion.destinationWorkspace,
+        destinationWorkspace:
+          split && promotion.destinationWorkspace === "repository"
+            ? docsKey
+            : promotion.destinationWorkspace,
         destination: promotion.destination,
         candidate: inputs[promotion.candidateInput] ?? "",
         evaluatorRevision: inputs[promotion.revisionInput] ?? "",
@@ -557,6 +619,7 @@ export function resolveAuthority(
   const repositoryIndex = role.contract.workspaces.indexOf("repository");
   const repositoryWorkspace = workspaces[repositoryIndex];
   const legacyEvidenceCompatibility =
+    !split &&
     legacyEvidenceMatch &&
     name === "evaluator-verify" &&
     role.contract.protected &&
@@ -585,15 +648,18 @@ export function resolveAuthority(
     ...(Object.keys(inputEvidence).length > 0 ? { inputEvidence } : {}),
     workspaces,
     capabilities: role.contract.capabilities,
+    ...(splitGrant ? splitGrant : {}),
     hostActions: {
       ...(evidence
         ? {
             evidence: {
-              workspace: evidence.workspace,
+              workspace: split ? docsKey : evidence.workspace,
               workspaceId: required(
-                workspaces[
-                  role.contract.workspaces.indexOf(evidence.workspace)
-                ],
+                split
+                  ? project.workspaces[docsKey]
+                  : workspaces[
+                      role.contract.workspaces.indexOf(evidence.workspace)
+                    ],
               ).id,
               destinations: [...evidence.destinations],
             },
@@ -627,7 +693,7 @@ export function resolveAuthority(
     const previousGrant = latestAllocation.evidence.grant as RoleGrant;
     const same =
       contentId({
-        ...previousGrant,
+        ...withoutCommits(previousGrant),
         id: null,
         allocationKey: null,
         predecessor: null,
@@ -690,6 +756,91 @@ export function resolveAuthority(
       id: contentId({ ...semantics, kind: "role-grant" }),
       allocationKey: key,
       ...semantics,
+      ...(split ? { commits: commitPair(project, inputs) } : {}),
     },
   };
+}
+
+// Brief §3 maxima. The role contract and configured workspace mode can only
+// narrow these; an undefined role is refused rather than guessed.
+const SPLIT_ROLE_ACCESS: Record<
+  string,
+  { source: WorkspaceAccess; workflow: WorkspaceAccess }
+> = {
+  "brief-readiness": { source: "read", workflow: "write" },
+  "design-map": { source: "read", workflow: "write" },
+  "evaluator-prepare": { source: "read", workflow: "write" },
+  "evaluator-repair": { source: "read", workflow: "write" },
+  implementation: { source: "write", workflow: "read" },
+  "evaluator-verify": { source: "read", workflow: "read" },
+  "as-built": { source: "read", workflow: "write" },
+  outcome: { source: "read", workflow: "write" },
+};
+
+function withoutCommits(grant: RoleGrant): Omit<RoleGrant, "commits"> {
+  const rest: Partial<RoleGrant> = { ...grant };
+  delete rest.commits;
+  return rest as Omit<RoleGrant, "commits">;
+}
+
+function headOf(root: string): string {
+  return execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: root,
+    encoding: "utf8",
+  }).trim();
+}
+
+// The allocation's source/workflow commit pair: the frozen candidate for a
+// candidate-bound role, otherwise source HEAD; and the docs HEAD that holds
+// the role's frozen inputs.
+function commitPair(
+  project: Project,
+  inputs: Record<string, string>,
+): { source: CommitBinding; workflow: CommitBinding } {
+  const docs = required(project.workspaces[project.workflowWorkspace ?? ""]);
+  const source = required(project.workspaces.repository);
+  const candidate = inputs.candidate;
+  return {
+    source: {
+      workspace: "repository",
+      repository: source.id,
+      ...(project.origin ? { origin: project.origin } : {}),
+      commit:
+        candidate && /^[a-f0-9]{40}$/.test(candidate)
+          ? candidate
+          : headOf(source.path),
+    },
+    workflow: {
+      workspace: project.workflowWorkspace ?? "",
+      repository: docs.id,
+      ...(project.workflowOrigin ? { origin: project.workflowOrigin } : {}),
+      commit: headOf(docs.path),
+    },
+  };
+}
+
+// A split-mode grant must carry its explicit access map, and every mounted
+// workspace's mode must be exactly the mapped access (never wider). Refusal
+// precedes any session or provider exposure.
+export function assertSplitGrant(project: Project, grant: RoleGrant): void {
+  if (!grant.access || !grant.gitCommit || !grant.commits)
+    throw new Error("split workflow grant lacks per-workspace access");
+  const docsKey = project.workflowWorkspace ?? "";
+  for (const key of ["repository", docsKey]) {
+    const workspace = project.workspaces[key];
+    const access = grant.access[key];
+    const mounted = grant.workspaces.find((w) => w.id === workspace?.id);
+    if (!workspace || !access || !mounted)
+      throw new Error("split workflow grant omits a repository workspace");
+    if ((access === "write") !== (mounted.mode === "write"))
+      throw new Error("split workflow grant mode exceeds its access map");
+  }
+  for (const key of grant.gitCommit)
+    if (grant.access[key] !== "write")
+      throw new Error("git commit authority requires workspace write");
+  if (
+    grant.commits.source.workspace !== "repository" ||
+    grant.commits.workflow.workspace !== docsKey
+  )
+    throw new Error("split workflow grant commit pair is mis-owned");
 }

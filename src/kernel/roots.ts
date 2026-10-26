@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { splitWorkflow, workflowRepositoryRoot } from "./model.ts";
 import type { Project } from "./model.ts";
 
 function refuse(reason: string): never {
@@ -117,6 +118,8 @@ export function runtimeCommit(root: string): {
 export interface ExternalRoots {
   readonly projectRepository: string;
   readonly methodologyRepository: string;
+  // Present only when workflow documentation lives in its own repository.
+  readonly workflowRepository?: string;
 }
 
 // Fail-closed structural checks for an external project (D2 invariants, D5).
@@ -147,6 +150,41 @@ export function assertExternalProject(
     contains(projectRepository, methodologyRepository)
   )
     refuse("project and methodology repositories overlap");
+  let workflowRepository: string | undefined;
+  if (splitWorkflow(project)) {
+    const key = project.workflowWorkspace ?? "";
+    const configured = project.workspaces[key];
+    if (!configured) refuse(`workflow workspace ${key} is not configured`);
+    if (configured.exposure !== "public")
+      refuse(`workflow workspace ${key} is not public`);
+    const docsRoot = real(configured.path, `workflow workspace ${key}`);
+    try {
+      workflowRepository = gitTopLevel(docsRoot);
+    } catch {
+      refuse("workflow workspace is not inside a Git repository");
+    }
+    if (workflowRepository !== docsRoot)
+      refuse("workflow workspace is not its Git repository top level");
+    for (const [label, other] of [
+      ["project", projectRepository],
+      ["methodology", methodologyRepository],
+    ] as const)
+      if (
+        contains(other, workflowRepository) ||
+        contains(workflowRepository, other)
+      )
+        refuse(`workflow and ${label} repositories overlap`);
+    if (workflowRepository === projectRepository)
+      refuse("workflow repository equals the project repository");
+    const actual = originUrl(workflowRepository);
+    if (actual === undefined)
+      refuse("workflow repository has no origin remote");
+    const normalized = normalizeOrigin(actual);
+    if (normalized === undefined)
+      refuse("workflow origin remote has an unrecognized spelling");
+    if (normalized !== project.workflowOrigin)
+      refuse("workflow origin remote does not match the configured identity");
+  }
   const workspaces = [
     ...Object.entries(project.workspaces),
     ...Object.values(project.workflows).flatMap((w) =>
@@ -161,12 +199,18 @@ export function assertExternalProject(
       contains(path, methodologyRepository)
     )
       refuse(`workspace ${name} overlaps the methodology repository`);
-    const inProject = contains(projectRepository, path);
+    const inProject =
+      contains(projectRepository, path) ||
+      (workflowRepository !== undefined && contains(workflowRepository, path));
     if (workspace.exposure === "public" && !inProject)
       refuse(`public workspace ${name} is outside the project repository`);
     if (
       workspace.exposure !== "public" &&
-      (contains(projectRepository, path) || contains(path, projectRepository))
+      [projectRepository, workflowRepository].some(
+        (repository) =>
+          repository !== undefined &&
+          (contains(repository, path) || contains(path, repository)),
+      )
     )
       refuse(`private workspace ${name} overlaps the project repository`);
     for (const other of seen)
@@ -178,15 +222,27 @@ export function assertExternalProject(
     seen.push({ id: workspace.id, path });
   }
   for (const [key, workflow] of Object.entries(project.workflows)) {
-    const directory = resolve(project.root, workflow.directory);
-    if (!contains(projectRepository, real(directory, `workflow ${key}`)))
-      refuse(`workflow ${key} ledger is outside the project repository`);
+    const directory = resolve(
+      workflowRepositoryRoot(project),
+      workflow.directory,
+    );
+    if (
+      !contains(
+        workflowRepository ?? projectRepository,
+        real(directory, `workflow ${key}`),
+      )
+    )
+      refuse(`workflow ${key} ledger is outside the workflow repository`);
   }
   if (options.privateDataRoot) {
     const target = resolve(options.privateDataRoot);
     const privateRoot = existsSync(target) ? realpathSync(target) : target;
     if (
-      [projectRepository, ...seen.map((item) => item.path)].some(
+      [
+        projectRepository,
+        ...(workflowRepository ? [workflowRepository] : []),
+        ...seen.map((item) => item.path),
+      ].some(
         (path) => contains(path, privateRoot) || contains(privateRoot, path),
       )
     )
@@ -215,5 +271,9 @@ export function assertExternalProject(
     if (normalized !== project.origin)
       refuse("project origin remote does not match the configured identity");
   }
-  return { projectRepository, methodologyRepository };
+  return {
+    projectRepository,
+    methodologyRepository,
+    ...(workflowRepository ? { workflowRepository } : {}),
+  };
 }

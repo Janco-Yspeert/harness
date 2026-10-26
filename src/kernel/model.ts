@@ -191,6 +191,27 @@ export interface Project {
   // Expected `origin` repository identity (`github.com/<owner>/<repo>`),
   // checked against the project repository's actual remote at host start.
   origin?: string;
+  // Optional workspace key owning the workflow directory, canonical ledger
+  // and public workflow artifacts (Spike 015). Absent: `repository`.
+  workflowWorkspace?: string;
+  // Expected `origin` identity of the workflow repository. Present exactly
+  // when `workflowWorkspace` names a workspace other than `repository`.
+  workflowOrigin?: string;
+}
+// True when the workflow documentation lives in a repository distinct from
+// the source repository. Never inferred from adjacent directories.
+export function splitWorkflow(project: Project): boolean {
+  return (
+    project.workflowWorkspace !== undefined &&
+    project.workflowWorkspace !== "repository"
+  );
+}
+// The root that owns the workflow directory, ledger and public artifacts.
+export function workflowRepositoryRoot(project: Project): string {
+  if (!splitWorkflow(project)) return project.root;
+  const workspace = project.workspaces[project.workflowWorkspace ?? ""];
+  if (!workspace) throw new Error("workflow workspace is not configured");
+  return workspace.path;
 }
 // Public-safe execution diagnostics. Categories are observations, never
 // semantic results, host actions or canonical transitions.
@@ -359,6 +380,18 @@ export interface Session {
   workspaces: Workspace[];
   registeredAt: string;
 }
+// Repository-qualified committed-data binding (Spike 015). The workspace key
+// is the owner; the configured id and origin travel with it so a binding
+// cannot be replayed against another repository.
+export interface CommitBinding {
+  workspace: string;
+  repository: string;
+  origin?: string;
+  commit: string;
+  path?: string;
+  sha256?: string;
+}
+export type WorkspaceAccess = "none" | "read" | "write";
 export interface RoleGrant {
   schemaVersion: 1;
   id: string;
@@ -373,6 +406,13 @@ export interface RoleGrant {
   inputEvidence?: Record<string, Data>;
   workspaces: Workspace[];
   capabilities: string[];
+  // Split workflow only: explicit per-workspace access and Git-commit
+  // authority. Absent (and refused) means no access is implied.
+  access?: Record<string, WorkspaceAccess>;
+  gitCommit?: string[];
+  // Split workflow only: the source/workflow commit pair resolved once at
+  // allocation. Never re-resolved and not part of the allocation identity.
+  commits?: { source: CommitBinding; workflow: CommitBinding };
   hostActions: {
     evidence?: {
       workspace: string;

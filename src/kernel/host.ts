@@ -83,6 +83,7 @@ import type {
   HumanRequest,
   PromotionArtifact,
 } from "./model.ts";
+import { workflowRepositoryRoot } from "./model.ts";
 import {
   assertExternalProject,
   external,
@@ -422,7 +423,7 @@ export class GovernedHost {
       );
     const workflow = required(this.kernel.project.workflows[input.workflow]);
     const coveragePath = resolve(
-      this.kernel.project.root,
+      workflowRepositoryRoot(this.kernel.project),
       workflow.directory,
       "coverage-map.json",
     );
@@ -468,7 +469,7 @@ export class GovernedHost {
     });
     if (!result.manifest) return result;
     const destination = resolve(
-      this.kernel.project.root,
+      workflowRepositoryRoot(this.kernel.project),
       workflow.directory,
       "evidence",
       "candidate-subject",
@@ -526,10 +527,13 @@ export class GovernedHost {
       typeof preparation.evidence.identity !== "string"
     )
       throw new Error("active evaluator readiness has no committed provenance");
-    const coverageBytes = gitBytes(this.kernel.project.root, [
-      "show",
-      `${preparation.evidence.commit}:${workflow.directory}/coverage-map.json`,
-    ]);
+    const coverageBytes = gitBytes(
+      workflowRepositoryRoot(this.kernel.project),
+      [
+        "show",
+        `${preparation.evidence.commit}:${workflow.directory}/coverage-map.json`,
+      ],
+    );
     if (identity(coverageBytes) !== preparation.evidence.identity)
       throw new Error("active evaluator readiness identity mismatch");
     const coverage = object(JSON.parse(coverageBytes.toString("utf8")));

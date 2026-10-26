@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "app",
+  "root": "../app",
+  "methodologyRoot": "../harness",
+  "origin": "github.com/acme/app",
+  "workflowWorkspace": "workflow",
+  "workflowOrigin": "github.com/acme/app-docs",
+  "policy": "methodologies/harness/policy.json",
+  "trustedHistory": "methodologies/harness/trusted.jsonl",
+  "validatorSources": {
+    "prepared-coverage": "src/methodologies/harness-public.ts",
+    "verification-accounting": "src/methodologies/harness-public.ts"
+  },
+  "workflowDirectory": "spikes",
+  "ledgerName": "workflow.jsonl",
+  "workspaces": {
+    "repository": {
+      "id": "app-source",
+      "path": ".",
+      "mode": "write",
+      "exposure": "public"
+    },
+    "workflow": {
+      "id": "app-docs",
+      "path": "../app-docs",
+      "mode": "write",
+      "exposure": "public"
+    },
+    "evaluation": {
+      "id": "app-evaluation",
+      "path": "../app-evaluation",
+      "mode": "write",
+      "exposure": "evaluator-private"
+    }
+  },
+  "remotes": {}
+}
