@@ -8,7 +8,7 @@
 
 Allow a governed project to keep application source and public workflow documentation in **two independent Git repositories**, while Harness continues to use its separately trusted methodology checkout and evaluator-private storage. Preserve exact, repository-qualified provenance, narrow role-specific filesystem and Git authority, and unchanged single-repository behavior.
 
-Prove that the arrangement can be bootstrapped and used with a **real provider**, not merely configured or exercised by mocks.
+Prove the arrangement with a **short real-provider external-project coding smoke test**, not merely mocks or configuration checks. Keep that proof deliberately smaller than a second full-methodology certification.
 
 The intended result is a small additional workspace boundary, **not** a generalized multi-repository orchestration system.
 
@@ -79,19 +79,23 @@ When `workflowWorkspace` is omitted:
 
 Any new repository-qualified fields must be forward-compatible with historical records, but **absence of fields in a new split-mode event is not permission to guess**.
 
-### 5. Usable bootstrap, not just a configuration test
+### 5. Usable bootstrap and short external-project E2E
 
-Supply an understandable example configuration, layout, startup instructions and host preflight for clean, separate source/docs/methodology checkouts plus evaluator-private storage. The example must not require editing Harness for a particular application, moving source into docs, or granting an agent blanket access to all three repositories.
+Provide an understandable example config and preflight for **three independent checkouts** (source, docs, Harness methodology/runtime) plus evaluator-private and host-private storage. Neither app-specific code nor manually relocated artifacts are prerequisites.
 
-Demonstrate an ordinary complete split-repository workflow with **at least one real supported provider**. The evidence must show:
+Run **one short, genuinely useful coding smoke test** with a real, supported provider under the existing Harness host and governed role machinery:
 
-1. Validated repository identities, expected branches/origins, a trusted and explicitly selected **pinned runtime/methodology** revision, and an accepted bootstrap basis; no uncommitted or untrusted candidate is misrepresented as installed/trusted.
-2. Canonical preflight/readiness and a real governed provider allocation with effective workspace permissions, authorized reads, and a successful semantic role result. A harmless probe or zero process exit alone is insufficient.
-3. Brief Readiness through frozen brief, Design Map, evaluator preparation, source implementation commit, evaluator verification and eligible public promotion, As-Built, explicit human acceptance, and Outcome, using the **existing** methodology and authority transitions.
-4. At least one realistic bounded failure/recovery or correction path completed through the existing governed mechanism, with prior evidence retained. No manual ledger editing, skipped role, manufactured verdict, or fresh private evaluator exposure to implementation.
-5. Local committed source and docs artifacts, exact provenance for both lineages, correct role write boundaries, and a reconstructed state from the docs ledger. The run must progress without product-specific host source edits or remote pushes.
+1. Create a disposable external source Git repository containing a tiny program/library with a well-defined failing or missing behavior (for example a trivial TypeScript utility). Initialize an independent docs Git repository and point the split project configuration at both; keep methodology and evaluator-private directories separate.
+2. Validate each root, actual Git identity, origins where required, trusted/pinned methodology/runtime, workspace grants and effective provider containment. Record the exact starting source/docs commits.
+3. Establish the **valid minimum Harness authority and public frozen inputs needed to dispatch the coding role** under the existing methodology. Use existing governed transitions and/or a deterministic fixture with honest, explicit provenance. Do not forge a green evaluator result, silently skip mandatory state, or redefine the production methodology just to make the demonstration convenient. Earlier methodology phases need **not** each be rerun live with a provider.
+4. Have the **real provider** execute an actual governed **Implementation** role: read its permitted public brief/design in docs; modify application source; run the project's ordinary test/check; and create the authorized **local source commit**. Produce or request the required public role evidence/checkpoint in docs through its authorized host-brokered channel, without general docs write access. Require an accepted **semantic Role Result**, not just process exit or readiness PASS.
+5. Confirm independent final source/docs commits and repository-qualified content identities; prove denied direct docs writes, denied ungranted source writes for docs-authoring roles, and evaluator-private nonexposure using deterministic boundary tests. Reconstruct workflow state from the docs ledger. Preserve real-provider launch/role evidence and any failures truthfully.
 
-The accepted/trusted/pinned **bootstrap** demonstration may be recorded at the established human-acceptance/closeout boundary if a new contract/runtime revision must first be accepted or adopted. Candidate-mode tests alone are not this demonstration. Do not allow a candidate methodology to approve its own adoption.
+A small smoke proves that Harness can **build something useful outside its own repository while storing its development records elsewhere**. It does **not** claim to prove every role in a fresh Brief Readiness → Outcome cycle. The full-workflow, repair, promotion, historical compatibility and negative-permission matrix belongs primarily in deterministic integration coverage, where it is reproducible and cheaper.
+
+If actual execution reveals a necessary adapter/contract deficiency, fix only the bounded deficiency needed for this proof; do not grow the scope into session persistence, an installer, general multi-repo support, new host authority kinds, or a second implementation of the entire methodology.
+
+Use an explicitly trusted, pinned runtime/methodology for the acceptance smoke. If a new runtime or methodology version must first be independently evaluated and accepted/adopted, record that transition through the **existing** authority process before claiming bootstrap success. Never let an untrusted candidate self-certify.
 
 ## Acceptance criteria
 
@@ -106,18 +110,18 @@ The accepted/trusted/pinned **bootstrap** demonstration may be recorded at the e
 | **AC07** | Brief Readiness and Design Map can write docs without source-write; their public artifacts freeze and resolve from docs commits. |
 | **AC08** | Implementation writes/commits source and reads public docs, but cannot arbitrarily write docs or see evaluator-private materials; its required public evidence still completes through bounded host action. |
 | **AC09** | Evaluator prepare, repair and verify retain private isolation, candidate/source read boundaries, host-owned result/checkpoint writes, and complete eligible promotion into docs. |
-| **AC10** | As-Built, human acceptance, Outcome and existing bounded correction/recovery work with cross-repository provenance and no new authority path. |
+| **AC10** | Deterministic integration coverage shows existing As-Built, human acceptance, Outcome, and bounded correction/recovery can resolve split-repository inputs without a new authority path. |
 | **AC11** | Every spawned provider/attached eligibility decision and effective containment respects per-workspace role access; wrong-root writes and ungranted Git actions are refused. |
 | **AC12** | No automatic remote publishing, raw worker Git credentials, cross-repo atomicity claim, new methodology engine, or silent historical migration is introduced. |
 | **AC13** | Example setup and diagnostics allow a clean external project to pass preflight without source-specific Harness code changes. |
-| **AC14** | At least one real-provider end-to-end split workflow reaches Outcome and demonstrates meaningful authorized reads/writes, local commits, one governed recovery, and both repository lineages; mocked probes alone cannot pass. |
-| **AC15** | Required contract changes are versioned, pinned and adopted forward-only; the demo identifies the exact accepted/trusted runtime and methodology revisions and never uses candidate self-authorization. |
+| **AC14** | One bounded real-provider governed **coding** smoke operates in an external source repository with separate docs, reads its authorized brief/design, changes source, runs the project check, commits source locally, records permitted docs evidence, returns an accepted semantic Role Result, and records both exact Git lineages. It need not run every methodology phase live or manufacture a recovery. A mock or readiness-only probe cannot pass. |
+| **AC15** | Required contract changes are versioned and adopted forward-only; the smoke identifies exact trusted runtime/methodology revisions and valid authority prerequisites, never allowing candidate self-authorization. |
 
 ## Verification boundaries
 
 Independent evaluation should cover, at minimum, deterministic fixtures for: legacy single-repo parity; positive split-mode discovery; root/origin/realpath failures; wrong-repo and wrong-commit inputs; stale source or docs HEAD; grant and artifact lineage; read-only source roles; implementation's denied docs writes; host-brokered public evidence; evaluator-private nonexposure; exact post-PASS promotion into docs; partial commits and local recovery; repeated dispatch/idempotency; and unchanged operational-versus-semantic retry accounting.
 
-Exercise the actual host action, Git, ledger, workspace and containment seams rather than mocking the boundary under test. Keep deterministic tests exhaustive and the live-provider demonstration deliberately bounded in cost. Preserve the full real-provider observations, including failures and corrections, without treating provider diagnostics as semantic results.
+Exercise actual host action, Git, ledger, workspace and containment seams rather than mocking the boundary under test. Use deterministic fixtures for the full phase/repair/promotion matrix. Keep **one** live coding smoke short and inexpensive; do not force an entire live methodology cycle or intentional live failure/recovery. Preserve real-provider observations and any naturally occurring failures without converting provider diagnostics into semantic results.
 
 ## Explicit non-goals
 
@@ -137,7 +141,9 @@ Exercise the actual host action, Git, ledger, workspace and containment seams ra
 4. Implement the narrow configuration, path, provenance, permission and host-action changes; keep old behavior under regression tests.
 5. Verify through the independent evaluator, preserving all attempts and correcting only under existing bounded authority. Promote eligible history after `PASS`.
 6. Record As-Built, obtain explicit human acceptance, and complete any required forward-only runtime/methodology adoption without granting a candidate its own authority.
-7. Perform and preserve the pinned, accepted real-provider bootstrap proof; record its exact revisions and repository commit pair. Do not call the split mode operationally proven before this evidence exists.
-8. Record Outcome only when the required acceptance and demonstration evidence is available, or truthfully record an incomplete/blocked closeout under existing workflow rules.
+7. Perform and preserve **one short real-provider external coding smoke**, after any required trusted runtime/methodology adoption; record its authority, semantic result, actual source change/test, docs checkpoint and exact commit pair. Its outcome is a practical bootstrap check, not a claim that a full live methodology was independently rerun.
+8. Record this **Spike 015's** Outcome only when its evaluation, human acceptance and bounded smoke evidence exist, or truthfully record an incomplete/blocked closeout under existing workflow rules.
 
 **This draft does not freeze the contract, authorize implementation, declare provider verification successful, or adopt a methodology.**
+
+**Retrospective scope safeguard:** the external-repository pilot is the forcing function. Do not introduce extra review phases, a generalized documentation platform, or exhaustive live multi-role proof to solve a targeted repository-layout problem.
