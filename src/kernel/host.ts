@@ -1,6 +1,7 @@
 import { execFileSync, spawn } from "node:child_process";
-import { timingSafeEqual } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import {
+  appendFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -51,7 +52,7 @@ import {
   providerEnvironment,
   READINESS_TOOLS_PATH,
 } from "../executors/governed.ts";
-import { ExecutionKernel, type KernelOptions } from "./execution.ts";
+import { ExecutionKernel, redact, type KernelOptions } from "./execution.ts";
 import { contentId, identity, object, required, text } from "./ledger.ts";
 import {
   assertEffectiveShape,
@@ -143,17 +144,118 @@ function operationalFailure(error: unknown): OperationalFailureClass {
     return "launch-shape-incompatibility";
   return "pre-allocation-readiness-failure";
 }
+
+const MAX_READINESS_DIAGNOSTIC_BYTES = 262_144;
+const MAX_READINESS_DIAGNOSTIC_LINE = 4_096;
+const REAP_GRACE_MS = 1_000;
+const DEFAULT_READINESS_TIMEOUT_MS: Readonly<Record<string, number>> = {
+  // A readiness probe is a real provider turn, not a local health check.
+  // Codex cold starts regularly exceed the old universal fifteen seconds.
+  codex: 60_000,
+  claude: 15_000,
+};
+
+export type ReadinessDiagnosticCause =
+  | "passed"
+  | "timeout"
+  | "provider-exit"
+  | "provider-error"
+  | "rate-limited"
+  | "permission-denied"
+  | "missing-mcp-confirmation"
+  | "spawn-error";
+
+class ReadinessDiagnostics {
+  #path: string | undefined;
+  #bytes = 0;
+
+  constructor(root: string | undefined, attempt: string | undefined) {
+    if (!root || !attempt) return;
+    try {
+      const directory = resolve(root, "provider-diagnostics");
+      mkdirSync(directory, { recursive: true, mode: 0o700 });
+      this.#path = join(realpathSync(directory), `${attempt}.jsonl`);
+    } catch {
+      // Diagnostics never decide whether a provider may run.
+    }
+  }
+
+  write(entry: Record<string, unknown>): void {
+    if (!this.#path) return;
+    const value = `${JSON.stringify(entry)}\n`;
+    const bytes = Buffer.byteLength(value);
+    if (this.#bytes + bytes > MAX_READINESS_DIAGNOSTIC_BYTES) return;
+    this.#bytes += bytes;
+    try {
+      appendFileSync(this.#path, value, { mode: 0o600 });
+    } catch {
+      this.#path = undefined;
+    }
+  }
+
+  line(stream: "stdout" | "stderr", line: string): void {
+    this.write({
+      stream,
+      line: redact(line).slice(0, MAX_READINESS_DIAGNOSTIC_LINE),
+    });
+  }
+
+  event(kind: string): void {
+    this.write({ kind: "structured-event", event: kind });
+  }
+
+  outcome(
+    cause: ReadinessDiagnosticCause,
+    code?: number | null,
+    signal?: string | null,
+  ): void {
+    this.write({
+      kind: "outcome",
+      cause,
+      ...(code === undefined ? {} : { code }),
+      ...(signal === undefined ? {} : { signal }),
+    });
+  }
+}
+
+export function readinessTimeoutMs(input: {
+  provider: string;
+  profile: { readinessTimeoutMs?: number };
+}): number {
+  const configured = input.profile.readinessTimeoutMs;
+  if (
+    configured !== undefined &&
+    Number.isSafeInteger(configured) &&
+    configured >= 1_000 &&
+    configured <= 120_000
+  )
+    return configured;
+  return DEFAULT_READINESS_TIMEOUT_MS[input.provider] ?? 15_000;
+}
+
+function retainLines(
+  diagnostics: ReadinessDiagnostics,
+  stream: "stdout" | "stderr",
+  pending: string,
+): string {
+  const lines = pending.split(/\r?\n/);
+  const tail = lines.pop() ?? "";
+  for (const line of lines) diagnostics.line(stream, line);
+  return tail;
+}
+
 export async function runProviderReadiness(input: {
   shape: CanonicalExecutionShape;
   adapter: ProviderAdapter;
   program: string;
-  profile: { maxTurns?: number };
+  profile: { maxTurns?: number; readinessTimeoutMs?: number };
   plan: { model?: string; reasoning?: string };
   containment?: {
     bwrap: string;
     masked: string[];
     protectedRoots: string[];
   };
+  privateDiagnostics?: { root: string; attempt: string };
   spawnProvider?: typeof spawn;
 }): Promise<ReadinessProbeResult> {
   const root = mkdtempSync(join(tmpdir(), "harness-readiness-"));
@@ -205,65 +307,137 @@ export async function runProviderReadiness(input: {
           env: providerEnvironment(scratch),
         })
       : { ...command, env: providerEnvironment(scratch) };
+    const diagnostics = new ReadinessDiagnostics(
+      input.privateDiagnostics?.root,
+      input.privateDiagnostics?.attempt,
+    );
+    diagnostics.write({
+      kind: "readiness-start",
+      provider: input.adapter.id,
+      timeoutMs: readinessTimeoutMs({
+        provider: input.adapter.id,
+        profile: input.profile,
+      }),
+    });
     const child = (input.spawnProvider ?? spawn)(launch.program, launch.args, {
       cwd: workspaces[0]?.path ?? scratch,
-      stdio: ["ignore", "pipe", "ignore"],
+      stdio: ["ignore", "pipe", "pipe"],
       env: launch.env,
     });
     return await new Promise<ReadinessProbeResult>((resolveProbe) => {
       let finished = false;
+      let timedOut = false;
       let failure: OperationalFailureClass | undefined;
+      let cause: ReadinessDiagnosticCause | undefined;
       let toolConnected = false;
-      let pending = "";
+      let stdoutPending = "";
+      let stderrPending = "";
+      let reapTimer: NodeJS.Timeout | undefined;
       const finish = (result: ReadinessProbeResult): void => {
         if (finished) return;
         finished = true;
         clearTimeout(timer);
+        if (reapTimer) clearTimeout(reapTimer);
         resolveProbe(result);
       };
       child.stdout.on("data", (chunk: Buffer) => {
-        pending += chunk.toString("utf8");
-        const lines = pending.split(/\r?\n/);
-        pending = lines.pop() ?? "";
+        stdoutPending += chunk.toString("utf8");
+        const lines = stdoutPending.split(/\r?\n/);
+        stdoutPending = lines.pop() ?? "";
+        for (const line of lines) diagnostics.line("stdout", line);
         for (const line of lines)
           for (const event of input.adapter.parse(line)) {
+            diagnostics.event(event.kind);
             if (event.kind === "tools-unavailable") {
               failure = "required-connectivity-tool-failure";
+              cause = "missing-mcp-confirmation";
               toolConnected = false;
             }
             if (event.kind === "tool-confirmed" && event.tool === "readiness")
               toolConnected = true;
-            if (event.kind === "permission-denied")
+            if (event.kind === "permission-denied") {
               failure = "pre-allocation-readiness-failure";
-            if (
-              event.kind === "provider-error" ||
-              event.kind === "rate-limited"
-            )
+              cause = "permission-denied";
+            }
+            if (event.kind === "provider-error") {
               failure = "pre-allocation-readiness-failure";
+              cause = "provider-error";
+            }
+            if (event.kind === "rate-limited") {
+              failure = "pre-allocation-readiness-failure";
+              cause = "rate-limited";
+            }
           }
       });
+      child.stderr.on("data", (chunk: Buffer) => {
+        stderrPending = retainLines(
+          diagnostics,
+          "stderr",
+          stderrPending + chunk.toString("utf8"),
+        );
+      });
       child.once("error", () => {
+        diagnostics.outcome("spawn-error");
         finish({
           state: "failed",
           failure: "provider-unavailable",
         });
       });
       child.once("exit", (code, signal) => {
-        if (code === 0 && signal === null && !failure && toolConnected)
+        if (stdoutPending) diagnostics.line("stdout", stdoutPending);
+        if (stderrPending) diagnostics.line("stderr", stderrPending);
+        if (timedOut) {
+          diagnostics.outcome("timeout", code, signal);
+          finish({
+            state: "failed",
+            failure: "pre-allocation-readiness-failure",
+          });
+          return;
+        }
+        if (code === 0 && signal === null && !failure && toolConnected) {
+          diagnostics.outcome("passed", code, signal);
           finish({ state: "passed", effective: effectiveShape(input.shape) });
-        else
+        } else {
+          const exitCause =
+            cause ??
+            (code !== 0 || signal !== null
+              ? "provider-exit"
+              : "missing-mcp-confirmation");
+          diagnostics.outcome(exitCause, code, signal);
           finish({
             state: "failed",
             failure: failure ?? "required-connectivity-tool-failure",
           });
+        }
       });
-      const timer = setTimeout(() => {
-        child.kill("SIGTERM");
-        finish({
-          state: "failed",
-          failure: "pre-allocation-readiness-failure",
-        });
-      }, 15_000);
+      const timer = setTimeout(
+        () => {
+          timedOut = true;
+          try {
+            child.kill("SIGTERM");
+          } catch {
+            diagnostics.outcome("spawn-error");
+            finish({
+              state: "failed",
+              failure: "pre-allocation-readiness-failure",
+            });
+            return;
+          }
+          // Do not remove the scratch tree until the child has exited. If it
+          // ignores TERM, escalate while retaining the same public failure.
+          reapTimer = setTimeout(() => {
+            try {
+              child.kill("SIGKILL");
+            } catch {
+              /* The exit handler remains the sole completion path. */
+            }
+          }, REAP_GRACE_MS);
+        },
+        readinessTimeoutMs({
+          provider: input.adapter.id,
+          profile: input.profile,
+        }),
+      );
     });
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -1237,6 +1411,7 @@ export class GovernedHost {
           let failure: OperationalFailureClass | null = null;
           let probeResult: ReadinessProbeResult | undefined;
           let refusal: HostRefusal | undefined;
+          const attemptId = randomUUID();
           try {
             if (this.#external && profile.command?.length)
               throw new HostRefusal(
@@ -1304,6 +1479,14 @@ export class GovernedHost {
                     program: provider.program,
                     profile,
                     plan: provider.plan,
+                    ...(this.kernel.options.privateDataRoot
+                      ? {
+                          privateDiagnostics: {
+                            root: this.kernel.options.privateDataRoot,
+                            attempt: attemptId,
+                          },
+                        }
+                      : {}),
                     ...(containment ? { containment } : {}),
                     ...(this.#runtime.spawnProvider
                       ? { spawnProvider: this.#runtime.spawnProvider }
@@ -1325,6 +1508,7 @@ export class GovernedHost {
               .length + 1;
           const probe = probeInput(shape, launchIntent);
           const attempt = makeLaunchAttempt({
+            id: attemptId,
             workflowGrant: grantId,
             role: resolution.grant.role,
             mode: "spawned",

@@ -145,7 +145,10 @@ const DETAIL_LIMIT = 240;
 // second line of defence against a credential-shaped value slipping in.
 export function redact(value: string): string {
   return value
-    .replaceAll(/(?:Bearer\s+|token[=:]\s*)[^\s"']+/gi, "[redacted]")
+    .replaceAll(
+      /(?:Bearer\s+|(?:access[_-]?token|refresh[_-]?token|token|(?:openai[_-]?)?api[_-]?key|authorization|cookie|secret|password)[=:]\s*)[^\s"']+/gi,
+      "[redacted]",
+    )
     .replaceAll(/\b[a-f0-9]{48,}\b/gi, "[redacted]")
     .replaceAll(/\bsk-[A-Za-z0-9_-]{8,}/g, "[redacted]");
 }
