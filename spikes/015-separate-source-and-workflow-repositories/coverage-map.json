@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "evaluationRequirements": "sha256:bb09fe3bd974c337f97679a69ed43143a966d3c9426363520b498ac4ac31bcdd",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 14,
+    "evaluatorRevision": "001",
+    "privateInventoryIdentity": "sha256:23e509c3909914baa0b1e7ab26035734d299c761b0c0a99a3775b1b70d282eb8",
+    "validatorResultBinding": "sha256:23e878b0a9ab8f47a0025fe1067d41bc013745731731424e16bd0c2bfec95de7",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 15
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md#AC01",
+      "mode": "executable-and-regression",
+      "required": true,
+      "procedures": [
+        "C-H01",
+        "P-REG"
+      ],
+      "sufficiency": "Executable legacy-parity cases plus the unchanged public suite on candidate versus parent show omitted workflowWorkspace behaves as before and historical records keep meaning."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md#AC02",
+      "mode": "executable",
+      "required": true,
+      "procedures": [
+        "C-H02"
+      ],
+      "sufficiency": "Real load and preflight over disposable Git repositories show a distinct docs repository owning the workflow directory while source and methodology stay separate."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md#AC03",
+      "mode": "executable",
+      "required": true,
+      "procedures": [
+        "C-H03"
+      ],
+      "sufficiency": "Each listed preflight defect is refused in isolation against a passing twin, proving the refusal is attributable to that defect."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md#AC04",
+      "mode": "public-evidence-review",
+      "required": true,
+      "procedures": [
+        "P-LINEAGE"
+      ],
+      "sufficiency": "Inspecting recorded allocations and bindings, with guard-mutation sensitivity, establishes repository-qualified commit/path/content provenance and the retained source/docs pair."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md#AC05",
+      "mode": "public-evidence-review",
+      "required": true,
+      "procedures": [
+        "P-LINEAGE"
+      ],
+      "sufficiency": "Per-failure-mode refusals (wrong repo, stale binding, content, ancestry) shown to depend on the guard by mutation in a scratch clone."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md#AC06",
+      "mode": "public-evidence-review",
+      "required": true,
+      "procedures": [
+        "P-LINEAGE"
+      ],
+      "sufficiency": "Partial single-repository checkpoints are shown to yield no transition and no combined-success claim while the docs ledger alone decides state."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md#AC07",
+      "mode": "public-evidence-review",
+      "required": true,
+      "procedures": [
+        "P-ACCESS"
+      ],
+      "sufficiency": "Attempted source writes by docs-authoring roles are refused through real containment and their artifacts resolve from docs commits."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md#AC08",
+      "mode": "public-evidence-review",
+      "required": true,
+      "procedures": [
+        "P-ACCESS"
+      ],
+      "sufficiency": "Attempted direct docs writes and private reads by Implementation are refused while the host-brokered evidence action still completes."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md#AC09",
+      "mode": "public-evidence-review",
+      "required": true,
+      "procedures": [
+        "P-ACCESS"
+      ],
+      "sufficiency": "Evaluator roles show private isolation, no source write, host-owned results and eligible promotion landing in docs."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md#AC10",
+      "mode": "public-evidence-review",
+      "required": true,
+      "procedures": [
+        "P-LIFECYCLE"
+      ],
+      "sufficiency": "Deterministic integration runs resolve As-Built, acceptance, Outcome, correction and recovery inputs from split repositories with no new authority kind."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md#AC11",
+      "mode": "public-evidence-review",
+      "required": true,
+      "procedures": [
+        "P-ACCESS"
+      ],
+      "sufficiency": "Effective grants carry the per-workspace access map, fail closed without it, and wrong-root writes and ungranted Git actions are refused at launch and attach."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md#AC12",
+      "mode": "manual-inspection",
+      "required": true,
+      "procedures": [
+        "P-BOUNDS",
+        "P-REG"
+      ],
+      "sufficiency": "Diff and search inspection of the candidate shows no push, credential exposure, second ledger, migration or atomicity claim, with the suite showing no regression."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md#AC13",
+      "mode": "manual-observation",
+      "required": true,
+      "procedures": [
+        "P-BOOT"
+      ],
+      "sufficiency": "Following the shipped example verbatim on clean disposable checkouts shows preflight passing without Harness code edits."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md#AC14",
+      "mode": "manual-evidence",
+      "required": true,
+      "procedures": [
+        "P-SMOKE"
+      ],
+      "sufficiency": "Committed real-provider smoke evidence is checked against each element of the criterion, rejecting mock or readiness-only substitutes."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md#AC15",
+      "mode": "manual-evidence",
+      "required": true,
+      "procedures": [
+        "P-AUTHORITY"
+      ],
+      "sufficiency": "Contract version and forward-only adoption records plus named trusted runtime/methodology revisions show no candidate self-authorization."
+    }
+  ]
+}
