@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "attempt": "011",
+  "execution": "a1dd366e-c749-40ee-8d6a-2499e74ff35e",
+  "roleGrant": "sha256:35a0a79deb605289dc4fbcd691f486daadbb5674379beb181e841942049a3e6f",
+  "commit": "edecf012a9b97ebb915c7f31f309c4811b6e927e",
+  "evaluatorRevision": "003",
+  "evaluatorRevisionIdentity": "sha256:a3e2c86bed00aa085b85eff106d581e26b0de107a6ed45c65025e221cb4c8920",
+  "inputs": {
+    "brief": "sha256:a0fbd91a0e41eed3c2e54e7450ab1e25400f71add68b0f02e10f54bc05629559",
+    "design": "sha256:32b38b26394b614dd9d293c056b67af75e9b89e0284c14eeba07c5d7e706813a",
+    "evaluationRequirements": "sha256:91d25c8bc3594a51a0767a426cbac6744fc2d206d9c869b64a6e5a7fee64175b",
+    "coverage": "sha256:112be8e3c1fbc8be8d67de29321256d9b9da00c3c1768b290bf4c1dd7a027073"
+  },
+  "result": "BLOCKED",
+  "classification": "EVALUATOR_DEFECT",
+  "coverageResults": {
+    "AC01": "NOT_ADJUDICATED",
+    "AC02": "NOT_ADJUDICATED",
+    "AC03": "NOT_ADJUDICATED",
+    "AC04": "SATISFIED",
+    "AC05": "NOT_ADJUDICATED",
+    "AC06": "NOT_ADJUDICATED",
+    "AC07": "NOT_ADJUDICATED",
+    "AC08": "NOT_ADJUDICATED"
+  },
+  "accounting": {
+    "criteria": 8,
+    "satisfied": 1,
+    "notSatisfied": 0,
+    "notAdjudicated": 7,
+    "executableCases": 5,
+    "executablePassed": 3,
+    "failedProcedures": [],
+    "note": "Trusted-N E1, E3 and E4 passed at the candidate. The frozen boundary and host-effects procedure ran inside the candidate subject but its required host-supplied inputs were not provided in frozen form, so E5 is not established and is not admitted. The frozen procedure depends on an input seam not exposed in the public contract; this is classified as an evaluator defect and, with two prior post-implementation evaluator revisions, requires a successor/methodology path rather than in-cycle correction. No coverage was fabricated."
+  },
+  "humanAcceptance": "Not applicable."
+}

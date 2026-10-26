@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 2,
+  "attempts": [
+    {
+      "id": "001",
+      "implementation": "git:0e2789c4e2040a3bafb6d173506f65be66d44956",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319",
+      "resultPath": ".eval/attempts/001/eval-result.md",
+      "resultIdentity": "sha256:cfd09f3018b5583bc322b29bd40f55f78976f1dd52494b6ca97814e111848c92",
+      "status": "FAIL"
+    },
+    {
+      "id": "004",
+      "implementation": "git:0e2789c4e2040a3bafb6d173506f65be66d44956",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319",
+      "resultPath": ".eval/attempts/004/eval-result.md",
+      "resultIdentity": "sha256:605a4d2494014e2131488596f1af8bfbcd9b286a2d0ce9f673e7ff1955774f2f",
+      "status": "FAIL"
+    },
+    {
+      "id": "005",
+      "implementation": "git:9169ccf7d4543c214e7b7890ee29e428a5f8c01a",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319",
+      "resultPath": ".eval/attempts/005/eval-result.md",
+      "resultIdentity": "sha256:3847107064ff1e097c131353874ed20af15d19dc88bd9f663f97eb27d74e9edd",
+      "status": "FAIL"
+    },
+    {
+      "id": "006",
+      "implementation": "git:9169ccf7d4543c214e7b7890ee29e428a5f8c01a",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319",
+      "resultPath": ".eval/attempts/006/eval-result.md",
+      "resultIdentity": "sha256:ad88717c7d54b17957461675210a10621ae3003d0160a20582a8038b4a331d61",
+      "status": "FAIL"
+    },
+    {
+      "id": "007",
+      "implementation": "git:9169ccf7d4543c214e7b7890ee29e428a5f8c01a",
+      "evaluatorRevision": "002",
+      "evaluatorRevisionIdentity": "sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319",
+      "resultPath": ".eval/attempts/007/eval-result.md",
+      "resultIdentity": "sha256:1bef15c8cb568729f31c4cfaacc8baaad3616133d4f276c7796ba55e20ea873c",
+      "status": "PASS"
+    }
+  ]
+}

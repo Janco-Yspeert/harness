@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "workflowGrant": {
+    "schemaVersion": 1,
+    "id": "bb291666-d05b-4baa-911d-4e38da21bbac",
+    "project": "project-spawned",
+    "workflow": "work-item",
+    "methodology": "sha256:967d00f78f43121025e1f3ba943d953232db22d33a887b682af10c32e6fbefc8",
+    "authorityBasis": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "origin": "human",
+    "continuation": true,
+    "delegation": [
+      "spawned"
+    ],
+    "roles": [
+      "produce",
+      "check"
+    ],
+    "stopAfter": [
+      "checked"
+    ],
+    "maxAllocations": 2
+  },
+  "launched": {
+    "execution": {
+      "schemaVersion": 1,
+      "id": "eb7b9d48-b9b7-4db4-b782-58dc2a7e29de",
+      "workflowGrant": "bb291666-d05b-4baa-911d-4e38da21bbac",
+      "roleGrant": "sha256:204c014fdd0fa050aebbee4d96d582a8489dd9af9b47bf6e2f182fbaa2c8cc13",
+      "session": "5d839667-5a7a-4203-b0dd-2bd5e3c1d279",
+      "mode": "spawned",
+      "process": "allocated",
+      "attention": "working",
+      "failure": null,
+      "pid": null,
+      "predecessor": null,
+      "result": null,
+      "actions": [],
+      "requests": []
+    },
+    "grant": {
+      "schemaVersion": 1,
+      "id": "sha256:204c014fdd0fa050aebbee4d96d582a8489dd9af9b47bf6e2f182fbaa2c8cc13",
+      "allocationKey": "sha256:0e3f4e30c6d074046beccd60ab7cd6c4558cb89b6c3ecf397812faca13b9fa95",
+      "workflowGrant": "bb291666-d05b-4baa-911d-4e38da21bbac",
+      "authorityBasis": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "methodology": "sha256:967d00f78f43121025e1f3ba943d953232db22d33a887b682af10c32e6fbefc8",
+      "role": "produce",
+      "contractIdentity": "sha256:47afa76f3efd8c3d6524633c4ba930b971d5e979945755b33771affe0d86bf96",
+      "skillIdentity": "sha256:9b9ad13affaa664b6d8a1895fb54ad9c4b32d4867b1f9f9f35c522c84da93f65",
+      "inputs": {
+        "input": "sha256:2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806"
+      },
+      "workspaces": [
+        {
+          "id": "repo",
+          "path": "/tmp/harness-014-proofs-AQtlSw/kernel-spawned-3ZUdgq/project",
+          "mode": "write",
+          "exposure": "public"
+        }
+      ],
+      "capabilities": [
+        "repository-read",
+        "repository-write"
+      ],
+      "hostActions": {},
+      "executorConstraints": {
+        "forbiddenExposure": [],
+        "protected": false
+      },
+      "predecessor": null,
+      "rootAuthority": null
+    },
+    "duplicate": false
+  },
+  "final": {
+    "executions": [
+      {
+        "schemaVersion": 1,
+        "id": "eb7b9d48-b9b7-4db4-b782-58dc2a7e29de",
+        "workflowGrant": "bb291666-d05b-4baa-911d-4e38da21bbac",
+        "roleGrant": "sha256:204c014fdd0fa050aebbee4d96d582a8489dd9af9b47bf6e2f182fbaa2c8cc13",
+        "session": "5d839667-5a7a-4203-b0dd-2bd5e3c1d279",
+        "mode": "spawned",
+        "process": "exited",
+        "attention": "terminal",
+        "failure": null,
+        "pid": 3451175,
+        "predecessor": null,
+        "result": {
+          "schemaVersion": 1,
+          "id": "b65e640f-54cf-4b75-b602-463b5d167b72",
+          "execution": "eb7b9d48-b9b7-4db4-b782-58dc2a7e29de",
+          "roleGrant": "sha256:204c014fdd0fa050aebbee4d96d582a8489dd9af9b47bf6e2f182fbaa2c8cc13",
+          "disposition": "succeeded",
+          "methodology": {
+            "verification": "PASS"
+          }
+        },
+        "actions": [],
+        "requests": [],
+        "transition": {
+          "status": "recorded",
+          "reason": null
+        }
+      },
+      {
+        "schemaVersion": 1,
+        "id": "d735a3be-2af8-4961-a053-106cdb71b316",
+        "workflowGrant": "bb291666-d05b-4baa-911d-4e38da21bbac",
+        "roleGrant": "sha256:af1673339cd09563b2c3b9e12d0b8aef1d3158fd97686e95e4cc026cad75612e",
+        "session": "bf030510-7265-4133-9c73-9aa5cf9ea870",
+        "mode": "spawned",
+        "process": "exited",
+        "attention": "terminal",
+        "failure": null,
+        "pid": 3451183,
+        "predecessor": null,
+        "result": {
+          "schemaVersion": 1,
+          "id": "d22b68ce-ebce-47e8-8437-af98fe0aad8e",
+          "execution": "d735a3be-2af8-4961-a053-106cdb71b316",
+          "roleGrant": "sha256:af1673339cd09563b2c3b9e12d0b8aef1d3158fd97686e95e4cc026cad75612e",
+          "disposition": "succeeded",
+          "methodology": {
+            "verification": "PASS"
+          }
+        },
+        "actions": [],
+        "requests": [],
+        "transition": {
+          "status": "recorded",
+          "reason": null
+        }
+      }
+    ]
+  },
+  "ledgerIdentity": "sha256:81eecb08697c7a70c42049397801516d1d3e713b446110010d5aa8aa7ca55030"
+}

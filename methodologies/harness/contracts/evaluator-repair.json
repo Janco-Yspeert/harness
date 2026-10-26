@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "workspaces": ["repository", "evaluation"],
+  "capabilities": [
+    "repository-read",
+    "repository-write",
+    "local-computation",
+    "git-inspect",
+    "git-commit"
+  ],
+  "forbiddenExposure": [],
+  "protected": true,
+  "inputs": [
+    {
+      "name": "brief",
+      "event": "brief-frozen",
+      "committed": true
+    },
+    {
+      "name": "design",
+      "event": "design-map-frozen",
+      "committed": true
+    },
+    {
+      "name": "coverage",
+      "event": ["evaluation-prepared", "evaluator-repair-recorded"],
+      "committed": true,
+      "validator": "prepared-coverage"
+    },
+    {
+      "name": "requirements",
+      "path": "eval-requirements.md",
+      "identityBinding": {
+        "input": "coverage",
+        "field": "evaluationRequirements"
+      }
+    },
+    {
+      "name": "sourceEvaluatorRevision",
+      "path": "coverage-map.json",
+      "jsonValue": "readiness.evaluatorRevision"
+    },
+    {
+      "name": "repairTrigger",
+      "event": [
+        "verification-finalized",
+        "human-evaluator-correction-authorized",
+        "human-correction-cycle-authorized"
+      ],
+      "field": "semanticResult"
+    }
+  ],
+  "results": ["succeeded", "blocked", "refused", "failed"],
+  "methodology": {},
+  "human": ["input", "approval", "root"],
+  "postconditions": ["coverage-map.json", "manifest.md"]
+}

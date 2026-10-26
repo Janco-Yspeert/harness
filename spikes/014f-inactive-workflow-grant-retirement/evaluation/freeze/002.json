@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "002",
+  "evaluatorSkill": {
+    "name": "evaluator",
+    "version": 14,
+    "identity": "sha256:3ae408436b2f957486d19062b837749a7f60c10426b02572d156172696c3e46b"
+  },
+  "inputs": {
+    "brief": "sha256:202fbf233199fc96042dd1e29eccdad1382b598be568e746e19effa8465f6f9c",
+    "designMap": "sha256:5b174680ce6e05af27edb056a9a930dc16de85e0b86da637a25c2bc6ef025d34",
+    "evaluationRequirements": "sha256:3e0c93e27cf21821703b1df7f2b3e7a9845d11967f95c3640520398ee7269cd4"
+  },
+  "artifacts": {
+    ".hidden-test/e1-kernel-retirement.test.ts": "sha256:90caef11b3040049f2b11cd53bebadd14f8404e58978fc4819e9e5c5198708f9",
+    ".hidden-test/e2-eligibility.test.ts": "sha256:cf6e7415ed6a9d3e39c16ebda0488f53f4f8bf3abeb76fd5a8be996f764d3aa0",
+    ".hidden-test/e3-effects.test.ts": "sha256:54d9737edc77fe6f065fa7b1935da92e75d96d8c5211d5e895b43e5c95e48cb7",
+    ".hidden-test/e4-host.test.ts": "sha256:9055d7d1875bd3a1f620e205c5bca29cf88ec3c6617bf65eb34ce2c06f953c1c",
+    ".hidden-test/e5-host-active.test.ts": "sha256:8f9e3dde8437e5d66504499bc93b9d3766c4b784dad173f2c7049ffee2d3258e",
+    ".hidden-test/e6-successor.test.ts": "sha256:1c3546f7142a48b65df626d483123415f64d5f45bb9b076edcaace4e1631416b",
+    ".hidden-test/manifest.json": "sha256:4979439b1527c273150747defb939b38e08019c2271fe5b78e4e07d2d4f18152",
+    ".hidden-test/package.json": "sha256:5a065fe7d8eab2a582f428e11c2ea63aaf70607a54f69cfd5c711b5c53d91b32",
+    ".hidden-test/support.ts": "sha256:e44145f0b362c71ad94a8d788b36ce6361fcb0bf9907dc6671d0d0110cc3bb2d",
+    "eval-spec.md": "sha256:5d21dfb3948e9e4570de07148dde8107af12f0159caa20a4ae89c157034c5484"
+  },
+  "integrityChecks": [
+    "every material criterion has exactly one criterion record with disposition and sufficiency",
+    "every criterion-referenced procedure exists in the bundle and maps back; no orphan procedure",
+    "every executable case names existing frozen files; support files present in the inventory",
+    "mandatory executable cases passed controlled positive, baseline-negative and single-defect negative exercises",
+    "non-executable procedures R1 and P1 are concretely defined in eval-spec.md",
+    "public coverage projection equals the private bundle; freeze inventory lists every dependency",
+    "tools/evaluator-integrity.ts validatePreparedEvaluatorBundle: PASS"
+  ],
+  "integrityResult": "PASS",
+  "readiness": {
+    "evaluatorRevision": "002",
+    "privateInventoryIdentity": "sha256:4cd6d5cdf8af41937048474b90fcd6d176ddf3f70cf4b879d23db3c4bba6d170",
+    "validatorResultBinding": "sha256:3a53415f97d97807c6344c098c2f830e15defac14c2dbc60419d2ae112d8b113",
+    "integrityValidation": "PASS"
+  }
+}

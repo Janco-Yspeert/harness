@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "harness-014d-r3-repair2-fixture",
+  "root": "../harness-014d-r3-repair2-fixture",
+  "policy": "methodologies/harness/policy.json",
+  "trustedHistory": "fixture-trusted.jsonl",
+  "validatorSources": {
+    "prepared-coverage": "src/methodologies/harness-public.ts",
+    "verification-accounting": "src/methodologies/harness-public.ts"
+  },
+  "workflows": {
+    "r3-repair": {
+      "directory": "fixture-spikes/r3-repair",
+      "ledger": "workflow.jsonl"
+    }
+  },
+  "workflowDirectory": "fixture-spikes",
+  "ledgerName": "workflow.jsonl",
+  "workspaces": {
+    "repository": {
+      "id": "fixture-repository",
+      "path": ".",
+      "mode": "write",
+      "exposure": "public"
+    },
+    "evaluation": {
+      "id": "fixture-evaluation-private",
+      "path": "../harness-014d-r3-repair2-private/evaluation",
+      "mode": "write",
+      "exposure": "evaluator-private"
+    }
+  },
+  "remotes": {}
+}

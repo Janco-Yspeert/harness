@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "governed-smoke-fixture",
+  "root": ".",
+  "policy": "methodology/policy.json",
+  "trustedHistory": "methodology/trusted.jsonl",
+  "validatorSources": {},
+  "workflows": {},
+  "workspaces": {},
+  "remotes": {}
+}

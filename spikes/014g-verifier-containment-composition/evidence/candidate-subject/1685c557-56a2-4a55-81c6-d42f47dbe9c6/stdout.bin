@@ -1,0 +1,129 @@
+SUBJECT-METADATA-BEGIN
+{"node":"v22.23.3","platform":"linux","arch":"x64","execPath":"/usr/bin/node"}
+frozen-blob 4b361f81e307e129be6d106c9df9a4910e674be9
+candidate-head 651352329cca473fb920139e1496f9f508eeabbb
+adapter-path /var/tmp/harness-subject-ayK2uN/evaluation/bin/codex
+SUBJECT-METADATA-END
+FROZEN-014E-BEGIN
+TAP version 13
+# (node:26) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+# --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("/var/tmp/harness-subject-ayK2uN/evaluation/subject-loader.mjs", pathToFileURL("./"));'
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: 014e AC01/TR1: the unchanged Harness config and an external config bind the same exact trusted N+1 from committed Harness history
+ok 1 - 014e AC01/TR1: the unchanged Harness config and an external config bind the same exact trusted N+1 from committed Harness history
+  ---
+  duration_ms: 427.129218
+  type: 'test'
+  ...
+# Subtest: 014e AC01/D3/TR3: an external grant records the methodology repository, trusted record and exact runtime commit, and stays pinned
+ok 2 - 014e AC01/D3/TR3: an external grant records the methodology repository, trusted record and exact runtime commit, and stays pinned
+  ---
+  duration_ms: 403.17855
+  type: 'test'
+  ...
+# Subtest: 014e D3: an external host reads trusted history only at its start commit; later methodology commits do not change new grants
+ok 3 - 014e D3: an external host reads trusted history only at its start commit; later methodology commits do not change new grants
+  ---
+  duration_ms: 352.816295
+  type: 'test'
+  ...
+# fatal: path 'spikes/smoke/marker.txt' exists on disk, but not in 'ffbea80a4097705ea6b3ba9977169a3e25351d73'
+# Subtest: 014e D2: an external project needs committed trusted history in the methodology repository
+ok 4 - 014e D2: an external project needs committed trusted history in the methodology repository
+  ---
+  duration_ms: 90.942935
+  type: 'test'
+  ...
+# Subtest: 014e AC02/AC03/AC04/D5: invalid roots, workspaces, remotes, origins and runtimes refuse host start
+ok 5 - 014e AC02/AC03/AC04/D5: invalid roots, workspaces, remotes, origins and runtimes refuse host start
+  ---
+  duration_ms: 884.360343
+  type: 'test'
+  ...
+# Subtest: 014e D5: only the recognized GitHub spellings normalize to an origin identity
+ok 6 - 014e D5: only the recognized GitHub spellings normalize to an origin identity
+  ---
+  duration_ms: 0.320799
+  type: 'test'
+  ...
+# Subtest: 014e AC02: committed-input provenance is checked in the project repository, never in the methodology repository
+ok 7 - 014e AC02: committed-input provenance is checked in the project repository, never in the methodology repository
+  ---
+  duration_ms: 71.894062
+  type: 'test'
+  ...
+# Subtest: 014e D4: containment makes forbidden-exposure grants eligible for every adapter only when enforced
+ok 8 - 014e D4: containment makes forbidden-exposure grants eligible for every adapter only when enforced
+  ---
+  duration_ms: 0.223752
+  type: 'test'
+  ...
+# Subtest: 014e AC03/AC04/D4: contained public and protected workers see only their granted workspaces, no Harness writes and no Git credentials
+ok 9 - 014e AC03/AC04/D4: contained public and protected workers see only their granted workspaces, no Harness writes and no Git credentials
+  ---
+  duration_ms: 522.307166
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H2): a Node runtime under the operator home exposes only the runtime, not its prefix siblings or the rest of home
+ok 10 - 014e D4 (H2): a Node runtime under the operator home exposes only the runtime, not its prefix siblings or the rest of home
+  ---
+  duration_ms: 72.074683
+  type: 'test'
+  ...
+# Subtest: 014e D4/TR4: a contained provider still reaches the Harness worker tools and its typed result is accepted
+ok 11 - 014e D4/TR4: a contained provider still reaches the Harness worker tools and its typed result is accepted
+  ---
+  duration_ms: 504.305287
+  type: 'test'
+  ...
+# Subtest: 014e D4: unavailable containment or an unwrapped fixture command is refused before any session or allocation
+ok 12 - 014e D4: unavailable containment or an unwrapped fixture command is refused before any session or allocation
+  ---
+  duration_ms: 358.480294
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H3): a nested provider sandbox that creates new mount points on its writable roots starts inside containment
+ok 13 - 014e D4 (H3): a nested provider sandbox that creates new mount points on its writable roots starts inside containment
+  ---
+  duration_ms: 17.295397
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H3): the nested-sandbox probe passes under real containment and refuses when the nested sandbox cannot start
+ok 14 - 014e D4 (H3): the nested-sandbox probe passes under real containment and refuses when the nested sandbox cannot start
+  ---
+  duration_ms: 25.985415
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H3): a Codex worker whose nested sandbox cannot start is refused before any session or allocation; Claude remains eligible
+ok 15 - 014e D4 (H3): a Codex worker whose nested sandbox cannot start is refused before any session or allocation; Claude remains eligible
+  ---
+  duration_ms: 428.648893
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H4): a Codex write grant selects a Git-writable permission profile for exactly its writable workspaces; read-only grants stay read-only
+ok 16 - 014e D4 (H4): a Codex write grant selects a Git-writable permission profile for exactly its writable workspaces; read-only grants stay read-only
+  ---
+  duration_ms: 0.361066
+  type: 'test'
+  ...
+# Subtest: 014e D4 (H4): inside containment the real Codex sandbox lets a write grant commit, keeps hooks and config read-only, and still denies commits under plain workspace-write
+ok 17 - 014e D4 (H4): inside containment the real Codex sandbox lets a write grant commit, keeps hooks and config read-only, and still denies commits under plain workspace-write
+  ---
+  duration_ms: 115.259817
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4432.852851
+FROZEN-014E-EXIT 0
+FROZEN-014E-END
+BOUNDARY-BEGIN
+{"read-repository":"yes","read-private":"yes","write-private":"yes","write-repository-root":"no","write-repository-git":"no","write-repository-spike":"no","read-home":"yes","read-sibling":"yes","read-tmp":"no","read-credentials":"no"}
+BOUNDARY-EXIT 0
+BOUNDARY-END

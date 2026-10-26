@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "request": {
+    "id": "7bfefd6a-74a7-4ef4-bf18-a2e40e47cd49",
+    "execution": "b005763e-b408-4bb4-8429-13f89ec88e10",
+    "roleGrant": "sha256:f14626b94580cc76b4d7bda4d2d2e80570eded6635046a4a0bd3c68bc75b4ef5",
+    "candidate": "f64b55286e2d2c06d4bd1fd1f815b1b9d09a5330",
+    "evaluatorRevision": "004",
+    "attempt": 2,
+    "destination": "evaluation",
+    "artifacts": [
+      {
+        "source": ".eval/promotion-plan.json",
+        "destination": "promotion-plan.json",
+        "identity": "sha256:b15a9ba9d51b3887ba7a0868e9f79c7ff10993da050289a730c6a61c44b991f1"
+      },
+      {
+        "source": ".eval/attempt-ledger.json",
+        "destination": "attempt-ledger.json",
+        "identity": "sha256:1a8f5b26b234b60e8a1fbf358cebc88789e194a5ec28dcaef4a01f02ea95cc52"
+      },
+      {
+        "source": ".eval/attempts/001/eval-result.md",
+        "destination": "attempts/001/eval-result.md",
+        "identity": "sha256:19a9515d842b6668ae960db84d41c4f73c5cbe375e35c8360dc6c0607151b5fa"
+      },
+      {
+        "source": ".eval/attempts/002/eval-result.md",
+        "destination": "attempts/002/eval-result.md",
+        "identity": "sha256:a98cb979255f0deb59be043c5e8df0f5da4a6cd7f0fbd97635c62930edcedf66"
+      }
+    ]
+  },
+  "result": {
+    "artifacts": {
+      "promotion-plan.json": "sha256:b15a9ba9d51b3887ba7a0868e9f79c7ff10993da050289a730c6a61c44b991f1",
+      "attempt-ledger.json": "sha256:1a8f5b26b234b60e8a1fbf358cebc88789e194a5ec28dcaef4a01f02ea95cc52",
+      "attempts/001/eval-result.md": "sha256:19a9515d842b6668ae960db84d41c4f73c5cbe375e35c8360dc6c0607151b5fa",
+      "attempts/002/eval-result.md": "sha256:a98cb979255f0deb59be043c5e8df0f5da4a6cd7f0fbd97635c62930edcedf66"
+    },
+    "integrityIdentity": "sha256:245fa648c064cf8a702780cd0625a80fdf44dd2f57954b3a45739008eef76136"
+  }
+}

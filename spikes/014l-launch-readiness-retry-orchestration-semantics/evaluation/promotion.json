@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "request": {
+    "id": "e60548b2-3519-49f8-80f8-df489d703e39",
+    "execution": "d44c7829-0fc1-4e51-a365-41253c09da64",
+    "roleGrant": "sha256:a973572347359006b91eec53f03c371888e3b92bee172d737f2571a1ef84453e",
+    "candidate": "4f0560165a14c44f76c6fdd540f4bc456ef208ae",
+    "evaluatorRevision": "001",
+    "attempt": 5,
+    "destination": "evaluation",
+    "artifacts": [
+      {
+        "source": "host:evaluation-fact.json",
+        "destination": "evaluation-fact.json",
+        "identity": "sha256:9924e8bfd88610beb45a6742bb6279afcd6f0ada165ea43727f85de0576c6e8e"
+      },
+      {
+        "source": ".eval/attempts/004/eval-result.md",
+        "destination": "attempts/004/eval-result.md",
+        "identity": "sha256:1309b662d6df6644e90d9889c5e21ca960ad480ff0d8fc107af4fb2fca8ff3f1"
+      },
+      {
+        "source": ".eval/attempts/005/eval-result.md",
+        "destination": "attempts/005/eval-result.md",
+        "identity": "sha256:be169a5bdc9b2a9facc797ddbf8e0fd51eb1a96c1325e88e2d82559a54eaec3b"
+      },
+      {
+        "source": ".eval/freeze.json",
+        "destination": "freeze/001.json",
+        "identity": "sha256:6293e45e5cb22a6449fec4315cc5440cc031e98e0ca3b93983798c8236f543cc"
+      },
+      {
+        "source": "eval-spec.md",
+        "destination": "revisions/001/eval-spec.md",
+        "identity": "sha256:cf916c7c4d8631d0a9ce3a996d352f556778a24e6e9eaf9f96664c97ed137861"
+      },
+      {
+        "source": ".hidden-test/manifest.json",
+        "destination": "revisions/001/.hidden-test/manifest.json",
+        "identity": "sha256:c87677826b3948eb51339988ff11dde7841dd307cf3f0bc644d7265c91c1ea2f"
+      },
+      {
+        "source": ".eval/validate.py",
+        "destination": "revisions/001/.eval/validate.py",
+        "identity": "sha256:72dc441593aae42fb50f9903ad89375ebc84af1b47a351ed58aa2a35ba2ba7c1"
+      }
+    ]
+  },
+  "result": {
+    "artifacts": {
+      "evaluation-fact.json": "sha256:9924e8bfd88610beb45a6742bb6279afcd6f0ada165ea43727f85de0576c6e8e",
+      "attempts/004/eval-result.md": "sha256:1309b662d6df6644e90d9889c5e21ca960ad480ff0d8fc107af4fb2fca8ff3f1",
+      "attempts/005/eval-result.md": "sha256:be169a5bdc9b2a9facc797ddbf8e0fd51eb1a96c1325e88e2d82559a54eaec3b",
+      "freeze/001.json": "sha256:6293e45e5cb22a6449fec4315cc5440cc031e98e0ca3b93983798c8236f543cc",
+      "revisions/001/eval-spec.md": "sha256:cf916c7c4d8631d0a9ce3a996d352f556778a24e6e9eaf9f96664c97ed137861",
+      "revisions/001/.hidden-test/manifest.json": "sha256:c87677826b3948eb51339988ff11dde7841dd307cf3f0bc644d7265c91c1ea2f",
+      "revisions/001/.eval/validate.py": "sha256:72dc441593aae42fb50f9903ad89375ebc84af1b47a351ed58aa2a35ba2ba7c1"
+    },
+    "integrityIdentity": "sha256:50264947b4218b4cea31016ff184002955b2b80ff6de8f7560abdc486be939cc"
+  }
+}

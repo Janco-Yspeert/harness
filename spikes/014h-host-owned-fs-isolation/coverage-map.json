@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "spike": "014h-host-owned-fs-isolation",
+  "evaluationRequirements": "sha256:e865df63af3cb5d0a371a25cad370679f145ce13f7623e6311bcc1b9f339a6a1",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 14,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:12c99f0a8f8d9a97ee6a5e2df07fb696d0ec3692b0ffb33506d208affaa0c731",
+    "privateInventoryIdentity": "sha256:af2bccfdc5b13a4c0e911d6e26f09ee55dfc7d845b779c3032aa70f13e7dc0ab",
+    "validatorResultBinding": "sha256:1dbf136b7b161a4f5d41b91834da8221eb6715542aef5acbd355e1b4364311e7",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 14
+  },
+  "criteria": [
+    {
+      "id": "AC01",
+      "frozenAuthority": "spike.md AC01; design-map.md shared contracts 1 and 2",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E3", "R1", "M1"],
+      "sufficiency": "E3 shows no second filesystem-sandbox construction exists outside the existing containment module. M1 reviews the host launch path to show every spawned registered-adapter launch, for Harness and external projects alike, reaches that one launcher. R1 requires the implementer's regression tests for that wiring to exist and pass."
+    },
+    {
+      "id": "AC02",
+      "frozenAuthority": "spike.md AC02, A1, A4; design-map.md invariants",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 runs sacrificial fixture processes through the production launcher and confirms from the host that the granted repository and scratch are usable while evaluator-private fixtures, sibling repositories, an ungranted checkout and a real-home file are unavailable."
+    },
+    {
+      "id": "AC03",
+      "frozenAuthority": "spike.md AC03, A2, B2; design-map.md invariants",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 shows write grants accept writes and local Git operations, and read grants reject create, edit, delete and mutating Git operations, verified on the host filesystem rather than from the process's own report."
+    },
+    {
+      "id": "AC04",
+      "frozenAuthority": "spike.md AC04; design-map.md invariants",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E1"],
+      "sufficiency": "E1 attempts relative-path and symlink escapes from granted workspaces and scratch and confirms from the host that no ungranted location is read or modified."
+    },
+    {
+      "id": "AC05",
+      "frozenAuthority": "spike.md AC05, A5; design-map.md shared contract 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E4", "M2"],
+      "sufficiency": "E4 checks the committed Stage A artifact is well-formed, public-safe and bound to a commit in the candidate history. M2 reviews that it records one successful real Codex public-role execution through the production launcher path with Harness tools available and forbidden paths unavailable; the evaluator does not repeat the live call."
+    },
+    {
+      "id": "AC06",
+      "frozenAuthority": "spike.md AC06 and Stage A interim enablement gate; design-map.md shared contract 5 and invariants",
+      "mode": "MANUAL_REVIEW",
+      "required": true,
+      "procedures": ["M4"],
+      "sufficiency": "M4 reviews committed public evidence and the workflow ledger to confirm the checkpoint binds the exact runtime commit to the deterministic results, the smoke, the profile and provider-confirmed identity, that the conditional authority was recorded before routing changed, and that the cutover is limited to public roles and is not final acceptance."
+    },
+    {
+      "id": "AC07",
+      "frozenAuthority": "spike.md AC07, B1; design-map.md design decisions",
+      "mode": "EXECUTABLE",
+      "required": true,
+      "procedures": ["E1", "E2"],
+      "sufficiency": "E1 runs the repository-read plus private-write plus scratch shape and confirms each mode and the absence of every other root from the host. E2 shows an unrepresentable overlap is refused or is actually enforced."
+    },
+    {
+      "id": "AC08",
+      "frozenAuthority": "spike.md AC08, B4; design-map.md shared contract 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E4", "M2"],
+      "sufficiency": "E4 checks the committed Stage B artifact is well-formed, public-safe and bound to a commit in the candidate history and records both read and write workspace modes for Claude. M2 reviews that it shows a real protected Claude execution through the same launcher path."
+    },
+    {
+      "id": "AC09",
+      "frozenAuthority": "spike.md AC09, A3; design-map.md invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E1", "E4", "M2"],
+      "sufficiency": "E1 shows the process home is synthetic and scratch-backed and real-home files and other provider state are absent. E4 scans the public artifacts for credentials and private or home paths. M2 confirms provider configuration and credentials do not appear in workflow evidence."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10, B5; design-map.md shared contract 6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R1", "M3"],
+      "sufficiency": "M3 reviews every use of the provider isolation flag to confirm it no longer decides filesystem visibility or the protected launch check and that protected routing remains Claude-only through policy. R1 requires the implementer's test for this and the unrelated capability checks to pass."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11 and Failure behavior; design-map.md shared contract 3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E2", "R1", "M1"],
+      "sufficiency": "E2 shows the launcher refuses unresolvable or exposing construction rather than returning a launch. M1 reviews that host refusals occur before session registration and allocation with the stated diagnostics and no unwrapped fallback. R1 requires the implementer's refusal tests to exist and pass."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12",
+      "mode": "REGRESSION",
+      "required": true,
+      "procedures": ["R1"],
+      "sufficiency": "R1 runs the repository typecheck, lint, format check and complete test suite, which contain the governed workflow, evaluator-private, trusted-methodology, promotion and recovery regressions."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13 and Handoff to 014i; design-map.md shared contract 1",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E3", "M1"],
+      "sufficiency": "E3 shows there is a single sandbox construction site. M1 reviews that the launcher's existing call shape accepts a repository-read, private-write and scratch grant directly so a later consumer can reuse it without a second mechanism."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md AC14 and Evidence; design-map.md shared contract 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E4", "M2"],
+      "sufficiency": "E4 checks both committed artifacts are public-safe and bound to the candidate's history. M2 reviews their provenance and consistency, including runtime commit, workspaces, profile, provider-confirmed identity where attestable, containment result and checks, without requiring provider credentials or a repeat live call."
+    }
+  ]
+}

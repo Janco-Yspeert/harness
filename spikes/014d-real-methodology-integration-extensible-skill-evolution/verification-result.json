@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "attempt": "007",
+  "allocationKey": "sha256:f8d10008f231d692ceda6a4ea608f669433bfcc9449b63df44a42176f005fdad",
+  "execution": "7b3daed7-6a33-4602-abde-1935c0757056",
+  "roleGrant": "sha256:4142f54d5a6ce7c4c143168608b8889019b3f0c98cfe1a37fd39b359f77b38da",
+  "commit": "9169ccf7d4543c214e7b7890ee29e428a5f8c01a",
+  "evaluatorRevision": "002",
+  "evaluatorRevisionIdentity": "sha256:386ed11bdd491aea3262122e684fd106798e07bc5df3d34d95d57aa86c171319",
+  "inputs": {
+    "brief": "sha256:8d4302b27bfd760127e8d8458b515db92f5eae63c4adb9061f3d63c2d1ac710d",
+    "design": "sha256:50780fa3bef5b097aab2d0cdd27c55b58113d19eca9f2485e9f808eea1e1200e",
+    "evaluationRequirements": "sha256:c47e49c8c478ff4c77fdf908eb8105d9c2d7ce6c728f9d594af845054d88691a",
+    "coverage": "sha256:a7abb9d197d50154c113fc9a6f85b639fdbce1c1cd912d15ff6990e05e8c349b"
+  },
+  "evidenceBasis": {
+    "candidate": "9169ccf7d4543c214e7b7890ee29e428a5f8c01a",
+    "committedEvidenceHead": "41726f75b9a0260dd606613aadcf78fd21d1e937",
+    "note": "The executable cases and the regression ran on a clean clone of the candidate. The public-evidence procedures also read the documentation-only evidence committed under the spike directory after the candidate, up to 41726f7. That includes the methodology candidate/check/diff evidence, which root authority 348cdfff named as the basis for this attempt. No code, skill, contract, policy, trusted history or test differs from the candidate."
+  },
+  "result": "PASS",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "SATISFIED"
+  },
+  "accounting": {
+    "criteria": 13,
+    "satisfied": 13,
+    "notSatisfied": 0,
+    "notAdjudicated": 0,
+    "procedures": 12,
+    "executableCases": 11,
+    "executablePassed": 11,
+    "failedProcedures": [],
+    "note": "Every procedure was adjudicated to decision depth. The committed methodology candidate/check/diff outputs reproduce byte-for-byte from the candidate, which closes the attempt-006 AC09 gap."
+  },
+  "regression": {
+    "command": "npm run check",
+    "environment": "clean clone of the candidate; provider credentials absent",
+    "exit": 0,
+    "tests": 175,
+    "passed": 175
+  },
+  "priorAttempts": {
+    "001": "FAIL IMPLEMENTATION_FAILURE on candidate 0e2789c",
+    "002": "host allocation ended at the provider rate limit before evaluation began; no result",
+    "003": "host allocation ended at the provider rate limit before evaluation began; no result",
+    "004": "FAIL IMPLEMENTATION_FAILURE on candidate 0e2789c (unchanged since 001)",
+    "005": "FAIL IMPLEMENTATION_FAILURE on candidate 9169ccf",
+    "006": "FAIL IMPLEMENTATION_FAILURE on candidate 9169ccf (AC09 candidate/check/diff evidence missing); closed in this attempt"
+  },
+  "supersedes": "The attempt-006 retry feedback in verification-feedback.md is historical and is closed by this attempt. No implementation feedback is outstanding.",
+  "humanAcceptance": "Required separately. This PASS does not accept the product or promote trusted methodology."
+}

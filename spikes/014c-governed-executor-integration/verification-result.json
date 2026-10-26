@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "attempt": "006",
+  "allocationKey": "sha256:f8bdd05910d22c1965e8c3ea68ac24f7ea697f50743c3b494f9d619f28fd0a09",
+  "execution": "65f8dbab-42e5-4f04-b2da-257310197142",
+  "roleGrant": "sha256:c9cc538f4fc17fb7f80524516f02cdbc8bf5bb250abd7af97663511c203b3e8c",
+  "commit": "e61c965e56637b8b44e14fd72947f7b7459bca80",
+  "evaluatorRevision": "001",
+  "evaluatorRevisionIdentity": "sha256:0f5e6846ac07c260f135e05d844a6487f29d35b64a3ba0d5a1738928c2687db8",
+  "inputs": {
+    "brief": "sha256:0e86f034efd3b3f4217f5049fdc063c47f4b36147b309b9d6b4fbf1f095d2d18",
+    "design": "sha256:9f98ebfcc201736737cb9e0f5dcebc29cafd1235a8e9465b02c81764013e82e1",
+    "evaluationRequirements": "sha256:4208a00410787a09eb4fafdaacd1756fd4f5f00a9bb1bf26e077a52f1ef4338c",
+    "coverage": "sha256:d9a843edfc9557e4e9e80af0b69b7855fc33447ba56dab471173baabdc7aecdf"
+  },
+  "result": "PASS",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "SATISFIED",
+    "AC14": "SATISFIED",
+    "AC15": "SATISFIED",
+    "AC16": "SATISFIED"
+  },
+  "accounting": {
+    "criteria": 16,
+    "satisfied": 16,
+    "mandatoryCases": 58,
+    "mandatoryPassed": 58,
+    "executableCases": 15,
+    "executablePassed": 15,
+    "procedures": 9
+  },
+  "regression": {
+    "command": "npm run check",
+    "environment": "clean checkout of the candidate; provider CLIs and credentials absent; offline",
+    "exit": 0,
+    "tests": 145,
+    "passed": 145
+  },
+  "evaluatorIntegrity": {
+    "frozenBundleUnchanged": true,
+    "specificationDrift": false,
+    "evaluatorDefects": 0
+  },
+  "notesForHumanAcceptance": [
+    "The executor decision's authentication and billing position rests on the frozen brief's statements. The Anthropic reference documentation was unreachable from the implementation sandbox. The route selection does not depend on it.",
+    "The decision record's version table shows the sandbox Codex binary (0.154.0-alpha.6.2). The governed smoke used codex-cli 0.155.1 and Claude Code 2.1.280.",
+    "The adapter reuse inventory calls the bootstrap tool unchanged. It was changed only by a human-authorized bootstrap recovery commit, not by implementation work.",
+    "The passing smoke record embeds no source revision. Its attribution to the corrected adapters rests on commit timing and an unchanged source tree up to the candidate."
+  ],
+  "promotion": {
+    "requested": true,
+    "privateRequestIdentity": "sha256:23f665990ac79d941c6231dd0a4bdaf9c61179bb22abc4b9daba14754b1ed239",
+    "attemptLedgerIdentity": "sha256:0392f040fa9ba47cf60f000bd72a63da1ba1ab5fc7b375aa73c486a96cd52eb9",
+    "attemptResultIdentity": "sha256:70c263b64eb477b195a063ba76a415165dcbeff4bb85dfab183ace73122e87e0",
+    "revisionEligibility": { "001": "ELIGIBLE" }
+  }
+}

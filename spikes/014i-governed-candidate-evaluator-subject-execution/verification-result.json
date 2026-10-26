@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "attempt": "004",
+  "execution": "68ee4301-683c-45b1-a1a8-a95b3b595e80",
+  "roleGrant": "sha256:e18ecf474cb61fcdb9d7229afeba04f29b2938cd3af9cb5d589c9832e82d9420",
+  "commit": "bb8d138d59c69e5af3f5b09b1a2fc5c6a4049f14",
+  "evaluatorRevision": "002",
+  "evaluatorRevisionIdentity": "sha256:f8c5cc0adc329153246d901a6744fa999cbb1b905862cce98f5695a5922cd410",
+  "inputs": {
+    "brief": "sha256:36143fc057b9a67594103baabb994f7b3c3b28a110c7d87b6baf39aa73796c7e",
+    "design": "sha256:69548f440c3f54efbcf3c2cf621d5c75d5c7f951b75b397c4dbeb9c2b5ca5f3b",
+    "evaluationRequirements": "sha256:33bc7a34dca20798c1d59e5c98aae2b9213aea8c06475f1069d282f6d4d9d2e2",
+    "coverage": "sha256:6fdd13c2e733f1ac3cd9586dc3bdbb0f7754fd5ca702bc976f205f52d97e385e"
+  },
+  "result": "PASS",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED"
+  },
+  "accounting": {
+    "criteria": 10,
+    "satisfied": 10,
+    "notSatisfied": 0,
+    "notAdjudicated": 0,
+    "procedures": 7,
+    "executableCases": 2,
+    "executablePassed": 2,
+    "failedProcedures": [],
+    "blockedProcedures": [],
+    "partialProcedures": [],
+    "note": "Both executable checks pass against the exact committed candidate. Public regression and all four manual reviews pass, including committed-revision methodology reconstruction through the existing builder."
+  },
+  "regression": {
+    "command": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "environment": "clean clone of the candidate outside the system temporary directory, installed dependencies",
+    "typecheck": "pass",
+    "lint": "pass",
+    "formatCheck": "pass",
+    "tests": 234,
+    "passed": 234
+  },
+  "evaluatorIntegrity": {
+    "frozenEvaluationModified": false,
+    "specificationDrift": false,
+    "evaluatorDefects": 0,
+    "postImplementationCorrections": 1,
+    "candidateEvaluationBegan": true
+  },
+  "environmentNote": "A clone placed under the system temporary directory reproduces one existing 014e test failure caused by checkout placement; the same suite passes fully elsewhere. Not a candidate or evaluator defect.",
+  "promotionPlan": {
+    "identity": "sha256:17942e967916947bb365b6b7d740a25b495d413c8c6308c75911cfd8f01192da",
+    "decision": "INELIGIBLE"
+  },
+  "humanAcceptance": "Not applicable: machine-verifiable PASS only. Archival is not requested because the plan is ineligible (frozen evaluator bundles carry private grader material with no disclosure decision)."
+}

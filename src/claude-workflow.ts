@@ -31,7 +31,7 @@ export function claudeWorkflowDirectory(
 // network-isolated profile can hold git-publish without this ever granting
 // Bash push access, and instead rely solely on the host-mediated
 // WorkflowRunRegistry#publishCommit endpoint.
-function resolveClaudeCapabilityTools(
+export function resolveClaudeCapabilityTools(
   capabilities: ReadonlySet<string>,
   options: { allowDirectPush: boolean },
 ): { tools: string[]; allowedTools: string[] } {
@@ -68,6 +68,103 @@ function resolveClaudeCapabilityTools(
   if (capabilities.has("local-computation"))
     allowedTools.push("Bash(node *)", "Bash(python3 *)");
   return { tools, allowedTools };
+}
+
+// Safe mode excludes CLAUDE.md, memory, plugins, hooks, skills and other
+// customizations. Restricted mode confines file tools to declared dirs.
+// Managed host policy still applies; candidate settings cannot grant access.
+// Shared by the legacy protected contract mode and governed execution.
+export const CLAUDE_PROTECTED_FLAGS = [
+  "--safe-mode",
+  "--restricted",
+  "--disable-slash-commands",
+  "--strict-mcp-config",
+  "--setting-sources",
+  "",
+] as const;
+
+// Governed execution needs exactly one MCP server: the repository-owned Harness
+// worker tool server passed with --mcp-config. Safe mode disables every MCP
+// server, including an explicitly passed one (observed in the 014c live smoke:
+// init reported no connected "harness" server). Governed launches therefore
+// keep each ambient exclusion without safe mode: --strict-mcp-config admits only
+// the passed config, --setting-sources "" loads no user/project/local settings
+// (and so no CLAUDE.md, hooks or enabled plugins), --disable-slash-commands
+// removes skills and commands, and --restricted keeps file tools inside the
+// declared directories.
+export const GOVERNED_CLAUDE_FLAGS: readonly string[] =
+  CLAUDE_PROTECTED_FLAGS.filter((flag) => flag !== "--safe-mode");
+
+// OS sandbox for command execution: block siblings of every granted workspace
+// (notably arbitrary /tmp entries), then re-open only the exact allocation.
+export function claudeSandboxSettings(
+  workspaces: readonly string[],
+  filesystemAuthority: "provider" | "host" = "provider",
+): string {
+  const hostOwnsFilesystem = filesystemAuthority === "host";
+  return JSON.stringify({
+    // A governed launch is already inside Harness's exact mount topology.
+    // Asking Claude's command parser to infer filesystem effects from shell
+    // syntax would make provider language recognition an authority boundary.
+    permissions: {
+      blockReadsOutsideWorkingDirectories: !hostOwnsFilesystem,
+    },
+    sandbox: {
+      enabled: true,
+      failIfUnavailable: true,
+      autoAllowBashIfSandboxed: true,
+      allowUnsandboxedCommands: false,
+      excludedCommands: [],
+      ...(hostOwnsFilesystem
+        ? {
+            // The parent Claude process retains provider and MCP connectivity.
+            // Only Bash and its descendants receive this strict deny-all
+            // network policy.
+            network: {
+              allowedDomains: [],
+              deniedDomains: ["*"],
+              strictAllowlist: true,
+            },
+            // Filesystem isolation is deliberately disabled below, but Claude
+            // 2.1.292 preserves credential-file masks and credential-env
+            // denials in that mode. The parent can authenticate from synthetic
+            // HOME while arbitrary child programs receive no usable provider
+            // authentication material.
+            credentials: {
+              files: [
+                { path: "~/.claude/.credentials.json", mode: "mask" },
+                { path: "~/.claude.json", mode: "mask" },
+                { path: "~/.claude/.claude.json", mode: "mask" },
+              ],
+              envVars: [
+                { name: "ANTHROPIC_API_KEY", mode: "deny" },
+                { name: "ANTHROPIC_AUTH_TOKEN", mode: "deny" },
+                { name: "CLAUDE_CODE_OAUTH_TOKEN", mode: "deny" },
+                {
+                  name: "CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR",
+                  mode: "deny",
+                },
+              ],
+            },
+          }
+        : {}),
+      // Governed launches already run inside host-owned bubblewrap mounts that
+      // enforce each workspace mode and expose no other host paths. Rebuilding
+      // that filesystem policy in Claude's nested sandbox is both redundant
+      // and invalid for a read-only repository: sandbox-runtime creates mount
+      // points such as .claude/hooks while preparing deny-write rules. Keep
+      // Claude's command/network sandbox, but leave filesystem authority with
+      // the outer containment. Legacy launches still use the provider fence.
+      filesystem: hostOwnsFilesystem
+        ? { disabled: true }
+        : {
+            denyRead: [
+              ...new Set(workspaces.map((workspace) => dirname(workspace))),
+            ],
+            allowRead: [...workspaces],
+          },
+    },
+  });
 }
 
 export function buildClaudeWorkflowCommand(
@@ -138,26 +235,7 @@ export function buildClaudeWorkflowCommand(
     ...(scratchWorkspace === undefined ? [] : [scratchWorkspace]),
   ];
   const sandboxSettings = permitsCommands
-    ? JSON.stringify({
-        permissions: { blockReadsOutsideWorkingDirectories: true },
-        sandbox: {
-          enabled: true,
-          failIfUnavailable: true,
-          autoAllowBashIfSandboxed: true,
-          allowUnsandboxedCommands: false,
-          excludedCommands: [],
-          filesystem: {
-            // Block siblings of every granted workspace (notably arbitrary
-            // /tmp entries), then re-open only the exact run allocation.
-            denyRead: [
-              ...new Set(
-                commandWorkspaces.map((workspace) => dirname(workspace)),
-              ),
-            ],
-            allowRead: commandWorkspaces,
-          },
-        },
-      })
+    ? claudeSandboxSettings(commandWorkspaces)
     : undefined;
   const parameters = {
     mode: spec.role.slice("evaluator-".length),
@@ -176,15 +254,7 @@ Use "blocked", "refused", or "failed" when appropriate, with an optional JSON st
   return [
     "claude",
     "-p",
-    // Safe mode excludes CLAUDE.md, memory, plugins, hooks, skills and other
-    // customizations. Restricted mode confines file tools to declared dirs.
-    // Managed host policy still applies; candidate settings cannot grant access.
-    "--safe-mode",
-    "--restricted",
-    "--disable-slash-commands",
-    "--strict-mcp-config",
-    "--setting-sources",
-    "",
+    ...CLAUDE_PROTECTED_FLAGS,
     ...(sandboxSettings === undefined ? [] : ["--settings", sandboxSettings]),
     "--tools",
     tools.join(","),
@@ -205,5 +275,148 @@ Use "blocked", "refused", or "failed" when appropriate, with an optional JSON st
     system,
     "--",
     `Work target: ${spec.slot.workflow}; phase: ${spec.slot.phase}; attempt: ${spec.slot.methodologyAttempt ?? "none"}.\n${spec.prompt ?? "Perform the allocated work."}`,
+  ];
+}
+
+// Governed execution: one reviewed mapping from Harness contract capabilities
+// to the Claude tool families above. A capability without an entry fails
+// closed; nothing here can widen into unrestricted permission mode or push.
+const GOVERNED_CLAUDE_CAPABILITIES: Readonly<
+  Record<string, readonly string[]>
+> = {
+  "repository-read": ["repository-read"],
+  "repository-write": ["workspace-write"],
+  "local-computation": [
+    "local-computation",
+    "child-process",
+    "test-build-lint-format",
+  ],
+  "git-inspect": ["git-inspect"],
+  "git-commit": ["git-commit"],
+};
+export const GOVERNED_WORKER_TOOL_SERVER = "harness";
+
+export function governedClaudeCapabilities(): readonly string[] {
+  return Object.keys(GOVERNED_CLAUDE_CAPABILITIES);
+}
+
+export function governedClaudePermissions(
+  capabilities: readonly string[],
+  workerOperations: readonly string[],
+  workspaceWrite = capabilities.includes("repository-write"),
+): {
+  tools: string[];
+  allowedTools: string[];
+  disallowedTools: string[];
+  permissionMode: "acceptEdits" | "dontAsk";
+  commands: boolean;
+} {
+  const families = new Set<string>();
+  for (const capability of capabilities) {
+    const mapped = GOVERNED_CLAUDE_CAPABILITIES[capability];
+    if (mapped === undefined)
+      throw new Error(
+        `capability ${capability} has no reviewed Claude permission mapping`,
+      );
+    for (const family of mapped) families.add(family);
+  }
+  // Capabilities decide which class of mutation is authorized; workspace
+  // modes decide where it may land. A read-only repository can therefore
+  // coexist with writable evaluator-private state without granting the
+  // repository-write capability.
+  if (workspaceWrite) families.add("workspace-write");
+  const { tools, allowedTools } = resolveClaudeCapabilityTools(families, {
+    allowDirectPush: false,
+  });
+  return {
+    tools,
+    allowedTools: [
+      ...allowedTools,
+      ...workerOperations.map(
+        (operation) => `mcp__${GOVERNED_WORKER_TOOL_SERVER}__${operation}`,
+      ),
+    ],
+    // Publication is only ever the host-configured requestAction.
+    disallowedTools: ["Bash(git push)", "Bash(git push *)"],
+    permissionMode: families.has("workspace-write") ? "acceptEdits" : "dontAsk",
+    commands: tools.includes("Bash"),
+  };
+}
+
+export interface GovernedClaudeLaunch {
+  // The first workspace is the provider working directory.
+  readonly workspaces: ReadonlyArray<{ path: string; mode: "read" | "write" }>;
+  readonly capabilities: readonly string[];
+  readonly workerOperations: readonly string[];
+  readonly scratch: string;
+  readonly mcpConfig: string;
+  readonly system: string;
+  readonly prompt: string;
+  readonly model?: string;
+  readonly maxTurns?: number;
+  // A spawned protected worker has no approval UI. Harness has already
+  // resolved its authority, so the provider must apply the explicit reviewed
+  // allow/deny rules without an independent command classifier.
+  readonly unattendedProtected?: boolean;
+}
+
+export function buildGovernedClaudeCommand(
+  launch: GovernedClaudeLaunch,
+): string[] {
+  const permissions = governedClaudePermissions(
+    launch.capabilities,
+    launch.workerOperations,
+    launch.workspaces.some((workspace) => workspace.mode === "write"),
+  );
+  // A protected governed worker has no approval surface
+  // (`--permission-prompts none`). Admit every provider tool family selected by
+  // the reviewed Harness capability mapping. Bash is auto-allowed only after
+  // Claude has installed its fail-closed child sandbox; Harness's outer
+  // bubblewrap and workspace modes remain the filesystem authority. The more
+  // specific read-only Edit/Write and git-push denials remain useful provider
+  // guardrails, but do not carry the actual filesystem boundary.
+  const allowedTools = launch.unattendedProtected
+    ? [...new Set([...permissions.allowedTools, ...permissions.tools])]
+    : permissions.allowedTools;
+  const paths = launch.workspaces.map((workspace) => workspace.path);
+  const commandWorkspaces = [...paths, launch.scratch];
+  const readOnly = launch.workspaces
+    .filter((workspace) => workspace.mode === "read")
+    .flatMap((workspace) => [
+      `Edit(/${workspace.path}/**)`,
+      `Write(/${workspace.path}/**)`,
+    ]);
+  return [
+    "claude",
+    "-p",
+    ...GOVERNED_CLAUDE_FLAGS,
+    "--mcp-config",
+    launch.mcpConfig,
+    ...(permissions.commands
+      ? ["--settings", claudeSandboxSettings(commandWorkspaces, "host")]
+      : []),
+    "--tools",
+    permissions.tools.join(","),
+    "--allowedTools",
+    allowedTools.join(","),
+    "--disallowedTools",
+    [...permissions.disallowedTools, ...readOnly].join(","),
+    "--permission-mode",
+    permissions.permissionMode,
+    "--permission-prompts",
+    "none",
+    "--no-session-persistence",
+    ...commandWorkspaces.slice(1).flatMap((path) => ["--add-dir", path]),
+    ...(launch.model === undefined ? [] : ["--model", launch.model]),
+    ...(launch.maxTurns === undefined
+      ? []
+      : ["--max-turns", String(launch.maxTurns)]),
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--system-prompt",
+    launch.system,
+    "--",
+    launch.prompt,
   ];
 }

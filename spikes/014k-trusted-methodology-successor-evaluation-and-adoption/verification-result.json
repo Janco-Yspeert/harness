@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "attempt": "002",
+  "commit": "f64b55286e2d2c06d4bd1fd1f815b1b9d09a5330",
+  "evaluatorRevision": "004",
+  "evaluatorRevisionIdentity": "sha256:dd9e3a8a646f2fe862da843b36c2d7cff63f4ea01a9b0786230ddbf23f251c11",
+  "result": "PASS",
+  "coverageResults": {
+    "AC01": "SATISFIED",
+    "AC02": "SATISFIED",
+    "AC03": "SATISFIED",
+    "AC04": "SATISFIED",
+    "AC05": "SATISFIED",
+    "AC06": "SATISFIED",
+    "AC07": "SATISFIED",
+    "AC08": "SATISFIED",
+    "AC09": "SATISFIED",
+    "AC10": "SATISFIED",
+    "AC11": "SATISFIED",
+    "AC12": "SATISFIED",
+    "AC13": "SATISFIED",
+    "AC14": "SATISFIED",
+    "AC15": "SATISFIED"
+  },
+  "promotionPlan": {
+    "identity": "sha256:b15a9ba9d51b3887ba7a0868e9f79c7ff10993da050289a730c6a61c44b991f1",
+    "decision": "ELIGIBLE"
+  }
+}

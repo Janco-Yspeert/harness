@@ -1,0 +1,271 @@
+{
+  "spike": "014l-launch-readiness-retry-orchestration-semantics",
+  "evaluationRequirements": "sha256:3359c649327fffbbc735a862c56a599db22276e9f8827b1c3c5f25f64144cbdb",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 14,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:6293e45e5cb22a6449fec4315cc5440cc031e98e0ca3b93983798c8236f543cc",
+    "privateInventoryIdentity": "sha256:19329388e7f4c8f36f8be38f39a2942d38b29a18f751163c8c505ac0b41e329c",
+    "validatorResultBinding": "sha256:8862c23d9eb5af6eaeda66a15add55cd8960018cde947768ead71804f118e872",
+    "integrityValidation": "PASS",
+    "integrityValidatedAt": "a3489b04",
+    "criterionRecordCount": 25
+  },
+  "criteria": [
+    {
+      "id": "AC1",
+      "frozenAuthority": "spike.md AC1; Brief 'Canonical launch shape'; Design Map shared contract 3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1"
+      ],
+      "sufficiency": "E1 requires the implementation's visible deterministic tests (brief required tests 1-2) to show spawned and attached shapes come from canonical role/grant state, and the evaluator's source inspection confirms no supervisor-side reconstruction path; a hidden test would need an invented shape representation, which the Design Map leaves to implementation."
+    },
+    {
+      "id": "AC2",
+      "frozenAuthority": "spike.md AC2; Brief 'Launch-shape ownership', AC2; Design Map shared contract 4",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1"
+      ],
+      "sufficiency": "E1 requires visible tests (brief required tests 3-5) that drop and broaden capabilities through the real adapter translation and fail closed, plus inspection that the adapter only translates host shape; the translation representation is implementation freedom, so no hidden seam is justified."
+    },
+    {
+      "id": "AC3",
+      "frozenAuthority": "spike.md AC3; Brief 'Spawned readiness topology', 'Readiness freshness'; Design Map shared contract 4",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2"
+      ],
+      "sufficiency": "E2 requires visible tests (brief tests 7-9) showing a separate probe invocation, single-use consumption bound to one launch intent, and invalidation on intent change, with inspection of the probe path; probe mechanics are explicit Design Map freedom."
+    },
+    {
+      "id": "AC4",
+      "frozenAuthority": "spike.md AC4; Brief 'Attached execution'; Design Map shared contract 6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E3"
+      ],
+      "sufficiency": "E3 requires visible tests (brief tests 13-14) showing attached incompatibility fails before allocation and compatible sessions reach the same allocation boundary, plus inspection that no provider probe is invoked in attached mode."
+    },
+    {
+      "id": "AC5",
+      "frozenAuthority": "spike.md AC5; Brief 'Operational launch attempts'; Design Map shared contract 2",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E4"
+      ],
+      "sufficiency": "E4 requires a visible test (brief test 10) and inspection showing a readiness failure yields a durable kernel.launch-attempt record while no kernel.allocation or semantic execution exists; the on-disk encoding is Design Map freedom but the named ledger record kind is stable."
+    },
+    {
+      "id": "AC6",
+      "frozenAuthority": "spike.md AC6; Brief 'Canonical semantic-attempt boundary'; Design Map shared contract 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E4"
+      ],
+      "sufficiency": "E4 requires visible tests (brief tests 15, 17) and inspection that kernel.allocation is the sole semantic commit and that post-allocation process failure remains a consumed semantic attempt."
+    },
+    {
+      "id": "AC7",
+      "frozenAuthority": "spike.md AC7; Brief 'Required ordering'; Design Map shared contract 5",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E4"
+      ],
+      "sufficiency": "E4 requires visible tests (brief tests 15-16) asserting ledger order of kernel.allocation, onAllocate projection, kernel.exposure, then delivery, using the real kernel and host ordering."
+    },
+    {
+      "id": "AC8",
+      "frozenAuthority": "spike.md AC8; Brief 'Material allowed during readiness'; Design Map shared contract 4",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2"
+      ],
+      "sufficiency": "E2 requires a visible test (brief tests 7, 29) that inspects everything the probe receives for absence of governed role material and shows no exposure record on failed readiness; probe inputs are inspectable at the injectable probe boundary the Design Map mandates."
+    },
+    {
+      "id": "AC9",
+      "frozenAuthority": "spike.md AC9; Brief 'Effective launch validation'; Design Map invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1",
+        "E2"
+      ],
+      "sufficiency": "E1/E2 require visible tests (brief tests 4-6) showing canonical/effective mismatch is an operational failure recorded before kernel.allocation, and inspection that mismatch fails closed when undetermined."
+    },
+    {
+      "id": "AC10",
+      "frozenAuthority": "spike.md AC10; Brief 'Operational launch attempts', 'Readiness requirements'; Design Map invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E2",
+        "E4"
+      ],
+      "sufficiency": "E2/E4 require visible tests (brief tests 10-12, 21) showing pre-allocation mismatch creates a durable operational record and leaves semantic numbering and budgets unchanged."
+    },
+    {
+      "id": "AC11",
+      "frozenAuthority": "spike.md AC11; Brief 'Launch-shape ownership', 'Effective launch validation'; Design Map invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E1"
+      ],
+      "sufficiency": "E1 requires inspection that adapter and supervisor paths have no route to alternate provider commands, flags or permissions outside the adapter translation, and that a launch-shape failure terminates fail-closed rather than being repaired."
+    },
+    {
+      "id": "AC12",
+      "frozenAuthority": "spike.md AC12; Brief 'Operational retry policy / Fixed budget'; Design Map invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E5"
+      ],
+      "sufficiency": "E5 requires a visible test (brief test 18) showing exactly one initial attempt plus three automatic retries per unchanged intent, then stop, independent of semantic limits; the numeric budget is fixed by the brief."
+    },
+    {
+      "id": "AC13",
+      "frozenAuthority": "spike.md AC13; Brief 'Launch-intent identity'; Design Map shared contract 3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E5"
+      ],
+      "sufficiency": "E5 requires visible tests (brief tests 19-20) showing failure-class/UUID/timestamp/grant-reissue changes do not reset the budget while a changed included field does, with inspection of the intent normalization field list against the brief."
+    },
+    {
+      "id": "AC14",
+      "frozenAuthority": "spike.md AC14; Brief 'Semantic retry policy'; Design Map design decisions",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E5"
+      ],
+      "sufficiency": "E5 requires a visible test (brief test 21) showing semantic retry counts and limits are unaffected by pre-allocation operational failures and begin only after allocation."
+    },
+    {
+      "id": "AC15",
+      "frozenAuthority": "spike.md AC15; Brief 'Authority invariants', 'Human-authorized retry'; Design Map shared contract 7",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E6"
+      ],
+      "sufficiency": "E6 requires a visible test (brief test 24) and inspection that automatic and human-authorized retry cannot change workspace, tools, role, exposure, candidate/evaluator or shape, with a changed scope producing a new launch intent."
+    },
+    {
+      "id": "AC16",
+      "frozenAuthority": "spike.md AC16; Brief 'Human-authorized retry'; Design Map shared contract 7",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E6"
+      ],
+      "sufficiency": "E6 requires visible tests (brief tests 22-23) for the root-only retries operation named by the Design Map: exact exhausted-identity binding, positive finite count, default of one, durable kernel.retry-authority record, and refusal on drift/unknown fields."
+    },
+    {
+      "id": "AC17",
+      "frozenAuthority": "spike.md AC17; Brief 'Operational launch attempts' append-only; Design Map shared contract 2",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E4"
+      ],
+      "sufficiency": "E4 requires visible tests and inspection showing operational attempts remain in append-only durable history after failure and after later success."
+    },
+    {
+      "id": "AC18",
+      "frozenAuthority": "spike.md AC18; Brief 'Attempt numbering'; Design Map design decisions",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E4"
+      ],
+      "sufficiency": "E4 requires a visible test (brief tests 15, 21) and inspection that semantic attempt numbers derive from committed kernel.allocation history and operational attempts create no gaps or inflation."
+    },
+    {
+      "id": "AC19",
+      "frozenAuthority": "spike.md AC19; Brief 'Canonical semantic progress identity'; Design Map shared contract 3",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E7"
+      ],
+      "sufficiency": "E7 requires visible tests (brief tests 25-26) showing identical progress identity despite execution/session/grant UUID churn and different identity on feedback/candidate/phase change, with inspection of the field set and ignored-field list against the brief."
+    },
+    {
+      "id": "AC20",
+      "frozenAuthority": "spike.md AC20; Brief 'Stop rule'; Design Map shared contract 8",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E7"
+      ],
+      "sufficiency": "E7 requires a visible test (brief test 27) showing a single repeated equivalent identity records the repeated-no-progress gate and performs no launch or allocation, and that a human-authorized retry that repeats stops again."
+    },
+    {
+      "id": "AC21",
+      "frozenAuthority": "spike.md AC21; Brief 'Deterministic no-progress detection'; Design Map shared contract 8",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E5",
+        "E7"
+      ],
+      "sufficiency": "E5/E7 require a visible test (brief test 28) showing repeated operational failures neither create nor advance the semantic comparison point."
+    },
+    {
+      "id": "AC22",
+      "frozenAuthority": "spike.md AC22; Brief 'Status projection'; Design Map shared contract 1",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E8"
+      ],
+      "sufficiency": "E8 requires a visible test (brief test 30) enumerating each minimum status fact in the brief against the existing root-only resolve GET response in launch, readiness, allocation, retry, no-progress and gate states; exact nesting is Design Map freedom, so presence and correctness of each fact is judged."
+    },
+    {
+      "id": "AC23",
+      "frozenAuthority": "spike.md AC23; Brief 'Status projection'; Design Map shared contract 1, invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E8"
+      ],
+      "sufficiency": "E8 requires a visible test (brief test 31) that regenerates the status from canonical records and inspection that no mutation path or second store exists."
+    },
+    {
+      "id": "AC24",
+      "frozenAuthority": "spike.md AC24; Brief 'Attached execution', Authority invariants; Design Map invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": [
+        "E3",
+        "E9"
+      ],
+      "sufficiency": "E3/E9 require visible tests and inspection showing failed readiness produces no protected exposure, attached reuse of implementation-exposed state is still refused for protected evaluator execution, and retry changes no exposure."
+    },
+    {
+      "id": "AC25",
+      "frozenAuthority": "spike.md AC25; Brief AC25; required tests 32-33",
+      "mode": "PUBLIC_REGRESSION",
+      "required": true,
+      "procedures": [
+        "E9"
+      ],
+      "sufficiency": "E9 requires visible regression tests (brief tests 32-33) and a full repository check run showing normal attached and spawned governed flows succeed without extra human intervention."
+    }
+  ]
+}

@@ -7,16 +7,25 @@ description:
 
 # Spike Implementation
 
-Contract version: 3
+Contract version: 6
 
 Answer one question: **does the frozen spike now exist in the repository?**
 
 ## Inputs
 
 Require and read the frozen `spike.md`, frozen `design-map.md`, public
-`eval-requirements.md`, repository instructions, and any public implementation
-feedback from earlier confirmed failures. Verify their recorded content
-identities and committed provenance before changing files.
+`eval-requirements.md`, repository instructions, and any correction feedback
+explicitly bound by the Role Grant. Ordinary post-verification feedback must
+come from the exact current committed `verification-finalized` event after the
+prior implementation handoff and be classified `IMPLEMENTATION_FAILURE`.
+Pre-semantic correction feedback must come from the exact current
+`pre-semantic-implementation-correction-authorized` input and its
+`executionContext.inputEvidence` projection; verify that its authorization
+identity matches the canonical evidence, that its preserved input lineage
+matches the other Role Grant inputs, and that it contains a non-empty human
+reason and defect list. It is operational evidence plus human correction
+authority, never an evaluator verdict. Do not discover correction authority from
+mutable repository state or select a different skill/evaluator authority.
 
 An explicitly frozen process exception may omit named inputs. Do not infer an
 exception after work begins.
@@ -44,30 +53,43 @@ with evidence instead of quietly fixing them.
 
 ## Revision and retry
 
-Create a focused implementation checkpoint containing the complete candidate and
-its manifest entry. Stage intended paths explicitly, inspect the staged diff,
-and exclude private evaluation, promoted evaluation, Outcomes, and unrelated
-work. Push the commit before external verification when the branch is the
-handoff surface.
+Create a focused local implementation checkpoint containing the complete
+candidate and its manifest entry. Stage intended paths explicitly, inspect the
+staged diff, and exclude private evaluation, promoted evaluation, Outcomes, and
+unrelated work.
 
-On a confirmed implementation failure, consume only sanitized public feedback
-and the same frozen contract. Produce a new implementation commit. Do not ask
-the evaluator to rerun `prepare` and do not attempt to reconstruct hidden tests.
+On a confirmed implementation failure or an authorized pre-semantic correction,
+consume only the bound public feedback and the same frozen contract/input
+lineage. Produce a new implementation commit. Do not ask the evaluator to rerun
+`prepare` and do not attempt to reconstruct hidden tests.
 
 After implementation and visible verification, make each attempt's `manifest.md`
 entry the final repository-content step. Record skill/version, inputs, output
 content identity, status, and statistics reliably available through immediately
 before that update. Capture a start baseline only for a directly measurable
 value; do not create a provisional entry, estimate metrics, or measure the entry
-itself. Preserve prior attempts. Then commit and push the checkpoint as required
-for evaluator handoff.
+itself. Preserve prior attempts. Then create the checkpoint and report its
+evidence for Harness validation.
 
 ## Completion
 
 Report branch, commit hash, changes, decisions, visible tests, checks, skipped
 checks, assumptions, and limitations. Do not claim independent evaluation has
 passed. The committed revision, not uncommitted residue, is the evaluator's
-input.
+input. Report the exact produced local commit. Harness owns any later
+publication and the canonical `implementation-handoff`; failure of that host
+action does not rewrite a truthful `succeeded` implementation result.
 
-For authority-enabled spikes, record `implementation-handoff` after the pushed
-candidate checkpoint; its commit and attempt are the canonical handoff.
+## Harness worker protocol
+
+Under Harness, read the pinned Role Grant with the `assignment` tool; its bound
+input identities name the exact frozen public inputs and any retry feedback.
+Your grant forbids evaluator-private exposure: never request or accept it. After
+the checkpoint containing the candidate and its `manifest.md` entry is the
+repository `HEAD`, submit exactly one typed result with `submitResult`:
+disposition `succeeded` with empty methodology `{}`. Submit `blocked` when a
+conflicting or unresolved public contract stops the work, and `failed` when a
+coherent candidate could not be produced. The host binds the handoff to the
+committed `HEAD`, so never leave the candidate partly uncommitted. This role
+requests no host action. Use `requestHuman` only for a product, scope or
+authority decision that the frozen inputs genuinely leave open.
