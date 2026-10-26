@@ -45,3 +45,12 @@
 - Outputs: `verification-result.json`, `feedback.md`, `manifest.md`
 - Checks: frozen inputs matched; configuration cases passed; public regression unchanged versus parent; 9 of 15 criteria unmet or partially unmet are listed in the result
 - Measurement cutoff: immediately before this manifest update.
+
+## Verification Result Publication Correction
+
+- Authority: bounded human-authorized, forward-only correction of attempt 1 public evidence format; no new evaluation or semantic result
+- Inputs: candidate `f2def40a5fe06701b499c24aaa0d8d5c70e80478`; evaluator revision 001; original public checkpoint `0e8ea60be6833091637d9d71331519e2c942a536`; original artifact `sha256:bbc2e831928d91d1da5de10092c159a308b8b5140e9e3ec01f65b4063d578c58`; semantic result `021df628-d0cc-4a44-a93e-b027f870bae2`
+- Result: corrected public schema; verdict remains `FAIL / IMPLEMENTATION_FAILURE`; 15 criteria accounted as 4 `SATISFIED`, 10 `NOT_SATISFIED`, and 1 `NOT_ADJUDICATED`
+- Outputs: `verification-result.json` (`sha256:7120b812f36ea16386f2817ac9b1978e7089dfa710d3075d3864526c5ff851d5`); `verification-result-correction-001.md`; `manifest.md`
+- Checks: exact pinned `verification-accounting` validator PASS; candidate/revision/attempt/verdict binding PASS; private finalization validator PASS; independent public-only evidence review PASS; recovery not yet invoked
+- Measurement cutoff: immediately before this manifest update.
