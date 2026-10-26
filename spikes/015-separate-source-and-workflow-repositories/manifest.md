@@ -36,3 +36,12 @@
 - Checks: `tsc`, eslint, prettier clean; `npm test` fails the same 11 pre-existing tests as the parent commit (no regressions); split tests pass
 - Limitations: no real-provider smoke (AC14) was run; no contract/skill changes or trust adoption (AC15); implementation's brokered docs-evidence channel, per-role dispatch integration through a real split ledger, and partial-checkpoint/promotion integration tests are not implemented
 - Measurement cutoff: immediately before this manifest update.
+
+## Evaluator Verify
+
+- Skill: evaluator, contract version 14, mode `verify` (attempt 1)
+- Inputs: candidate `f2def40a5fe06701b499c24aaa0d8d5c70e80478`, evaluator revision 001, `coverage-map.json` (`sha256:25774ad65316d4e8ec2c2e586ba4f526f74787e3390a39f063a293997304bc27`)
+- Result: `succeeded`; verdict `FAIL`, classification `IMPLEMENTATION_FAILURE`
+- Outputs: `verification-result.json`, `feedback.md`, `manifest.md`
+- Checks: frozen inputs matched; configuration cases passed; public regression unchanged versus parent; 9 of 15 criteria unmet or partially unmet are listed in the result
+- Measurement cutoff: immediately before this manifest update.

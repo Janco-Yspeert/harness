@@ -2,43 +2,28 @@
 
 Reviewed: `spikes/015-separate-source-and-workflow-repositories/spike.md` (`sha256:cd9485caa4689a2001521e45e3ed39edb8fc0e0b99fb90b90cc72f8348658010`), read completely.
 
-## Repository evidence consulted
+(Earlier brief-readiness verdict: **Ready after minor clarification**; see git history for its full text.)
 
-- `AGENTS.md` (scope, explicit non-goals as requirements, no speculative abstraction).
-- `harness.project.json`: single `repository` workspace; `workflowDirectory` and ledger resolved relative to the project root.
-- `src/kernel/roots.ts` (`assertExternalProject`): rejects public workspaces and workflow directories outside the project repository; `project.origin` is optional and validated against the actual remote; the methodology repository is already required to be distinct and non-overlapping.
-- `src/executors/containment.ts`, `src/executors/adapters.ts`: containment binds each workspace at its own `read`/`write` mode; `repository-write`/`git-commit` are flat grant capabilities.
-- `src/kernel/model.ts`, `src/kernel/execution.ts`: commit bindings are currently single-repository.
+# Verification Feedback — attempt 1
 
-The brief's problem statement matches the repository. The seam (`workflowWorkspace`, defaulting to `repository`) is small and recognizable. Per-workspace modes already exist in containment, so per-workspace access is feasible without a new isolation model. Deferring exact property names, schema layout and commit-pair representation to the Design Map is ordinary freedom, because the behavioral constraints are stated.
+Candidate `f2def40a5fe06701b499c24aaa0d8d5c70e80478`, evaluator revision 001. Result: **FAIL**, classification `IMPLEMENTATION_FAILURE`.
 
-## Findings
+## Passing
 
-### Blockers
-None.
+- AC01-AC03 (legacy parity, split positive, refusal matrix), AC12, AC13: satisfied; public regression unchanged versus parent commit.
 
-### Material clarifications (non-blocking)
+## Violated public requirements
 
-1. **Minimum authority for the smoke dispatch (§5.3, AC14, AC15).** A fixture may supply prerequisites "with honest, explicit provenance", but the brief does not say whether a fixture may stand in for evaluator-attested prerequisites such as prepared evaluation. Implementation dispatch depends on frozen brief, design map and prepared evaluation. Smallest clarification: fixture-created prerequisites must be labelled as fixture-sourced, must not be indistinguishable from evaluator-attested events, and carry no adoption authority.
-2. **Source/docs commit pair selection (§2.2).** The source commit granted to docs-authoring roles is unspecified. Likely answer: source HEAD at allocation, recorded and never re-resolved. State this, and state that a docs-only advance does not invalidate the source side of an implementation's pair.
-3. **Implementation's docs evidence channel (§3, AC08).** "Existing pattern or a minimal equivalent" leaves open whether a new host-action destination class is needed. Confirm it may only be extended to name the docs workspace as owner, with no new authority kind.
-4. **Config location and relative-path base.** Today `workflowDirectory` resolves against the project root. State that in split mode it resolves against the docs workspace root (implied by §1.2).
+- AC04-AC06 (repository-qualified lineage, refusal of wrong repository/stale/content/ancestry, partial checkpoints yield no transition): no committed deterministic coverage or behaviour beyond grant shape.
+- AC07-AC09, AC11 (per-role access enforced through containment/launch, docs evidence only via host action, commit authority per workspace): only the grant `access` map and `assertSplitGrant` exist; no enforced path or host evidence channel to docs.
+- AC10 (lifecycle roles and promotion archive resolve via docs ledger): not delivered.
+- AC14 (recorded real-provider smoke): not run.
+- AC15 (forward-only authority adoption of access/ownership changes): not done.
 
-### Editorial
+## Expected vs observed
 
-- Step 7 (smoke after adoption) follows human acceptance (step 6); state explicitly that AC14/AC15 may remain unmet under the permitted incomplete/blocked closeout.
-- Consolidate the live-scope limits scattered across §5 and AC14.
+Expected: the behaviours above, demonstrated by committed deterministic tests on real Git repositories and the real ledger. Observed: the implementation manifest itself declares these as not implemented.
 
-## Limitations
+## Safe diagnostics
 
-Review limited to the brief and visible repository evidence. No evaluator-private material inspected. No prototype or tests run. `manifest.md` did not exist and was created with this entry.
-
-## Files changed
-
-`feedback.md`, `manifest.md` in this spike directory. No preliminary snapshot (passing verdict).
-
-## Checks run
-
-Full read of `spike.md`; sha256 matched the bound identity; targeted inspection of `src/kernel/roots.ts`, `src/executors/*`, `harness.project.json`.
-
-**Ready after minor clarification**
+Configuration cases ran 32/32 pass. Public `npm test` has the same single failing test on candidate and parent; typecheck clean on both.
