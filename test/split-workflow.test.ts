@@ -203,14 +203,14 @@ const loadRefusals: Array<
     (c) => {
       c.workflowWorkspace = "nope";
     },
-    /configured public workspace/,
+    /configured writable public workspace/,
   ],
   [
     "private workflow workspace",
     (c) => {
       c.workflowWorkspace = "evaluation";
     },
-    /configured public workspace/,
+    /configured writable public workspace/,
   ],
   [
     "read-only workflow workspace",
@@ -329,7 +329,13 @@ function grant(project: Project, change: Partial<RoleGrant> = {}): RoleGrant {
   return {
     schemaVersion: 1,
     id: "g",
+    workflowGrant: "workflow-grant",
+    methodology: "methodology",
+    authorityBasis: "authority-basis",
+    allocationKey: "allocation-key",
     role: "implementation",
+    contractIdentity: "contract-identity",
+    skillIdentity: "skill-identity",
     inputs: {},
     workspaces: [],
     capabilities: [],
@@ -350,8 +356,11 @@ function grant(project: Project, change: Partial<RoleGrant> = {}): RoleGrant {
       },
     },
     hostActions: {},
+    executorConstraints: { forbiddenExposure: [], protected: false },
+    predecessor: null,
+    rootAuthority: null,
     ...change,
-  } as unknown as RoleGrant;
+  };
 }
 
 void test("split grants need an access map and may not widen it", (t) => {

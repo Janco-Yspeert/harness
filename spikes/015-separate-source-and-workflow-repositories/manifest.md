@@ -66,3 +66,15 @@
 - Environment limitation: the 25-case Git-backed `test/split-workflow.test.ts` suite could not execute in this worker sandbox because every Node `spawnSync git` call was refused with `EPERM`; the broader suite was not completed for the same process-spawn restriction
 - Scope limitations: no real-provider coding smoke was run (AC14); the changed implementation contract is a candidate identity only and was not self-adopted (AC15); independent evaluation and later human trust/adoption remain required
 - Measurement cutoff: immediately before this manifest update.
+
+## Pre-Semantic Implementation Correction
+
+- Skill: implementation, contract version 6 (attempt 3)
+- Inputs: candidate `781b54ecd2fbb8296291d0b0ea50d14fbbfe2715`; `spike.md` (`sha256:cd9485caa4689a2001521e45e3ed39edb8fc0e0b99fb90b90cc72f8348658010`), `design-map.md` (`sha256:0c4682d02c8b3cc74818000625bfe9a79f60a5b4561607b9c7dac1db5eaf5a5c`), `coverage-map.json` (`sha256:25774ad65316d4e8ec2c2e586ba4f526f74787e3390a39f063a293997304bc27`), `eval-requirements.md` (`sha256:bb09fe3bd974c337f97679a69ed43143a966d3c9426363520b498ac4ac31bcdd`); one-shot root authority `60d8c4a9-e0d4-4de5-bd51-6de5d6846007`
+- Result: `succeeded`; authorized test-only correction candidate produced; not independently evaluated
+- Changes: updated the two split-workflow refusal assertions to the configured writable-public-workspace diagnostic; completed the synthetic `RoleGrant` fixture with mandatory provenance, executor-constraint and predecessor/root-authority fields; removed the unsafe double assertion
+- Output content identity: implementation diff excluding this manifest entry (`sha256:0e0d5f19f82bcab6a09ae6c140be553bbe2922bce95288573a9d8b54f0843111`)
+- Checks: `npm run typecheck`, `npm run lint`, and `npm run format:check` PASS; `node --test test/orchestration.test.ts test/worker-context.test.ts` PASS (2 files); `git diff --check` PASS for the corrected test
+- Environment limitation: `test/split-workflow.test.ts` could not execute because all 25 cases were refused at fixture setup when Node `spawnSync git` returned `EPERM`; the broader `npm test` run likewise did not complete successfully under the sandbox's subprocess restrictions
+- Scope: no production, evaluator, routing or acceptance-criteria changes
+- Measurement cutoff: immediately before this manifest update.
