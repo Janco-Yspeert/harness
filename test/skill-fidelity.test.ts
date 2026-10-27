@@ -561,6 +561,7 @@ async function harness(
   );
   writeFileSync(join(workflowRoot, DIR, "spike.md"), "# Demo spike\n\nAC1.\n");
   writeFileSync(join(workflowRoot, ".gitignore"), `${DIR}/workflow.jsonl\n`);
+  mkdirSync(root, { recursive: true });
   git(root, ["init", "-q", "-b", "main"]);
   if (split) {
     writeFileSync(join(root, "README.md"), "split source fixture\n");

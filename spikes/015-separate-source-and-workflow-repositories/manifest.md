@@ -99,3 +99,15 @@
 - Environment limitation: `test/skill-fidelity.test.ts` could not execute in this worker sandbox because Node `spawnSync git` was refused with `EPERM`/`ENOENT` at fixture initialization; no lifecycle assertion ran, and the failure occurred before candidate test logic
 - Frozen-sequence limitation: human input `808db1fe-ccab-4988-aeb1-9c63800b86e5` confirmed that trusted sequence-7 runtime `3e753a4a732c87fc5b42e9e3cf771482aba6a522` cannot represent the split smoke and that no accepted split-capable runtime exists. Per the frozen post-acceptance order, no real-provider smoke or trust adoption was attempted; AC14 and AC15 remain explicitly unresolved and no authority was fabricated.
 - Measurement cutoff: immediately before this manifest update.
+
+## Pre-Semantic Implementation Correction (attempt 5)
+
+- Skill: implementation, contract version 6
+- Inputs: candidate `5cf454eeeaaae363d5b5f48c23db77ab32485d98`; `spike.md` (`sha256:cd9485caa4689a2001521e45e3ed39edb8fc0e0b99fb90b90cc72f8348658010`), `design-map.md` (`sha256:0c4682d02c8b3cc74818000625bfe9a79f60a5b4561607b9c7dac1db5eaf5a5c`), `coverage-map.json` (`sha256:25774ad65316d4e8ec2c2e586ba4f526f74787e3390a39f063a293997304bc27`), `eval-requirements.md` (`sha256:bb09fe3bd974c337f97679a69ed43143a966d3c9426363520b498ac4ac31bcdd`); one-shot root authority `a9633cf0-aceb-4cff-89e4-d35f9fa5aaf5`
+- Result: `succeeded`; authorized test-fixture correction candidate produced; not independently evaluated
+- Changes: created the disposable split-fixture source directory recursively before its Git initialization; no production, evaluator, adoption, smoke or acceptance-criteria behavior changed
+- Output content identity: implementation diff excluding this manifest entry (`sha256:35013fea76cb65a31e27f4ce23a5a80b4469070d8e6504e5e155e5c6e6e4034f`)
+- Checks: `npm run typecheck`, `npm run lint`, `npm run format:check`, and targeted `git diff --check` PASS
+- Environment limitation: both `015 AC10` cases and the broader `npm test` suite were attempted, but this managed worker reports Node `spawnSync git` as `EPERM` despite child status 0; the focused cases stopped at fixture Git initialization before lifecycle assertions, and the broader run was terminated after the same failures left it hanging
+- Scope: no further fixture defect was exposed before the environment-level process-spawn refusal
+- Measurement cutoff: immediately before this manifest update.
