@@ -77,6 +77,13 @@ export interface RoleContract {
     workspace: string;
     destinations: string[];
   };
+  // Split-repository-only evidence channel. The worker keeps direct source
+  // write/commit authority, while the host writes these exact public files to
+  // the distinct workflow repository. It is ignored in single-repository
+  // mode, where the worker writes ordinary postconditions directly.
+  workflowEvidence?: {
+    destinations: string[];
+  };
   promotion?: {
     sourceWorkspace: string;
     destinationWorkspace: string;
@@ -260,6 +267,7 @@ export interface WorkflowGrant {
   executor?: { model?: string; reasoning?: string; exactModel?: string };
   // Host-written methodology source binding (never caller configuration).
   source?: MethodologySourceBinding;
+  repositories?: { source: CommitBinding; workflow: CommitBinding };
 }
 export interface MethodologySourceBinding {
   // Real Git top-level of the repository the trusted methodology is read from.
@@ -384,7 +392,7 @@ export interface Session {
 // is the owner; the configured id and origin travel with it so a binding
 // cannot be replayed against another repository.
 export interface CommitBinding {
-  workspace: string;
+  workspace: "repository" | "workflow";
   repository: string;
   origin?: string;
   commit: string;
@@ -470,6 +478,7 @@ export interface RoleResult {
   roleGrant: string;
   disposition: string;
   methodology: Data;
+  commits?: { source: CommitBinding; workflow: CommitBinding };
 }
 export interface TerminalOutcome {
   disposition: string;
@@ -543,6 +552,7 @@ export interface RootAuthority {
   request?: string;
   permission?: string;
   decision?: { response: string; value: string };
+  repositories?: { source: CommitBinding; workflow: CommitBinding };
 }
 export interface HumanRequest {
   schemaVersion: 1;
@@ -651,6 +661,9 @@ export interface PromotionActionResult {
   artifacts: Record<string, string>;
   integrityIdentity: string | null;
   promotionIdentity: string | null;
+  before?: string;
+  after?: string;
+  binding?: CommitBinding;
   reason: string | null;
   directPublication: false;
 }
@@ -661,6 +674,7 @@ export interface EvidenceActionResult {
   status: "succeeded" | "failed" | "denied";
   before: string | null;
   after: string | null;
+  binding?: CommitBinding;
   reason: string | null;
   directPublication: false;
 }

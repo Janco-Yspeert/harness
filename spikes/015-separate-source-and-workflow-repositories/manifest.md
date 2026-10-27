@@ -54,3 +54,15 @@
 - Outputs: `verification-result.json` (`sha256:7120b812f36ea16386f2817ac9b1978e7089dfa710d3075d3864526c5ff851d5`); `verification-result-correction-001.md`; `manifest.md`
 - Checks: exact pinned `verification-accounting` validator PASS; candidate/revision/attempt/verdict binding PASS; private finalization validator PASS; independent public-only evidence review PASS; recovery not yet invoked
 - Measurement cutoff: immediately before this manifest update.
+
+## Implementation Retry
+
+- Skill: implementation, contract version 6 (attempt 2)
+- Inputs: `spike.md` (`sha256:cd9485caa4689a2001521e45e3ed39edb8fc0e0b99fb90b90cc72f8348658010`), `design-map.md` (`sha256:0c4682d02c8b3cc74818000625bfe9a79f60a5b4561607b9c7dac1db5eaf5a5c`), `coverage-map.json` (`sha256:25774ad65316d4e8ec2c2e586ba4f526f74787e3390a39f063a293997304bc27`), `eval-requirements.md` (`sha256:bb09fe3bd974c337f97679a69ed43143a966d3c9426363520b498ac4ac31bcdd`), implementation feedback (`sha256:7120b812f36ea16386f2817ac9b1978e7089dfa710d3075d3864526c5ff851d5`)
+- Result: `succeeded`; correction candidate produced; not independently evaluated
+- Changes: repository-qualified source/workflow binding validation and ancestry checks; split allocation/result/transition authority snapshots; docs-owner committed-input validation; writable-workspace launch selection; attached-session workspace-provenance refusal; split-only implementation manifest evidence; stale docs/source partial-checkpoint refusal; host-committed split promotion checkpoint; expanded 25-case split integration/configuration suite and operator documentation
+- Output content identity: implementation diff excluding this manifest entry (`sha256:77016dca2d023db52eac943672d74c62fdf25cd5bb66f401d63c46e98e9c854b`)
+- Checks: `npm run typecheck`, `npm run lint`, and `npm run format:check` PASS; `node --test test/orchestration.test.ts test/worker-context.test.ts` PASS (2 files); current methodology including split-only evidence contract loaded with the pinned public validators
+- Environment limitation: the 25-case Git-backed `test/split-workflow.test.ts` suite could not execute in this worker sandbox because every Node `spawnSync git` call was refused with `EPERM`; the broader suite was not completed for the same process-spawn restriction
+- Scope limitations: no real-provider coding smoke was run (AC14); the changed implementation contract is a candidate identity only and was not self-adopted (AC15); independent evaluation and later human trust/adoption remain required
+- Measurement cutoff: immediately before this manifest update.

@@ -241,6 +241,7 @@ export function assertExternalProject(
       [
         projectRepository,
         ...(workflowRepository ? [workflowRepository] : []),
+        methodologyRepository,
         ...seen.map((item) => item.path),
       ].some(
         (path) => contains(path, privateRoot) || contains(privateRoot, path),

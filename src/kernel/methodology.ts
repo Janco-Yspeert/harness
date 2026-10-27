@@ -50,6 +50,21 @@ export function validEvidenceContract(contract: RoleContract): boolean {
     )
   );
 }
+export function validWorkflowEvidenceContract(contract: RoleContract): boolean {
+  const evidence = contract.workflowEvidence;
+  if (evidence === undefined) return true;
+  return (
+    contract.workspaces.includes("repository") &&
+    contract.capabilities.includes("repository-write") &&
+    contract.capabilities.includes("git-commit") &&
+    Array.isArray(evidence.destinations) &&
+    evidence.destinations.length > 0 &&
+    evidence.destinations.every(
+      (item) =>
+        typeof item === "string" && evidencePath(item, item.endsWith("/")),
+    )
+  );
+}
 export function inside(root: string, path: string): string {
   const absolute = resolve(root, path);
   const delta = relative(realpathSync(root), realpathSync(absolute));
@@ -110,6 +125,7 @@ export function definitionFrom(
       (contract.resultConstraints !== undefined &&
         !Array.isArray(contract.resultConstraints)) ||
       !validEvidenceContract(contract) ||
+      !validWorkflowEvidenceContract(contract) ||
       (contract.promotion !== undefined &&
         (!contract.workspaces.includes(contract.promotion.sourceWorkspace) ||
           !contract.workspaces.includes(

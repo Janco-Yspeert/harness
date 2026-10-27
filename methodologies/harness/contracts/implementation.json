@@ -63,5 +63,8 @@
   "results": ["succeeded", "blocked", "refused", "failed"],
   "methodology": {},
   "human": ["input", "approval", "root"],
-  "postconditions": ["manifest.md"]
+  "postconditions": ["manifest.md"],
+  "workflowEvidence": {
+    "destinations": ["manifest.md"]
+  }
 }

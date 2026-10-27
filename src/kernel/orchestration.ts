@@ -51,6 +51,7 @@ export interface CanonicalExecutionShape {
   forbiddenExposure: string[];
   protected: boolean;
   resultInterface: "harness-worker-protocol-v1";
+  workspaceAccess?: RoleGrant["access"];
   attachment?: {
     session: string;
     exposures: string[];
@@ -181,6 +182,7 @@ export function deriveExecutionShape(
     forbiddenExposure: sorted(grant.executorConstraints.forbiddenExposure),
     protected: grant.executorConstraints.protected,
     resultInterface: "harness-worker-protocol-v1",
+    ...(grant.access ? { workspaceAccess: { ...grant.access } } : {}),
     ...(mode === "attached" && session
       ? {
           attachment: {
@@ -279,6 +281,9 @@ export function authorityScopeIdentity(grant: RoleGrant): string {
     workspaces: grant.workspaces,
     capabilities: sorted(grant.capabilities),
     hostActions: grant.hostActions,
+    ...(grant.access ? { access: grant.access } : {}),
+    ...(grant.gitCommit ? { gitCommit: sorted(grant.gitCommit) } : {}),
+    ...(grant.commits ? { commits: grant.commits } : {}),
     executorConstraints: grant.executorConstraints,
     rootAuthority: grant.rootAuthority,
   });
@@ -416,6 +421,13 @@ export function attachedCompatibility(
     (shape.reasoning !== undefined && shape.reasoning !== active.reasoning) ||
     (shape.attachment !== undefined &&
       shape.attachment.session !== session.id) ||
+    (shape.workspaceAccess !== undefined &&
+      canonical(shape.attachment?.workspaces ?? []) !==
+        canonical(
+          shape.workspaces
+            .map(({ id, mode }) => ({ id, mode }))
+            .sort((a, b) => a.id.localeCompare(b.id)),
+        )) ||
     shape.forbiddenExposure.some((item) => session.exposures.includes(item))
   )
     return "attached-session-incompatibility";

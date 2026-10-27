@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { isAbsolute, relative, resolve } from "node:path";
 import {
   contentId,
   identity,
@@ -141,6 +141,15 @@ export function roleInputs(
         throw new Error(`required input identity missing: ${rule.name}`);
       }
       inputs[rule.name] = field;
+      if (splitWorkflow(project) && rule.name === "candidate") {
+        const binding = event?.evidence.candidateBinding as
+          CommitBinding | undefined;
+        if (!binding)
+          throw new Error("split candidate input lacks repository binding");
+        validateCommitBinding(project, "repository", binding);
+        if (binding.commit !== field)
+          throw new Error("split candidate repository binding drift");
+      }
       // Human evaluator-correction authority is a typed host-owned input, not
       // merely an opaque trigger. Project it only to the role whose contract
       // consumes that trigger so the repair worker can reason from the bound
@@ -221,9 +230,28 @@ export function roleInputs(
         // A transition whose evidence already carries a `commit` (for
         // example verification's candidate) records its artifact's own
         // checkpoint as `artifactCommit`; provenance is that checkpoint.
-        const commit = event?.evidence.artifactCommit ?? event?.evidence.commit;
+        const qualified = event?.evidence.artifactBinding as
+          CommitBinding | undefined;
+        if (splitWorkflow(project)) {
+          if (!qualified)
+            throw new Error("split committed input lacks repository binding");
+          validateCommitBinding(project, "workflow", qualified, {
+            path: relative(workflowRepositoryRoot(project), path),
+            sha256: required(inputs[rule.name]),
+          });
+        }
+        const commit =
+          qualified?.commit ??
+          event?.evidence.artifactCommit ??
+          event?.evidence.commit;
         if (typeof commit !== "string" || !/^[a-f0-9]{40,64}$/.test(commit))
           throw new Error("input lacks committed provenance");
+        if (qualified) {
+          const recorded =
+            event?.evidence.artifactCommit ?? event?.evidence.commit;
+          if (recorded !== qualified.commit)
+            throw new Error("committed input repository binding drift");
+        }
         const committed = execFileSync(
           "git",
           [
@@ -500,8 +528,14 @@ export function resolveAuthority(
   } catch (e) {
     return { kind: "denied", reason: (e as Error).message };
   }
-  const evidence = role.contract.evidence;
   const split = splitWorkflow(project);
+  const evidence =
+    split && role.contract.workflowEvidence
+      ? {
+          workspace: "workflow",
+          destinations: role.contract.workflowEvidence.destinations,
+        }
+      : role.contract.evidence;
   const docsKey = project.workflowWorkspace ?? "";
   let splitGrant:
     | { access: Record<string, WorkspaceAccess>; gitCommit: string[] }
@@ -793,7 +827,7 @@ function headOf(root: string): string {
 // The allocation's source/workflow commit pair: the frozen candidate for a
 // candidate-bound role, otherwise source HEAD; and the docs HEAD that holds
 // the role's frozen inputs.
-function commitPair(
+export function commitPair(
   project: Project,
   inputs: Record<string, string>,
 ): { source: CommitBinding; workflow: CommitBinding } {
@@ -811,7 +845,7 @@ function commitPair(
           : headOf(source.path),
     },
     workflow: {
-      workspace: project.workflowWorkspace ?? "",
+      workspace: "workflow",
       repository: docs.id,
       ...(project.workflowOrigin ? { origin: project.workflowOrigin } : {}),
       commit: headOf(docs.path),
@@ -840,7 +874,128 @@ export function assertSplitGrant(project: Project, grant: RoleGrant): void {
       throw new Error("git commit authority requires workspace write");
   if (
     grant.commits.source.workspace !== "repository" ||
-    grant.commits.workflow.workspace !== docsKey
+    grant.commits.workflow.workspace !== "workflow"
   )
     throw new Error("split workflow grant commit pair is mis-owned");
+  validateCommitBinding(project, "repository", grant.commits.source);
+  validateCommitBinding(project, "workflow", grant.commits.workflow);
+  if (
+    grant.inputs.candidate !== undefined &&
+    grant.commits.source.commit !== grant.inputs.candidate
+  )
+    throw new Error("split workflow grant candidate binding drift");
+}
+
+function bindingWorkspace(project: Project, owner: CommitBinding["workspace"]) {
+  const key = owner === "repository" ? "repository" : project.workflowWorkspace;
+  const workspace = key ? project.workspaces[key] : undefined;
+  if (!workspace) throw new Error(`split ${owner} workspace is unavailable`);
+  return { key, workspace };
+}
+
+// Validate committed provenance against the declared repository rather than
+// process cwd. Historical commits remain valid; checkpoint ancestry is a
+// separate, explicit check below.
+export function validateCommitBinding(
+  project: Project,
+  owner: CommitBinding["workspace"],
+  binding: CommitBinding,
+  expected: { path?: string; sha256?: string } = {},
+): void {
+  if (binding.workspace !== owner)
+    throw new Error("repository binding has the wrong owner");
+  const { workspace } = bindingWorkspace(project, owner);
+  if (binding.repository !== workspace.id)
+    throw new Error("repository binding names the wrong repository");
+  const configuredOrigin =
+    owner === "repository" ? project.origin : project.workflowOrigin;
+  if (binding.origin !== configuredOrigin)
+    throw new Error("repository binding origin mismatch");
+  if (!/^[a-f0-9]{40}$/.test(binding.commit))
+    throw new Error("repository binding commit is not exact");
+  try {
+    execFileSync("git", ["cat-file", "-e", `${binding.commit}^{commit}`], {
+      cwd: workspace.path,
+      stdio: "pipe",
+    });
+  } catch {
+    throw new Error("repository binding commit is unavailable");
+  }
+  if (expected.path !== undefined && binding.path !== expected.path)
+    throw new Error("repository binding path mismatch");
+  if (expected.sha256 !== undefined && binding.sha256 !== expected.sha256)
+    throw new Error("repository binding content mismatch");
+  if (binding.path === undefined) {
+    if (binding.sha256 !== undefined)
+      throw new Error("repository binding content lacks a path");
+    return;
+  }
+  if (
+    !binding.path ||
+    isAbsolute(binding.path) ||
+    binding.path
+      .split("/")
+      .some((part) => ["", ".", "..", ".git"].includes(part.toLowerCase()))
+  )
+    throw new Error("repository binding path is invalid");
+  if (!binding.sha256)
+    throw new Error("repository binding path lacks content identity");
+  let bytes: Buffer;
+  try {
+    bytes = execFileSync("git", ["show", `${binding.commit}:${binding.path}`], {
+      cwd: workspace.path,
+      stdio: "pipe",
+    });
+  } catch {
+    throw new Error("repository binding path is unavailable");
+  }
+  if (identity(bytes) !== binding.sha256)
+    throw new Error("repository binding content mismatch");
+}
+
+export function assertBindingAdvance(
+  project: Project,
+  predecessor: CommitBinding,
+  successor: CommitBinding,
+): void {
+  if (
+    predecessor.workspace !== successor.workspace ||
+    predecessor.repository !== successor.repository ||
+    predecessor.origin !== successor.origin
+  )
+    throw new Error("repository checkpoint predecessor mismatch");
+  validateCommitBinding(project, predecessor.workspace, predecessor);
+  validateCommitBinding(project, successor.workspace, successor);
+  const { workspace } = bindingWorkspace(project, successor.workspace);
+  try {
+    execFileSync(
+      "git",
+      ["merge-base", "--is-ancestor", predecessor.commit, successor.commit],
+      { cwd: workspace.path, stdio: "pipe" },
+    );
+  } catch {
+    throw new Error("repository checkpoint is not descended from predecessor");
+  }
+}
+
+export function committedBinding(
+  project: Project,
+  owner: CommitBinding["workspace"],
+  commit: string,
+  path?: string,
+  sha256?: string,
+): CommitBinding {
+  const { workspace } = bindingWorkspace(project, owner);
+  const origin =
+    owner === "repository" ? project.origin : project.workflowOrigin;
+  const binding: CommitBinding = {
+    workspace: owner,
+    repository: workspace.id,
+    ...(origin ? { origin } : {}),
+    commit,
+    ...(path ? { path } : {}),
+    ...(sha256 ? { sha256 } : {}),
+  };
+  validateCommitBinding(project, owner, binding);
+  return binding;
 }

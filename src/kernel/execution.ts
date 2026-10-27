@@ -45,7 +45,12 @@ import {
   type PreservationPlan,
 } from "./archive-preservation.ts";
 import { evidencePath, inside, loadDefinition } from "./methodology.ts";
-import { assertSplitGrant } from "./resolver.ts";
+import {
+  assertBindingAdvance,
+  assertSplitGrant,
+  commitPair,
+  committedBinding,
+} from "./resolver.ts";
 import {
   buildKnownLossArtifacts,
   parseArchiveLossDeclaration,
@@ -577,6 +582,9 @@ export class ExecutionKernel {
         ...(request.inline ? { inline: true } : {}),
         ...(request.executor ? { executor: request.executor } : {}),
         ...(source ? { source } : {}),
+        ...(splitWorkflow(this.project)
+          ? { repositories: commitPair(this.project, {}) }
+          : {}),
       };
       if (request.supersedes) {
         const old = this.execution(workflow, request.supersedes);
@@ -2104,6 +2112,28 @@ export class ExecutionKernel {
           ),
           path,
         );
+      let resultCommits = grant.commits;
+      if (splitWorkflow(this.project) && resultCommits) {
+        const evidenceCommit = execution.actions
+          .filter(
+            (action): action is EvidenceActionResult =>
+              action.request.kind === "evidence" &&
+              action.status === "succeeded" &&
+              "binding" in action,
+          )
+          .at(-1)?.binding;
+        if (evidenceCommit)
+          resultCommits = { ...resultCommits, workflow: evidenceCommit };
+        if (grant.role === "implementation" && disposition === "succeeded") {
+          const head = execFileSync("git", ["rev-parse", "HEAD"], {
+            cwd: this.project.root,
+            encoding: "utf8",
+          }).trim();
+          const source = committedBinding(this.project, "repository", head);
+          assertBindingAdvance(this.project, resultCommits.source, source);
+          resultCommits = { ...resultCommits, source };
+        }
+      }
       const result: RoleResult = {
         schemaVersion: 1,
         id: randomUUID(),
@@ -2111,6 +2141,9 @@ export class ExecutionKernel {
         roleGrant: grant.id,
         disposition,
         methodology,
+        ...(splitWorkflow(this.project) && resultCommits
+          ? { commits: resultCommits }
+          : {}),
       };
       this.#append(workflow, "kernel.result", result);
       this.#transition(workflow, id);
@@ -2310,6 +2343,26 @@ export class ExecutionKernel {
       return;
     const evidence: Data = { ...rule.evidence?.fields };
     try {
+      if (splitWorkflow(this.project) && grant.role === "implementation") {
+        const allowed = required(
+          grant.hostActions.evidence,
+          "split implementation lacks brokered workflow evidence",
+        );
+        if (
+          !allowed.destinations.includes("manifest.md") ||
+          !execution.actions.some(
+            (action) =>
+              action.request.kind === "evidence" &&
+              action.status === "succeeded" &&
+              action.request.files.some(
+                (file) => file.destination === "manifest.md",
+              ),
+          )
+        )
+          throw new Error(
+            "split implementation requires brokered manifest evidence",
+          );
+      }
       const pinned = this.definition(workflow, grant.methodology);
       if (
         Object.entries(pinned.validators).some(
@@ -2372,12 +2425,34 @@ export class ExecutionKernel {
         );
       }
       if (rule.evidence?.artifact || rule.evidence?.commitHead) {
+        const commitRoot =
+          splitWorkflow(this.project) &&
+          grant.role === "implementation" &&
+          rule.evidence.commitHead &&
+          !rule.evidence.artifact
+            ? this.project.root
+            : workflowRepositoryRoot(this.project);
         artifactCommit = execFileSync("git", ["rev-parse", "HEAD"], {
-          cwd: workflowRepositoryRoot(this.project),
+          cwd: commitRoot,
           encoding: "utf8",
         }).trim();
         if (evidence.commit === undefined) evidence.commit = artifactCommit;
         else evidence.artifactCommit = artifactCommit;
+        if (splitWorkflow(this.project) && !rule.evidence.artifact) {
+          const binding = committedBinding(
+            this.project,
+            grant.role === "implementation" ? "repository" : "workflow",
+            artifactCommit,
+          );
+          if (grant.role === "implementation") {
+            const predecessor = required(
+              grant.commits?.source,
+              "implementation lacks its source checkpoint binding",
+            );
+            assertBindingAdvance(this.project, predecessor, binding);
+            evidence.candidateBinding = binding;
+          } else evidence.checkpointBinding = binding;
+        }
       }
       if (rule.evidence?.artifact) {
         const path = inside(
@@ -2426,6 +2501,14 @@ export class ExecutionKernel {
         }
         evidence.path = rule.evidence.artifact;
         evidence.identity = identity(bytes);
+        if (splitWorkflow(this.project))
+          evidence.artifactBinding = committedBinding(
+            this.project,
+            "workflow",
+            required(artifactCommit),
+            relative(workflowRepositoryRoot(this.project), path),
+            identity(bytes),
+          );
       }
     } catch (error) {
       this.#append(workflow, "kernel.transition-blocked", {
@@ -2448,6 +2531,9 @@ export class ExecutionKernel {
       roleGrant: grant.id,
       semanticResult: execution.result.id,
       inputs: grant.inputs,
+      ...(splitWorkflow(this.project) && execution.result.commits
+        ? { repositories: execution.result.commits }
+        : {}),
     });
     this.#append(workflow, "kernel.transition", {
       execution: id,
@@ -2525,6 +2611,15 @@ export class ExecutionKernel {
         workflowGrant: grant.id,
         methodology: definition.id,
         authorityBasis: authorityBasis(events),
+        ...(splitWorkflow(this.project)
+          ? {
+              repositories: commitPair(this.project, {
+                ...(typeof resolvedEvidence.candidate === "string"
+                  ? { candidate: resolvedEvidence.candidate }
+                  : {}),
+              }),
+            }
+          : {}),
       };
       this.#append(workflow, rule.transition, canonical);
       return { transition: rule.transition, evidence: canonical };
@@ -2559,6 +2654,9 @@ export class ExecutionKernel {
         origin: "human",
         uses,
         change: "permit-role",
+        ...(splitWorkflow(this.project)
+          ? { repositories: commitPair(this.project, {}) }
+          : {}),
       };
       this.#append(workflow, "kernel.root", root);
       return root;
@@ -2937,6 +3035,11 @@ export class ExecutionKernel {
             { encoding: "utf8", stdio: "pipe", env },
           ).trim();
         action.before = git(["rev-parse", "--verify", "HEAD^{commit}"]);
+        if (
+          splitWorkflow(this.project) &&
+          action.before !== grant.commits?.workflow.commit
+        )
+          throw new Error("evidence workflow checkpoint is stale");
         for (const [index, target] of targets.entries()) {
           const prior = existsSync(target) ? readFileSync(target) : null;
           const created: string[] = [];
@@ -2989,6 +3092,18 @@ export class ExecutionKernel {
             ) !== required(request.files[index]).identity
           )
             throw new Error("committed evidence differs from the request");
+        if (splitWorkflow(this.project)) {
+          action.binding = committedBinding(
+            this.project,
+            "workflow",
+            action.after,
+          );
+          assertBindingAdvance(
+            this.project,
+            required(grant.commits?.workflow),
+            action.binding,
+          );
+        }
         action.status = "succeeded";
       } catch (error) {
         for (const undo of restore.reverse()) {
@@ -4080,6 +4195,37 @@ export class ExecutionKernel {
             required(this.project.workflows[workflow]).directory,
           ),
         );
+        const repository = realpathSync(workflowRepositoryRoot(this.project));
+        const git = (args: string[]): string =>
+          execFileSync(
+            "git",
+            [
+              "-C",
+              repository,
+              "-c",
+              "core.hooksPath=/dev/null",
+              "-c",
+              "commit.gpgsign=false",
+              ...args,
+            ],
+            {
+              encoding: "utf8",
+              stdio: "pipe",
+              env: {
+                ...process.env,
+                GIT_AUTHOR_NAME: `harness-execution-${id}`,
+                GIT_AUTHOR_EMAIL: `${id}@harness.invalid`,
+                GIT_COMMITTER_NAME: `harness-execution-${id}`,
+                GIT_COMMITTER_EMAIL: `${id}@harness.invalid`,
+                GIT_TERMINAL_PROMPT: "0",
+              },
+            },
+          ).trim();
+        if (splitWorkflow(this.project)) {
+          action.before = git(["rev-parse", "--verify", "HEAD^{commit}"]);
+          if (action.before !== execution.result.commits?.workflow.commit)
+            throw new Error("promotion workflow checkpoint is stale");
+        }
         const destinationRoot = boundedPath(workflowRoot, allowed.destination);
         const destinationWorkspace = realpathSync(destination.path);
         const destinationParent = realpathSync(dirname(destinationRoot));
@@ -4195,6 +4341,40 @@ export class ExecutionKernel {
           }
         } else renameSync(staging, destinationRoot);
         staging = undefined;
+        if (splitWorkflow(this.project)) {
+          const commitPaths = [
+            relative(repository, destinationRoot),
+            ...(preservation ? [relative(repository, preservation.to)] : []),
+          ];
+          git(["add", "--all", "--", ...commitPaths]);
+          git([
+            "commit",
+            "-q",
+            "--no-verify",
+            "--only",
+            "-m",
+            [
+              `promotion(${grant.role}): archive attempt ${String(attempt)}`,
+              "",
+              `Harness-Execution: ${id}`,
+              `Harness-Role-Grant: ${grant.id}`,
+              `Harness-Action: ${action.id}`,
+            ].join("\n"),
+            "--",
+            ...commitPaths,
+          ]);
+          action.after = git(["rev-parse", "--verify", "HEAD^{commit}"]);
+          action.binding = committedBinding(
+            this.project,
+            "workflow",
+            action.after,
+          );
+          assertBindingAdvance(
+            this.project,
+            required(execution.result.commits?.workflow),
+            action.binding,
+          );
+        }
         action.status = "succeeded";
       } catch (error) {
         if (staging) rmSync(staging, { recursive: true, force: true });
@@ -4239,6 +4419,7 @@ export class ExecutionKernel {
           roleGrant: grant.id,
           semanticResult: required(execution.result).id,
           action: action.id,
+          ...(action.binding ? { checkpointBinding: action.binding } : {}),
           ...(archiveLoss ? { archiveLoss } : {}),
           ...(archiveRecovery ? { archiveRecovery } : {}),
           ...(unboundArchiveRecovery ? { unboundArchiveRecovery } : {}),

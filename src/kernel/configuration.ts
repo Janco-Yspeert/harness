@@ -32,6 +32,8 @@ export function loadProject(path: string): Project {
   const split =
     raw.workflowWorkspace !== undefined &&
     raw.workflowWorkspace !== "repository";
+  if (split && raw.origin === undefined)
+    throw new Error("split workflow workspace requires project origin");
   if (split && raw.workflowOrigin === undefined)
     throw new Error("split workflow workspace requires workflowOrigin");
   if (!split && raw.workflowOrigin !== undefined)
@@ -39,9 +41,20 @@ export function loadProject(path: string): Project {
   if (
     split &&
     (!Object.hasOwn(raw.workspaces, raw.workflowWorkspace as string) ||
-      raw.workspaces[raw.workflowWorkspace as string]?.exposure !== "public")
+      raw.workspaces[raw.workflowWorkspace as string]?.exposure !== "public" ||
+      raw.workspaces[raw.workflowWorkspace as string]?.mode !== "write")
   )
-    throw new Error("workflow workspace must be a configured public workspace");
+    throw new Error(
+      "workflow workspace must be a configured writable public workspace",
+    );
+  if (split) {
+    const ids = Object.values(raw.workspaces).map((workspace) => workspace.id);
+    if (
+      ids.some((id) => typeof id !== "string" || !id) ||
+      new Set(ids).size !== ids.length
+    )
+      throw new Error("split workflow workspaces require distinct identities");
+  }
   if (object(raw).schemaVersion !== 1 || !raw.id || !raw.root || !raw.policy)
     throw new Error("invalid project configuration");
   if (
