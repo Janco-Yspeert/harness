@@ -1,12 +1,10 @@
 {
   "schemaVersion": 1,
   "workflow": "015-separate-source-and-workflow-repositories",
-  "execution": "bf97e36a-2706-466c-b0cb-7abe4f767baf",
-  "roleGrant": "sha256:a309983618d94e0d7dfe0812079e216d87caa781183aa4516c06cc882c90e74c",
-  "allocationEvent": "21e1b912-f987-4372-816f-4a92b5970671",
-  "semanticResult": "021df628-d0cc-4a44-a93e-b027f870bae2",
-  "attempt": 1,
-  "commit": "f2def40a5fe06701b499c24aaa0d8d5c70e80478",
+  "execution": "7690702c-58a1-4f0e-ba9b-d30461304987",
+  "roleGrant": "sha256:3e47aed1aace2ab860a3bb3e820c639667d1aa18876778f4afa608eadc5f6e4b",
+  "attempt": 2,
+  "commit": "5ef6230eb85b4fc0371bcdbc54007c525725e658",
   "evaluatorRevision": "001",
   "result": "FAIL",
   "classification": "IMPLEMENTATION_FAILURE",
@@ -14,14 +12,14 @@
     "AC01": "SATISFIED",
     "AC02": "SATISFIED",
     "AC03": "SATISFIED",
-    "AC04": "NOT_SATISFIED",
-    "AC05": "NOT_SATISFIED",
-    "AC06": "NOT_SATISFIED",
-    "AC07": "NOT_SATISFIED",
-    "AC08": "NOT_SATISFIED",
-    "AC09": "NOT_SATISFIED",
+    "AC04": "NOT_ADJUDICATED",
+    "AC05": "NOT_ADJUDICATED",
+    "AC06": "NOT_ADJUDICATED",
+    "AC07": "NOT_ADJUDICATED",
+    "AC08": "NOT_ADJUDICATED",
+    "AC09": "NOT_ADJUDICATED",
     "AC10": "NOT_SATISFIED",
-    "AC11": "NOT_SATISFIED",
+    "AC11": "NOT_ADJUDICATED",
     "AC12": "SATISFIED",
     "AC13": "NOT_ADJUDICATED",
     "AC14": "NOT_SATISFIED",
@@ -30,22 +28,15 @@
   "accounting": {
     "criteria": 15,
     "satisfied": 4,
-    "notSatisfied": 10,
-    "notAdjudicated": 1,
-    "note": "AC13 is not adjudicated because the original record did not establish the complete frozen manual observation. This does not affect the overall FAIL, which is independently established by ten unsatisfied required criteria."
+    "notSatisfied": 3,
+    "notAdjudicated": 8,
+    "note": "Criteria marked NOT_ADJUDICATED were not individually established because the overall FAIL is independently established by three unsatisfied required criteria."
   },
   "feedback": {
-    "requirement": "Split-mode lineage (AC04-AC06), per-role access and host evidence channel (AC07-AC09, AC11), lifecycle resolution from the docs ledger (AC10), real-provider smoke (AC14) and forward-only authority adoption (AC15).",
-    "expected": "Committed deterministic tests and recorded evidence show repository-qualified source/docs bindings with refusals for wrong repository, stale binding, content and ancestry; partial single-repository checkpoints yielding no transition; containment-enforced per-workspace access with docs evidence only via a host action; As-Built, acceptance, correction, recovery and promotion archive resolving through the docs ledger; one recorded real-provider smoke; trust adoption of any contract change.",
-    "observed": "Configuration, preflight, split grant access map and commit pair shape are implemented and pass (32 of 32 evaluator configuration cases; public regression unchanged versus parent). The committed split test file covers configuration, preflight and grant-shape only. The candidate's own record states that the brokered docs evidence channel, per-role dispatch through a split ledger, partial-checkpoint and promotion integration tests, the real-provider smoke, and trust adoption were not delivered.",
-    "diagnostics": "Isolated rerun of configuration cases passed; public suite shows the same single failing test on candidate and parent; no evaluator or infrastructure cause identified."
-  },
-  "correction": {
-    "kind": "PUBLIC_FORMAT_CORRECTION",
-    "originalArtifactCommit": "0e8ea60be6833091637d9d71331519e2c942a536",
-    "originalArtifactIdentity": "sha256:bbc2e831928d91d1da5de10092c159a308b8b5140e9e3ec01f65b4063d578c58",
-    "reason": "The original public checkpoint used candidate and array-style coverage fields that did not satisfy the pinned verification-accounting validator.",
-    "semanticVerdictChanged": false
+    "requirement": "Lifecycle resolution over split inputs (AC10), one recorded real-provider governed coding smoke (AC14), and forward-only versioned authority adoption of changed contracts (AC15).",
+    "expected": "Committed deterministic integration coverage shows As-Built, human acceptance, Outcome, bounded correction and recovery, and promotion archive resolving through the docs ledger without a new authority path; one recorded real-provider smoke with exact source/docs commit pair; the changed implementation contract adopted through the existing forward-only trust process, with the smoke naming exact trusted runtime/methodology revisions.",
+    "observed": "Configuration, preflight, repository-qualified binding and docs-HEAD drift coverage pass (32 of 32 evaluator configuration cases; the committed split suite passes; public regression unchanged versus parent). No committed coverage exercises the As-Built, acceptance, Outcome, correction, recovery or promotion lifecycle over split inputs; no real-provider smoke evidence exists; the implementation contract was changed without trust adoption. The candidate's own record declares the smoke and adoption as not delivered.",
+    "diagnostics": "Public npm test shows the same single failing test on candidate and parent; typecheck clean. No evaluator or infrastructure cause identified."
   },
   "regressionRecommendations": []
 }
