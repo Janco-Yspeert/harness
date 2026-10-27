@@ -87,3 +87,15 @@
 - Outputs: `verification-result.json`, `feedback.md`, `manifest.md`
 - Checks: frozen inputs matched; configuration cases 32/32 passed; public regression unchanged versus parent; AC10, AC14 and AC15 unmet; 8 criteria not individually adjudicated
 - Measurement cutoff: immediately before this manifest update.
+
+## Implementation Retry (attempt 4)
+
+- Skill: implementation, contract version 6
+- Inputs: `spike.md` (`sha256:cd9485caa4689a2001521e45e3ed39edb8fc0e0b99fb90b90cc72f8348658010`), `design-map.md` (`sha256:0c4682d02c8b3cc74818000625bfe9a79f60a5b4561607b9c7dac1db5eaf5a5c`), `coverage-map.json` (`sha256:25774ad65316d4e8ec2c2e586ba4f526f74787e3390a39f063a293997304bc27`), `eval-requirements.md` (`sha256:bb09fe3bd974c337f97679a69ed43143a966d3c9426363520b498ac4ac31bcdd`), implementation feedback (`sha256:5eac816cac5dac0b9f1db96840257f2d7f709fa68ee0347e79d8ee62da710840`)
+- Result: `succeeded`; bounded AC10 correction candidate produced; not independently evaluated
+- Changes: extended the production-host scripted fidelity fixture to create distinct source, workflow-docs and methodology Git repositories; routed scripted public writes to the granted writable repository; added split lifecycle coverage for brokered implementation/evaluator evidence, repository-qualified promotion, As-Built, human acceptance, Outcome, implementation retry and evaluator repair with preserved three-attempt history
+- Output content identity: implementation diff excluding this manifest entry (`sha256:b4eec50502b74e06cfa031c5bb0a8c5c2a14ae024197478fb0210406487e3ad4`)
+- Checks: `npm run typecheck`, `npm run lint`, `npm run format:check`, targeted `git diff --check`, and `node --test test/orchestration.test.ts test/worker-context.test.ts` PASS
+- Environment limitation: `test/skill-fidelity.test.ts` could not execute in this worker sandbox because Node `spawnSync git` was refused with `EPERM`/`ENOENT` at fixture initialization; no lifecycle assertion ran, and the failure occurred before candidate test logic
+- Frozen-sequence limitation: human input `808db1fe-ccab-4988-aeb1-9c63800b86e5` confirmed that trusted sequence-7 runtime `3e753a4a732c87fc5b42e9e3cf771482aba6a522` cannot represent the split smoke and that no accepted split-capable runtime exists. Per the frozen post-acceptance order, no real-provider smoke or trust adoption was attempted; AC14 and AC15 remain explicitly unresolved and no authority was fabricated.
+- Measurement cutoff: immediately before this manifest update.

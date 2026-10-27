@@ -306,6 +306,100 @@ function verifySteps(
   return steps;
 }
 
+// In split mode Implementation commits only source. Its public manifest, and
+// evaluator public results, cross the repository boundary through the exact
+// host-brokered evidence channel carried by their Role Grants.
+function splitImplementationSteps(label = "implementation"): Step[] {
+  return [
+    {
+      write: {
+        workspace: "repository",
+        path: `src/${label}.txt`,
+        content: `${label} feature\n`,
+      },
+    },
+    { commit: { message: label, paths: [`src/${label}.txt`] } },
+    {
+      tool: "requestAction",
+      args: {
+        kind: "evidence",
+        files: [
+          {
+            destination: "manifest.md",
+            content: `# Manifest\n\n${label}\n`,
+          },
+        ],
+      },
+    },
+    submit(),
+  ];
+}
+
+function splitVerifySteps(
+  attempts: Array<[string, "PASS" | "FAIL" | "BLOCKED"]>,
+  classification?: string,
+): Step[] {
+  const last = attempts.length;
+  const [, result] = attempts[last - 1] ?? ["001", "PASS"];
+  const resultPath = (attempt: number): string =>
+    `.eval/attempts/${String(attempt).padStart(3, "0")}/eval-result.md`;
+  const methodology: Record<string, string> =
+    result === "PASS"
+      ? { result }
+      : { result, classification: classification ?? "" };
+  const resultBytes = json({
+    schemaVersion: 1,
+    commit: "{{input:candidate}}",
+    evaluatorRevision: "{{input:evaluatorRevision}}",
+    ...methodology,
+    coverageResults: { AC1: result === "PASS" ? "SATISFIED" : "BLOCKED" },
+  });
+  const steps: Step[] = [
+    ...attempts.map(([, status], index) =>
+      priv(resultPath(index + 1), `attempt ${String(index + 1)} ${status}\n`),
+    ),
+    priv(
+      ".eval/attempt-ledger.json",
+      json({
+        schemaVersion: 2,
+        attempts: attempts.map(([revision, status], index) => ({
+          id: String(index + 1).padStart(3, "0"),
+          implementation:
+            index === last - 1
+              ? "git:{{input:candidate}}"
+              : `{{json:private:.eval/attempt-ledger.json:/attempts/${String(index)}/implementation}}`,
+          evaluatorRevision: revision,
+          evaluatorRevisionIdentity: ident(
+            "private",
+            revision === attempts[last - 1]?.[0]
+              ? ".eval/freeze.json"
+              : `.eval/revisions/${revision}/freeze.json`,
+          ),
+          resultPath: resultPath(index + 1),
+          resultIdentity: ident("private", resultPath(index + 1)),
+          status,
+        })),
+      }),
+    ),
+    {
+      tool: "requestAction",
+      args: {
+        kind: "evidence",
+        files: [
+          { destination: "verification-result.json", content: resultBytes },
+          {
+            destination: "manifest.md",
+            content: `# Manifest\n\nverify attempt ${String(last)}\n`,
+          },
+        ],
+      },
+    },
+    submit(methodology),
+  ];
+  if (result === "PASS") steps.push({ promotion: { fromPlan: true } });
+  return steps;
+}
+
 function scripts(
   overrides: Record<string, Step[]> = {},
 ): Record<string, Step[]> {
@@ -391,34 +485,54 @@ function git(root: string, args: string[]): string {
 // A disposable Harness project built from the candidate's real methodology,
 // with its own test-only trust root, one workflow and a private evaluation
 // workspace. It never touches Harness's own trusted history.
-async function harness(t: TestContext, roles: Record<string, Step[]>) {
+async function harness(
+  t: TestContext,
+  roles: Record<string, Step[]>,
+  options: { split?: boolean } = {},
+) {
   const dir = mkdtempSync(join(tmpdir(), "harness-fidelity-"));
   t.after(() => {
     rmSync(dir, { recursive: true, force: true });
   });
-  const root = join(dir, "project");
+  const split = options.split === true;
+  const root = join(dir, split ? "source" : "project");
+  const workflowRoot = split ? join(dir, "docs") : root;
+  const methodologyRoot = split ? join(dir, "methodology") : root;
   const privateDir = join(dir, "evaluation-private");
-  mkdirSync(join(root, DIR), { recursive: true });
-  mkdirSync(join(root, "src/methodologies"), { recursive: true });
+  mkdirSync(join(workflowRoot, DIR), { recursive: true });
+  mkdirSync(join(methodologyRoot, "src/methodologies"), { recursive: true });
   mkdirSync(privateDir);
-  cpSync("methodologies", join(root, "methodologies"), { recursive: true });
-  rmSync(join(root, "methodologies/harness/trusted.jsonl"));
+  cpSync("methodologies", join(methodologyRoot, "methodologies"), {
+    recursive: true,
+  });
+  rmSync(join(methodologyRoot, "methodologies/harness/trusted.jsonl"));
   for (const entry of Object.values(policy.roles))
-    cpSync(entry.skill, join(root, entry.skill));
+    cpSync(entry.skill, join(methodologyRoot, entry.skill));
   cpSync(
     "src/methodologies/harness-public.ts",
-    join(root, "src/methodologies/harness-public.ts"),
+    join(methodologyRoot, "src/methodologies/harness-public.ts"),
   );
   const validatorSources = {
     "prepared-coverage": "src/methodologies/harness-public.ts",
     "verification-accounting": "src/methodologies/harness-public.ts",
   };
+  const configPath = split
+    ? join(dir, "harness.project.json")
+    : join(root, "harness.project.json");
   writeFileSync(
-    join(root, "harness.project.json"),
+    configPath,
     json({
       schemaVersion: 1,
       id: "fidelity",
-      root: ".",
+      root: split ? "source" : ".",
+      ...(split
+        ? {
+            methodologyRoot: "methodology",
+            origin: "github.com/harness-fixture/source",
+            workflowWorkspace: "workflow",
+            workflowOrigin: "github.com/harness-fixture/docs",
+          }
+        : {}),
       policy: "methodologies/harness/policy.json",
       trustedHistory: "methodologies/harness/trusted.jsonl",
       validatorSources,
@@ -431,22 +545,59 @@ async function harness(t: TestContext, roles: Record<string, Step[]>) {
           mode: "write",
           exposure: "public",
         },
+        ...(split
+          ? {
+              workflow: {
+                id: "fidelity-workflow",
+                path: "../docs",
+                mode: "write",
+                exposure: "public",
+              },
+            }
+          : {}),
       },
       remotes: {},
     }),
   );
-  writeFileSync(join(root, DIR, "spike.md"), "# Demo spike\n\nAC1.\n");
-  writeFileSync(join(root, ".gitignore"), `${DIR}/workflow.jsonl\n`);
+  writeFileSync(join(workflowRoot, DIR, "spike.md"), "# Demo spike\n\nAC1.\n");
+  writeFileSync(join(workflowRoot, ".gitignore"), `${DIR}/workflow.jsonl\n`);
   git(root, ["init", "-q", "-b", "main"]);
+  if (split) {
+    writeFileSync(join(root, "README.md"), "split source fixture\n");
+    git(root, [
+      "remote",
+      "add",
+      "origin",
+      "git@github.com:harness-fixture/source.git",
+    ]);
+  }
   git(root, ["add", "."]);
   git(root, ["commit", "-q", "-m", "fixture project"]);
-  const trusted = trustFixtureMethodology(root, {
+  if (split) {
+    git(workflowRoot, ["init", "-q", "-b", "main"]);
+    git(workflowRoot, [
+      "remote",
+      "add",
+      "origin",
+      "git@github.com:harness-fixture/docs.git",
+    ]);
+    git(workflowRoot, ["add", "."]);
+    git(workflowRoot, ["commit", "-q", "-m", "fixture workflow"]);
+    git(methodologyRoot, ["init", "-q", "-b", "main"]);
+    git(methodologyRoot, [
+      "remote",
+      "add",
+      "origin",
+      "git@github.com:harness-fixture/methodology.git",
+    ]);
+  }
+  const trusted = trustFixtureMethodology(methodologyRoot, {
     policy: "methodologies/harness/policy.json",
     methodologyPaths: ["methodologies/harness/contracts", "skills"],
     validatorSources,
     history: "methodologies/harness/trusted.jsonl",
   });
-  const project = loadProject(join(root, "harness.project.json"));
+  const project = loadProject(configPath);
   const workflow = project.workflows[WORKFLOW];
   assert.ok(workflow);
   workflow.workspaces = {
@@ -456,6 +607,16 @@ async function harness(t: TestContext, roles: Record<string, Step[]>) {
       mode: "write",
       exposure: "public",
     },
+    ...(split
+      ? {
+          workflow: {
+            id: "fidelity-workflow",
+            path: workflowRoot,
+            mode: "write" as const,
+            exposure: "public",
+          },
+        }
+      : {}),
     evaluation: {
       id: "fidelity-evaluation",
       path: privateDir,
@@ -507,7 +668,7 @@ async function harness(t: TestContext, roles: Record<string, Step[]>) {
     },
   });
   t.after(() => host.close());
-  const ledgerPath = join(root, DIR, "workflow.jsonl");
+  const ledgerPath = join(workflowRoot, DIR, "workflow.jsonl");
   // The response type is selected by the caller; fetch cannot infer it from a
   // route string or request body.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
@@ -615,6 +776,8 @@ async function harness(t: TestContext, roles: Record<string, Step[]>) {
   return {
     dir,
     root,
+    workflowRoot,
+    methodologyRoot,
     privateDir,
     trusted,
     host,
@@ -890,6 +1053,141 @@ void test("014d AC01/AC03/AC05-scripted: one bounded grant carries all eight rea
   const outcome = last(h.ledger(), "outcome-recorded");
   assert.equal(outcome.evidence.completionMode, "STANDARD");
   assert.deepEqual((await h.resolved(grant.id)).kind, "denied");
+});
+
+void test("015 AC10: the complete governed lifecycle resolves source and workflow history from separate repositories", async (t) => {
+  const h = await harness(
+    t,
+    scripts({
+      implementation: splitImplementationSteps(),
+      "evaluator-verify": splitVerifySteps([["001", "PASS"]]),
+    }),
+    { split: true },
+  );
+  const grant = await h.grant();
+  await h.start(grant.id);
+  assert.deepEqual(h.transitions(), [
+    "brief-frozen",
+    "design-map-frozen",
+    "evaluation-prepared",
+    "implementation-handoff",
+    "verification-allocated",
+    "verification-finalized",
+    "promotion-recorded",
+    "as-built-recorded",
+  ]);
+  const beforeAcceptance = h.ledger();
+  const handoff = last(beforeAcceptance, "implementation-handoff");
+  const promotion = last(beforeAcceptance, "promotion-recorded");
+  assert.equal(
+    (handoff.evidence.candidateBinding as { workspace?: string }).workspace,
+    "repository",
+  );
+  assert.equal(
+    (
+      last(beforeAcceptance, "as-built-recorded").evidence.artifactBinding as {
+        workspace?: string;
+      }
+    ).workspace,
+    "workflow",
+  );
+  assert.ok(existsSync(join(h.workflowRoot, DIR, "evaluation/promotion.json")));
+  assert.ok(!existsSync(join(h.root, DIR, "workflow.jsonl")));
+
+  const accepted = await h.api<object>("decisions", {
+    workflowGrant: grant.id,
+    decision: "accept",
+    evidence: {
+      candidate: handoff.evidence.commit,
+      verification: last(beforeAcceptance, "verification-finalized").evidence
+        .semanticResult,
+      promotion: promotion.evidence.promotionIdentity,
+      asBuilt: last(beforeAcceptance, "as-built-recorded").evidence
+        .semanticResult,
+      cycle: "001",
+    },
+  });
+  assert.equal(accepted.status, 201, JSON.stringify(accepted.value));
+  await h.start(grant.id);
+  const outcome = last(h.ledger(), "outcome-recorded");
+  assert.equal(outcome.evidence.completionMode, "STANDARD");
+  assert.equal(
+    (outcome.evidence.artifactBinding as { workspace?: string }).workspace,
+    "workflow",
+  );
+});
+
+void test("015 AC10: split lifecycle preserves implementation correction and evaluator repair history", async (t) => {
+  const h = await harness(
+    t,
+    scripts({
+      "implementation#1": splitImplementationSteps("implementation-first"),
+      "implementation#2": splitImplementationSteps("implementation-retry"),
+      "evaluator-verify#1": splitVerifySteps(
+        [["001", "FAIL"]],
+        "IMPLEMENTATION_FAILURE",
+      ),
+      "evaluator-verify#2": splitVerifySteps(
+        [
+          ["001", "FAIL"],
+          ["001", "BLOCKED"],
+        ],
+        "EVALUATOR_DEFECT",
+      ),
+      "evaluator-verify#3": splitVerifySteps([
+        ["001", "FAIL"],
+        ["001", "BLOCKED"],
+        ["002", "PASS"],
+      ]),
+      "evaluator-repair": [
+        ...revisionBundle("002"),
+        pub("coverage-map.json", coverage("002")),
+        pub("manifest.md", "# Manifest\n\nrepair\n"),
+        commit("repair", "coverage-map.json", "manifest.md"),
+        submit(),
+      ],
+    }),
+    { split: true },
+  );
+  const grant = await h.grant();
+  await h.start(grant.id);
+  assert.deepEqual(h.transitions().slice(0, 13), [
+    "brief-frozen",
+    "design-map-frozen",
+    "evaluation-prepared",
+    "implementation-handoff",
+    "verification-allocated",
+    "verification-finalized",
+    "implementation-handoff",
+    "verification-allocated",
+    "verification-finalized",
+    "evaluator-repair-recorded",
+    "verification-allocated",
+    "verification-finalized",
+    "promotion-recorded",
+  ]);
+  const finals = h
+    .ledger()
+    .filter((event) => event.transition === "verification-finalized");
+  assert.deepEqual(
+    finals.map((event) => [
+      event.evidence.result,
+      event.evidence.classification ?? null,
+      event.evidence.attempt,
+    ]),
+    [
+      ["FAIL", "IMPLEMENTATION_FAILURE", 1],
+      ["BLOCKED", "EVALUATOR_DEFECT", 2],
+      ["PASS", null, 3],
+    ],
+  );
+  assert.equal(
+    (
+      last(h.ledger(), "evaluator-repair-recorded").evidence
+        .artifactBinding as { workspace?: string }
+    ).workspace,
+    "workflow",
+  );
 });
 
 void test("014d AC01/AC07: readiness NOT_READY records readiness-blocked and gates; an explicit stop halts automatic continuation", async (t) => {

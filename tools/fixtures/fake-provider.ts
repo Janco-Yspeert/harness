@@ -202,13 +202,24 @@ if (scenario.hang) {
   }
   const workspaceRoot = (name: "repository" | "private"): string => {
     const grant = assignment?.roleGrant as {
-      workspaces: Array<{ path: string; exposure: string }>;
+      workspaces: Array<{
+        path: string;
+        exposure: string;
+        mode: "read" | "write";
+      }>;
     };
-    const found = grant.workspaces.find((workspace) =>
+    const candidates = grant.workspaces.filter((workspace) =>
       name === "repository"
         ? workspace.exposure === "public"
         : workspace.exposure !== "public",
     );
+    // Split-repository roles can see two public workspaces. Scripted writes
+    // and commits must follow the same writable-workspace selection as the
+    // real provider launcher, never whichever public mount happened to be
+    // listed first.
+    const found =
+      candidates.find((workspace) => workspace.mode === "write") ??
+      candidates[0];
     if (!found) throw new Error(`no granted ${name} workspace`);
     return found.path;
   };
