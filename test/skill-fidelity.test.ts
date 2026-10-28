@@ -69,6 +69,20 @@ const claude: ExecutorProfile = {
   isolation: ["private-workspace"],
   available: true,
 };
+const codex: ExecutorProfile = {
+  id: "codex",
+  provider: "codex",
+  modes: ["spawned"],
+  capabilities: [
+    "repository-read",
+    "repository-write",
+    "local-computation",
+    "git-inspect",
+    "git-commit",
+  ],
+  isolation: [],
+  available: true,
+};
 const policy = JSON.parse(
   readFileSync("methodologies/harness/policy.json", "utf8"),
 ) as {
@@ -331,6 +345,18 @@ function splitImplementationSteps(label = "implementation"): Step[] {
         ],
       },
     },
+    submit(),
+  ];
+}
+
+function splitAsBuiltSteps(): Step[] {
+  // Split promotion is host-brokered into the docs repository and already
+  // committed there. The pinned As-Built instruction requires reusing that
+  // exact checkpoint, not attempting an empty duplicate commit.
+  return [
+    pub("as-built.md", "# As-Built\n\nNo discrepancies.\n"),
+    pub("manifest.md", "# Manifest\n\nas-built\n"),
+    commit("as-built", "as-built.md", "manifest.md"),
     submit(),
   ];
 }
@@ -598,6 +624,10 @@ async function harness(
     validatorSources,
     history: "methodologies/harness/trusted.jsonl",
   });
+  if (split) {
+    git(methodologyRoot, ["add", "-f", "methodologies/harness/trusted.jsonl"]);
+    git(methodologyRoot, ["commit", "-q", "-m", "fixture trust root"]);
+  }
   const project = loadProject(configPath);
   const workflow = project.workflows[WORKFLOW];
   assert.ok(workflow);
@@ -639,7 +669,7 @@ async function harness(
     governed: {
       rootToken,
       project,
-      executors: [claude],
+      executors: split ? [codex, claude] : [claude],
       validators: harnessValidators,
       privateDataRoot: join(dir, "host-private"),
       providerRuntime: {
@@ -1062,6 +1092,7 @@ void test("015 AC10: the complete governed lifecycle resolves source and workflo
     scripts({
       implementation: splitImplementationSteps(),
       "evaluator-verify": splitVerifySteps([["001", "PASS"]]),
+      "as-built": splitAsBuiltSteps(),
     }),
     { split: true },
   );

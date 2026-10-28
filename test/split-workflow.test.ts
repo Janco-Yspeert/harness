@@ -7,6 +7,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   realpathSync,
   rmSync,
   symlinkSync,
@@ -17,9 +18,14 @@ import { join } from "node:path";
 import test, { type TestContext } from "node:test";
 
 import { loadProject } from "../src/kernel/configuration.ts";
+import {
+  ADAPTERS,
+  planLaunch,
+  type ProviderId,
+} from "../src/executors/adapters.ts";
 import { launchWorkspaces } from "../src/executors/governed.ts";
 import { ExecutionKernel } from "../src/kernel/execution.ts";
-import { identity } from "../src/kernel/ledger.ts";
+import { appendLedger, identity } from "../src/kernel/ledger.ts";
 import type {
   ExecutorProfile,
   Project,
@@ -363,6 +369,133 @@ function grant(project: Project, change: Partial<RoleGrant> = {}): RoleGrant {
   };
 }
 
+function splitImplementationEvidenceGrant(project: Project): RoleGrant {
+  const source = project.workspaces.repository;
+  const docs = project.workspaces.workflow;
+  assert.ok(source && docs);
+  return grant(project, {
+    workspaces: [
+      { ...source, mode: "write" },
+      { ...docs, mode: "read" },
+    ],
+    capabilities: [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit",
+    ],
+    hostActions: {
+      evidence: {
+        workspace: "workflow",
+        workspaceId: docs.id,
+        destinations: ["manifest.md"],
+      },
+    },
+  });
+}
+
+const splitImplementationProfiles: Array<
+  ExecutorProfile & { provider: ProviderId }
+> = [
+  {
+    id: "codex",
+    provider: "codex",
+    modes: ["spawned"],
+    capabilities: [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit",
+    ],
+    isolation: [],
+    available: true,
+  },
+  {
+    id: "claude",
+    provider: "claude",
+    modes: ["spawned"],
+    capabilities: [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit",
+    ],
+    isolation: ["private-workspace"],
+    available: true,
+  },
+];
+
+void test("both adapters allow source-only split implementation authority and refuse widened evidence authority", (t) => {
+  const project = loadProject(fixture(t).write());
+  const source = project.workspaces.repository;
+  const docs = project.workspaces.workflow;
+  assert.ok(source && docs);
+  const valid = splitImplementationEvidenceGrant(project);
+  const validEvidence = valid.hostActions.evidence;
+  assert.ok(validEvidence);
+
+  for (const profile of splitImplementationProfiles) {
+    const adapter = ADAPTERS[profile.provider];
+    assert.deepEqual(planLaunch(adapter, valid, profile), {}, profile.id);
+  }
+  assert.equal(launchWorkspaces(valid)[0]?.id, source.id);
+  const missingAccess: RoleGrant = { ...valid };
+  delete missingAccess.access;
+
+  const invalid: Array<{ name: string; grant: RoleGrant }> = [
+    {
+      name: "writable evidence workspace",
+      grant: {
+        ...valid,
+        workspaces: valid.workspaces.map((workspace) =>
+          workspace.id === docs.id
+            ? { ...workspace, mode: "write" as const }
+            : workspace,
+        ),
+      },
+    },
+    {
+      name: "evidence Git commit authority",
+      grant: { ...valid, gitCommit: ["repository", "workflow"] },
+    },
+    {
+      name: "widened workspace access",
+      grant: {
+        ...valid,
+        access: { ...valid.access, unrelated: "write" as const },
+      },
+    },
+    {
+      name: "missing split access metadata",
+      grant: missingAccess,
+    },
+    {
+      name: "mismatched evidence workspace",
+      grant: {
+        ...valid,
+        hostActions: {
+          evidence: {
+            ...validEvidence,
+            workspaceId: source.id,
+          },
+        },
+      },
+    },
+  ];
+  for (const { name, grant: invalidGrant } of invalid) {
+    for (const profile of splitImplementationProfiles) {
+      assert.throws(
+        () => planLaunch(ADAPTERS[profile.provider], invalidGrant, profile),
+        /mediated evidence requires a read-only workspace/,
+        `${profile.id}: ${name}`,
+      );
+    }
+  }
+});
+
 void test("split grants need an access map and may not widen it", (t) => {
   const project = loadProject(fixture(t).write());
   const docs = project.workspaces.workflow;
@@ -475,7 +608,7 @@ void test("the writable split workspace is the provider cwd", (t) => {
   assert.equal(launchWorkspaces(base)[0]?.id, "docs");
 });
 
-function splitKernelFixture(t: TestContext) {
+function splitKernelFixture(t: TestContext, allocate = true) {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "split-kernel-")));
   t.after(() => {
     rmSync(dir, { recursive: true, force: true });
@@ -589,6 +722,8 @@ function splitKernelFixture(t: TestContext) {
     available: true,
   };
   const kernel = new ExecutionKernel({ project, executors: [profile] });
+  if (!allocate)
+    return { source, docs, methodology, workflow, project, profile, kernel };
   const workflowGrant = kernel.authorize(workflow, {
     continuation: true,
     delegation: ["attached"],
@@ -603,29 +738,31 @@ function splitKernelFixture(t: TestContext) {
     mode: "attached",
   });
   kernel.process(workflow, run.execution.id, "running");
-  return { source, docs, workflow, kernel, run };
+  return { source, docs, methodology, workflow, project, profile, kernel, run };
 }
 
 void test("split implementation commits source and brokers docs evidence with an exact pair", (t) => {
   const f = splitKernelFixture(t);
+  const run = f.run;
+  assert.ok(run);
   const sourceStart = git(f.source, ["rev-parse", "HEAD"]);
   const docsStart = git(f.docs, ["rev-parse", "HEAD"]);
-  const commits = f.run.grant.commits;
+  const commits = run.grant.commits;
   assert.ok(commits);
   assert.equal(commits.source.commit, sourceStart);
   assert.equal(commits.workflow.commit, docsStart);
-  assert.deepEqual(f.run.grant.hostActions.evidence?.destinations, [
+  assert.deepEqual(run.grant.hostActions.evidence?.destinations, [
     "manifest.md",
   ]);
   assert.equal(
-    f.run.grant.workspaces.find((workspace) => workspace.id === "source")?.mode,
+    run.grant.workspaces.find((workspace) => workspace.id === "source")?.mode,
     "write",
   );
   assert.equal(
-    f.run.grant.workspaces.find((workspace) => workspace.id === "docs")?.mode,
+    run.grant.workspaces.find((workspace) => workspace.id === "docs")?.mode,
     "read",
   );
-  const action = f.kernel.recordEvidence(f.workflow, f.run.execution.id, [
+  const action = f.kernel.recordEvidence(f.workflow, run.execution.id, [
     { destination: "manifest.md", content: "# Manifest\n\nimplementation\n" },
   ]);
   assert.equal(action.status, "succeeded", action.reason ?? "");
@@ -636,7 +773,7 @@ void test("split implementation commits source and brokers docs evidence with an
   git(f.source, ["commit", "-q", "-m", "implement"]);
   const completed = f.kernel.result(
     f.workflow,
-    f.run.execution.id,
+    run.execution.id,
     "succeeded",
     {},
   );
@@ -664,10 +801,12 @@ void test("split implementation commits source and brokers docs evidence with an
 
 void test("a docs HEAD drift denies evidence and cannot create a combined transition", (t) => {
   const f = splitKernelFixture(t);
+  const run = f.run;
+  assert.ok(run);
   writeFileSync(join(f.docs, "drift.txt"), "drift\n");
   git(f.docs, ["add", "drift.txt"]);
   git(f.docs, ["commit", "-q", "-m", "drift"]);
-  const action = f.kernel.recordEvidence(f.workflow, f.run.execution.id, [
+  const action = f.kernel.recordEvidence(f.workflow, run.execution.id, [
     { destination: "manifest.md", content: "# Manifest\n\nstale\n" },
   ]);
   assert.equal(action.status, "failed");
@@ -677,7 +816,7 @@ void test("a docs HEAD drift denies evidence and cannot create a combined transi
   git(f.source, ["commit", "-q", "-m", "partial"]);
   const completed = f.kernel.result(
     f.workflow,
-    f.run.execution.id,
+    run.execution.id,
     "succeeded",
     {},
   );
@@ -687,5 +826,202 @@ void test("a docs HEAD drift denies evidence and cannot create a combined transi
       .events(f.workflow)
       .some((event) => event.transition === "implementation-handoff"),
     false,
+  );
+});
+
+void test("split recovery finalizes corrected docs evidence without replacing the blocked result", (t) => {
+  const f = splitKernelFixture(t, false);
+  const candidate = git(f.source, ["rev-parse", "HEAD"]);
+  const evaluatorRevision = "001";
+  const contract: RoleContract = {
+    schemaVersion: 1,
+    workspaces: ["repository"],
+    capabilities: [
+      "repository-read",
+      "repository-write",
+      "local-computation",
+      "git-inspect",
+      "git-commit",
+    ],
+    forbiddenExposure: ["evaluator-private"],
+    protected: false,
+    inputs: [
+      { name: "candidate", event: "inputs-bound", field: "candidate" },
+      {
+        name: "evaluatorRevision",
+        event: "inputs-bound",
+        field: "evaluatorRevision",
+      },
+    ],
+    results: ["succeeded"],
+    methodology: { result: ["PASS"] },
+    human: [],
+    postconditions: ["verification-result.json"],
+    workflowEvidence: {
+      destinations: ["manifest.md", "verification-result.json"],
+    },
+  };
+  const policy: WorkflowPolicy = {
+    schemaVersion: 1,
+    roles: {
+      implementation: {
+        contract: "contracts/implementation.json",
+        skill: "skills/implementation.md",
+        when: { not: { event: "verification-finalized" } },
+        retry: { dispositions: ["failed"], limit: 1 },
+        onAllocate: {
+          transition: "verification-allocated",
+          fromInputs: {
+            commit: "candidate",
+            evaluatorRevision: "evaluatorRevision",
+          },
+          counterField: "attempt",
+        },
+        outcomes: [
+          {
+            disposition: "succeeded",
+            methodology: { result: "PASS" },
+            transition: "verification-finalized",
+            evidence: {
+              artifact: "verification-result.json",
+              validator: "verification-accounting",
+              allocation: "verification-allocated",
+            },
+          },
+        ],
+      },
+    },
+    gates: [],
+    maxAllocations: 2,
+  };
+  writeFileSync(
+    join(f.methodology, "contracts", "implementation.json"),
+    `${JSON.stringify(contract)}\n`,
+  );
+  writeFileSync(
+    join(f.methodology, "policy.json"),
+    `${JSON.stringify(policy)}\n`,
+  );
+  git(f.methodology, ["add", "."]);
+  git(f.methodology, ["commit", "-q", "-m", "recovery definition"]);
+
+  const artifact = join(
+    f.docs,
+    "spikes",
+    f.workflow,
+    "verification-result.json",
+  );
+  writeFileSync(
+    artifact,
+    JSON.stringify({ candidate, evaluatorRevision, result: "PASS" }) + "\n",
+  );
+  git(f.docs, ["add", "spikes"]);
+  git(f.docs, ["commit", "-q", "-m", "malformed verification"]);
+  appendLedger(f.kernel.path(f.workflow), "inputs-bound", {
+    candidate,
+    candidateBinding: committedBinding(f.project, "repository", candidate),
+    evaluatorRevision,
+  });
+
+  const kernel = new ExecutionKernel({
+    project: f.project,
+    executors: [f.profile],
+    validators: {
+      "verification-accounting": {
+        identity: "sha256:split-transition-recovery-validator",
+        validate: (document, context) => {
+          const value = document as Record<string, unknown>;
+          if (
+            !context ||
+            value.commit !== context.inputs.candidate ||
+            value.evaluatorRevision !== context.inputs.evaluatorRevision ||
+            value.result !== context.result.result ||
+            typeof value.coverageResults !== "object" ||
+            value.coverageResults === null
+          )
+            throw new Error("verification result identity mismatch");
+        },
+      },
+    },
+  });
+  const workflowGrant = kernel.authorize(f.workflow, {
+    continuation: true,
+    delegation: ["attached"],
+    maxAllocations: 2,
+    inline: true,
+  });
+  const session = kernel.register(f.workflow, "fixture").session;
+  const allocation = kernel.allocate(f.workflow, workflowGrant.id, {
+    role: "implementation",
+    session: session.id,
+    mode: "attached",
+  });
+  const allocationEvent = kernel
+    .events(f.workflow)
+    .find(
+      (event) =>
+        event.transition === "verification-allocated" &&
+        event.evidence.execution === allocation.execution.id,
+    );
+  assert.ok(allocationEvent);
+  assert.ok(allocationEvent.id);
+  kernel.process(f.workflow, allocation.execution.id, "running");
+  const evidence = kernel.recordEvidence(f.workflow, allocation.execution.id, [
+    { destination: "manifest.md", content: "# Manifest\n\nrecovery\n" },
+  ]);
+  assert.equal(evidence.status, "succeeded", evidence.reason ?? "");
+  kernel.result(f.workflow, allocation.execution.id, "succeeded", {
+    result: "PASS",
+  });
+  const blocked = kernel.execution(f.workflow, allocation.execution.id);
+  assert.equal(blocked.transition?.status, "blocked");
+  const semanticResult = blocked.result;
+  assert.ok(semanticResult);
+
+  writeFileSync(
+    artifact,
+    JSON.stringify({
+      commit: candidate,
+      evaluatorRevision,
+      result: "PASS",
+      coverageResults: { AC10: "SATISFIED" },
+    }) + "\n",
+  );
+  git(f.docs, ["add", "spikes"]);
+  git(f.docs, ["commit", "-q", "-m", "correct verification"]);
+  const artifactCommit = git(f.docs, ["rev-parse", "HEAD"]);
+  const artifactIdentity = identity(readFileSync(artifact));
+  const recovered = kernel.recoverTransition(f.workflow, {
+    execution: allocation.execution.id,
+    roleGrant: allocation.execution.roleGrant,
+    allocationEvent: allocationEvent.id,
+    semanticResult: semanticResult.id,
+    transition: "verification-finalized",
+    candidate,
+    evaluatorRevision,
+    attempt: 1,
+    result: "PASS",
+    artifactCommit,
+    artifactPath: "verification-result.json",
+    artifactIdentity,
+  });
+  assert.equal(recovered.evidence.semanticResult, semanticResult.id);
+  assert.equal(recovered.evidence.artifactCommit, artifactCommit);
+  assert.equal(
+    (recovered.evidence.repositories as { workflow?: { commit?: string } })
+      .workflow?.commit,
+    semanticResult.commits?.workflow.commit,
+  );
+  assert.equal(
+    kernel
+      .events(f.workflow)
+      .filter((event) => event.transition === "kernel.result").length,
+    1,
+  );
+  assert.equal(
+    kernel
+      .events(f.workflow)
+      .filter((event) => event.transition === "verification-allocated").length,
+    1,
   );
 });

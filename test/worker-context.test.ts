@@ -101,6 +101,10 @@ void test("014d C9: identical pinned inputs give a byte-identical stable prefix;
   assert.ok(stable.includes(JSON.stringify(contract)));
   for (const operation of WORKER_OPERATIONS)
     assert.ok(stable.includes(operation), operation);
+  assert.match(
+    stable,
+    /split-repository Implementation grant may separately authorize source writes and commits, but never direct writes or commits to its read-only evidence\/docs workspace/,
+  );
   for (const value of [
     first.execution,
     first.workflow,

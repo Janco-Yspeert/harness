@@ -111,3 +111,15 @@
 - Environment limitation: both `015 AC10` cases and the broader `npm test` suite were attempted, but this managed worker reports Node `spawnSync git` as `EPERM` despite child status 0; the focused cases stopped at fixture Git initialization before lifecycle assertions, and the broader run was terminated after the same failures left it hanging
 - Scope: no further fixture defect was exposed before the environment-level process-spawn refusal
 - Measurement cutoff: immediately before this manifest update.
+
+## Pre-Semantic Implementation Correction (attempt 6)
+
+- Skill: implementation, contract version 6
+- Inputs: candidate `57b2266318f70f8cc49fcd695d6d4916588606d6`; `spike.md` (`sha256:cd9485caa4689a2001521e45e3ed39edb8fc0e0b99fb90b90cc72f8348658010`), `design-map.md` (`sha256:0c4682d02c8b3cc74818000625bfe9a79f60a5b4561607b9c7dac1db5eaf5a5c`), `coverage-map.json` (`sha256:25774ad65316d4e8ec2c2e586ba4f526f74787e3390a39f063a293997304bc27`), `eval-requirements.md` (`sha256:bb09fe3bd974c337f97679a69ed43143a966d3c9426363520b498ac4ac31bcdd`); one-shot root authority `e3b2e7ff-6fff-4796-9f20-76dbd3df312b`; validated disposable patch `f3b81a866d49a2db8b8c7d358529a84c1f6d4a0f`
+- Result: `succeeded`; authorized AC10 correction candidate produced; not independently evaluated
+- Changes: allowed only split Implementation grants with writable source and source-only Git commit authority alongside read-only docs and host-brokered evidence; refused missing, mismatched or widened split authority; preserved ordinary and legacy evidence composition; corrected mixed-workspace worker instructions; completed deterministic adapter, lifecycle, recovery and worker-context coverage
+- Output content identity: implementation diff excluding this manifest entry (`sha256:a7b5023a6465613e23e79cac32861e7b194c273644a9627ebb062f36dea8fee2`)
+- Checks: `npm run typecheck`, `npm run lint`, `npm run format:check`, `git diff --cached --check`, and `node --test test/worker-context.test.ts` PASS; the five corrected files match the authorized disposable patch tree exactly
+- Environment limitation: focused Git-backed split workflow and AC10 lifecycle tests failed at fixture setup because Node `spawnSync git` reported `EPERM`; `npm test` was attempted and all visible test files reported, but the runner did not exit after the same sandbox subprocess failures and was interrupted after three empty 30-second polls
+- Scope: no evaluator, adoption, smoke, frozen-contract or unrelated production change; existing unrelated working-tree residue was preserved and excluded
+- Measurement cutoff: immediately before this manifest update.

@@ -596,10 +596,10 @@ export function planLaunch(
   profile: ExecutorProfile,
 ): { model?: string; reasoning?: string } {
   adapter.checkCapabilities(grant.capabilities);
-  // Mediated evidence is only meaningful when the role can neither write nor
-  // commit directly and its evidence workspace is read-only. Every registered
-  // adapter enforces a read-only workspace; a grant that does not describe that
-  // composition is refused rather than launched with a write grant.
+  // Mediated evidence is only meaningful when its workspace is read-only and
+  // carries no direct Git authority. A split Implementation grant may still
+  // write and commit its separately bound source workspace; its explicit
+  // access and Git-commit maps make that composition auditable.
   const evidence = (grant.hostActions as RoleGrant["hostActions"] | undefined)
     ?.evidence;
   if (evidence) {
@@ -607,20 +607,57 @@ export function planLaunch(
       (item) => item.id === evidence.workspaceId,
     );
     const legacy = grant.legacyEvidenceCompatibility;
+    const split =
+      grant.access !== undefined ||
+      grant.gitCommit !== undefined ||
+      grant.commits !== undefined;
     const ordinaryComposition =
       !grant.capabilities.includes("repository-write") &&
       !grant.capabilities.includes("git-commit") &&
       workspace?.mode === "read";
+    const access = grant.access;
+    const gitCommit = grant.gitCommit;
+    const commits = grant.commits;
+    const sourceWorkspace = commits
+      ? grant.workspaces.find((item) => item.id === commits.source.repository)
+      : undefined;
+    const splitImplementationComposition =
+      split &&
+      grant.role === "implementation" &&
+      evidence.workspace !== "repository" &&
+      workspace?.id === evidence.workspaceId &&
+      workspace.mode === "read" &&
+      commits?.source.workspace === "repository" &&
+      commits.workflow.workspace === evidence.workspace &&
+      commits.workflow.repository === evidence.workspaceId &&
+      sourceWorkspace?.mode === "write" &&
+      sourceWorkspace.id === commits.source.repository &&
+      access?.repository === "write" &&
+      access[evidence.workspace] === "read" &&
+      Object.keys(access).length === 2 &&
+      Object.keys(access).every(
+        (workspaceKey) =>
+          workspaceKey === "repository" || workspaceKey === evidence.workspace,
+      ) &&
+      gitCommit?.length === 1 &&
+      gitCommit[0] === "repository" &&
+      grant.capabilities.includes("repository-write") &&
+      grant.capabilities.includes("git-commit");
     const legacyComposition =
+      !split &&
       legacy?.destination === "verification-result.json" &&
       legacy.rootAuthority === grant.rootAuthority &&
       grant.capabilities.includes("repository-write") &&
       grant.capabilities.includes("git-commit") &&
       workspace?.mode === "write";
-    if (!ordinaryComposition && !legacyComposition)
+    if (
+      !ordinaryComposition &&
+      !splitImplementationComposition &&
+      !legacyComposition
+    )
       throw new AdapterRefusal(
         "provider-config-invalid",
-        "mediated evidence requires a read-only workspace and no direct write or commit capability",
+        "mediated evidence requires a read-only workspace with no direct write or commit authority",
       );
   }
   const plan: { model?: string; reasoning?: string } = {};
