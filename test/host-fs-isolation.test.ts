@@ -339,3 +339,35 @@ void test("014h AC11: unavailable namespaces are reported as permission-denied a
     probeContainment(f.bwrap);
   });
 });
+
+void test("Codex containment copies only auth into scratch HOME without exposing the real home", (t) => {
+  const f = fixture(t);
+  const config = join(f.home, ".codex");
+  mkdirSync(config);
+  writeFileSync(join(config, "auth.json"), '{"token":"fixture-secret"}');
+  const command = containedLaunch({
+    bwrap: f.bwrap,
+    provider: "codex",
+    program: f.program,
+    args: [],
+    cwd: f.repo,
+    workspaces: [{ path: f.repo, mode: "read" }],
+    scratch: f.scratch,
+    nodePath: process.execPath,
+    toolFiles: [],
+    masked: [],
+    protectedRoots: [f.checkout],
+    env: { PATH: "/usr/bin:/bin" },
+    sourceEnv: { HOME: f.home, PATH: process.env.PATH ?? "" },
+  });
+  assert.equal(command.env.HOME, join(f.scratch, "home"));
+  assert.equal(
+    readFileSync(join(f.scratch, "home", ".codex", "auth.json"), "utf8"),
+    '{"token":"fixture-secret"}',
+  );
+  assert.equal(
+    existsSync(join(f.scratch, "home", "real-home-secret.txt")),
+    false,
+  );
+  assert.equal(command.env.CODEX_HOME, undefined);
+});

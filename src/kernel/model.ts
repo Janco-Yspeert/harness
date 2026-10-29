@@ -375,6 +375,9 @@ export interface ExecutorProfile {
   cost?: number;
   // Operational bound on provider turns for registered adapters.
   maxTurns?: number;
+  // Bounded pre-allocation readiness deadline. When omitted, the host uses
+  // the registered provider's conservative default.
+  readinessTimeoutMs?: number;
   // Fixture-only: honoured solely when a profile is passed programmatically
   // to the host. Production configuration rejects it.
   command?: string[];

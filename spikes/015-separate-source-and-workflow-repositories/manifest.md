@@ -123,3 +123,15 @@
 - Environment limitation: focused Git-backed split workflow and AC10 lifecycle tests failed at fixture setup because Node `spawnSync git` reported `EPERM`; `npm test` was attempted and all visible test files reported, but the runner did not exit after the same sandbox subprocess failures and was interrupted after three empty 30-second polls
 - Scope: no evaluator, adoption, smoke, frozen-contract or unrelated production change; existing unrelated working-tree residue was preserved and excluded
 - Measurement cutoff: immediately before this manifest update.
+
+## Root-Authorized Implementation Correction (attempt 7)
+
+- Skill: implementation, contract version 6
+- Inputs: candidate `d4479fd083529169fafd09f1155a19c31ba7d01d`; `spike.md` (`sha256:cd9485caa4689a2001521e45e3ed39edb8fc0e0b99fb90b90cc72f8348658010`), `design-map.md` (`sha256:0c4682d02c8b3cc74818000625bfe9a79f60a5b4561607b9c7dac1db5eaf5a5c`), `coverage-map.json` (`sha256:25774ad65316d4e8ec2c2e586ba4f526f74787e3390a39f063a293997304bc27`), `eval-requirements.md` (`sha256:bb09fe3bd974c337f97679a69ed43143a966d3c9426363520b498ac4ac31bcdd`); one-shot root authority `07addd27-77c0-4535-a121-5ee8e44ead3f`; validated experimental runtime `29eb21bbb2e6a4d3d7c324e49086704ab622d8d3`
+- Result: `succeeded`; authorized readiness-hardening correction candidate produced; not independently evaluated
+- Changes: incorporated the exact authorized eight-file runtime diff; added configurable bounded readiness deadlines, explicit structured rate-limit recognition, bounded redacted private readiness diagnostics, bounded stream parsing, and deterministic timeout termination/reaping; preserved the existing Spike 015 split-workflow and AC10 changes
+- Output content identity: implementation diff excluding this manifest entry (`sha256:1198a651a383d985bd9c3b9547db99700d41aa225b25f9ff1b148a9192251d7a`)
+- Checks: `test/readiness-evidence.test.ts`, `npm run typecheck`, `npm run lint`, `npm run format:check`, and targeted `git diff --check` PASS; all eight changed files match the validated runtime tree exactly
+- Environment limitation: focused adapter, containment, split-workflow and both `015 AC10` lifecycle cases stopped at fixture initialization because Node `spawnSync git` reported `EPERM` despite child status 0; `npm test` reported 8 passing and 16 failing test files, then did not exit through two 30-second polls and was interrupted, with the same sandbox subprocess restriction confirmed by the focused runs
+- Scope: no evaluator, adoption, smoke, methodology, routing, authority or unrelated change
+- Measurement cutoff: immediately before this manifest update.

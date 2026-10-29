@@ -146,13 +146,41 @@ export interface KernelOptions {
   methodologyBinding?: () => MethodologySourceBinding;
 }
 const DETAIL_LIMIT = 240;
+const SECRET_FIELD =
+  /(?:api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|cookie|password|secret|token)/i;
+
+function redactPlaintext(value: string): string {
+  return value
+    .replaceAll(
+      /((?:["']?(?:access[_-]?token|refresh[_-]?token|(?:openai[_-]?)?api[_-]?key|authorization|cookie|password|secret|token)["']?\s*[:=]\s*["']?))[^\s,"'}\]]+/gi,
+      "$1[redacted]",
+    )
+    .replaceAll(/Bearer\s+[^\s,"'}\]]+/gi, "Bearer [redacted]")
+    .replaceAll(/\b[a-f0-9]{48,}\b/gi, "[redacted]")
+    .replaceAll(/\bsk-[A-Za-z0-9_-]{8,}/g, "[redacted]");
+}
+
+function redactJson(value: unknown, key?: string): unknown {
+  if (key && SECRET_FIELD.test(key)) return "[redacted]";
+  if (typeof value === "string") return redactPlaintext(value);
+  if (Array.isArray(value)) return value.map((entry) => redactJson(entry));
+  if (value !== null && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([name, entry]) => [
+        name,
+        redactJson(entry, name),
+      ]),
+    );
+  return value;
+}
 // Public diagnostic details are short host-authored phrases. Redaction is a
 // second line of defence against a credential-shaped value slipping in.
 export function redact(value: string): string {
-  return value
-    .replaceAll(/(?:Bearer\s+|token[=:]\s*)[^\s"']+/gi, "[redacted]")
-    .replaceAll(/\b[a-f0-9]{48,}\b/gi, "[redacted]")
-    .replaceAll(/\bsk-[A-Za-z0-9_-]{8,}/g, "[redacted]");
+  try {
+    return JSON.stringify(redactJson(JSON.parse(value)));
+  } catch {
+    return redactPlaintext(value);
+  }
 }
 export function safeDetail(value: string): string {
   return (redact(value).split("\n")[0] ?? "").slice(0, DETAIL_LIMIT);

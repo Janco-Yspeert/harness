@@ -1888,6 +1888,24 @@ void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is l
       },
     ],
   );
+  assert.deepEqual(
+    ADAPTERS.codex.parse(
+      JSON.stringify({
+        type: "turn.failed",
+        error: { type: "rate_limit_error", code: "rate_limit_exceeded" },
+      }),
+    ),
+    [{ kind: "rate-limited", detail: "provider rate limit" }],
+  );
+  assert.deepEqual(
+    ADAPTERS.codex.parse(
+      JSON.stringify({
+        type: "turn.failed",
+        error: { message: "perhaps this is a rate limit" },
+      }),
+    ),
+    [{ kind: "provider-error", detail: "provider turn.failed" }],
+  );
 });
 
 void test("AC05/AC11: a provider that cannot reach the Harness tools yields no result and a classified diagnostic", async (t) => {

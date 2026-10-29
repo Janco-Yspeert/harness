@@ -339,9 +339,14 @@ export function readinessIdentity(input: ReadinessProbeInput): string {
 }
 
 export function makeLaunchAttempt(
-  input: Omit<LaunchAttemptRecord, "schemaVersion" | "id">,
+  input: Omit<LaunchAttemptRecord, "schemaVersion" | "id"> & {
+    // A host may reserve the canonical identity before a readiness probe so
+    // its private diagnostics can be keyed to the resulting attempt.
+    id?: string;
+  },
 ): LaunchAttemptRecord {
-  return { schemaVersion: 1, id: randomUUID(), ...input };
+  const { id = randomUUID(), ...record } = input;
+  return { schemaVersion: 1, id, ...record };
 }
 
 export function operationalAttempts(
