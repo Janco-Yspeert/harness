@@ -1,300 +1,201 @@
 # Spike 015a — Bootstrap-Closed Completion Path
 
-**Status:** Draft for Brief Readiness and human review; not frozen
+**Status:** Draft for Brief Readiness and human review; not frozen.
 
-**Technical baseline:** Spike 015 candidate
-1159f66422796c14a68428990ae93768ce3102fd.
+**Technical baseline:** Spike 015 implementation candidate 1159f66422796c14a68428990ae93768ce3102fd.
 
-**Trusted predecessor:** methodology sequence 7,
-sha256:bea2ae256165b900a40e4cefd0fa98cfad665b5511bf2107f02b785f3fe00eea,
-revision 3e753a4a732c87fc5b42e9e3cf771482aba6a522.
+**Trusted predecessor:** methodology sequence 7, sha256:bea2ae256165b900a40e4cefd0fa98cfad665b5511bf2107f02b785f3fe00eea, revision 3e753a4a732c87fc5b42e9e3cf771482aba6a522.
 
-**Depends on:** accepted 014i candidate-subject observation boundary, accepted
-014j bootstrap-closed preparation substrate, accepted 014k forward-only
-adoption semantics, and the complete technical baseline represented by Spike
-015 candidate 1159f664.
+**Depends on:** accepted 014i non-authoritative candidate observation, 014j bootstrap-closed preparation, 014k independent successor evaluation and forward-only adoption, and the Spike 015 technical implementation baseline.
 
 ## Purpose
 
-Repair the frozen Spike 015 specification/evidence-model defect without
-reopening its technical implementation.
+Repair Spike 015's frozen completion-model contradiction without rewriting its history or reimplementing the split-repository feature.
 
-The successor establishes one narrow completion mechanism: a workflow may
-declare a post-adoption split-repository coding-smoke obligation. The host,
-rather than worker prose or an unchecked human assertion, validates the
-resulting real Implementation handoff, source/docs lineage, brokered docs
-evidence, and project check. A sequence-8 Outcome then requires that validated
-record only for workflows that declared the obligation.
+The successor introduces **one narrow, optional, host-validated split-coding-smoke completion obligation**, applicable only to newly created workflows under the adopted sequence-8 methodology. The obligation does not grant the candidate authority to evaluate or adopt itself.
 
-This spike deliberately separates two contexts:
+The old Spike 015 evaluator revision 001 cannot honestly PASS under its frozen sequencing. Its attempts, criteria, experimental smoke and review remain unchanged. Spike 015a is a successor certification, not an evaluator repair or a retroactive 015 PASS.
 
-1. **Pre-adoption certification under sequence 7.** Trusted sequence 7
-   independently evaluates a candidate sequence-8 runtime/methodology and may
-   authorize adoption without requiring a sequence-8 workflow or live
-   post-adoption smoke.
-2. **Fresh post-adoption operation under sequence 8.** A newly allocated,
-   explicitly obligated workflow performs the real coding smoke. Its Outcome
-   cannot complete until the host-validated record exists.
+## Existing evidence and inherited technical scope
 
-A sequence-7 Workflow Grant remains pinned to sequence 7 after adoption.
-Adoption does not rewrite it, migrate it, or cause a sequence-8 Outcome
-predicate to govern it retroactively.
+An independent non-authoritative technical review of candidate 1159f664 assessed Spike 015 AC01–AC13 as technically supported by public evidence and recommended no candidate-specific correction. The experimental label-normalizer smoke used 29eb21bbb2e6a4d3d7c324e49086704ab622d8d3, whose eight runtime/test files match 1159f664. Its test-only methodology at 94f51d98ec45369dbbd26a7a56b49b3ed94897ae is not production trust.
 
-## Context
+These are valuable evidence, **not an authoritative verification PASS**. Before 015a can authorize adoption of the combined implementation, its new trusted-sequence-7 evaluator must independently establish the inherited technical properties of AC01–AC13 against the exact combined candidate. It may reuse existing attributable tests, public evidence, and frozen requirements. It must not silently inherit the independent review's verdict, copy private 015 evaluator material into implementation context, or redesign the underlying split-repository requirements. No implementation changes to those properties are requested absent a demonstrated defect.
 
-The independent technical review of the exact Spike 015 candidate assessed
-AC01–AC13 as technically supported by public evidence. It did not create an
-authoritative evaluator PASS and did not inspect the private evaluator
-revision. Treat that candidate as the implementation baseline.
+The inherited /tmp-layout containment test failure is an independently tracked operational concern, not permission to weaken containment and not scope for a general rewrite. Baseline comparisons must distinguish it from introduced regressions.
 
-Spike 015's AC14/AC15 arrangement has a circular completion model. A valid,
-trusted, split-capable runtime is needed for the production coding smoke, but
-the smoke was previously described as though it were necessary before that
-runtime could receive the adoption authority that makes it valid.
+## The two distinct lifecycle contexts
 
-The existing successful label-normalizer experiment is useful historical
-technical evidence. Its runtime
-29eb21bbb2e6a4d3d7c324e49086704ab622d8d3 is code-identical to the candidate's
-runtime/test tree; its methodology
-94f51d98ec45369dbbd26a7a56b49b3ed94897ae is test-only. It may inform fixture
-design and expected completion-record fields. It is not, and must never be
-relabelled as, sequence-8 post-adoption authority or completion evidence.
-
-The pre-existing containment failure observed only with a Harness checkout
-under /tmp is an independent operational concern. Preserve it for separate
-investigation. Do not expand this spike into a containment rewrite.
-
-## Question
-
-Can Harness, using trusted sequence 7, independently evaluate one sequence-8
-candidate that adds a narrow host-validated coding-smoke completion gate, adopt
-that candidate through the existing forward-only path, and then require the
-gate only for a fresh sequence-8 workflow that explicitly declared it?
-
-## Authority model
+### A. Sequence-7 certification of the successor
 
     trusted sequence 7
-      |
-      | evaluates candidate sequence 8 through deterministic evidence
-      v
-    sequence-7 PASS / promotion / As-Built / human acceptance
-      |
-      | existing explicit adoption authority
-      v
-    trusted sequence 8 appended forward-only
-      |
-      | fresh Workflow Grant (never a migrated sequence-7 grant)
-      v
-    declared split-coding-smoke workflow
-      |
-      | real registered-provider Implementation + host validation
-      v
-    completion-smoke-recorded
-      |
-      v
-    sequence-8 Outcome eligibility
+      -> Brief Readiness, Design Map, independent evaluator preparation
+      -> bounded candidate implementation
+      -> independent trusted-7 verification of inherited technical behavior
+         and the proposed sequence-8 completion mechanism
+      -> PASS and host-owned evidence promotion
+      -> As-Built and human acceptance
+      -> truthful sequence-7 Outcome (STANDARD, or an already-authorized
+         PROCESS_EXCEPTION where legitimately necessary)
+      -> separate explicit forward-only adoption authority
+      -> sequence 8
 
-Candidate code may be tested before adoption as software under evaluation.
-It may not supply the authority by which sequence 7 evaluates or adopts it.
+The certification workflow's Workflow Grant remains pinned to sequence 7. Neither adoption nor a post-adoption smoke can retroactively make it subject to sequence-8 policy.
 
-## Scope
+A process exception does **not** replace the independent PASS or independently required adoption evidence. If a process exception is used during closeout, its exact reason and authority must be preserved, and methodology adoption must still pass all existing trusted-predecessor PASS, closeout, human-decision and identity checks.
 
-Implement one optional, closed completion obligation: split-coding-smoke.
+### B. Fresh sequence-8 operational coding smoke
+
+    fresh sequence-8 workflow with frozen split-coding-smoke obligation
+      -> normal governed prerequisites, including its own valid frozen inputs
+      -> real contained registered-provider Implementation
+      -> accepted source commit, brokered docs evidence and semantic handoff
+      -> host validates the declared smoke check and records exact evidence
+      -> normal subsequent methodology requirements, if Outcome is pursued
+      -> STANDARD Outcome only with a matching valid completion record
+
+The smoke is the **post-adoption operational demonstration**, not a prerequisite for the sequence-7 certification PASS. To demonstrate the completion mechanism, the live pilot needs one genuine governed coding allocation and a host completion record; it need not run every other methodology role live merely to prove this narrow seam. If the pilot proceeds to As-Built, acceptance and Outcome, it must satisfy the existing verification, promotion and human gates honestly. No synthetic PASS or fabricated lifecycle event is allowed.
+
+## Bounded completion obligation
 
 ### 1. Frozen declaration
 
-A workflow declares the obligation with a committed public
-completion-obligation.json in its workflow directory. The host validates it
-while recording the workflow's Brief-freeze facts and appends a canonical
-completion-obligation-declared event only when it is valid.
+Only a **fresh sequence-8 split workflow** may opt in. Before Brief freeze its docs repository contains a committed completion-obligation.json beside the workflow brief. During the authorized Brief-freeze transition, the host validates and records one completion-obligation-declared event binding the exact committed docs artifact, content identity and workflow scope.
 
-The declaration has a closed shape:
+The closed declaration contains:
 
-- schemaVersion 1;
-- kind split-coding-smoke;
-- an exact source workspace and docs workflow workspace identity;
-- one exact project check command vector and a source-relative working
-  directory;
-- the exact allowlisted brokered-docs evidence destination;
-- the content identity and committed docs binding of the declaration.
+- schemaVersion 1 and kind split-coding-smoke;
+- source and workflow-docs workspace identities, matched against the actual split project configuration and Git origins;
+- one repository-relative Node built-in test target and, if needed, a source-relative working directory;
+- the exact required host-brokered docs evidence destination (the already-supported manifest.md evidence action);
+- no user-supplied shell, environment overrides, host paths, network command or executable selector.
 
-The declaration is committed workflow input, not a request parameter and not
-worker prose. An absent declaration creates no event and preserves the
-ordinary legacy completion path.
+For this bounded spike the host invokes the fixed Node.js built-in test runner against the declared test target. Do **not** add a reusable arbitrary-command runner or a general postcondition DSL. The fixture is self-contained and requires no dependency installation.
 
-### 2. Host-validated completion operation
+Absence of the declaration at freeze means there is no completion obligation. A malformed declaration fails freeze closed; it is not interpreted as absence. Adding or changing a declaration after freeze cannot silently alter the obligation. The event and its Git/content binding, not a mutable working-tree file, are authoritative.
 
-After a qualifying Implementation handoff, Harness automatically derives a
-completion attempt from canonical facts. It records completion-smoke-recorded
-only after all checks below pass; otherwise it records a bounded failed
-completion attempt that cannot satisfy Outcome.
+### 2. Host-validated completion record
 
-The successful public-safe completion-smoke.json and canonical event bind:
+Following a qualifying Implementation handoff in that same new workflow, the trusted host may run the one declared check and produce a host-owned completion attempt. It produces completion-smoke-recorded **only** when it independently verifies:
 
-- the obligation identity and declaration docs binding;
-- the exact adopted methodology identity, trusted sequence and runtime binding;
-- the exact Workflow Grant and Role Grant;
-- a real registered-provider, non-inline Implementation allocation and provider
-  confirmation;
-- the accepted semantic Implementation handoff;
-- the allocation source/docs snapshot pair;
-- the source candidate binding, including repository identity, origin, full
-  commit, path/content identity where applicable, ancestry from the allocation
-  source snapshot, and a non-empty source-tree delta;
-- the brokered evidence action, exact docs evidence binding, and ancestry from
-  the allocation docs snapshot;
-- the host-run check command identity, exact checked source commit, exit status,
-  bounded stdout/stderr identities, and containment identity.
+1. The exact frozen declaration, current workflow, and adopted trusted sequence-8 methodology/runtime bindings.
+2. A legitimate spawned (not inline) Implementation allocation through the configured production registered-provider adapter, with host-observed readiness and managed process provenance, not a fixture-injected execution or merely a profile name.
+3. A valid accepted semantic implementation-handoff for that execution. Provider launch settings and recorded enforcement are distinguished from concrete provider attestation. Codex can enforce its model/effort selector but does not attest concrete model identity; unavailable attestation is not invented or made an impossible prerequisite.
+4. The allocation's exact source/docs Git snapshot pair and a descended candidate commit containing a real source-tree change; the immutable initial baseline and final candidate are distinct.
+5. The successful authorized brokered manifest.md evidence action and exact docs checkpoint, descended from the allocation's docs snapshot. Direct worker docs writes, unrelated commits and stale docs evidence cannot substitute.
+6. A host-run check of both the immutable initial source commit and exact final source candidate, using the fixed declared Node test target. The baseline must fail for the expected missing behavior and the final candidate must pass. The host records actual bounded exits/output identities, not the worker's assertion about tests.
 
-The host runs the frozen check in a fresh disposable checkout of the exact
-source candidate, under existing containment, with no credentials, Git hooks,
-or writable project/docs mounts. The check is not a generic worker command
-endpoint. It exists solely to execute the one committed command of this
-declared obligation after the exact qualifying handoff.
+Both checks use disposable source checkouts with the existing host containment machinery, no mounted production Git credentials, no writable application/docs roots, no network permission, bounded runtime/output and process cleanup. This is ordinary bounded code execution inside a test fixture, **not** a claim of absolute security or a new containment architecture.
 
-The host derives all record fields from canonical allocation, process, result,
-action, Git, and check facts. A worker statement that a check passed, or a human
-statement that a smoke occurred, has no authority to create the record.
+Successful completion-smoke.json is a public-safe host-generated docs artifact. It binds declaration, workflow, runtime/methodology identities, grants, execution, source/docs repositories and commit lineages, evidence action, check results and content identities. It contains no secrets, private evaluator material or raw unbounded logs.
 
-The host commits the public-safe record in the docs repository through the
-existing host-owned local checkpoint pattern. It does not push or publish.
+The host checkpoints that artifact locally in docs, validates its exact committed identity, and only then records the canonical completion-smoke-recorded event. Partial checkpoint failures must not create a successful event. A failed check or invalid prerequisite produces an explicit bounded, non-satisfying completion-attempt record. Repeated finalization of the same handoff must be idempotent and must not create conflicting success records. No remote push occurs.
 
-### 3. Sequence-8 Outcome gate
+The check can be implemented as a narrowly triggered post-handoff host operation using existing host action/checkpoint primitives. There is no requirement to expose an extra generic API or worker command.
 
-The sequence-8 policy adds a conditional eligibility branch:
+### 3. Outcome enforcement and explicit exceptions
 
-- no completion-obligation-declared event: retain the existing Outcome
-  predicate unchanged;
-- declared split-coding-smoke obligation: require a current,
-  identity-valid completion-smoke-recorded event bound to the declaration
-  before Outcome allocation and before STANDARD Outcome recording.
+For a sequence-8 workflow **without** a completion-obligation-declared event, preserve existing Outcome eligibility and both completion modes.
 
-The sequence-8 Outcome contract receives declaration and completion-record
-identities as inputs when present. Its artifact cites them. The host record,
-not the Outcome worker, establishes their relationship.
+For a sequence-8 workflow **with** a declared obligation:
 
-### 4. Sequence-7 certification closeout
+- A STANDARD Outcome requires a successful, current completion-smoke-recorded event bound to the same declaration, workflow, adopted authority and **latest accepted Implementation handoff**. The host revalidates those bindings before both Outcome allocation where applicable and terminal STANDARD outcome recording. Mere existence of an old matching event is insufficient.
+- The existing PROCESS_EXCEPTION path remains available **only under its existing explicit authorization and evidence requirements**. It may truthfully close an incomplete or exceptional workflow when legitimate, including when the smoke is missing or unsuccessful. It must identify the unfulfilled smoke obligation, its reason and exact human/process-exception evidence. It must never mark the smoke satisfied, create completion-smoke-recorded, or make a STANDARD completion claim.
+- A missing smoke must not create an automatic process exception, and the exception must not bypass independently required human acceptance or other existing authority predicates.
 
-The certification workflow for this spike remains governed by sequence 7.
-After its independent PASS, promotion, As-Built and human acceptance, it may
-record the existing sequence-7 STANDARD Outcome only on the existing
-sequence-7 conditions.
+Since eligibility is decided before the Outcome worker chooses its completion mode, the implementation must preserve a possible authorized PROCESS_EXCEPTION allocation while rejecting any STANDARD result that lacks current completion proof. Test both allocation and result/transition enforcement.
 
-Its Outcome must truthfully state that:
+The Outcome contract accepts the declaration/record identities when present; a successful STANDARD artifact cites them. In PROCESS_EXCEPTION, the artifact cites the declaration and outstanding obligation plus exception authority instead. Only the trusted host validates bindings. Avoid a general predicate-language extension if one narrow checked completion rule suffices.
 
-- the grant is pinned to sequence 7;
-- sequence-8 smoke enforcement is not applicable to that historical workflow;
-- adoption is forward-only; and
-- a distinct fresh sequence-8 workflow is required to exercise the obligation.
+### 4. Predecessor-pinned certification closeout
 
-It must not claim that a sequence-8 predicate governed its closeout, nor cite
-the historical experiment as post-adoption proof.
+The 015a certification workflow completes under trusted sequence-7 authority. Its Outcome must state that its own grant remains sequence 7, sequence-8 smoke enforcement is not retroactive, and adoption plus a fresh sequence-8 pilot are distinct later actions.
 
-## Acceptance criteria
+The certification's STANDARD/PROCESS_EXCEPTION choice must be made under the existing sequence-7 requirements. Neither mode claims that the subsequent real smoke has already happened. Explicit sequence-8 adoption occurs only after all existing trusted-N promotion requirements have been independently met.
 
-| ID | Criterion |
+## Pre-adoption acceptance criteria
+
+| ID | Required property |
 | --- | --- |
-| **BC01** | Every mandatory pre-adoption criterion is independently verifiable under trusted sequence 7. No required evidence depends on sequence-8 authority, a post-adoption grant, or a real post-adoption smoke. Evaluator Prepare must stop before freeze if this is false. |
-| **BC02** | A completion obligation is accepted only from the committed, closed declaration artifact and exact docs binding. Its absence preserves historical workflow behavior. |
-| **BC03** | A successful record requires a genuine registered-provider Implementation allocation, provider confirmation, accepted semantic handoff, source candidate ancestry and a non-empty source change; fixture, inline, prose-only and fake-provider substitutes are refused. |
-| **BC04** | A successful record requires the bounded host-brokered docs evidence action and a descended docs checkpoint. Direct worker docs writes, stale docs HEAD and unrelated docs commits cannot substitute. |
-| **BC05** | The host runs the exact declared check against a disposable checkout of the exact source candidate under credential-free containment. Non-zero exit, command drift, checkout drift, output truncation or containment failure prevents a successful record. |
-| **BC06** | The completion record binds the adopted methodology/runtime identity, obligation, grants, semantic handoff, source/docs Git lineages, evidence action and host check. It is host-derived and cannot be fabricated through worker prose or unchecked human assertion. |
-| **BC07** | A fresh sequence-8 declared workflow cannot allocate or record a STANDARD Outcome without its matching successful completion record. An undeclared sequence-8 workflow and every legacy workflow retain existing completion behavior. |
-| **BC08** | Adoption is non-retroactive: a pre-adoption sequence-7 grant remains sequence 7, and its truthful closeout neither claims nor receives sequence-8 enforcement. A fresh grant after adoption binds sequence 8. |
-| **BC09** | All original 015 verification, implementation, experimental and review evidence remains immutable. Historical experimental smoke can be used only as non-authoritative design or deterministic-fixture evidence. |
-| **BC10** | The candidate introduces no second evaluator, trust authority, workflow engine, generic arbitrary-command surface, remote publication power, or containment rewrite. |
+| **BC01** | Bootstrap closure: every required certification criterion has an evidence path available under trusted sequence 7; no real post-adoption smoke or sequence-8 authority is required for PASS. |
+| **BC02** | Declaration is closed, committed, bound to the frozen docs/workflow context and recorded only through host Brief-freeze authority. Missing declarations preserve legacy behavior; invalid or late declarations cannot silently change scope. |
+| **BC03** | Completion success requires host-observed production registered-provider spawned Implementation, readiness/managed-process facts, accepted semantic handoff, exact source/docs snapshot and nonempty source delta. Selector enforcement is not confused with unavailable Codex model attestation; fixture/inlined/prose-only evidence fails closed. |
+| **BC04** | Only the authorized brokered manifest.md action and exact descended docs checkpoint satisfy docs evidence; direct writes, stale checkpoints or mismatched origins do not. |
+| **BC05** | The narrow contained Node test checks an initially failing frozen baseline and a passing exact final commit, recording bounded exit/output identities. Failed check, wrong target/commit, containment failure or evidence drift cannot produce success. |
+| **BC06** | Host-derived record and event bind current declaration, workflow, candidate, trusted methodology/runtime, grants, semantic result, Git lineages, brokered evidence and checks. Forgery, stale handoffs, partial checkpoints and duplicate finalization fail closed or remain idempotent. |
+| **BC07** | A sequence-8 obligated workflow cannot allocate/finalize STANDARD Outcome without its **current** valid record. Undeclared and historical workflows preserve existing eligibility. |
+| **BC08** | Explicitly authorized PROCESS_EXCEPTION remains possible without fabricating the smoke. It records outstanding obligations, never becomes STANDARD, and does not bypass other existing gates. |
+| **BC09** | A sequence-7 certification workflow remains sequence 7 after trust adoption; a fresh post-adoption grant resolves sequence 8. No retroactive policy or evidence reassignment occurs. |
+| **BC10** | Technical properties of Spike 015 AC01–AC13 remain independently supported for the exact successor candidate through trusted-7 evaluator evidence, public boundary/regression tests and inspection. The original 015 frozen evaluator is not rewritten or represented as PASS. |
+| **BC11** | All historical Spike 015 verification, implementation, independent review and experimental evidence remains unchanged; no second evaluator, new trust authority, generic command interface, migration, remote publishing or containment rewrite is introduced. |
 
-## Bootstrap-closure proof
+## Bootstrap-closure and evidence feasibility
 
-| Criterion | Required evidence | Producing operation | Authority required to produce it | Authority available when evaluated | Lifecycle consumer |
-| --- | --- | --- | --- | --- | --- |
-| BC01 | Candidate tests and dependency audit | Deterministic test/inspection | Existing evaluator test authority | Sequence 7 | Sequence-7 evaluator verdict |
-| BC02 | Declaration acceptance/refusal tests | Candidate runtime under test | Existing evaluator test authority | Sequence 7 | Sequence-7 evaluator verdict |
-| BC03 | Synthetic ledgers, registered-adapter and Git fixture tests | Candidate runtime under test | Existing evaluator test authority | Sequence 7 | Sequence-7 evaluator verdict |
-| BC04 | Evidence action, stale docs and wrong-root tests | Candidate runtime under test | Existing evaluator test authority | Sequence 7 | Sequence-7 evaluator verdict |
-| BC05 | Disposable-checkout/contained-check tests | Candidate runtime under test | Existing evaluator test authority | Sequence 7 | Sequence-7 evaluator verdict |
-| BC06 | Tamper, fake record, prose-only and wrong-binding tests | Candidate runtime under test | Existing evaluator test authority | Sequence 7 | Sequence-7 evaluator verdict |
-| BC07 | Declared versus undeclared Outcome predicate tests | Candidate runtime under test | Existing evaluator test authority | Sequence 7 | Sequence-7 evaluator verdict |
-| BC08 | Forward-only adoption fixture | Existing adoption code plus candidate tests | Existing human adoption model and evaluator test authority | Sequence 7 | Sequence-7 evaluator verdict |
-| BC09 | Git/history inspection | Evaluator inspection | Repository-read and Git-inspect | Sequence 7 | Sequence-7 evaluator verdict |
-| BC10 | Diff/architecture inspection and regression tests | Evaluator inspection/test | Existing evaluator authority | Sequence 7 | Sequence-7 evaluator verdict |
+Every required pre-adoption criterion must be independently falsifiable with existing sequence-7 evaluation authority. The Design Map and Evaluator Prepare must map each to an explicit executable/inspection procedure before freeze.
 
-No mandatory row depends on a sequence-8 grant or on evidence that can only be
-created after sequence-8 adoption. The actual real-provider smoke is a
-post-adoption completion obligation, not a pre-adoption PASS prerequisite.
+| Criteria | Pre-adoption evidence | Available authority |
+| --- | --- | --- |
+| BC01, BC09 | Dependency audit and fixture showing pinned predecessor grants versus newly bound successor grants | Existing sequence-7 evaluator and 014k trust fixture semantics |
+| BC02 | Committed-docs, freeze and malformed/late declaration tests | Existing Git/host integration test authority |
+| BC03–BC04 | Supervised-provider fixture and real host/kernel, Git, grant and brokered-action boundary tests; missing attestation and fake launch negative cases | Existing sequence-7 evaluator tests running candidate software as non-authoritative subject |
+| BC05–BC06 | Contained disposable baseline/final check, tamper, partial checkpoint, idempotence and lineage tests | Existing sequence-7 local tests/host-fixture authority |
+| BC07–BC08 | Outcome eligibility, latest-handoff, STANDARD rejection and authorized PROCESS_EXCEPTION tests | Existing sequence-7 evaluator testing proposed policy as candidate software |
+| BC10 | Independent technical criterion matrix covering unchanged AC01–AC13 properties, with focused regression execution and inspection | Existing sequence-7 evaluator authority; not the old 015 evaluator verdict |
+| BC11 | Git/history inspection, full regression and scope review | Existing sequence-7 evaluator authority |
 
-## Required implementation changes
+No procedure uses candidate-created authority as the source of the trusted-7 verdict. Candidate policy/host behaviour is exercised only as **software under test**. Real sequence-8 adoption and the live post-adoption smoke happen later, under separate authority.
 
-Keep the candidate coherent and narrow:
+If any mandatory evaluation procedure requires sequence-8 trust, an actual post-adoption completion event or an inadmissible private 015 artifact, stop preparation before freeze. Do not solve the circularity by changing the meaning of a result after the fact.
 
-- add typed completion-obligation, completion-attempt and completion-record
-  models;
-- add host validation/recording of the committed declaration;
-- add the host-owned post-handoff contained check runner, reusing existing
-  disposable-workspace and containment mechanisms;
-- derive and commit the public-safe completion record through the workflow/docs
-  checkpoint path;
-- add the sequence-8 conditional Outcome predicate, contract inputs and
-  artifact validation;
-- extend methodology coherence validation only as needed to recognize the
-  conditional completion contract;
-- add deterministic tests for exact lineage, source delta, brokered docs
-  evidence, fake-provider refusal, command/check failure, tampering, legacy
-  workflows, sequence-7 pinning and fresh sequence-8 enforcement.
+## Bounded implementation
 
-Do not modify the original 015 candidate, original evaluator material, trusted
-history, historical ledgers, or the /tmp containment concern.
+Build on 1159f664; do not redesign the existing split-repository work.
 
-## Verification boundaries
+- Add only the typed frozen declaration, bounded completion-attempt and completion-record types.
+- Reuse existing Brief-freeze, host-owned evidence, Git checkpoint and governed execution seams to validate and record the declaration and actual smoke result.
+- Add only the fixture-specific, contained Node test check, with no general command launcher or dependency installer.
+- Add conditional host validation for current completion evidence at Outcome eligibility and STANDARD transition, with the existing PROCESS_EXCEPTION branch preserved.
+- Update the Outcome contract and coherence validation only as required for these exact semantics.
+- Add deterministic negative tests and regression coverage; preserve historical artifacts untouched.
 
-Trusted sequence-7 evaluation must use real Git repositories and the actual
-host/kernel seams for declaration binding, grant provenance, brokered evidence,
-local checkpoints and Outcome eligibility. It may use deterministic registered
-provider fixtures to establish candidate behavior. It must not require a live
-provider or actual adoption to establish BC01–BC10.
+Do not build a general approval system, new evaluator, new trust mechanism, configurable command-execution API, session backend, remote publisher or containment rewrite.
 
-The post-adoption smoke is separately required only after sequence 8 is
-trusted, in a fresh declared workflow. It must use a supported real provider
-and preserve the host completion record plus source/docs lineage.
+## Verification and completion sequence
 
-## Recommended governed execution sequence
+1. Human reviews this draft, then Brief Readiness under trusted sequence 7.
+2. Freeze a corrected brief and Design Map only after proving each criterion's pre-adoption evidence is executable under sequence 7.
+3. Prepare independent evaluation. Reject impossible private/procedural assumptions before freezing its revision.
+4. Implement one exact successor runtime/methodology candidate based on 1159f664.
+5. Trusted sequence 7 verifies both inherited technical properties (BC10) and completion semantics (BC01–BC09, BC11); independently PASS, then promote evidence and perform As-Built.
+6. Human acceptance, truthful sequence-7 Outcome by STANDARD or genuinely authorized PROCESS_EXCEPTION as appropriate; no post-adoption smoke claim.
+7. Separately authorize exact candidate adoption under existing trusted-methodology promotion requirements and append sequence 8 forward-only.
+8. Create a new, disposable split source/docs workflow under sequence 8, with its completion obligation committed before Brief freeze. Use a small Node test fixture with a genuinely failing baseline.
+9. After normal frozen-input prerequisites, execute **one** real contained supported-provider Implementation and accept its semantic handoff.
+10. Let the trusted host run the frozen baseline/final checks and commit the validated smoke record. Preserve every actual failure truthfully.
+11. Independently demonstrate that sequence-8 STANDARD Outcome requires the matching record, while a properly authorized PROCESS_EXCEPTION may close incomplete without claiming smoke success. A real Outcome is recorded only if its ordinary verification/promotion/acceptance prerequisites have also been satisfied.
 
-1. Draft this brief; run Brief Readiness under trusted sequence 7.
-2. Freeze the brief and Design Map only after the bootstrap-closure table is
-   mechanically checked.
-3. Prepare independent evaluation under sequence 7.
-4. Implement one sequence-8 candidate based on 1159f664.
-5. Verify under sequence 7; promote, create As-Built and obtain human
-   acceptance.
-6. Close the sequence-7 certification workflow truthfully under its existing
-   predicate.
-7. Use the existing explicit human adoption route to append sequence 8.
-8. Allocate a fresh sequence-8 workflow that declares split-coding-smoke.
-9. Run a real supported-provider Implementation against a disposable split
-   source/docs project.
-10. Let the host produce and checkpoint the completion record.
-11. Complete As-Built, acceptance and Outcome under sequence 8.
+The live pilot does not need another complete live multi-role methodology cycle merely to demonstrate this single gate. Its completion record is post-adoption operational proof; the sequence-7 certification Outcome is a separate historical fact.
 
 ## Explicit non-goals
 
-- Re-evaluating, changing or broadening Spike 015 AC01–AC13.
-- Treating the experimental smoke as production adoption or backdating it as a
-  completion record.
-- Migrating or reinterpreting grants, ledgers or Outcomes created under
-  sequence 7.
-- Arbitrary post-handoff command execution, another evaluator framework, a new
-  trust authority system, remote publication, or a containment rewrite.
-- Repairing the independent /tmp containment concern.
+- Rewriting original Spike 015 criteria, frozen evaluator revision, terminal results, workflow ledgers or experimental history.
+- Claiming an authoritative Spike 015 PASS from this successor.
+- Turning the old experimental smoke into post-adoption proof.
+- Changing the split-repository feature absent a confirmed inherited defect.
+- Building general-purpose code execution, installation, sandbox-security architecture or new provider attestation.
+- Disabling or automatically granting legitimate PROCESS_EXCEPTION authority.
+- Retroactive methodology migration, remote push or automatic trust promotion.
 
-## Freeze blocker
+## Freeze conditions
 
-No unresolved authority question blocks freeze if the Design Map preserves this
-boundary: the host check runner executes only the exact command committed in a
-validated declaration, only after a qualifying fresh sequence-8 Implementation
-handoff, and only in a disposable credential-free checkout. It is not exposed
-as a general worker or operator command facility.
+Before Brief freeze, establish:
 
-If that boundary cannot be implemented using the existing host containment and
-disposable-workspace substrate, stop before freeze and split that prerequisite
-into its own bootstrap-closed successor.
+1. Every mandatory pre-adoption criterion has an evidence procedure available with sequence-7 authority.
+2. The frozen declaration/check can be implemented through existing host/Git/containment machinery without a generalized runner.
+3. The Outcome policy can preserve legitimate PROCESS_EXCEPTION while rejecting unsupported STANDARD completion at both authorization and result transitions.
+4. The evaluator can independently test the inherited AC01–AC13 behavioural requirements against the exact successor candidate without depending on old private evaluator authority.
+5. The certification workflow's own sequence-7 closeout and the fresh sequence-8 smoke are explicitly distinct.
+
+If any of these conditions fails, return NOT_READY with the specific unsatisfied dependency. Do not patch around an unresolved authority cycle during implementation.
+
+**This is a draft brief only. It does not freeze acceptance semantics, allocate roles, authorize adoption, or claim the old 015 cycle passed.**
