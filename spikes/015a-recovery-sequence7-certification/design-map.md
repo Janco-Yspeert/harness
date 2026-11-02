@@ -1,6 +1,6 @@
-# Design Map — Spike 015a (Bootstrap-Closed Completion Path)
+# Design Map — Spike 015a Recovery Sequence 7 Certification
 
-Bound brief: `spike.md` `sha256:eac9f72546fa65ab722dbcfd6b7d0d47c0787c1e6cd6cd66b5c570913b87baaa` (verified; committed at `eda5ebe983a4c5a37f8c4134a2abb87c6cd5c034`). The host-issued frozen binding is authoritative despite the brief's retained draft-status prose. The non-blocking Brief Readiness clarifications are settled below without changing product behavior or scope.
+Bound brief: `spike.md` `sha256:eac9f72546fa65ab722dbcfd6b7d0d47c0787c1e6cd6cd66b5c570913b87baaa`, committed at `df46058ebfb19d4e820c29357f215f40ead391b3`. The host-issued frozen binding is authoritative despite the brief's retained draft-status prose. This map incorporates the recorded non-blocking Brief Readiness clarifications without changing product behavior or scope.
 
 ## Shared contracts
 
