@@ -432,6 +432,7 @@ export class GovernedProviderRun {
         relay: { port: address.port, key: this.#relayKey },
         nodePath: process.execPath,
         workerToolsPath: WORKER_TOOLS_PATH,
+        mcpToolSet: "worker",
         system: instructions.system,
         prompt: instructions.prompt,
         ...launch.plan,

@@ -48,6 +48,7 @@ export type ProviderEvent =
     }
   | { kind: "tools-unavailable"; detail: string }
   | { kind: "tool-confirmed"; tool: string }
+  | { kind: "authentication-failed"; detail: string }
   | { kind: "permission-denied"; detail: string }
   | { kind: "rate-limited"; detail: string }
   | { kind: "provider-error"; detail: string };
@@ -61,6 +62,9 @@ export interface AdapterCommandInput {
   readonly relay: { port: number; key: string };
   readonly nodePath: string;
   readonly workerToolsPath: string;
+  // The host chooses the only MCP tool vocabulary a launch may receive.
+  // Readiness is deliberately not a worker protocol operation.
+  readonly mcpToolSet: "worker" | "readiness";
   readonly system: string;
   readonly prompt: string;
   readonly model?: string;
@@ -128,13 +132,15 @@ const claude: ProviderAdapter = {
     }
   },
   command(input) {
+    const workerOperations =
+      input.mcpToolSet === "readiness" ? ["readiness"] : WORKER_OPERATIONS;
     return buildGovernedClaudeCommand({
       workspaces: input.workspaces.map((workspace) => ({
         path: workspace.path,
         mode: workspace.mode,
       })),
       capabilities: input.shape.capabilities,
-      workerOperations: WORKER_OPERATIONS,
+      workerOperations,
       scratch: input.scratch,
       mcpConfig: JSON.stringify({
         mcpServers: {
@@ -190,7 +196,17 @@ const claude: ProviderAdapter = {
         });
       }
     }
-    if (event.error === "rate_limit")
+    if (
+      event.error === "authentication_error" ||
+      event.error === "authentication_failed" ||
+      event.error === "unauthorized" ||
+      event.error === "invalid_api_key"
+    )
+      events.push({
+        kind: "authentication-failed",
+        detail: "provider authentication failed",
+      });
+    else if (event.error === "rate_limit")
       events.push({ kind: "rate-limited", detail: "provider rate limit" });
     else if (typeof event.error === "string" && event.type === "assistant")
       events.push({ kind: "provider-error", detail: "provider API error" });

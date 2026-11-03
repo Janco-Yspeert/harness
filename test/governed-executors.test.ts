@@ -43,6 +43,7 @@ import {
 } from "../src/executors/protocol.ts";
 import { handleMessage } from "../src/executors/worker-tools.ts";
 import { startHarnessHost } from "../src/index.ts";
+import { readinessFailureFromEvent } from "../src/kernel/host.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
 import { ExecutionKernel } from "../src/kernel/execution.ts";
 import { appendLedger, identity, readLedger } from "../src/kernel/ledger.ts";
@@ -1749,6 +1750,7 @@ void test("AC08: the versioned worker protocol is typed, provider-neutral and ca
     relay: { port: 40000, key: "relay-key" },
     nodePath: "/usr/bin/node",
     workerToolsPath: "/repo/src/executors/worker-tools.ts",
+    mcpToolSet: "worker" as const,
     system: "system",
     prompt: "prompt",
   };
@@ -1791,6 +1793,7 @@ void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is l
     relay: { port: 40000, key: "relay-key" },
     nodePath: "/usr/bin/node",
     workerToolsPath: "/repo/src/executors/worker-tools.ts",
+    mcpToolSet: "worker" as const,
     system: "system",
     prompt: "prompt",
   };
@@ -1798,6 +1801,28 @@ void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is l
   const claudeArgs = ADAPTERS.claude.command(input);
   assert.ok(!claudeArgs.includes("--safe-mode"));
   assert.ok(claudeArgs.includes("--strict-mcp-config"));
+  const ordinaryAllowed = new Set(
+    (claudeArgs[claudeArgs.indexOf("--allowedTools") + 1] ?? "").split(","),
+  );
+  assert.ok(ordinaryAllowed.has("mcp__harness__assignment"));
+  assert.ok(!ordinaryAllowed.has("mcp__harness__readiness"));
+  const readinessArgs = ADAPTERS.claude.command({
+    ...input,
+    mcpToolSet: "readiness",
+  });
+  const readinessAllowed = new Set(
+    (readinessArgs[readinessArgs.indexOf("--allowedTools") + 1] ?? "").split(
+      ",",
+    ),
+  );
+  assert.ok(readinessAllowed.has("mcp__harness__readiness"));
+  for (const operation of [
+    "assignment",
+    "submitResult",
+    "requestAction",
+    "requestHuman",
+  ])
+    assert.ok(!readinessAllowed.has(`mcp__harness__${operation}`));
   // Codex declines unapproved MCP calls under approval_policy="never"; only
   // the Harness server is pre-approved, and no sandbox setting widens.
   const codexArgs = ADAPTERS.codex.command(input);
@@ -1837,6 +1862,38 @@ void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is l
       kind: "tools-unavailable",
       detail: "Harness worker tool server is not connected (unknown)",
     },
+  );
+  assert.deepEqual(
+    ADAPTERS.claude.parse(
+      JSON.stringify({ type: "assistant", error: "authentication_error" }),
+    ),
+    [
+      {
+        kind: "authentication-failed",
+        detail: "provider authentication failed",
+      },
+    ],
+  );
+  assert.equal(
+    readinessFailureFromEvent({
+      kind: "permission-denied",
+      detail: "provider denied tool mcp__harness__readiness",
+    }),
+    "provider-permission-denied",
+  );
+  assert.equal(
+    readinessFailureFromEvent({
+      kind: "authentication-failed",
+      detail: "provider authentication failed",
+    }),
+    "authentication-failure",
+  );
+  assert.equal(
+    readinessFailureFromEvent({
+      kind: "tools-unavailable",
+      detail: "Harness worker tool server is not connected (absent)",
+    }),
+    "required-connectivity-tool-failure",
   );
   assert.deepEqual(
     ADAPTERS.codex.parse(

@@ -6,8 +6,11 @@ import test, { type TestContext } from "node:test";
 
 import { ExecutionKernel } from "../src/kernel/execution.ts";
 import { contentId } from "../src/kernel/ledger.ts";
+import { authorityBasis } from "../src/kernel/resolver.ts";
 import type {
+  Data,
   ExecutorProfile,
+  LedgerEvent,
   Project,
   RoleContract,
   RoleGrant,
@@ -542,6 +545,88 @@ void test("014l required test 22: human operational retry binds exact exhaustion
       exhausted: "wrong",
       count: 1,
     }),
+  );
+});
+
+void test("015a: an operational retry retains its exact exhausted launch intent", () => {
+  const fact: LedgerEvent = {
+    schemaVersion: 1,
+    id: "frozen-design",
+    at: "2026-11-03T00:00:00.000Z",
+    transition: "design-map-frozen",
+    evidence: { identity: "sha256:design" },
+  };
+  const before = authorityBasis([fact]);
+  const originalGrant = grant({ authorityBasis: before });
+  const original = deriveLaunchIntent({
+    workflowScope: "work",
+    grant: originalGrant,
+    mode: "spawned",
+    shape: deriveExecutionShape(originalGrant, profile, "spawned"),
+    runtimeGeneration: "runtime",
+  });
+  const retry: LedgerEvent = {
+    schemaVersion: 1,
+    id: "retry-authority",
+    at: "2026-11-03T00:01:00.000Z",
+    transition: "kernel.retry-authority",
+    evidence: {
+      workflowGrant: originalGrant.workflowGrant,
+      kind: "operational",
+      scope: original,
+      exhausted: operationalExhaustedIdentity(original),
+      count: 1,
+    },
+  };
+  const after = authorityBasis([fact, retry]);
+  assert.equal(after, before);
+  const retriedGrant = grant({ authorityBasis: after });
+  const retried = deriveLaunchIntent({
+    workflowScope: "work",
+    grant: retriedGrant,
+    mode: "spawned",
+    shape: deriveExecutionShape(retriedGrant, profile, "spawned"),
+    runtimeGeneration: "runtime",
+  });
+  assert.equal(retried, original);
+
+  const attempts: LedgerEvent[] = [1, 2, 3, 4].map((ordinal) => ({
+    schemaVersion: 1 as const,
+    id: `attempt-${String(ordinal)}`,
+    at: "2026-11-03T00:00:00.000Z",
+    transition: "kernel.launch-attempt",
+    evidence: failedAttempt(original, ordinal) as unknown as Data,
+  }));
+  assert.deepEqual(operationalRetryAllowance([...attempts, retry], original), {
+    used: 4,
+    automaticRemaining: 0,
+    humanRemaining: 1,
+  });
+  const fifth: LedgerEvent = {
+    schemaVersion: 1 as const,
+    id: "attempt-5",
+    at: "2026-11-03T00:02:00.000Z",
+    transition: "kernel.launch-attempt",
+    evidence: failedAttempt(original, 5) as unknown as Data,
+  };
+  assert.deepEqual(
+    operationalRetryAllowance([...attempts, retry, fifth], original),
+    { used: 5, automaticRemaining: 0, humanRemaining: 0 },
+  );
+
+  const changedInput = grant({
+    authorityBasis: after,
+    inputs: { candidate: "sha256:different" },
+  });
+  assert.notEqual(
+    deriveLaunchIntent({
+      workflowScope: "work",
+      grant: changedInput,
+      mode: "spawned",
+      shape: deriveExecutionShape(changedInput, profile, "spawned"),
+      runtimeGeneration: "runtime",
+    }),
+    original,
   );
 });
 

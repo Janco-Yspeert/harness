@@ -74,6 +74,7 @@ import {
   type ReadinessProbeInput,
   type ReadinessProbeResult,
 } from "./orchestration.ts";
+import type { ProviderEvent } from "../executors/adapters.ts";
 import type {
   Data,
   DiagnosticCategory,
@@ -133,12 +134,24 @@ function operationalFailure(error: unknown): OperationalFailureClass {
   const category = error instanceof HostRefusal ? error.category : undefined;
   if (category === "provider-not-installed" || category === "no-adapter")
     return "provider-unavailable";
-  if (category === "permission-denied") return "authentication-failure";
+  if (category === "permission-denied")
+    return "pre-allocation-readiness-failure";
   if (category === "provider-config-invalid")
     return "launch-shape-incompatibility";
   return "pre-allocation-readiness-failure";
 }
-async function runProviderReadiness(input: {
+export function readinessFailureFromEvent(
+  event: ProviderEvent,
+): OperationalFailureClass | undefined {
+  if (event.kind === "authentication-failed") return "authentication-failure";
+  if (event.kind === "permission-denied") return "provider-permission-denied";
+  if (event.kind === "tools-unavailable")
+    return "required-connectivity-tool-failure";
+  if (event.kind === "provider-error" || event.kind === "rate-limited")
+    return "pre-allocation-readiness-failure";
+  return undefined;
+}
+export async function runProviderReadiness(input: {
   shape: CanonicalExecutionShape;
   adapter: ProviderAdapter;
   program: string;
@@ -174,6 +187,7 @@ async function runProviderReadiness(input: {
       relay: { port: 9, key: "readiness" },
       nodePath: process.execPath,
       workerToolsPath: READINESS_TOOLS_PATH,
+      mcpToolSet: "readiness",
       system:
         "HARNESS_READINESS_V1. Call the Harness readiness tool exactly once, perform a harmless computation, then return.",
       prompt:
@@ -223,19 +237,13 @@ async function runProviderReadiness(input: {
           for (const event of input.adapter.parse(line)) {
             if (event.kind === "confirmed" && input.adapter.id === "claude")
               toolConnected = true;
+            const eventFailure = readinessFailureFromEvent(event);
             if (event.kind === "tools-unavailable") {
-              failure = "required-connectivity-tool-failure";
               toolConnected = false;
             }
             if (event.kind === "tool-confirmed" && event.tool === "readiness")
               toolConnected = true;
-            if (event.kind === "permission-denied")
-              failure = "authentication-failure";
-            if (
-              event.kind === "provider-error" ||
-              event.kind === "rate-limited"
-            )
-              failure = "pre-allocation-readiness-failure";
+            if (eventFailure) failure = eventFailure;
           }
       });
       child.once("error", () => {

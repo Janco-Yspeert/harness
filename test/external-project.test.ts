@@ -1189,6 +1189,7 @@ function codexInput(
     relay: { port: 40000, key: "relay-key" },
     nodePath: "/usr/bin/node",
     workerToolsPath: "/repo/src/executors/worker-tools.ts",
+    mcpToolSet: "worker" as const,
     system: "system",
     prompt: "prompt",
   };

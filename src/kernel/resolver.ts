@@ -72,6 +72,13 @@ const MECHANICS = new Set([
   "kernel.diagnostic",
   "kernel.executor-confirmed",
   "kernel.prepared-observation",
+  // Retry accounting is bound to an already-derived launch intent. It is not
+  // semantic authority for a different role, input, execution shape, or
+  // contract; including it here would change the identity it authorizes.
+  "kernel.launch-attempt",
+  "kernel.readiness-consumed",
+  "kernel.retry-authority",
+  "kernel.retry-exhausted",
 ]);
 export function authorityBasis(events: LedgerEvent[]): string {
   return contentId(
