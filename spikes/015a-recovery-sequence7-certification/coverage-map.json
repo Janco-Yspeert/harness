@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "spike": "015a-recovery-sequence7-certification",
+  "evaluationRequirements": "sha256:0d370ed19e102d40d89e0f010016383bfa7f50b801bae7bfbe4fbe2a90623f8f",
+  "readiness": {
+    "skill": "evaluator",
+    "skillVersion": 14,
+    "evaluatorRevision": "001",
+    "evaluatorRevisionIdentity": "sha256:2d8883ce53a17b9e04d6cf4eb2a6f530ca8f1219fb824f2fd15314978c224105",
+    "privateInventoryIdentity": "sha256:d8909283670e222339e2a9d28c4677766fae36749e6ca31c310426815e109ab4",
+    "validatorResultBinding": "sha256:bee7bbd77b574dc3fae0de33acc84ab5d3b42f7f92ccdbedad09a507cbb617fe",
+    "integrityValidation": "PASS",
+    "criterionRecordCount": 11
+  },
+  "criteria": [
+    {
+      "id": "BC01",
+      "frozenAuthority": "spike.md BC01; Bootstrap-closure table; design-map.md Invariants 'certification PASS never depends on sequence-8'",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E-TR1", "M-SCOPE"],
+      "sufficiency": "Git inspection proves the trusted history is untouched at sequence 7 and no adoption surface is added to workers, while the scope review confirms no evaluation procedure needs sequence-8 authority or a post-adoption event; together they show the PASS path is bootstrap-closed."
+    },
+    {
+      "id": "BC02",
+      "frozenAuthority": "spike.md BC02; design-map.md Frozen declaration",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-SUITE", "M-TESTS"],
+      "sufficiency": "The declaration contract is host behavior with no public import seam, so the full suite must pass and the review must find tests asserting closed shape, brief-freeze recording, fail-closed malformed and late declarations, and legacy behavior when absent."
+    },
+    {
+      "id": "BC03",
+      "frozenAuthority": "spike.md BC03; design-map.md Provider evidence boundary",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-SUITE", "M-TESTS"],
+      "sufficiency": "Spawned-provider provenance is only observable through host facts at the adapter boundary; the suite must pass and the review must find negative tests for inline, fixture-injected, profile-only and missing readiness, empty delta, and unfabricated Codex attestation."
+    },
+    {
+      "id": "BC04",
+      "frozenAuthority": "spike.md BC04; design-map.md Completion finalization and Invariants on docs evidence",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-SUITE", "M-TESTS"],
+      "sufficiency": "Docs-evidence rules (brokered action, descended checkpoint, origins) are verified by passing suite plus reviewed tests that refuse direct writes, stale checkpoints and mismatched origins."
+    },
+    {
+      "id": "BC05",
+      "frozenAuthority": "spike.md BC05; design-map.md Bounded check result",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-SUITE", "M-TESTS"],
+      "sufficiency": "Baseline exit 1 and final exit 0 semantics and each non-satisfying outcome are asserted by candidate tests whose presence and passing are established by the suite run and review."
+    },
+    {
+      "id": "BC06",
+      "frozenAuthority": "spike.md BC06; design-map.md Attempt and success records",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-SUITE", "M-TESTS"],
+      "sufficiency": "Record binding, forgery refusal, partial-checkpoint non-satisfaction, serialized idempotent finalization and supersession are asserted by candidate tests, established by the suite run and review."
+    },
+    {
+      "id": "BC07",
+      "frozenAuthority": "spike.md BC07; design-map.md Current completion and Outcome; Outcome contract boundary",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-SUITE", "M-TESTS"],
+      "sufficiency": "STANDARD rejection without a current record at both allocation and transition, the contract versioned above 5, and unchanged undeclared workflows are asserted by candidate tests, established by the suite run and review."
+    },
+    {
+      "id": "BC08",
+      "frozenAuthority": "spike.md BC08; design-map.md Current completion and Outcome; Invariants on PROCESS_EXCEPTION",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-SUITE", "M-TESTS"],
+      "sufficiency": "Preserved authorized PROCESS_EXCEPTION that records the outstanding obligation without success or STANDARD claims is asserted by candidate tests, established by the suite run and review."
+    },
+    {
+      "id": "BC09",
+      "frozenAuthority": "spike.md BC09; design-map.md Outcome contract boundary and Invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E-TR1", "R-SUITE", "M-TESTS", "M-SCOPE"],
+      "sufficiency": "Trusted history stays at sequence 7 by Git inspection, a candidate test must show a sequence-7 grant remaining sequence 7 after fixture adoption while a fresh grant resolves sequence 8, and the scope review confirms the sequence-7 Outcome contract is unchanged."
+    },
+    {
+      "id": "BC10",
+      "frozenAuthority": "spike.md BC10 and Existing evidence section; evaluation-requirements EA6",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["R-SUITE", "M-AC015"],
+      "sufficiency": "The independent matrix maps each public Spike 015 AC01-AC13 to a passing asserting candidate test or inspection note for the exact candidate, with no reliance on the old private evaluator or review verdict; the suite run shows no introduced regression."
+    },
+    {
+      "id": "BC11",
+      "frozenAuthority": "spike.md BC11 and Explicit non-goals; design-map.md Invariants",
+      "mode": "COMPOSITE",
+      "required": true,
+      "procedures": ["E-TR1", "R-SUITE", "M-SCOPE"],
+      "sufficiency": "Git inspection proves 015 history and baseline tests are intact, the full regression shows no introduced failure, and the diff review confirms no generic runner, installer, network, remote push, trust mechanism, evaluator or containment rewrite."
+    }
+  ]
+}
