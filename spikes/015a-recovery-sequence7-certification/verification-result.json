@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "commit": "62e78d481c061881c9aa971d9b74512ca18174b8",
+  "evaluatorRevision": "001",
+  "attempt": 1,
+  "result": "BLOCKED",
+  "classification": "INFRASTRUCTURE_FAILURE",
+  "coverageResults": {
+    "BC01": "NOT_ADJUDICATED",
+    "BC02": "NOT_ADJUDICATED",
+    "BC03": "NOT_ADJUDICATED",
+    "BC04": "NOT_ADJUDICATED",
+    "BC05": "NOT_ADJUDICATED",
+    "BC06": "NOT_ADJUDICATED",
+    "BC07": "NOT_ADJUDICATED",
+    "BC08": "NOT_ADJUDICATED",
+    "BC09": "NOT_ADJUDICATED",
+    "BC10": "NOT_ADJUDICATED",
+    "BC11": "NOT_ADJUDICATED"
+  },
+  "notes": "All frozen input identities matched. The frozen Git-inspection case passed. The mandatory repository check run (typecheck, lint, format:check, test) could not execute: the evaluation environment has no installed dependencies and no network access to install them, so the suite fails at module load (missing package 'ws') and the type, lint and format tools are unavailable. This is not attributable to the candidate. The review procedures depend on a valid suite run and were not adjudicated; no coverage was fabricated. Retry requires an evaluation environment with the repository's installed dependencies."
+}

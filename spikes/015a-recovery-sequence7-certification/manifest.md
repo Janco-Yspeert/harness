@@ -65,3 +65,11 @@
   workflow ledgers were not inspected. Unrelated worktree and runtime residue
   was preserved and excluded from the candidate.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-11-03 — Evaluator Verify
+
+- Skill: evaluator, contract version 14, mode `verify`; attempt 1.
+- Inputs: candidate `62e78d481c061881c9aa971d9b74512ca18174b8`; evaluator revision `001`; all frozen brief, Design Map, requirements and evaluator identities matched.
+- Result: `succeeded`; verdict `BLOCKED`, classification `INFRASTRUCTURE_FAILURE`.
+- Checks: the Git-inspection case passed; the repository check run could not execute because the evaluation environment lacks installed dependencies and network access; review procedures not adjudicated. No promotion requested.
+- Measurement cutoff: immediately before this manifest update.
