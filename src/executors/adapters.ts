@@ -210,6 +210,27 @@ const claude: ProviderAdapter = {
       events.push({ kind: "rate-limited", detail: "provider rate limit" });
     else if (typeof event.error === "string" && event.type === "assistant")
       events.push({ kind: "provider-error", detail: "provider API error" });
+    // Claude emits an assistant message containing tool_use blocks when it
+    // actually invokes an MCP tool.  Initialization alone only proves that
+    // the server connected; readiness must observe this explicit call.
+    if (
+      event.type === "assistant" &&
+      event.message !== null &&
+      typeof event.message === "object"
+    ) {
+      const content = Array.isArray((event.message as Json).content)
+        ? ((event.message as Json).content as unknown[])
+        : [];
+      for (const item of content) {
+        if (item === null || typeof item !== "object") continue;
+        const block = item as Json;
+        if (
+          block.type === "tool_use" &&
+          block.name === `mcp__${GOVERNED_WORKER_TOOL_SERVER}__readiness`
+        )
+          events.push({ kind: "tool-confirmed", tool: "readiness" });
+      }
+    }
     if (event.type === "result") {
       const denials = Array.isArray(event.permission_denials)
         ? event.permission_denials

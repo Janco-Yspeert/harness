@@ -90,6 +90,32 @@ export interface ReadinessProbeResult {
   readonly state: "passed" | "failed";
   readonly effective?: EffectiveExecutionShape;
   readonly failure?: OperationalFailureClass;
+  // Public-safe operational facts for a material-free provider probe.  These
+  // deliberately exclude provider output and environment values: launch
+  // attempts are ledgered outside the provider containment boundary.
+  readonly diagnostic?: ReadinessDiagnostic;
+}
+
+export interface ReadinessDiagnostic {
+  readonly elapsedMs: number;
+  readonly exitCode: number | null;
+  readonly signal: string | null;
+  readonly timedOut: boolean;
+  readonly stderrBytes: number;
+  readonly phase:
+    | "completed"
+    | "provider-start"
+    | "provider-initialization"
+    | "provider-api"
+    | "provider-permission"
+    | "mcp-connection"
+    | "readiness-tool"
+    | "provider-termination"
+    | "timeout";
+  readonly mcpConnection: "connected" | "unavailable" | "unknown";
+  readonly readinessTool: "called" | "not-called";
+  readonly providerEvents: readonly string[];
+  readonly deniedTool: string | null;
 }
 
 export interface LaunchAttemptRecord {
@@ -111,6 +137,7 @@ export interface LaunchAttemptRecord {
   failure: OperationalFailureClass | null;
   effective: Data | null;
   readinessIdentity: string | null;
+  readinessDiagnostic?: ReadinessDiagnostic;
   consumed: boolean;
 }
 

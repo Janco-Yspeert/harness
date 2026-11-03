@@ -30,6 +30,7 @@ import {
   locateProvider,
   planLaunch,
   validateProductionExecutors,
+  type ProviderAdapter,
 } from "../src/executors/adapters.ts";
 import { locateContainment } from "../src/executors/containment.ts";
 import {
@@ -43,7 +44,12 @@ import {
 } from "../src/executors/protocol.ts";
 import { handleMessage } from "../src/executors/worker-tools.ts";
 import { startHarnessHost } from "../src/index.ts";
-import { readinessFailureFromEvent } from "../src/kernel/host.ts";
+import {
+  readinessFailureFromEvent,
+  readinessFailureIsRetryable,
+  mostSpecificReadinessFailure,
+  runProviderReadiness,
+} from "../src/kernel/host.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
 import { ExecutionKernel } from "../src/kernel/execution.ts";
 import { appendLedger, identity, readLedger } from "../src/kernel/ledger.ts";
@@ -1874,6 +1880,22 @@ void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is l
       },
     ],
   );
+  assert.deepEqual(
+    ADAPTERS.claude.parse(
+      JSON.stringify({
+        type: "assistant",
+        message: {
+          content: [
+            {
+              type: "tool_use",
+              name: "mcp__harness__readiness",
+            },
+          ],
+        },
+      }),
+    ),
+    [{ kind: "tool-confirmed", tool: "readiness" }],
+  );
   assert.equal(
     readinessFailureFromEvent({
       kind: "permission-denied",
@@ -1895,6 +1917,43 @@ void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is l
     }),
     "required-connectivity-tool-failure",
   );
+  assert.equal(
+    mostSpecificReadinessFailure(
+      "authentication-failure",
+      "pre-allocation-readiness-failure",
+    ),
+    "authentication-failure",
+  );
+  assert.equal(
+    readinessFailureIsRetryable("authentication-failure", {
+      elapsedMs: 1,
+      exitCode: 1,
+      signal: null,
+      timedOut: false,
+      stderrBytes: 0,
+      phase: "provider-api",
+      mcpConnection: "connected",
+      readinessTool: "not-called",
+      providerEvents: ["authentication-failed"],
+      deniedTool: null,
+    }),
+    false,
+  );
+  assert.equal(
+    readinessFailureIsRetryable("pre-allocation-readiness-failure", {
+      elapsedMs: 15_000,
+      exitCode: null,
+      signal: "SIGTERM",
+      timedOut: true,
+      stderrBytes: 0,
+      phase: "timeout",
+      mcpConnection: "unknown",
+      readinessTool: "not-called",
+      providerEvents: [],
+      deniedTool: null,
+    }),
+    true,
+  );
   assert.deepEqual(
     ADAPTERS.codex.parse(
       JSON.stringify({
@@ -1914,6 +1973,68 @@ void test("AC05/AC11: live-smoke defects stay fixed: the worker tool server is l
       },
     ],
   );
+});
+
+void test("readiness requires a completed readiness-tool call, not only Claude initialization", async () => {
+  const fixture = (lines: readonly string[]): ProviderAdapter => ({
+    id: "claude",
+    program: process.execPath,
+    capabilities: [],
+    model: { enforce: true, attest: true },
+    reasoning: { enforce: false, attest: false },
+    privateWorkspace: true,
+    nestedSandbox: false,
+    checkCapabilities() {},
+    command() {
+      return [
+        process.execPath,
+        "-e",
+        `console.log(${JSON.stringify(lines.join("\n"))})`,
+      ];
+    },
+    parse(line) {
+      if (line === "init")
+        return [
+          {
+            kind: "confirmed" as const,
+            model: "fixture",
+            reasoning: null,
+            version: null,
+          },
+        ];
+      if (line === "called")
+        return [{ kind: "tool-confirmed" as const, tool: "readiness" }];
+      return [];
+    },
+  });
+  const shape = {
+    provider: "claude",
+    profile: "fixture",
+    workspaces: [{ id: "source", mode: "read", exposure: "public" }],
+    capabilities: [],
+    isolation: [],
+    resultInterface: "fixture",
+    protected: false,
+  } as unknown as CanonicalExecutionShape;
+  const initializedOnly = await runProviderReadiness({
+    shape,
+    adapter: fixture(["init"]),
+    program: process.execPath,
+    profile: {},
+    plan: {},
+  });
+  assert.equal(initializedOnly.state, "failed");
+  assert.equal(initializedOnly.failure, "required-connectivity-tool-failure");
+  assert.equal(initializedOnly.diagnostic?.phase, "readiness-tool");
+  const called = await runProviderReadiness({
+    shape,
+    adapter: fixture(["init", "called"]),
+    program: process.execPath,
+    profile: {},
+    plan: {},
+  });
+  assert.equal(called.state, "passed", JSON.stringify(called));
+  assert.equal(called.diagnostic?.readinessTool, "called");
 });
 
 void test("AC05/AC11: a provider that cannot reach the Harness tools yields no result and a classified diagnostic", async (t) => {

@@ -71,6 +71,7 @@ import {
   shapeIdentity,
   type CanonicalExecutionShape,
   type OperationalFailureClass,
+  type ReadinessDiagnostic,
   type ReadinessProbeInput,
   type ReadinessProbeResult,
 } from "./orchestration.ts";
@@ -151,6 +152,47 @@ export function readinessFailureFromEvent(
     return "pre-allocation-readiness-failure";
   return undefined;
 }
+
+export function mostSpecificReadinessFailure(
+  current: OperationalFailureClass | undefined,
+  next: OperationalFailureClass | undefined,
+): OperationalFailureClass | undefined {
+  if (!next) return current;
+  // Claude may emit a terminal generic result error after the actionable
+  // authentication or permission event. Keep the actionable cause.
+  if (
+    current === "authentication-failure" ||
+    current === "provider-permission-denied" ||
+    current === "required-connectivity-tool-failure"
+  )
+    return current;
+  return next;
+}
+
+export function readinessFailureIsRetryable(
+  failure: OperationalFailureClass,
+  diagnostic?: ReadinessDiagnostic,
+): boolean {
+  // Credentials, permissions, the configured MCP server, and launch shape do
+  // not become healthy because we ask the identical question four times.
+  if (
+    failure === "authentication-failure" ||
+    failure === "provider-permission-denied" ||
+    failure === "required-connectivity-tool-failure" ||
+    failure === "provider-unavailable" ||
+    failure === "launch-shape-incompatibility"
+  )
+    return false;
+  // A provider API interruption, a startup timeout, or a process which died
+  // only after calling readiness can reasonably be transient.  The existing
+  // bounded retry allowance remains the upper bound.
+  return (
+    diagnostic?.phase === "timeout" ||
+    diagnostic?.phase === "provider-api" ||
+    diagnostic?.phase === "provider-termination" ||
+    diagnostic === undefined
+  );
+}
 export async function runProviderReadiness(input: {
   shape: CanonicalExecutionShape;
   adapter: ProviderAdapter;
@@ -215,19 +257,83 @@ export async function runProviderReadiness(input: {
       : { ...command, env: providerEnvironment(scratch) };
     const child = (input.spawnProvider ?? spawn)(launch.program, launch.args, {
       cwd: workspaces[0]?.path ?? scratch,
-      stdio: ["ignore", "pipe", "ignore"],
+      stdio: ["ignore", "pipe", "pipe"],
       env: launch.env,
     });
     return await new Promise<ReadinessProbeResult>((resolveProbe) => {
       let finished = false;
       let failure: OperationalFailureClass | undefined;
-      let toolConnected = false;
+      let mcpConnection: ReadinessDiagnostic["mcpConnection"] = "unknown";
+      let readinessTool: ReadinessDiagnostic["readinessTool"] = "not-called";
+      let stderrBytes = 0;
+      let exitCode: number | null = null;
+      let signal: string | null = null;
+      let timedOut = false;
+      let startFailed = false;
+      let exitObserved = false;
+      let stdoutEnded = false;
+      const startedAt = Date.now();
+      const providerEvents = new Set<string>();
+      let deniedTool: string | null = null;
       let pending = "";
+      const diagnostic = (
+        phase: ReadinessDiagnostic["phase"],
+      ): ReadinessDiagnostic => ({
+        elapsedMs: Date.now() - startedAt,
+        exitCode,
+        signal,
+        timedOut,
+        stderrBytes,
+        phase,
+        mcpConnection,
+        readinessTool,
+        providerEvents: [...providerEvents].sort(),
+        deniedTool,
+      });
       const finish = (result: ReadinessProbeResult): void => {
         if (finished) return;
         finished = true;
         clearTimeout(timer);
         resolveProbe(result);
+      };
+      const finishExit = (): void => {
+        if (!exitObserved || !stdoutEnded || finished) return;
+        if (
+          exitCode === 0 &&
+          signal === null &&
+          !failure &&
+          mcpConnection === "connected" &&
+          readinessTool === "called"
+        ) {
+          finish({
+            state: "passed",
+            effective: effectiveShape(input.shape),
+            diagnostic: diagnostic("completed"),
+          });
+          return;
+        }
+        const phase: ReadinessDiagnostic["phase"] = timedOut
+          ? "timeout"
+          : startFailed
+            ? "provider-start"
+            : failure === "authentication-failure" ||
+                providerEvents.has("rate-limited") ||
+                providerEvents.has("provider-error")
+              ? "provider-api"
+              : failure === "provider-permission-denied"
+                ? "provider-permission"
+                : mcpConnection === "unavailable"
+                  ? "mcp-connection"
+                  : readinessTool === "not-called"
+                    ? mcpConnection === "connected"
+                      ? "readiness-tool"
+                      : "provider-initialization"
+                    : "provider-termination";
+        finish({
+          state: "failed",
+          failure: failure ?? "required-connectivity-tool-failure",
+          diagnostic: diagnostic(phase),
+        });
       };
       child.stdout.on("data", (chunk: Buffer) => {
         pending += chunk.toString("utf8");
@@ -235,37 +341,55 @@ export async function runProviderReadiness(input: {
         pending = lines.pop() ?? "";
         for (const line of lines)
           for (const event of input.adapter.parse(line)) {
+            providerEvents.add(event.kind);
             if (event.kind === "confirmed" && input.adapter.id === "claude")
-              toolConnected = true;
+              mcpConnection = "connected";
             const eventFailure = readinessFailureFromEvent(event);
             if (event.kind === "tools-unavailable") {
-              toolConnected = false;
+              mcpConnection = "unavailable";
             }
             if (event.kind === "tool-confirmed" && event.tool === "readiness")
-              toolConnected = true;
-            if (eventFailure) failure = eventFailure;
+              readinessTool = "called";
+            if (event.kind === "permission-denied") {
+              const match =
+                /^provider denied tool (mcp__[a-z0-9_]{1,128})$/i.exec(
+                  event.detail,
+                );
+              deniedTool = match?.[1] ?? "unknown";
+            }
+            failure = mostSpecificReadinessFailure(failure, eventFailure);
           }
       });
+      child.stdout.once("end", () => {
+        stdoutEnded = true;
+        finishExit();
+      });
+      child.stderr.on("data", (chunk: Buffer) => {
+        // Do not persist provider stderr.  Its byte count is enough to tell an
+        // operator that the provider emitted diagnostics without leaking it.
+        stderrBytes += chunk.length;
+      });
       child.once("error", () => {
+        startFailed = true;
         finish({
           state: "failed",
           failure: "provider-unavailable",
+          diagnostic: diagnostic("provider-start"),
         });
       });
-      child.once("exit", (code, signal) => {
-        if (code === 0 && signal === null && !failure && toolConnected)
-          finish({ state: "passed", effective: effectiveShape(input.shape) });
-        else
-          finish({
-            state: "failed",
-            failure: failure ?? "required-connectivity-tool-failure",
-          });
+      child.once("exit", (code, exitSignal) => {
+        exitCode = code;
+        signal = exitSignal;
+        exitObserved = true;
+        finishExit();
       });
       const timer = setTimeout(() => {
+        timedOut = true;
         child.kill("SIGTERM");
         finish({
           state: "failed",
           failure: "pre-allocation-readiness-failure",
+          diagnostic: diagnostic("timeout"),
         });
       }, 15_000);
     });
@@ -1318,10 +1442,24 @@ export class GovernedHost {
                 ? (probeResult.effective as unknown as Data)
                 : null,
             readinessIdentity: readinessIdentity(probe),
+            ...(probeResult?.diagnostic
+              ? { readinessDiagnostic: probeResult.diagnostic }
+              : {}),
             consumed: false,
           });
           this.kernel.recordLaunchAttempt(workflow, attempt);
           if (!failure) successfulAttempt = attempt;
+          else if (
+            !readinessFailureIsRetryable(failure, probeResult?.diagnostic)
+          ) {
+            send(409, {
+              kind: "stop",
+              reason: "deterministic provider readiness failure",
+              category: failure,
+              attempt: attempt.id,
+            });
+            return;
+          }
         }
         const registration = this.kernel.register(workflow, profile.id);
         this.kernel.consumeReadiness(
