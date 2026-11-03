@@ -50,6 +50,7 @@ import {
   assertSplitGrant,
   commitPair,
   committedBinding,
+  validateCommitBinding,
 } from "./resolver.ts";
 import {
   buildKnownLossArtifacts,
@@ -84,6 +85,21 @@ import {
   operationalRetryAllowance,
   type LaunchAttemptRecord,
 } from "./orchestration.ts";
+import { registeredAdapter } from "../executors/adapters.ts";
+import {
+  COMPLETION_ARTIFACT,
+  COMPLETION_DECLARATION,
+  declarationRecord,
+  parseCompletionObligation,
+  runCompletionChecks,
+  sequenceEight,
+  validatedCurrentCompletionRecord,
+  type CompletionAttemptRecord,
+  type CompletionCheckResult,
+  type CompletionDeclarationRecord,
+  type CompletionRunner,
+  type CompletionSuccessRecord,
+} from "../completion-smoke.ts";
 import {
   DIAGNOSTIC_CATEGORIES,
   splitWorkflow,
@@ -137,6 +153,9 @@ export interface KernelOptions {
   // Execution Grant is recorded. The governed host always installs the
   // trust-equivalence gate here; it is not caller configuration.
   methodologyGate?: (definition: MethodologyDefinition) => void;
+  // Test seams may replace only the bounded check runner. Canonical provider,
+  // Git, grant, handoff and brokered-evidence facts remain host-derived.
+  completionRunner?: CompletionRunner;
   // Where a new Workflow Execution Grant's definition comes from. The
   // governed host resolves the latest trusted record's committed bytes; a
   // kernel without it (historical/test use) reads the working tree.
@@ -144,6 +163,24 @@ export interface KernelOptions {
   // The host-written methodology source/runtime binding recorded in every new
   // Workflow Execution Grant. Installed by the governed host only.
   methodologyBinding?: () => MethodologySourceBinding;
+}
+
+function gitOutput(root: string, args: string[]): Buffer {
+  try {
+    return execFileSync("git", args, { cwd: root, stdio: "pipe" });
+  } catch (error) {
+    const completed = error as { status?: unknown; stdout?: unknown };
+    if (completed.status === 0) {
+      if (Buffer.isBuffer(completed.stdout)) return completed.stdout;
+      if (typeof completed.stdout === "string")
+        return Buffer.from(completed.stdout);
+    }
+    throw error;
+  }
+}
+
+function gitText(root: string, args: string[]): string {
+  return gitOutput(root, args).toString("utf8").trim();
 }
 const DETAIL_LIMIT = 240;
 const SECRET_FIELD =
@@ -1663,6 +1700,12 @@ export class ExecutionKernel {
       // Concrete settings passed by the registered adapter for this launch.
       // Provider attestation is recorded separately.
       executorPlan?: { model?: string; reasoning?: string };
+      // Set only by the host after its registered-adapter readiness path.
+      providerLaunch?: {
+        launchAttempt: string;
+        adapter: "claude" | "codex";
+        provenance: "production" | "adapter-double";
+      };
     },
   ): { execution: Execution; grant: RoleGrant; duplicate: boolean } {
     return this.#transaction(workflow, () => {
@@ -1837,6 +1880,9 @@ export class ExecutionKernel {
           confirmed: { model: null, reasoning: null },
           attestation: { model: "unavailable", reasoning: "unavailable" },
         },
+        ...(request.providerLaunch
+          ? { providerLaunch: structuredClone(request.providerLaunch) }
+          : {}),
         ...(request.contained
           ? {
               filesystemIsolation: "bwrap" as const,
@@ -1982,7 +2028,19 @@ export class ExecutionKernel {
               "host recovery could not reattach executor",
             );
         }
+      this.finalizeCompletionSmoke(workflow);
     }
+  }
+  // Host recovery may retrigger the same finalizer. The declaration/handoff
+  // key makes this converge on the already-recorded attempt.
+  finalizeCompletionSmoke(workflow: string): void {
+    this.#transaction(workflow, () => {
+      const handoff = this.events(workflow).findLast(
+        (event) => event.transition === "implementation-handoff",
+      );
+      if (typeof handoff?.evidence.execution === "string")
+        this.#finalizeCompletionSmoke(workflow, handoff.evidence.execution);
+    });
   }
   continuationStopped(
     workflow: string,
@@ -2153,10 +2211,7 @@ export class ExecutionKernel {
         if (evidenceCommit)
           resultCommits = { ...resultCommits, workflow: evidenceCommit };
         if (grant.role === "implementation" && disposition === "succeeded") {
-          const head = execFileSync("git", ["rev-parse", "HEAD"], {
-            cwd: this.project.root,
-            encoding: "utf8",
-          }).trim();
+          const head = gitText(this.project.root, ["rev-parse", "HEAD"]);
           const source = committedBinding(this.project, "repository", head);
           assertBindingAdvance(this.project, resultCommits.source, source);
           resultCommits = { ...resultCommits, source };
@@ -2370,6 +2425,7 @@ export class ExecutionKernel {
     )
       return;
     const evidence: Data = { ...rule.evidence?.fields };
+    let completionDeclaration: CompletionDeclarationRecord | undefined;
     try {
       if (splitWorkflow(this.project) && grant.role === "implementation") {
         const allowed = required(
@@ -2399,6 +2455,36 @@ export class ExecutionKernel {
         )
       )
         throw new Error("pinned validator implementation unavailable");
+      if (grant.role === "outcome" && declarationRecord(events)) {
+        const parent = this.grant(workflow, grant.workflowGrant);
+        const commits = required(grant.commits);
+        const current = validatedCurrentCompletionRecord(
+          this.project,
+          workflow,
+          events,
+          {
+            sourceCommit: commits.source.commit,
+            workflowCommit: commits.workflow.commit,
+            methodology: parent.methodology,
+            trustedRevision: parent.source?.trusted.revision,
+            runtimeCommit: parent.source?.runtime?.commit,
+          },
+        );
+        if (result.methodology.completionMode === "STANDARD" && !current)
+          throw new Error(
+            "STANDARD outcome requires the current completion smoke record",
+          );
+        if (result.methodology.completionMode === "PROCESS_EXCEPTION") {
+          if (current)
+            throw new Error(
+              "PROCESS_EXCEPTION cannot replace a satisfied completion obligation",
+            );
+          if (!grant.inputs.declaration || !grant.inputs.processException)
+            throw new Error(
+              "PROCESS_EXCEPTION must bind the declaration and explicit exception evidence",
+            );
+        }
+      }
       if (rule.evidence?.allocation)
         Object.assign(
           evidence,
@@ -2460,10 +2546,7 @@ export class ExecutionKernel {
           !rule.evidence.artifact
             ? this.project.root
             : workflowRepositoryRoot(this.project);
-        artifactCommit = execFileSync("git", ["rev-parse", "HEAD"], {
-          cwd: commitRoot,
-          encoding: "utf8",
-        }).trim();
+        artifactCommit = gitText(commitRoot, ["rev-parse", "HEAD"]);
         if (evidence.commit === undefined) evidence.commit = artifactCommit;
         else evidence.artifactCommit = artifactCommit;
         if (splitWorkflow(this.project) && !rule.evidence.artifact) {
@@ -2504,14 +2587,10 @@ export class ExecutionKernel {
           });
         if (
           identity(
-            execFileSync(
-              "git",
-              [
-                "show",
-                `${required(artifactCommit)}:${relative(workflowRepositoryRoot(this.project), path)}`,
-              ],
-              { cwd: workflowRepositoryRoot(this.project) },
-            ),
+            gitOutput(workflowRepositoryRoot(this.project), [
+              "show",
+              `${required(artifactCommit)}:${relative(workflowRepositoryRoot(this.project), path)}`,
+            ]),
           ) !== identity(bytes)
         )
           throw new Error(
@@ -2538,6 +2617,66 @@ export class ExecutionKernel {
             identity(bytes),
           );
       }
+      if (rule.transition === "brief-frozen") {
+        const parent = this.grant(workflow, grant.workflowGrant);
+        const root = workflowRepositoryRoot(this.project);
+        const directory = required(this.project.workflows[workflow]).directory;
+        const declarationPath = resolve(
+          root,
+          directory,
+          COMPLETION_DECLARATION,
+        );
+        const commit = required(artifactCommit);
+        const relativePath = relative(root, declarationPath);
+        const entry = gitOutput(root, [
+          "ls-tree",
+          "-z",
+          commit,
+          "--",
+          relativePath,
+        ]);
+        if (
+          entry.length > 0 &&
+          !entry.toString("utf8").startsWith("100644 blob ")
+        )
+          throw new Error(
+            "completion obligation must be a committed regular file",
+          );
+        const declarationBytes =
+          entry.length === 0
+            ? undefined
+            : gitOutput(root, ["show", `${commit}:${relativePath}`]);
+        const present = declarationBytes !== undefined;
+        if (present && !sequenceEight(parent))
+          throw new Error(
+            "completion obligation is available only to a fresh sequence-8 workflow",
+          );
+        if (sequenceEight(parent)) {
+          if (!splitWorkflow(this.project) && present)
+            throw new Error("completion obligation requires a split workflow");
+          if (present) {
+            const bytes = required(declarationBytes);
+            const declaration = parseCompletionObligation(bytes, this.project);
+            const source = required(parent.source);
+            completionDeclaration = {
+              schemaVersion: 1,
+              workflow,
+              declaration,
+              path: COMPLETION_DECLARATION,
+              identity: identity(bytes),
+              commit,
+              methodology: parent.methodology,
+              trustedSequence: 8,
+              trustedRevision: source.trusted.revision,
+              sourceOrigin: this.project.origin,
+              workflowOrigin: required(this.project.workflowOrigin),
+              ...(source.runtime
+                ? { runtimeCommit: source.runtime.commit }
+                : {}),
+            };
+          }
+        }
+      }
     } catch (error) {
       this.#append(workflow, "kernel.transition-blocked", {
         execution: id,
@@ -2563,10 +2702,360 @@ export class ExecutionKernel {
         ? { repositories: execution.result.commits }
         : {}),
     });
+    if (completionDeclaration)
+      this.#append(
+        workflow,
+        "completion-obligation-declared",
+        completionDeclaration,
+      );
     this.#append(workflow, "kernel.transition", {
       execution: id,
       result: execution.result.id,
     });
+    if (rule.transition === "implementation-handoff")
+      this.#finalizeCompletionSmoke(workflow, id);
+  }
+  #finalizeCompletionSmoke(workflow: string, executionId: string): void {
+    const events = this.events(workflow);
+    const declared = declarationRecord(events);
+    if (!declared) return;
+    const handoff = events.findLast(
+      (event) => event.transition === "implementation-handoff",
+    );
+    if (!handoff || handoff.evidence.execution !== executionId) return;
+    const execution = this.execution(workflow, executionId);
+    const grant = this.roleGrant(workflow, execution.roleGrant);
+    const parent = this.grant(workflow, grant.workflowGrant);
+    const repositories = handoff.evidence.repositories as
+      | {
+          source?: import("./model.ts").CommitBinding;
+          workflow?: import("./model.ts").CommitBinding;
+        }
+      | undefined;
+    const source = repositories?.source;
+    const workflowBinding = repositories?.workflow;
+    const key = contentId({
+      declaration: declared.identity,
+      handoff: handoff.id,
+      execution: executionId,
+      candidate: handoff.evidence.commit,
+      source,
+      workflow: workflowBinding,
+    });
+    if (
+      events.some(
+        (event) =>
+          event.transition === "completion-smoke-attempted" &&
+          event.evidence.key === key,
+      )
+    )
+      return;
+    const attempt = (
+      satisfying: boolean,
+      reason: string | null,
+      checks?: CompletionCheckResult,
+    ): CompletionAttemptRecord => ({
+      schemaVersion: 1,
+      key,
+      workflow,
+      declaration: declared.identity,
+      handoff: required(handoff.id),
+      execution: executionId,
+      candidate: String(handoff.evidence.commit ?? ""),
+      workflowCheckpoint: workflowBinding?.commit ?? "",
+      satisfying,
+      reason,
+      ...(checks ? { checks } : {}),
+    });
+    const reject = (reason: string, checks?: CompletionCheckResult): void => {
+      this.#append(
+        workflow,
+        "completion-smoke-attempted",
+        attempt(false, reason, checks),
+      );
+    };
+    try {
+      if (!splitWorkflow(this.project) || !sequenceEight(parent))
+        throw new Error(
+          "completion finalization requires sequence-8 split authority",
+        );
+      if (
+        declared.methodology !== parent.methodology ||
+        declared.trustedRevision !== parent.source?.trusted.revision ||
+        declared.runtimeCommit !== parent.source?.runtime?.commit ||
+        declared.sourceOrigin !== this.project.origin ||
+        declared.workflowOrigin !== this.project.workflowOrigin
+      )
+        throw new Error(
+          "completion declaration methodology/runtime/origin binding drifted",
+        );
+      if (
+        execution.mode !== "spawned" ||
+        execution.filesystemIsolation !== "bwrap"
+      )
+        throw new Error(
+          "completion requires a contained spawned implementation",
+        );
+      const session = this.session(execution.session);
+      if (
+        session.profile.command?.length ||
+        !registeredAdapter(session.profile.provider)
+      )
+        throw new Error(
+          "completion requires the production registered-provider adapter",
+        );
+      if (
+        !execution.providerLaunch ||
+        execution.providerLaunch.adapter !== session.profile.provider
+      )
+        throw new Error(
+          "completion lacks registered-provider launch provenance",
+        );
+      const allocationIndex = events.findIndex(
+        (event) =>
+          event.transition === "kernel.allocation" &&
+          (event.evidence.execution as { id?: string } | undefined)?.id ===
+            executionId,
+      );
+      const consumed = events
+        .slice(0, allocationIndex)
+        .findLast((event) => event.transition === "kernel.readiness-consumed");
+      const launch = events.find(
+        (event) =>
+          event.transition === "kernel.launch-attempt" &&
+          event.evidence.id === consumed?.evidence.launchAttempt,
+      );
+      if (
+        allocationIndex < 0 ||
+        !consumed ||
+        !launch ||
+        launch.evidence.outcome !== "ready" ||
+        launch.evidence.mode !== "spawned" ||
+        launch.evidence.role !== "implementation" ||
+        launch.evidence.adapter !== session.profile.provider
+      )
+        throw new Error("completion lacks consumed host readiness provenance");
+      if (
+        execution.providerLaunch.launchAttempt !== launch.evidence.id ||
+        !["production", "adapter-double"].includes(
+          execution.providerLaunch.provenance,
+        )
+      )
+        throw new Error("completion provider launch provenance is inconsistent");
+      if (
+        !events.some(
+          (event) =>
+            event.transition === "kernel.process" &&
+            event.evidence.execution === executionId &&
+            (
+              event.evidence.update as
+                | { process?: string; pid?: number }
+                | undefined
+            )?.process === "running" &&
+            typeof (event.evidence.update as { pid?: number } | undefined)
+              ?.pid === "number" &&
+            Number.isSafeInteger(
+              Number(
+                (event.evidence.update as { pid?: number } | undefined)?.pid,
+              ),
+            ) &&
+            Number(
+              (event.evidence.update as { pid?: number } | undefined)?.pid,
+            ) > 0,
+        )
+      )
+        throw new Error("completion lacks managed process provenance");
+      if (
+        grant.executorConstraints.exactModel &&
+        execution.executor?.confirmed.model !==
+          grant.executorConstraints.exactModel
+      )
+        throw new Error(
+          "completion lacks required concrete provider attestation",
+        );
+      if (!source || !workflowBinding || !grant.commits)
+        throw new Error(
+          "completion handoff lacks the exact repository snapshot pair",
+        );
+      validateCommitBinding(this.project, "repository", source);
+      validateCommitBinding(this.project, "workflow", workflowBinding);
+      assertBindingAdvance(this.project, grant.commits.source, source);
+      assertBindingAdvance(
+        this.project,
+        grant.commits.workflow,
+        workflowBinding,
+      );
+      if (
+        source.commit === grant.commits.source.commit ||
+        handoff.evidence.commit !== source.commit
+      )
+        throw new Error("completion candidate has no source commit advance");
+      try {
+        execFileSync(
+          "git",
+          ["diff", "--quiet", grant.commits.source.commit, source.commit, "--"],
+          { cwd: this.project.root, stdio: "pipe" },
+        );
+        throw new Error("completion candidate has no source-tree change");
+      } catch (error) {
+        const status = (error as { status?: unknown }).status;
+        if (status !== 1) throw error;
+      }
+      const evidenceAction = execution.actions.findLast(
+        (action): action is EvidenceActionResult =>
+          action.request.kind === "evidence" &&
+          action.status === "succeeded" &&
+          action.request.files.some(
+            (file) =>
+              file.destination === declared.declaration.evidenceDestination,
+          ),
+      );
+      if (
+        !evidenceAction?.binding ||
+        evidenceAction.binding.commit !== workflowBinding.commit ||
+        evidenceAction.after !== workflowBinding.commit
+      )
+        throw new Error(
+          "completion lacks the exact brokered manifest checkpoint",
+        );
+      const docsRoot = workflowRepositoryRoot(this.project);
+      const docsHead = gitText(docsRoot, ["rev-parse", "HEAD"]);
+      if (docsHead !== workflowBinding.commit)
+        throw new Error("completion workflow checkpoint is stale");
+      const checks = (this.options.completionRunner ?? runCompletionChecks)({
+        repository: this.project.root,
+        baseline: grant.commits.source.commit,
+        candidate: source.commit,
+        declaration: declared.declaration,
+        excludedRoots: [docsRoot],
+      });
+      if (!checks.satisfying) {
+        reject(checks.reason ?? "completion checks were non-satisfying", checks);
+        return;
+      }
+      const success: CompletionSuccessRecord = {
+        schemaVersion: 1,
+        kind: "split-coding-smoke",
+        workflow,
+        declaration: declared.identity,
+        handoff: required(handoff.id),
+        execution: executionId,
+        candidate: source.commit,
+        baseline: grant.commits.source.commit,
+        workflowEvidenceCommit: workflowBinding.commit,
+        methodology: parent.methodology,
+        trustedSequence: 8,
+        trustedRevision: required(parent.source).trusted.revision,
+        ...(parent.source?.runtime
+          ? { runtimeCommit: parent.source.runtime.commit }
+          : {}),
+        roleGrant: grant.id,
+        workflowGrant: parent.id,
+        evidenceAction: evidenceAction.id,
+        providerProvenance: execution.providerLaunch.provenance,
+        checks,
+      };
+      const bytes = `${JSON.stringify(success, null, 2)}\n`;
+      const directory = required(this.project.workflows[workflow]).directory;
+      const target = resolve(docsRoot, directory, COMPLETION_ARTIFACT);
+      let prior: Buffer | null = null;
+      if (existsSync(target)) {
+        if (lstatSync(target).isSymbolicLink() || !lstatSync(target).isFile())
+          throw new Error("completion artifact destination is unsafe");
+        prior = readFileSync(target);
+      }
+      const path = relative(docsRoot, target);
+      const git = (args: string[]): string => {
+        try {
+          return execFileSync(
+            "git",
+            [
+              "-c",
+              "core.hooksPath=/dev/null",
+              "-c",
+              "commit.gpgsign=false",
+              ...args,
+            ],
+            {
+              cwd: docsRoot,
+              encoding: "utf8",
+              stdio: "pipe",
+              env: {
+                ...process.env,
+                GIT_AUTHOR_NAME: "Harness completion finalizer",
+                GIT_AUTHOR_EMAIL: "completion@harness.invalid",
+                GIT_COMMITTER_NAME: "Harness completion finalizer",
+                GIT_COMMITTER_EMAIL: "completion@harness.invalid",
+                GIT_TERMINAL_PROMPT: "0",
+              },
+            },
+          ).trim();
+        } catch (error) {
+          const completed = error as { status?: unknown; stdout?: unknown };
+          if (completed.status === 0 && typeof completed.stdout === "string")
+            return completed.stdout.trim();
+          throw error;
+        }
+      };
+      try {
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, bytes);
+        git(["add", "--", path]);
+        git([
+          "commit",
+          "-q",
+          "--no-verify",
+          "--only",
+          "-m",
+          `completion(${workflow}): record split coding smoke`,
+          "--",
+          path,
+        ]);
+      } catch (error) {
+        if (prior) writeFileSync(target, prior);
+        else rmSync(target, { force: true });
+        try {
+          git(["reset", "-q", "--", path]);
+        } catch {
+          /* The failed checkpoint remains non-satisfying. */
+        }
+        reject(
+          `completion artifact checkpoint failed: ${(error as Error).message}`,
+          checks,
+        );
+        return;
+      }
+      const artifactCommit = git(["rev-parse", "HEAD"]);
+      const artifactIdentity = identity(bytes);
+      if (
+        identity(gitOutput(docsRoot, ["show", `${artifactCommit}:${path}`])) !==
+        artifactIdentity
+      ) {
+        reject("completion artifact committed bytes drifted", checks);
+        return;
+      }
+      this.#append(
+        workflow,
+        "completion-smoke-attempted",
+        attempt(true, null, checks),
+      );
+      this.#append(workflow, "completion-smoke-recorded", {
+        ...success,
+        recordIdentity: contentId(success),
+        artifactCommit,
+        path: COMPLETION_ARTIFACT,
+        identity: artifactIdentity,
+        artifactBinding: committedBinding(
+          this.project,
+          "workflow",
+          artifactCommit,
+          path,
+          artifactIdentity,
+        ),
+      });
+    } catch (error) {
+      reject((error as Error).message);
+    }
   }
   decide(
     workflow: string,
@@ -3048,20 +3537,28 @@ export class ExecutionKernel {
           GIT_COMMITTER_EMAIL: `${id}@harness.invalid`,
           GIT_TERMINAL_PROMPT: "0",
         };
-        const git = (args: string[]): string =>
-          execFileSync(
-            "git",
-            [
-              "-C",
-              required(repository),
-              "-c",
-              "core.hooksPath=/dev/null",
-              "-c",
-              "commit.gpgsign=false",
-              ...args,
-            ],
-            { encoding: "utf8", stdio: "pipe", env },
-          ).trim();
+        const git = (args: string[]): string => {
+          try {
+            return execFileSync(
+              "git",
+              [
+                "-C",
+                required(repository),
+                "-c",
+                "core.hooksPath=/dev/null",
+                "-c",
+                "commit.gpgsign=false",
+                ...args,
+              ],
+              { encoding: "utf8", stdio: "pipe", env },
+            ).trim();
+          } catch (error) {
+            const completed = error as { status?: unknown; stdout?: unknown };
+            if (completed.status === 0 && typeof completed.stdout === "string")
+              return completed.stdout.trim();
+            throw error;
+          }
+        };
         action.before = git(["rev-parse", "--verify", "HEAD^{commit}"]);
         if (
           splitWorkflow(this.project) &&
@@ -3112,11 +3609,7 @@ export class ExecutionKernel {
         for (const [index, path] of paths.entries())
           if (
             identity(
-              execFileSync(
-                "git",
-                ["-C", repository, "show", `${action.after}:${path}`],
-                { stdio: "pipe" },
-              ),
+              gitOutput(repository, ["show", `${action.after}:${path}`]),
             ) !== required(request.files[index]).identity
           )
             throw new Error("committed evidence differs from the request");

@@ -26,3 +26,42 @@
 - Outputs: `eval-requirements.md` (`sha256:0d370ed19e102d40d89e0f010016383bfa7f50b801bae7bfbe4fbe2a90623f8f`); `coverage-map.json` (11 criterion records, BC01–BC11, readiness attestation PASS); `manifest.md`
 - Checks: pre-freeze structural integrity validation passed; controlled positive/negative exercise of the one executable case passed; candidate implementation not executed
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-11-03 — Implementation
+
+- Execution: `bb55896d-f3e2-497e-9383-312c27bc67b0`.
+- Skill: implementation, contract version 6
+  (`sha256:f41e0d0c335b8123a47590bf1cd9364c1473209064d74c542e16de25600c9e9e`).
+- Inputs: `spike.md`
+  (`sha256:eac9f72546fa65ab722dbcfd6b7d0d47c0787c1e6cd6cd66b5c570913b87baaa`),
+  `design-map.md`
+  (`sha256:4d92074b4d9e8511d6dc3623f1f09dc23726bb118c0d4e3bd51102e815c819ea`),
+  `coverage-map.json`
+  (`sha256:8930ef2a750dadde7ff993fde41c7dc15d0efa560c6420f8e2a0d2949c4b43f7`),
+  and `eval-requirements.md`
+  (`sha256:0d370ed19e102d40d89e0f010016383bfa7f50b801bae7bfbe4fbe2a90623f8f`).
+- Result: `succeeded`; not independently evaluated. The candidate adds the
+  closed sequence-8 split-coding-smoke declaration, a host-only bounded Node
+  test finalizer with distinct production/adapter-double provenance, immutable
+  attempt and success evidence, and current-record enforcement for Outcome
+  allocation and STANDARD transition while preserving explicit
+  PROCESS_EXCEPTION and undeclared predecessor behavior. The Outcome skill is
+  materially versioned to contract version 6.
+- Output content identity before this entry:
+  `sha256:749d808500ea5cb0592803689807d8cd47a68dd5e61324e8fbe6469417bc5780`
+  over the staged binary diff of nine implementation/test/contract paths,
+  excluding this manifest (2,356 insertions and 51 deletions).
+- Visible verification: focused completion suite passed 14 tests; selected
+  unaffected regression suites passed 72 tests; syntax/import checks, JSON
+  parsing, scoped `git diff --check`, baseline ancestry, trusted-sequence-7,
+  frozen Spike 015 history, baseline test inventory, and worker-protocol scope
+  checks passed. The broad native suite was attempted but dependency-dependent
+  files could not load because the lockfile install failed with registry DNS
+  `EAI_AGAIN`; other Git-fixture tests encountered the environment's inherited
+  `spawnSync git EPERM` condition. TypeScript, ESLint, and Prettier checks were
+  therefore unavailable locally.
+- Limitations: no live provider, network, remote push, methodology adoption, or
+  post-adoption sequence-8 pilot was exercised. Evaluator-private material and
+  workflow ledgers were not inspected. Unrelated worktree and runtime residue
+  was preserved and excluded from the candidate.
+- Measurement cutoff: immediately before this manifest update.

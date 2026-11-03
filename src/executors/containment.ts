@@ -80,6 +80,63 @@ export function probeContainment(bwrap: string): void {
   }
 }
 
+// Narrow host-only launcher for the split-coding smoke. It deliberately has
+// no command, environment or executable selector: Node's built-in test runner
+// is fixed here, the checkout is read-only, scratch is the only host-writable
+// mount, and the network namespace is disconnected.
+export function containedNodeTestLaunch(input: {
+  readonly bwrap: string;
+  readonly checkout: string;
+  readonly scratch: string;
+  readonly cwd: string;
+  readonly target: string;
+  readonly nodePath: string;
+}): { program: string; args: string[]; env: NodeJS.ProcessEnv } {
+  const checkout = realpathSync(input.checkout);
+  const scratch = realpathSync(input.scratch);
+  const cwd = realpathSync(input.cwd);
+  const target = realpathSync(input.target);
+  if (!contains(checkout, cwd) || !contains(checkout, target))
+    throw new AdapterRefusal(
+      "provider-config-invalid",
+      "completion smoke path escaped its checkout",
+    );
+  const args = [
+    ...NAMESPACES,
+    "--unshare-net",
+    "--proc",
+    "/proc",
+    "--dev",
+    "/dev",
+  ];
+  for (const directory of SYSTEM_DIRECTORIES)
+    if (existsSync(directory)) args.push("--ro-bind", directory, directory);
+  for (const link of SYSTEM_LINKS) {
+    if (!existsSync(link)) continue;
+    const stat = lstatSync(link);
+    if (stat.isSymbolicLink()) args.push("--symlink", readlinkSync(link), link);
+    else args.push("--ro-bind", link, link);
+  }
+  args.push("--tmpfs", "/tmp");
+  args.push(...nodeRuntime(input.nodePath, []));
+  args.push("--ro-bind", checkout, checkout);
+  args.push("--bind", scratch, scratch);
+  args.push("--remount-ro", "/");
+  args.push("--chdir", cwd);
+  args.push("--", realpathSync(input.nodePath), "--test", target);
+  return {
+    program: input.bwrap,
+    args,
+    env: {
+      HOME: scratch,
+      TMPDIR: scratch,
+      PATH: dirname(realpathSync(input.nodePath)),
+      GIT_TERMINAL_PROMPT: "0",
+      GIT_CONFIG_NOSYSTEM: "1",
+    },
+  };
+}
+
 function packageRoot(program: string): string {
   const marker = "/node_modules/";
   const index = program.lastIndexOf(marker);

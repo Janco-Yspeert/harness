@@ -1702,6 +1702,17 @@ export class GovernedHost {
           ...(predecessor ? { predecessor } : {}),
           ...(containment ? { contained: true } : {}),
           ...(provider ? { executorPlan: provider.plan } : {}),
+          ...(provider
+            ? {
+                providerLaunch: {
+                  launchAttempt: successfulAttempt.id,
+                  adapter: provider.adapter.id,
+                  provenance: this.#runtime.spawnProvider
+                    ? ("adapter-double" as const)
+                    : ("production" as const),
+                },
+              }
+            : {}),
         });
         const address = request.socket.localPort;
         if (!allocation.duplicate && provider) {

@@ -532,6 +532,14 @@ export interface Execution {
       reasoning: "provider-attested" | "unavailable";
     };
   };
+  // Host-observed registered-adapter launch provenance. `adapter-double` is
+  // available only through the host runtime's adapter-boundary test seam; it
+  // is intentionally distinct from an operational provider launch.
+  providerLaunch?: {
+    launchAttempt: string;
+    adapter: "claude" | "codex";
+    provenance: "production" | "adapter-double";
+  };
   // Public-safe host containment evidence (Spike 014h). Present only when the
   // spawned provider was launched inside host filesystem isolation; it holds
   // no paths, credentials or provider configuration.

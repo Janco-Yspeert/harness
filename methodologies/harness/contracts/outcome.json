@@ -52,6 +52,18 @@
       "event": "process-exception-evidence-recorded",
       "field": "evidenceIdentity",
       "optional": true
+    },
+    {
+      "name": "declaration",
+      "event": "completion-obligation-declared",
+      "field": "identity",
+      "optional": true
+    },
+    {
+      "name": "completionRecord",
+      "event": "completion-smoke-recorded",
+      "field": "recordIdentity",
+      "optional": true
     }
   ],
   "results": ["succeeded", "blocked", "refused", "failed"],

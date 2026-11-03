@@ -26,6 +26,7 @@ import type {
 } from "./model.ts";
 import { splitWorkflow, workflowRepositoryRoot } from "./model.ts";
 import type { CommitBinding, WorkspaceAccess } from "./model.ts";
+import { outcomeAllocationPermitted } from "../completion-smoke.ts";
 
 export type Resolution =
   | { kind: "grant"; grant: RoleGrant }
@@ -488,6 +489,28 @@ export function resolveAuthority(
     };
   const [name, role] = required(candidates[0]);
   if (
+    name === "outcome" &&
+    !outcomeAllocationPermitted(
+      effectiveEvents,
+      project,
+      workflow.workflow,
+      splitWorkflow(project)
+        ? {
+            sourceCommit: commitPair(project, {}).source.commit,
+            workflowCommit: commitPair(project, {}).workflow.commit,
+            methodology: workflow.methodology,
+            trustedRevision: workflow.source?.trusted.revision,
+            runtimeCommit: workflow.source?.runtime?.commit,
+          }
+        : undefined,
+    )
+  )
+    return {
+      kind: "denied",
+      reason:
+        "Outcome requires a current completion smoke record or explicit process-exception evidence",
+    };
+  if (
     session &&
     role.contract.forbiddenExposure.some((exposure) =>
       session.exposures.includes(exposure),
@@ -817,11 +840,22 @@ function withoutCommits(grant: RoleGrant): Omit<RoleGrant, "commits"> {
   return rest as Omit<RoleGrant, "commits">;
 }
 
+function successfulGit(root: string, args: string[]): Buffer {
+  try {
+    return execFileSync("git", args, { cwd: root, stdio: "pipe" });
+  } catch (error) {
+    const completed = error as { status?: unknown; stdout?: unknown };
+    if (completed.status === 0) {
+      if (Buffer.isBuffer(completed.stdout)) return completed.stdout;
+      if (typeof completed.stdout === "string")
+        return Buffer.from(completed.stdout);
+    }
+    throw error;
+  }
+}
+
 function headOf(root: string): string {
-  return execFileSync("git", ["rev-parse", "HEAD"], {
-    cwd: root,
-    encoding: "utf8",
-  }).trim();
+  return successfulGit(root, ["rev-parse", "HEAD"]).toString("utf8").trim();
 }
 
 // The allocation's source/workflow commit pair: the frozen candidate for a
@@ -914,10 +948,11 @@ export function validateCommitBinding(
   if (!/^[a-f0-9]{40}$/.test(binding.commit))
     throw new Error("repository binding commit is not exact");
   try {
-    execFileSync("git", ["cat-file", "-e", `${binding.commit}^{commit}`], {
-      cwd: workspace.path,
-      stdio: "pipe",
-    });
+    successfulGit(workspace.path, [
+      "cat-file",
+      "-e",
+      `${binding.commit}^{commit}`,
+    ]);
   } catch {
     throw new Error("repository binding commit is unavailable");
   }
@@ -942,10 +977,10 @@ export function validateCommitBinding(
     throw new Error("repository binding path lacks content identity");
   let bytes: Buffer;
   try {
-    bytes = execFileSync("git", ["show", `${binding.commit}:${binding.path}`], {
-      cwd: workspace.path,
-      stdio: "pipe",
-    });
+    bytes = successfulGit(workspace.path, [
+      "show",
+      `${binding.commit}:${binding.path}`,
+    ]);
   } catch {
     throw new Error("repository binding path is unavailable");
   }
@@ -968,10 +1003,9 @@ export function assertBindingAdvance(
   validateCommitBinding(project, successor.workspace, successor);
   const { workspace } = bindingWorkspace(project, successor.workspace);
   try {
-    execFileSync(
-      "git",
+    successfulGit(
+      workspace.path,
       ["merge-base", "--is-ancestor", predecessor.commit, successor.commit],
-      { cwd: workspace.path, stdio: "pipe" },
     );
   } catch {
     throw new Error("repository checkpoint is not descended from predecessor");
