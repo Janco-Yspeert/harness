@@ -197,7 +197,7 @@ export async function runProviderReadiness(input: {
   shape: CanonicalExecutionShape;
   adapter: ProviderAdapter;
   program: string;
-  profile: { maxTurns?: number };
+  profile: { maxTurns?: number; readinessTimeoutMs?: number };
   plan: { model?: string; reasoning?: string };
   containment?: {
     bwrap: string;
@@ -348,8 +348,13 @@ export async function runProviderReadiness(input: {
             if (event.kind === "tools-unavailable") {
               mcpConnection = "unavailable";
             }
-            if (event.kind === "tool-confirmed" && event.tool === "readiness")
+            if (event.kind === "tool-confirmed" && event.tool === "readiness") {
               readinessTool = "called";
+              // A completed invocation is stronger evidence of an MCP
+              // connection than provider-specific initialization events.
+              // Codex does not emit Claude's "confirmed" event.
+              mcpConnection = "connected";
+            }
             if (event.kind === "permission-denied") {
               const match =
                 /^provider denied tool (mcp__[a-z0-9_]{1,128})$/i.exec(
@@ -383,19 +388,38 @@ export async function runProviderReadiness(input: {
         exitObserved = true;
         finishExit();
       });
-      const timer = setTimeout(() => {
-        timedOut = true;
-        child.kill("SIGTERM");
-        finish({
-          state: "failed",
-          failure: "pre-allocation-readiness-failure",
-          diagnostic: diagnostic("timeout"),
-        });
-      }, 15_000);
+      const timer = setTimeout(
+        () => {
+          timedOut = true;
+          child.kill("SIGTERM");
+          finish({
+            state: "failed",
+            failure: "pre-allocation-readiness-failure",
+            diagnostic: diagnostic("timeout"),
+          });
+        },
+        readinessTimeoutMs(input.adapter.id, input.profile),
+      );
     });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+}
+export function readinessTimeoutMs(
+  provider: string,
+  profile: { readinessTimeoutMs?: number },
+): number {
+  const configured = profile.readinessTimeoutMs;
+  if (
+    configured !== undefined &&
+    Number.isSafeInteger(configured) &&
+    configured >= 1_000 &&
+    configured <= 120_000
+  )
+    return configured;
+  // Readiness is a real provider turn. Codex cold-starts can exceed the old
+  // universal fifteen-second deadline; Claude retains its established bound.
+  return provider === "codex" ? 60_000 : 15_000;
 }
 function gitBytes(root: string, args: readonly string[]): Buffer {
   try {

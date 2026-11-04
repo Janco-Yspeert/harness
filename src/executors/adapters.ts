@@ -518,6 +518,7 @@ const PROFILE_KEYS = [
   "usage",
   "cost",
   "maxTurns",
+  "readinessTimeoutMs",
 ];
 
 // Production executor configuration: every profile must name a registered
@@ -602,6 +603,16 @@ export function validateProductionExecutors(raw: unknown): ExecutorProfile[] {
         profile.maxTurns < 1)
     )
       throw new Error(`executor profile ${name} maxTurns must be positive`);
+    if (
+      profile.readinessTimeoutMs !== undefined &&
+      (typeof profile.readinessTimeoutMs !== "number" ||
+        !Number.isSafeInteger(profile.readinessTimeoutMs) ||
+        profile.readinessTimeoutMs < 1_000 ||
+        profile.readinessTimeoutMs > 120_000)
+    )
+      throw new Error(
+        `executor profile ${name} readinessTimeoutMs must be an integer between 1000 and 120000`,
+      );
     return structuredClone(profile) as unknown as ExecutorProfile;
   });
 }

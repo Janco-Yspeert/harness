@@ -48,6 +48,7 @@ import {
   readinessFailureFromEvent,
   readinessFailureIsRetryable,
   mostSpecificReadinessFailure,
+  readinessTimeoutMs,
   runProviderReadiness,
 } from "../src/kernel/host.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
@@ -2035,6 +2036,51 @@ void test("readiness requires a completed readiness-tool call, not only Claude i
   });
   assert.equal(called.state, "passed", JSON.stringify(called));
   assert.equal(called.diagnostic?.readinessTool, "called");
+});
+
+void test("Codex readiness accepts a completed tool call and receives its conservative deadline", async () => {
+  const fixture: ProviderAdapter = {
+    id: "codex",
+    program: process.execPath,
+    capabilities: [],
+    model: { enforce: true, attest: true },
+    reasoning: { enforce: true, attest: true },
+    privateWorkspace: true,
+    nestedSandbox: false,
+    checkCapabilities() {},
+    command() {
+      return [process.execPath, "-e", "console.log('called')"];
+    },
+    parse(line) {
+      return line === "called"
+        ? [{ kind: "tool-confirmed" as const, tool: "readiness" }]
+        : [];
+    },
+  };
+  const shape = {
+    provider: "codex",
+    profile: "fixture",
+    workspaces: [{ id: "source", mode: "read", exposure: "public" }],
+    capabilities: [],
+    isolation: [],
+    resultInterface: "fixture",
+    protected: false,
+  } as unknown as CanonicalExecutionShape;
+  const result = await runProviderReadiness({
+    shape,
+    adapter: fixture,
+    program: process.execPath,
+    profile: {},
+    plan: {},
+  });
+  assert.equal(result.state, "passed", JSON.stringify(result));
+  assert.equal(result.diagnostic?.mcpConnection, "connected");
+  assert.equal(readinessTimeoutMs("codex", {}), 60_000);
+  assert.equal(readinessTimeoutMs("claude", {}), 15_000);
+  assert.equal(
+    readinessTimeoutMs("codex", { readinessTimeoutMs: 60_000 }),
+    60_000,
+  );
 });
 
 void test("AC05/AC11: a provider that cannot reach the Harness tools yields no result and a classified diagnostic", async (t) => {
