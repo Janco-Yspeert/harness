@@ -119,3 +119,12 @@
   workflow ledgers were not inspected. Unrelated worktree and runtime residue
   was preserved and excluded from the candidate.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-11-04 — Evaluator Verify (attempt 3)
+
+- Skill: evaluator, contract version 14, mode `verify`
+- Inputs: candidate `5df58ccd70b8fc8954f7497279d823ab2088842d`, evaluator revision `001`, `eval-requirements.md` (`sha256:0d370ed19e102d40d89e0f010016383bfa7f50b801bae7bfbe4fbe2a90623f8f`), `coverage-map.json` (`sha256:8930ef2a750dadde7ff993fde41c7dc15d0efa560c6420f8e2a0d2949c4b43f7`)
+- Result: `succeeded`; verdict `PASS`; all criteria BC01-BC11 satisfied; frozen inputs matched; evaluator integrity intact.
+- Checks: Git-state inspection, typecheck, lint and format:check clean; full test run showed only the 8 failures inherited identically from baseline `1159f664`; test-coverage, Spike 015 and scope reviews satisfied.
+- Limitations: no live provider, network or sequence-8 authority used.
+- Measurement cutoff: immediately before this manifest update.
