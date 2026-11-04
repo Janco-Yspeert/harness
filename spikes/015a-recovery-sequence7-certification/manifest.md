@@ -81,3 +81,41 @@
 - Result: `succeeded`; verdict `FAIL`, classification `IMPLEMENTATION_FAILURE`.
 - Checks: the Git-inspection case passed; typecheck, lint and format:check fail at the candidate while clean at baseline; test failures equal the inherited set. Review procedures not adjudicated. Public feedback in `feedback.md`. No promotion requested.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-11-04 — Implementation Retry
+
+- Execution: `587ac885-6a0e-4e85-bf14-aba30a66af68`.
+- Skill: implementation, contract version 6
+  (`sha256:f41e0d0c335b8123a47590bf1cd9364c1473209064d74c542e16de25600c9e9e`).
+- Inputs: `spike.md`
+  (`sha256:eac9f72546fa65ab722dbcfd6b7d0d47c0787c1e6cd6cd66b5c570913b87baaa`),
+  `design-map.md`
+  (`sha256:4d92074b4d9e8511d6dc3623f1f09dc23726bb118c0d4e3bd51102e815c819ea`),
+  `coverage-map.json`
+  (`sha256:8930ef2a750dadde7ff993fde41c7dc15d0efa560c6420f8e2a0d2949c4b43f7`),
+  `eval-requirements.md`
+  (`sha256:0d370ed19e102d40d89e0f010016383bfa7f50b801bae7bfbe4fbe2a90623f8f`),
+  and bound `IMPLEMENTATION_FAILURE` feedback
+  (`sha256:840202d52057f664090e74713a55dbfd2afd0ab711b844aef18edae9fb71c1e6`).
+- Result: `succeeded`; not independently evaluated. Corrected the reported
+  TypeScript exact-optional and literal typing failures, ESLint violations and
+  Prettier drift without changing the frozen completion behavior. Malformed
+  non-string handoff commit evidence now remains non-satisfying without unsafe
+  object stringification.
+- Output content identity before this entry:
+  `sha256:f3dd88a1df5552ffcad61ea620a68962632188446ab5fc819cf696f34360010e`
+  over the staged binary diff of five implementation/test/contract paths,
+  excluding this manifest (503 insertions and 534 deletions, including required
+  Prettier normalization).
+- Visible verification: `npm run typecheck`, `npm run lint`,
+  `npm run format:check`, focused `node --test test/completion-smoke.test.ts`,
+  scoped `git diff --check`, baseline ancestry/history checks and baseline test
+  inventory preservation passed. The broad `npm test` run was attempted; the
+  focused completion suite passed, while unrelated suites reproduced the
+  sandbox's inherited Git/containment failures and the terminal wrapper stalled
+  after the test process exited without emitting its final TAP summary.
+- Limitations: no live provider, network, remote push, methodology adoption or
+  post-adoption sequence-8 pilot was exercised. Evaluator-private material and
+  workflow ledgers were not inspected. Unrelated worktree and runtime residue
+  was preserved and excluded from the candidate.
+- Measurement cutoff: immediately before this manifest update.

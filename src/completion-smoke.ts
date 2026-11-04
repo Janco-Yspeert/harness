@@ -40,11 +40,7 @@ export interface CompletionObligation {
 export interface CompletionCheckFacts {
   readonly commit: string;
   readonly outcome:
-    | "exited"
-    | "spawn-error"
-    | "timeout"
-    | "signal"
-    | "overflow";
+    "exited" | "spawn-error" | "timeout" | "signal" | "overflow";
   readonly exitCode: number | null;
   readonly signal: string | null;
   readonly timedOut: boolean;
@@ -162,8 +158,8 @@ export function parseCompletionObligation(
     !workflow ||
     raw.schemaVersion !== 1 ||
     raw.kind !== "split-coding-smoke" ||
-    raw.sourceWorkspace !== source?.id ||
-    raw.workflowWorkspace !== workflow?.id ||
+    raw.sourceWorkspace !== source.id ||
+    raw.workflowWorkspace !== workflow.id ||
     raw.evidenceDestination !== COMPLETION_EVIDENCE_DESTINATION
   )
     throw new Error(
@@ -197,7 +193,7 @@ export function assertCommittedTestTarget(
     cwd: repository,
     encoding: "utf8",
   });
-  if (mode.status !== 0 || !/^100644 blob [a-f0-9]+\t/m.test(mode.stdout ?? ""))
+  if (mode.status !== 0 || !/^100644 blob [a-f0-9]+\t/m.test(mode.stdout))
     throw new Error(
       "completion obligation testTarget is not a committed regular file",
     );
@@ -396,10 +392,8 @@ export function currentCompletionRecord(
       event.evidence.workflowEvidenceCommit ===
         (
           handoff.evidence.repositories as
-            | { workflow?: { commit?: string } }
-            | undefined
-        )
-          ?.workflow?.commit,
+            { workflow?: { commit?: string } } | undefined
+        )?.workflow?.commit,
   );
 }
 
@@ -546,12 +540,7 @@ export function validatedCurrentCompletionRecord(
   );
   const workflowAncestry = spawnSync(
     "git",
-    [
-      "merge-base",
-      "--is-ancestor",
-      workflowBinding.commit,
-      binding.commit,
-    ],
+    ["merge-base", "--is-ancestor", workflowBinding.commit, binding.commit],
     { cwd: docs.path, stdio: "pipe" },
   );
   if (sourceAncestry.status !== 0 || workflowAncestry.status !== 0)
@@ -593,8 +582,7 @@ export function outcomeAllocationPermitted(
 ): boolean {
   if (!declarationRecord(events)) return true;
   if (
-    project &&
-    workflow
+    project && workflow
       ? validatedCurrentCompletionRecord(project, workflow, events, expected)
       : currentCompletionRecord(events)
   )

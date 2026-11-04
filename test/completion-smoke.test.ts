@@ -21,7 +21,12 @@ import {
   type CompletionCheckResult,
 } from "../src/completion-smoke.ts";
 import { ExecutionKernel } from "../src/kernel/execution.ts";
-import { appendLedger, contentId, identity } from "../src/kernel/ledger.ts";
+import {
+  appendLedger,
+  contentId,
+  identity,
+  required,
+} from "../src/kernel/ledger.ts";
 import { makeLaunchAttempt } from "../src/kernel/orchestration.ts";
 import type {
   ExecutorProfile,
@@ -108,7 +113,9 @@ function fixture(
   } = {},
 ) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "completion-fixture-")));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
+  t.after(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
   const source = repository(
     join(root, "source"),
     "git@github.com:acme/completion-source.git",
@@ -239,12 +246,12 @@ function fixture(
     maxAllocations: 6,
   };
   const bound = (name: string, value: RoleContract) => ({
-    policy: policy.roles[name]!,
+    policy: required(policy.roles[name]),
     contract: value,
     contractIdentity: contentId(value),
     skill: { path: `${name}.md`, identity: identity(name), content: name },
   });
-  const definitionBody = {
+  const definitionBody: Omit<MethodologyDefinition, "id"> = {
     schemaVersion: 1,
     policyIdentity: contentId(policy),
     policy,
@@ -477,325 +484,301 @@ function freezeAndImplement(
   return { run, action, candidate: git(f.source, ["rev-parse", "HEAD"]) };
 }
 
-void test(
-  "completion declaration is closed and rejects unsafe or mismatched values",
-  (t) => {
-    const f = fixture(t);
-    assert.deepEqual(
-      parseCompletionObligation(JSON.stringify(obligation), f.kernel.project),
-      obligation,
-    );
-    assert.doesNotThrow(() =>
-      assertCommittedTestTarget(f.source, f.baseline, {
-        ...obligation,
-        workingDirectory: "application",
-      }),
-    );
+void test("completion declaration is closed and rejects unsafe or mismatched values", (t) => {
+  const f = fixture(t);
+  assert.deepEqual(
+    parseCompletionObligation(JSON.stringify(obligation), f.kernel.project),
+    obligation,
+  );
+  assert.doesNotThrow(() => {
+    assertCommittedTestTarget(f.source, f.baseline, {
+      ...obligation,
+      workingDirectory: "application",
+    });
+  });
+  assert.throws(() => {
+    assertCommittedTestTarget(f.source, f.baseline, {
+      ...obligation,
+      testTarget: "test/missing.test.js",
+    });
+  });
+  for (const bad of [
+    { ...obligation, extra: true },
+    { ...obligation, evidenceDestination: "other.md" },
+    { ...obligation, testTarget: "../escape.test.js" },
+    { ...obligation, sourceWorkspace: "unknown" },
+    { ...obligation, workflowWorkspace: "unknown" },
+    { ...obligation, workingDirectory: "/tmp" },
+    { ...obligation, testTarget: "test/smoke.txt" },
+  ])
     assert.throws(() =>
-      assertCommittedTestTarget(f.source, f.baseline, {
-        ...obligation,
-        testTarget: "test/missing.test.js",
-      }),
+      parseCompletionObligation(JSON.stringify(bad), f.kernel.project),
     );
-    for (const bad of [
-      { ...obligation, extra: true },
-      { ...obligation, evidenceDestination: "other.md" },
-      { ...obligation, testTarget: "../escape.test.js" },
-      { ...obligation, sourceWorkspace: "unknown" },
-      { ...obligation, workflowWorkspace: "unknown" },
-      { ...obligation, workingDirectory: "/tmp" },
-      { ...obligation, testTarget: "test/smoke.txt" },
-    ])
-      assert.throws(() =>
-        parseCompletionObligation(JSON.stringify(bad), f.kernel.project),
-      );
-  },
-);
+});
 
-void test(
-  "bounded check semantics require baseline exit 1 and final exit 0",
-  () => {
-    const base = facts("a".repeat(40), 1);
-    const final = facts("b".repeat(40), 0);
-    assert.equal(evaluateCompletionFacts(base, final).satisfying, true);
-    for (const bad of [
-      { ...base, exitCode: 0 },
-      { ...base, exitCode: 2 },
-      { ...base, signal: "SIGKILL" },
-      { ...base, timedOut: true },
-      { ...base, outputOverflow: true },
-      { ...base, outcome: "spawn-error" as const, exitCode: null },
-      {
-        ...base,
-        outcome: "timeout" as const,
-        exitCode: null,
-        timedOut: true,
-      },
-      {
-        ...base,
-        outcome: "overflow" as const,
-        exitCode: null,
-        outputOverflow: true,
-      },
-      {
-        ...base,
-        outcome: "signal" as const,
-        exitCode: null,
-        signal: "SIGKILL",
-      },
-    ])
-      assert.equal(evaluateCompletionFacts(bad, final).satisfying, false);
-    for (const bad of [
-      { ...final, exitCode: 1 },
-      { ...final, signal: "SIGTERM" },
-      { ...final, timedOut: true },
-      { ...final, outputOverflow: true },
-      { ...final, outcome: "spawn-error" as const, exitCode: null },
-      {
-        ...final,
-        outcome: "timeout" as const,
-        exitCode: null,
-        timedOut: true,
-      },
-      {
-        ...final,
-        outcome: "overflow" as const,
-        exitCode: null,
-        outputOverflow: true,
-      },
-      {
-        ...final,
-        outcome: "signal" as const,
-        exitCode: null,
-        signal: "SIGTERM",
-      },
-    ])
-      assert.equal(evaluateCompletionFacts(base, bad).satisfying, false);
-  },
-);
+void test("bounded check semantics require baseline exit 1 and final exit 0", () => {
+  const base = facts("a".repeat(40), 1);
+  const final = facts("b".repeat(40), 0);
+  assert.equal(evaluateCompletionFacts(base, final).satisfying, true);
+  for (const bad of [
+    { ...base, exitCode: 0 },
+    { ...base, exitCode: 2 },
+    { ...base, signal: "SIGKILL" },
+    { ...base, timedOut: true },
+    { ...base, outputOverflow: true },
+    { ...base, outcome: "spawn-error" as const, exitCode: null },
+    {
+      ...base,
+      outcome: "timeout" as const,
+      exitCode: null,
+      timedOut: true,
+    },
+    {
+      ...base,
+      outcome: "overflow" as const,
+      exitCode: null,
+      outputOverflow: true,
+    },
+    {
+      ...base,
+      outcome: "signal" as const,
+      exitCode: null,
+      signal: "SIGKILL",
+    },
+  ])
+    assert.equal(evaluateCompletionFacts(bad, final).satisfying, false);
+  for (const bad of [
+    { ...final, exitCode: 1 },
+    { ...final, signal: "SIGTERM" },
+    { ...final, timedOut: true },
+    { ...final, outputOverflow: true },
+    { ...final, outcome: "spawn-error" as const, exitCode: null },
+    {
+      ...final,
+      outcome: "timeout" as const,
+      exitCode: null,
+      timedOut: true,
+    },
+    {
+      ...final,
+      outcome: "overflow" as const,
+      exitCode: null,
+      outputOverflow: true,
+    },
+    {
+      ...final,
+      outcome: "signal" as const,
+      exitCode: null,
+      signal: "SIGTERM",
+    },
+  ])
+    assert.equal(evaluateCompletionFacts(base, bad).satisfying, false);
+});
 
-void test(
-  "sequence-8 handoff creates one bound completion attempt and success record",
-  (t) => {
-    const f = fixture(t);
-    const completed = freezeAndImplement(f);
-    const events = f.kernel.events(f.workflow);
-    const declarations = events.filter(
-      (event) => event.transition === "completion-obligation-declared",
-    );
-    const attempts = events.filter(
-      (event) => event.transition === "completion-smoke-attempted",
-    );
-    const records = events.filter(
-      (event) => event.transition === "completion-smoke-recorded",
-    );
-    assert.equal(declarations.length, 1);
-    assert.equal(attempts.length, 1);
-    assert.equal(
-      attempts[0]?.evidence.satisfying,
-      true,
-      String(attempts[0]?.evidence.reason ?? "completion was non-satisfying"),
-    );
-    assert.equal(records.length, 1);
-    assert.equal(records[0]?.evidence.candidate, completed.candidate);
-    assert.equal(records[0]?.evidence.providerProvenance, "adapter-double");
-    assert.equal(completed.run.execution.executor?.confirmed.model, null);
-    assert.equal(
-      records[0]?.evidence.workflowEvidenceCommit,
-      completed.action?.after,
-    );
-    assert.ok(
-      readFileSync(
-        join(f.directory, "completion-smoke.json"),
-        "utf8",
-      ).includes(completed.candidate),
-    );
-    f.kernel.finalizeCompletionSmoke(f.workflow);
-    assert.equal(
-      f.kernel
-        .events(f.workflow)
-        .filter((event) => event.transition === "completion-smoke-attempted")
-        .length,
-      1,
-    );
-    assert.equal(
-      f.kernel.inspect(f.workflow, f.grant.id, "outcome").kind,
-      "grant",
-    );
-    const valid = records[0]!;
-    appendLedger(f.kernel.path(f.workflow), "completion-smoke-recorded", {
-      ...valid.evidence,
-      recordIdentity: "sha256:" + "f".repeat(64),
-    });
-    assert.equal(
-      f.kernel.inspect(f.workflow, f.grant.id, "outcome").kind,
-      "denied",
-    );
-  },
-);
-
-void test(
-  "post-freeze working-tree declaration changes cannot alter the recorded obligation",
-  (t) => {
-    const f = fixture(t, { alterDeclarationAfterFreeze: true });
-    freezeAndImplement(f);
-    const declared = f.kernel
+void test("sequence-8 handoff creates one bound completion attempt and success record", (t) => {
+  const f = fixture(t);
+  const completed = freezeAndImplement(f);
+  const events = f.kernel.events(f.workflow);
+  const declarations = events.filter(
+    (event) => event.transition === "completion-obligation-declared",
+  );
+  const attempts = events.filter(
+    (event) => event.transition === "completion-smoke-attempted",
+  );
+  const records = events.filter(
+    (event) => event.transition === "completion-smoke-recorded",
+  );
+  assert.equal(declarations.length, 1);
+  assert.equal(attempts.length, 1);
+  const attempt = required(attempts[0]);
+  assert.equal(
+    attempt.evidence.satisfying,
+    true,
+    JSON.stringify(attempt.evidence.reason ?? "completion was non-satisfying"),
+  );
+  assert.equal(records.length, 1);
+  const valid = required(records[0]);
+  assert.equal(valid.evidence.candidate, completed.candidate);
+  assert.equal(valid.evidence.providerProvenance, "adapter-double");
+  assert.equal(completed.run.execution.executor?.confirmed.model, null);
+  assert.equal(valid.evidence.workflowEvidenceCommit, completed.action?.after);
+  assert.ok(
+    readFileSync(join(f.directory, "completion-smoke.json"), "utf8").includes(
+      completed.candidate,
+    ),
+  );
+  f.kernel.finalizeCompletionSmoke(f.workflow);
+  assert.equal(
+    f.kernel
       .events(f.workflow)
-      .findLast(
-        (event) => event.transition === "completion-obligation-declared",
-      );
-    assert.equal(
-      (declared?.evidence.declaration as { testTarget?: string }).testTarget,
-      obligation.testTarget,
-    );
-    assert.equal(
-      f.kernel
-        .events(f.workflow)
-        .some((event) => event.transition === "completion-smoke-recorded"),
-      true,
-    );
-  },
-);
+      .filter((event) => event.transition === "completion-smoke-attempted")
+      .length,
+    1,
+  );
+  assert.equal(
+    f.kernel.inspect(f.workflow, f.grant.id, "outcome").kind,
+    "grant",
+  );
+  appendLedger(f.kernel.path(f.workflow), "completion-smoke-recorded", {
+    ...valid.evidence,
+    recordIdentity: "sha256:" + "f".repeat(64),
+  });
+  assert.equal(
+    f.kernel.inspect(f.workflow, f.grant.id, "outcome").kind,
+    "denied",
+  );
+});
 
-void test(
-  "stale brokered evidence and configured origin drift remain non-satisfying",
-  (t) => {
-    const stale = fixture(t, { staleEvidence: true });
-    freezeAndImplement(stale);
-    assert.match(
-      String(
-        stale.kernel
-          .events(stale.workflow)
-          .findLast(
-            (event) => event.transition === "completion-smoke-attempted",
-          )?.evidence.reason,
-      ),
-      /exact brokered manifest checkpoint|workflow checkpoint is stale/,
-    );
+void test("post-freeze working-tree declaration changes cannot alter the recorded obligation", (t) => {
+  const f = fixture(t, { alterDeclarationAfterFreeze: true });
+  freezeAndImplement(f);
+  const declared = f.kernel
+    .events(f.workflow)
+    .findLast((event) => event.transition === "completion-obligation-declared");
+  assert.equal(
+    (declared?.evidence.declaration as { testTarget?: string }).testTarget,
+    obligation.testTarget,
+  );
+  assert.equal(
+    f.kernel
+      .events(f.workflow)
+      .some((event) => event.transition === "completion-smoke-recorded"),
+    true,
+  );
+});
 
-    const drifted = fixture(t, { originDrift: true });
-    freezeAndImplement(drifted);
-    assert.match(
-      String(
-        drifted.kernel
-          .events(drifted.workflow)
-          .findLast(
-            (event) => event.transition === "completion-smoke-attempted",
-          )?.evidence.reason,
-      ),
-      /methodology\/runtime\/origin binding drifted|origin mismatch/,
-    );
-  },
-);
+void test("stale brokered evidence and configured origin drift remain non-satisfying", (t) => {
+  const stale = fixture(t, { staleEvidence: true });
+  freezeAndImplement(stale);
+  assert.match(
+    String(
+      stale.kernel
+        .events(stale.workflow)
+        .findLast((event) => event.transition === "completion-smoke-attempted")
+        ?.evidence.reason,
+    ),
+    /exact brokered manifest checkpoint|workflow checkpoint is stale/,
+  );
 
-void test(
-  "direct docs writes and an unchanged source candidate cannot satisfy completion",
-  (t) => {
-    const direct = fixture(t, { directEvidence: true });
-    freezeAndImplement(direct);
-    assert.equal(
-      direct.kernel
-        .events(direct.workflow)
-        .some((event) => event.transition === "implementation-handoff"),
-      false,
-    );
+  const drifted = fixture(t, { originDrift: true });
+  freezeAndImplement(drifted);
+  assert.match(
+    String(
+      drifted.kernel
+        .events(drifted.workflow)
+        .findLast((event) => event.transition === "completion-smoke-attempted")
+        ?.evidence.reason,
+    ),
+    /methodology\/runtime\/origin binding drifted|origin mismatch/,
+  );
+});
 
-    const unchanged = fixture(t, { noSourceChange: true });
-    freezeAndImplement(unchanged);
-    const attempt = unchanged.kernel
+void test("direct docs writes and an unchanged source candidate cannot satisfy completion", (t) => {
+  const direct = fixture(t, { directEvidence: true });
+  freezeAndImplement(direct);
+  assert.equal(
+    direct.kernel
+      .events(direct.workflow)
+      .some((event) => event.transition === "implementation-handoff"),
+    false,
+  );
+
+  const unchanged = fixture(t, { noSourceChange: true });
+  freezeAndImplement(unchanged);
+  const attempt = required(
+    unchanged.kernel
       .events(unchanged.workflow)
-      .findLast((event) => event.transition === "completion-smoke-attempted");
-    assert.equal(attempt?.evidence.satisfying, false);
-    assert.match(String(attempt?.evidence.reason), /no source commit advance/);
-  },
-);
+      .findLast((event) => event.transition === "completion-smoke-attempted"),
+  );
+  assert.equal(attempt.evidence.satisfying, false);
+  const reason = attempt.evidence.reason;
+  if (typeof reason !== "string") assert.fail("attempt reason is missing");
+  assert.match(reason, /no source commit advance/);
+});
 
-void test(
-  "fake provider profiles, missing readiness, and failed checks remain non-satisfying",
-  (t) => {
-    const missing = fixture(t, { readiness: false });
-    freezeAndImplement(missing, false);
-    let events = missing.kernel.events(missing.workflow);
-    assert.equal(
-      events.findLast(
-        (event) => event.transition === "completion-smoke-attempted",
-      )?.evidence.satisfying,
-      false,
-    );
+void test("fake provider profiles, missing readiness, and failed checks remain non-satisfying", (t) => {
+  const missing = fixture(t, { readiness: false });
+  freezeAndImplement(missing, false);
+  let events = missing.kernel.events(missing.workflow);
+  assert.equal(
+    events.findLast(
+      (event) => event.transition === "completion-smoke-attempted",
+    )?.evidence.satisfying,
+    false,
+  );
 
-    const profileOnly = fixture(t, { providerEvidence: false });
-    freezeAndImplement(profileOnly);
-    events = profileOnly.kernel.events(profileOnly.workflow);
-    assert.match(
-      String(
-        events.findLast(
-          (event) => event.transition === "completion-smoke-attempted",
-        )?.evidence.reason,
-      ),
-      /registered-provider launch provenance/,
-    );
-    assert.equal(
-      events.some((event) => event.transition === "completion-smoke-recorded"),
-      false,
-    );
-
-    const failed = fixture(t, {
-      check: { satisfying: false, reason: "containment failure" },
-    });
-    freezeAndImplement(failed);
-    events = failed.kernel.events(failed.workflow);
-    assert.equal(
+  const profileOnly = fixture(t, { providerEvidence: false });
+  freezeAndImplement(profileOnly);
+  events = profileOnly.kernel.events(profileOnly.workflow);
+  assert.match(
+    String(
       events.findLast(
         (event) => event.transition === "completion-smoke-attempted",
       )?.evidence.reason,
-      "containment failure",
-    );
-    assert.equal(
-      events.some((event) => event.transition === "completion-smoke-recorded"),
-      false,
-    );
+    ),
+    /registered-provider launch provenance/,
+  );
+  assert.equal(
+    events.some((event) => event.transition === "completion-smoke-recorded"),
+    false,
+  );
 
-    const fake = fixture(t, { commandProfile: true });
-    freezeAndImplement(fake);
-    events = fake.kernel.events(fake.workflow);
-    assert.match(
-      String(
-        events.findLast(
-          (event) => event.transition === "completion-smoke-attempted",
-        )?.evidence.reason,
-      ),
-      /production registered-provider/,
-    );
+  const failed = fixture(t, {
+    check: { satisfying: false, reason: "containment failure" },
+  });
+  freezeAndImplement(failed);
+  events = failed.kernel.events(failed.workflow);
+  assert.equal(
+    events.findLast(
+      (event) => event.transition === "completion-smoke-attempted",
+    )?.evidence.reason,
+    "containment failure",
+  );
+  assert.equal(
+    events.some((event) => event.transition === "completion-smoke-recorded"),
+    false,
+  );
 
-    const inline = fixture(t);
-    freezeAndImplement(inline, false, "attached");
-    events = inline.kernel.events(inline.workflow);
-    assert.match(
-      String(
-        events.findLast(
-          (event) => event.transition === "completion-smoke-attempted",
-        )?.evidence.reason,
-      ),
-      /contained spawned implementation/,
-    );
+  const fake = fixture(t, { commandProfile: true });
+  freezeAndImplement(fake);
+  events = fake.kernel.events(fake.workflow);
+  assert.match(
+    String(
+      events.findLast(
+        (event) => event.transition === "completion-smoke-attempted",
+      )?.evidence.reason,
+    ),
+    /production registered-provider/,
+  );
 
-    const checkpoint = fixture(t, { unsafeArtifact: true });
-    freezeAndImplement(checkpoint);
-    events = checkpoint.kernel.events(checkpoint.workflow);
-    assert.match(
-      String(
-        events.findLast(
-          (event) => event.transition === "completion-smoke-attempted",
-        )?.evidence.reason,
-      ),
-      /destination is unsafe/,
-    );
-    assert.equal(
-      events.some((event) => event.transition === "completion-smoke-recorded"),
-      false,
-    );
-  },
-);
+  const inline = fixture(t);
+  freezeAndImplement(inline, false, "attached");
+  events = inline.kernel.events(inline.workflow);
+  assert.match(
+    String(
+      events.findLast(
+        (event) => event.transition === "completion-smoke-attempted",
+      )?.evidence.reason,
+    ),
+    /contained spawned implementation/,
+  );
+
+  const checkpoint = fixture(t, { unsafeArtifact: true });
+  freezeAndImplement(checkpoint);
+  events = checkpoint.kernel.events(checkpoint.workflow);
+  assert.match(
+    String(
+      events.findLast(
+        (event) => event.transition === "completion-smoke-attempted",
+      )?.evidence.reason,
+    ),
+    /destination is unsafe/,
+  );
+  assert.equal(
+    events.some((event) => event.transition === "completion-smoke-recorded"),
+    false,
+  );
+});
 
 void test("malformed declarations fail brief freeze closed", (t) => {
   const f = fixture(t, { declaration: { ...obligation, unexpected: true } });
@@ -809,8 +792,9 @@ void test("malformed declarations fail brief freeze closed", (t) => {
   const result = f.kernel.result(f.workflow, run.execution.id, "succeeded", {
     verdict: "READY",
   });
-  assert.equal(result.transition?.status, "blocked");
-  assert.match(result.transition?.reason ?? "", /unknown field/);
+  const transition = required(result.transition);
+  assert.equal(transition.status, "blocked");
+  assert.match(transition.reason ?? "", /unknown field/);
   assert.equal(
     f.kernel
       .events(f.workflow)
@@ -841,147 +825,131 @@ void test("malformed declarations fail brief freeze closed", (t) => {
     "succeeded",
     { verdict: "READY" },
   );
-  assert.equal(rejected.transition?.status, "blocked");
-  assert.match(rejected.transition?.reason ?? "", /fresh sequence-8/);
+  const rejectedTransition = required(rejected.transition);
+  assert.equal(rejectedTransition.status, "blocked");
+  assert.match(rejectedTransition.reason ?? "", /fresh sequence-8/);
 });
 
-void test(
-  "Outcome requires current smoke for STANDARD and preserves explicit exception allocation",
-  (t) => {
-    const f = fixture(t, {
-      check: { satisfying: false, reason: "test failed" },
-    });
-    freezeAndImplement(f);
-    assert.equal(
-      outcomeAllocationPermitted(
-        f.kernel.events(f.workflow),
-        f.kernel.project,
-        f.workflow,
-      ),
-      false,
-    );
-    assert.equal(
-      f.kernel.inspect(f.workflow, f.grant.id, "outcome").kind,
-      "denied",
-    );
-    appendLedger(
-      f.kernel.path(f.workflow),
-      "process-exception-authorized",
-      { authority: "human" },
-    );
-    appendLedger(
-      f.kernel.path(f.workflow),
-      "process-exception-evidence-recorded",
-      { evidenceIdentity: "sha256:" + "e".repeat(64) },
-    );
-    assert.equal(
-      f.kernel.inspect(f.workflow, f.grant.id, "outcome").kind,
-      "grant",
-    );
-    const run = f.kernel.allocate(f.workflow, f.grant.id, {
-      role: "outcome",
-      session: f.session.id,
-      mode: "attached",
-      inline: true,
-    });
-    f.kernel.process(f.workflow, run.execution.id, "running", 102);
-    writeFileSync(join(f.directory, "outcome.md"), "PROCESS EXCEPTION\n");
-    git(f.docs, ["add", "spikes/001/outcome.md"]);
-    git(f.docs, ["commit", "-q", "-m", "outcome"]);
-    const standard = f.kernel.result(
+void test("Outcome requires current smoke for STANDARD and preserves explicit exception allocation", (t) => {
+  const f = fixture(t, {
+    check: { satisfying: false, reason: "test failed" },
+  });
+  freezeAndImplement(f);
+  assert.equal(
+    outcomeAllocationPermitted(
+      f.kernel.events(f.workflow),
+      f.kernel.project,
       f.workflow,
-      run.execution.id,
-      "succeeded",
-      { completionMode: "STANDARD" },
-    );
-    assert.equal(standard.transition?.status, "blocked");
-    assert.equal(
-      f.kernel
-        .events(f.workflow)
-        .some((event) => event.transition === "outcome-recorded"),
-      false,
-    );
-  },
-);
-
-void test(
-  "authorized PROCESS_EXCEPTION records the outstanding obligation without smoke success",
-  (t) => {
-    const f = fixture(t, {
-      check: { satisfying: false, reason: "pilot unavailable" },
-    });
-    freezeAndImplement(f);
-    appendLedger(f.kernel.path(f.workflow), "process-exception-authorized", {
-      authority: "human",
-      reason: "bounded fixture exception",
-    });
-    appendLedger(
-      f.kernel.path(f.workflow),
-      "process-exception-evidence-recorded",
-      { evidenceIdentity: "sha256:" + "d".repeat(64) },
-    );
-    const run = f.kernel.allocate(f.workflow, f.grant.id, {
-      role: "outcome",
-      session: f.session.id,
-      mode: "attached",
-      inline: true,
-    });
-    f.kernel.process(f.workflow, run.execution.id, "running", 105);
-    writeFileSync(
-      join(f.directory, "outcome.md"),
-      "COMPLETE — PROCESS EXCEPTION\n\nOutstanding: split-coding-smoke\n",
-    );
-    git(f.docs, ["add", "spikes/001/outcome.md"]);
-    git(f.docs, ["commit", "-q", "-m", "exception outcome"]);
-    const result = f.kernel.result(
-      f.workflow,
-      run.execution.id,
-      "succeeded",
-      { completionMode: "PROCESS_EXCEPTION" },
-    );
-    assert.equal(
-      result.transition?.status,
-      "recorded",
-      result.transition?.reason ?? "",
-    );
-    const recorded = f.kernel
+    ),
+    false,
+  );
+  assert.equal(
+    f.kernel.inspect(f.workflow, f.grant.id, "outcome").kind,
+    "denied",
+  );
+  appendLedger(f.kernel.path(f.workflow), "process-exception-authorized", {
+    authority: "human",
+  });
+  appendLedger(
+    f.kernel.path(f.workflow),
+    "process-exception-evidence-recorded",
+    { evidenceIdentity: "sha256:" + "e".repeat(64) },
+  );
+  assert.equal(
+    f.kernel.inspect(f.workflow, f.grant.id, "outcome").kind,
+    "grant",
+  );
+  const run = f.kernel.allocate(f.workflow, f.grant.id, {
+    role: "outcome",
+    session: f.session.id,
+    mode: "attached",
+    inline: true,
+  });
+  f.kernel.process(f.workflow, run.execution.id, "running", 102);
+  writeFileSync(join(f.directory, "outcome.md"), "PROCESS EXCEPTION\n");
+  git(f.docs, ["add", "spikes/001/outcome.md"]);
+  git(f.docs, ["commit", "-q", "-m", "outcome"]);
+  const standard = f.kernel.result(f.workflow, run.execution.id, "succeeded", {
+    completionMode: "STANDARD",
+  });
+  assert.equal(standard.transition?.status, "blocked");
+  assert.equal(
+    f.kernel
       .events(f.workflow)
-      .findLast((event) => event.transition === "outcome-recorded");
-    assert.equal(recorded?.evidence.completionMode, "PROCESS_EXCEPTION");
-    assert.equal(
-      f.kernel
-        .events(f.workflow)
-        .some((event) => event.transition === "completion-smoke-recorded"),
-      false,
-    );
-  },
-);
+      .some((event) => event.transition === "outcome-recorded"),
+    false,
+  );
+});
 
-void test(
-  "STANDARD Outcome records only with the current completion snapshot",
-  (t) => {
-    const f = fixture(t);
-    freezeAndImplement(f);
-    const run = f.kernel.allocate(f.workflow, f.grant.id, {
-      role: "outcome",
-      session: f.session.id,
-      mode: "attached",
-      inline: true,
-    });
-    f.kernel.process(f.workflow, run.execution.id, "running", 106);
-    writeFileSync(join(f.directory, "outcome.md"), "COMPLETE — STANDARD\n");
-    git(f.docs, ["add", "spikes/001/outcome.md"]);
-    git(f.docs, ["commit", "-q", "-m", "standard outcome"]);
-    const result = f.kernel.result(f.workflow, run.execution.id, "succeeded", {
-      completionMode: "STANDARD",
-    });
-    assert.equal(
-      result.transition?.status,
-      "recorded",
-      result.transition?.reason ?? "",
-    );
-  },
-);
+void test("authorized PROCESS_EXCEPTION records the outstanding obligation without smoke success", (t) => {
+  const f = fixture(t, {
+    check: { satisfying: false, reason: "pilot unavailable" },
+  });
+  freezeAndImplement(f);
+  appendLedger(f.kernel.path(f.workflow), "process-exception-authorized", {
+    authority: "human",
+    reason: "bounded fixture exception",
+  });
+  appendLedger(
+    f.kernel.path(f.workflow),
+    "process-exception-evidence-recorded",
+    { evidenceIdentity: "sha256:" + "d".repeat(64) },
+  );
+  const run = f.kernel.allocate(f.workflow, f.grant.id, {
+    role: "outcome",
+    session: f.session.id,
+    mode: "attached",
+    inline: true,
+  });
+  f.kernel.process(f.workflow, run.execution.id, "running", 105);
+  writeFileSync(
+    join(f.directory, "outcome.md"),
+    "COMPLETE — PROCESS EXCEPTION\n\nOutstanding: split-coding-smoke\n",
+  );
+  git(f.docs, ["add", "spikes/001/outcome.md"]);
+  git(f.docs, ["commit", "-q", "-m", "exception outcome"]);
+  const result = f.kernel.result(f.workflow, run.execution.id, "succeeded", {
+    completionMode: "PROCESS_EXCEPTION",
+  });
+  assert.equal(
+    result.transition?.status,
+    "recorded",
+    result.transition?.reason ?? "",
+  );
+  const recorded = f.kernel
+    .events(f.workflow)
+    .findLast((event) => event.transition === "outcome-recorded");
+  assert.equal(recorded?.evidence.completionMode, "PROCESS_EXCEPTION");
+  assert.equal(
+    f.kernel
+      .events(f.workflow)
+      .some((event) => event.transition === "completion-smoke-recorded"),
+    false,
+  );
+});
+
+void test("STANDARD Outcome records only with the current completion snapshot", (t) => {
+  const f = fixture(t);
+  freezeAndImplement(f);
+  const run = f.kernel.allocate(f.workflow, f.grant.id, {
+    role: "outcome",
+    session: f.session.id,
+    mode: "attached",
+    inline: true,
+  });
+  f.kernel.process(f.workflow, run.execution.id, "running", 106);
+  writeFileSync(join(f.directory, "outcome.md"), "COMPLETE — STANDARD\n");
+  git(f.docs, ["add", "spikes/001/outcome.md"]);
+  git(f.docs, ["commit", "-q", "-m", "standard outcome"]);
+  const result = f.kernel.result(f.workflow, run.execution.id, "succeeded", {
+    completionMode: "STANDARD",
+  });
+  assert.equal(
+    result.transition?.status,
+    "recorded",
+    result.transition?.reason ?? "",
+  );
+});
 
 void test("absent declaration preserves legacy behavior", (t) => {
   const f = fixture(t, { declaration: null });
@@ -1006,7 +974,7 @@ void test("absent declaration preserves legacy behavior", (t) => {
 
 void test("methodology adoption is forward-only for workflow grants", (t) => {
   const f = fixture(t, { declaration: null, sequence: 7 });
-  assert.equal(f.grant.source?.trusted.sequence, 7);
+  assert.equal(required(f.grant.source).trusted.sequence, 7);
   f.adoptSequenceEight();
   const fresh = f.kernel.authorize(f.workflow, {
     continuation: true,
@@ -1015,58 +983,52 @@ void test("methodology adoption is forward-only for workflow grants", (t) => {
     maxAllocations: 6,
     inline: true,
   });
-  assert.equal(f.grant.source?.trusted.sequence, 7);
-  assert.equal(fresh.source?.trusted.sequence, 8);
+  assert.equal(required(f.grant.source).trusted.sequence, 7);
+  assert.equal(required(fresh.source).trusted.sequence, 8);
 });
 
-void test(
-  "later source or workflow checkpoints make a completion record non-current",
-  (t) => {
-    const sourceDrift = fixture(t);
-    freezeAndImplement(sourceDrift);
-    writeFileSync(join(sourceDrift.source, "later.js"), "module.exports=2\n");
-    git(sourceDrift.source, ["add", "later.js"]);
-    git(sourceDrift.source, ["commit", "-q", "-m", "later source"]);
-    assert.equal(
-      sourceDrift.kernel.inspect(
-        sourceDrift.workflow,
-        sourceDrift.grant.id,
-        "outcome",
-      ).kind,
-      "denied",
-    );
+void test("later source or workflow checkpoints make a completion record non-current", (t) => {
+  const sourceDrift = fixture(t);
+  freezeAndImplement(sourceDrift);
+  writeFileSync(join(sourceDrift.source, "later.js"), "module.exports=2\n");
+  git(sourceDrift.source, ["add", "later.js"]);
+  git(sourceDrift.source, ["commit", "-q", "-m", "later source"]);
+  assert.equal(
+    sourceDrift.kernel.inspect(
+      sourceDrift.workflow,
+      sourceDrift.grant.id,
+      "outcome",
+    ).kind,
+    "denied",
+  );
 
-    const docsDrift = fixture(t);
-    freezeAndImplement(docsDrift);
-    writeFileSync(join(docsDrift.directory, "later.md"), "later\n");
-    git(docsDrift.docs, ["add", "spikes/001/later.md"]);
-    git(docsDrift.docs, ["commit", "-q", "-m", "later docs"]);
-    assert.equal(
-      docsDrift.kernel.inspect(
-        docsDrift.workflow,
-        docsDrift.grant.id,
-        "outcome",
-      ).kind,
-      "denied",
-    );
+  const docsDrift = fixture(t);
+  freezeAndImplement(docsDrift);
+  writeFileSync(join(docsDrift.directory, "later.md"), "later\n");
+  git(docsDrift.docs, ["add", "spikes/001/later.md"]);
+  git(docsDrift.docs, ["commit", "-q", "-m", "later docs"]);
+  assert.equal(
+    docsDrift.kernel.inspect(docsDrift.workflow, docsDrift.grant.id, "outcome")
+      .kind,
+    "denied",
+  );
 
-    const laterHandoff = fixture(t);
-    freezeAndImplement(laterHandoff);
-    const prior = laterHandoff.kernel
-      .events(laterHandoff.workflow)
-      .findLast((event) => event.transition === "implementation-handoff");
-    appendLedger(
-      laterHandoff.kernel.path(laterHandoff.workflow),
-      "implementation-handoff",
-      { ...prior?.evidence, execution: "later-execution" },
-    );
-    assert.equal(
-      laterHandoff.kernel.inspect(
-        laterHandoff.workflow,
-        laterHandoff.grant.id,
-        "outcome",
-      ).kind,
-      "denied",
-    );
-  },
-);
+  const laterHandoff = fixture(t);
+  freezeAndImplement(laterHandoff);
+  const prior = laterHandoff.kernel
+    .events(laterHandoff.workflow)
+    .findLast((event) => event.transition === "implementation-handoff");
+  appendLedger(
+    laterHandoff.kernel.path(laterHandoff.workflow),
+    "implementation-handoff",
+    { ...prior?.evidence, execution: "later-execution" },
+  );
+  assert.equal(
+    laterHandoff.kernel.inspect(
+      laterHandoff.workflow,
+      laterHandoff.grant.id,
+      "outcome",
+    ).kind,
+    "denied",
+  );
+});

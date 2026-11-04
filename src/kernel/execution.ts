@@ -2466,8 +2466,12 @@ export class ExecutionKernel {
             sourceCommit: commits.source.commit,
             workflowCommit: commits.workflow.commit,
             methodology: parent.methodology,
-            trustedRevision: parent.source?.trusted.revision,
-            runtimeCommit: parent.source?.runtime?.commit,
+            ...(parent.source
+              ? { trustedRevision: parent.source.trusted.revision }
+              : {}),
+            ...(parent.source?.runtime
+              ? { runtimeCommit: parent.source.runtime.commit }
+              : {}),
           },
         );
         if (result.methodology.completionMode === "STANDARD" && !current)
@@ -2668,7 +2672,7 @@ export class ExecutionKernel {
               methodology: parent.methodology,
               trustedSequence: 8,
               trustedRevision: source.trusted.revision,
-              sourceOrigin: this.project.origin,
+              sourceOrigin: required(this.project.origin),
               workflowOrigin: required(this.project.workflowOrigin),
               ...(source.runtime
                 ? { runtimeCommit: source.runtime.commit }
@@ -2734,11 +2738,15 @@ export class ExecutionKernel {
       | undefined;
     const source = repositories?.source;
     const workflowBinding = repositories?.workflow;
+    const candidate =
+      typeof handoff.evidence.commit === "string"
+        ? handoff.evidence.commit
+        : "";
     const key = contentId({
       declaration: declared.identity,
       handoff: handoff.id,
       execution: executionId,
-      candidate: handoff.evidence.commit,
+      candidate,
       source,
       workflow: workflowBinding,
     });
@@ -2761,7 +2769,7 @@ export class ExecutionKernel {
       declaration: declared.identity,
       handoff: required(handoff.id),
       execution: executionId,
-      candidate: String(handoff.evidence.commit ?? ""),
+      candidate,
       workflowCheckpoint: workflowBinding?.commit ?? "",
       satisfying,
       reason,
@@ -2779,10 +2787,11 @@ export class ExecutionKernel {
         throw new Error(
           "completion finalization requires sequence-8 split authority",
         );
+      const parentSource = required(parent.source);
       if (
         declared.methodology !== parent.methodology ||
-        declared.trustedRevision !== parent.source?.trusted.revision ||
-        declared.runtimeCommit !== parent.source?.runtime?.commit ||
+        declared.trustedRevision !== parentSource.trusted.revision ||
+        declared.runtimeCommit !== parentSource.runtime?.commit ||
         declared.sourceOrigin !== this.project.origin ||
         declared.workflowOrigin !== this.project.workflowOrigin
       )
@@ -2841,7 +2850,9 @@ export class ExecutionKernel {
           execution.providerLaunch.provenance,
         )
       )
-        throw new Error("completion provider launch provenance is inconsistent");
+        throw new Error(
+          "completion provider launch provenance is inconsistent",
+        );
       if (
         !events.some(
           (event) =>
@@ -2849,8 +2860,7 @@ export class ExecutionKernel {
             event.evidence.execution === executionId &&
             (
               event.evidence.update as
-                | { process?: string; pid?: number }
-                | undefined
+                { process?: string; pid?: number } | undefined
             )?.process === "running" &&
             typeof (event.evidence.update as { pid?: number } | undefined)
               ?.pid === "number" &&
@@ -2930,7 +2940,10 @@ export class ExecutionKernel {
         excludedRoots: [docsRoot],
       });
       if (!checks.satisfying) {
-        reject(checks.reason ?? "completion checks were non-satisfying", checks);
+        reject(
+          checks.reason ?? "completion checks were non-satisfying",
+          checks,
+        );
         return;
       }
       const success: CompletionSuccessRecord = {
@@ -2945,9 +2958,9 @@ export class ExecutionKernel {
         workflowEvidenceCommit: workflowBinding.commit,
         methodology: parent.methodology,
         trustedSequence: 8,
-        trustedRevision: required(parent.source).trusted.revision,
-        ...(parent.source?.runtime
-          ? { runtimeCommit: parent.source.runtime.commit }
+        trustedRevision: parentSource.trusted.revision,
+        ...(parentSource.runtime
+          ? { runtimeCommit: parentSource.runtime.commit }
           : {}),
         roleGrant: grant.id,
         workflowGrant: parent.id,

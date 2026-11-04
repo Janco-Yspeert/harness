@@ -76,9 +76,9 @@ Report the structured completion mode as exactly `STANDARD` or
 For a workflow carrying a bound split-coding-smoke declaration, STANDARD also
 requires the bound current completion record and the Outcome cites both exact
 identities. PROCESS_EXCEPTION instead cites the declaration, the outstanding
-smoke obligation, its reason, and the already-bound exception authority; it
-does not claim or synthesize smoke success. Workflows without a declaration,
-and predecessor-pinned sequence-7 workflows, retain the version-5 completion
+smoke obligation, its reason, and the already-bound exception authority; it does
+not claim or synthesize smoke success. Workflows without a declaration, and
+predecessor-pinned sequence-7 workflows, retain the version-5 completion
 meaning.
 
 After checking Outcome, make its `manifest.md` entry the final

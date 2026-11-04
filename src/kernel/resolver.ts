@@ -499,8 +499,12 @@ export function resolveAuthority(
             sourceCommit: commitPair(project, {}).source.commit,
             workflowCommit: commitPair(project, {}).workflow.commit,
             methodology: workflow.methodology,
-            trustedRevision: workflow.source?.trusted.revision,
-            runtimeCommit: workflow.source?.runtime?.commit,
+            ...(workflow.source
+              ? { trustedRevision: workflow.source.trusted.revision }
+              : {}),
+            ...(workflow.source?.runtime
+              ? { runtimeCommit: workflow.source.runtime.commit }
+              : {}),
           }
         : undefined,
     )
@@ -1003,10 +1007,12 @@ export function assertBindingAdvance(
   validateCommitBinding(project, successor.workspace, successor);
   const { workspace } = bindingWorkspace(project, successor.workspace);
   try {
-    successfulGit(
-      workspace.path,
-      ["merge-base", "--is-ancestor", predecessor.commit, successor.commit],
-    );
+    successfulGit(workspace.path, [
+      "merge-base",
+      "--is-ancestor",
+      predecessor.commit,
+      successor.commit,
+    ]);
   } catch {
     throw new Error("repository checkpoint is not descended from predecessor");
   }
