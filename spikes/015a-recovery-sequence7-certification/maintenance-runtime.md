@@ -101,3 +101,32 @@ The successor's frozen public inputs remain:
 
 The record does not expose implementation candidate material to evaluator
 preparation and does not authorize any later role automatically.
+
+## Readiness maintenance supplement (2026-11-04)
+
+The human operator separately authorized the use of maintenance runtime
+`e332b14e3754b84597b3dfe159bd15f370886562`, descended from
+`f216b99b607305db11f143d2a8444fd096cf70db`, for the existing correction
+Implementation grant only. It remains an operator-approved runtime exception,
+not a replacement identity for the trusted sequence-7 baseline.
+
+Its narrowly reviewed delta changes only readiness plumbing and tests:
+
+- Codex readiness defaults to a bounded 60-second deadline (Claude remains at
+  15 seconds); a validated executor-profile override is available only between
+  1 and 120 seconds.
+- A completed `mcp__harness__readiness` invocation is recorded as positive MCP
+  connectivity evidence for adapters such as Codex that do not emit Claude's
+  initialization event.
+
+Focused readiness regressions, typecheck, lint, formatting, and diff checks
+passed. A real Bubblewrap-contained Codex Sol Medium probe using synthetic
+workspaces completed in 16,587 ms with exit status 0 and invoked only
+`mcp__harness__readiness`; it exposed neither candidate C nor evaluator-private
+material. The pre-existing full-suite failures listed above remain outside this
+supplement.
+
+This supplement neither changes methodology, frozen inputs, evaluator revision
+001, candidate C, prior failed attempts, nor the canonical workflow ledger. It
+authorizes one bounded operational retry only after the host confirms that the
+existing correction-grant launch intent and authority bindings are unchanged.
