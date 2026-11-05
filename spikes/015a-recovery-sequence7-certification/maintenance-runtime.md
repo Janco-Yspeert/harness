@@ -130,3 +130,35 @@ This supplement neither changes methodology, frozen inputs, evaluator revision
 001, candidate C, prior failed attempts, nor the canonical workflow ledger. It
 authorizes one bounded operational retry only after the host confirms that the
 existing correction-grant launch intent and authority bindings are unchanged.
+
+## Promotion compatibility supplement (2026-11-05)
+
+The human operator authorized maintenance runtime
+`7210c9c8c25b182c2c0327c5ecb269353074dbf6`, descended from the previously
+authorized `e332b14e3754b84597b3dfe159bd15f370886562`, solely to finish
+host-owned promotion after the canonical PASS for candidate D
+`5df58ccd70b8fc8954f7497279d823ab2088842d`. This is an operational runtime
+exception, not a new sequence-7 methodology identity.
+
+The reviewed delta changes only `src/evaluation-closeout.ts` and its focused
+test file. It recognizes one historical private-ledger producer shape: schema
+version 2 entries with an explicit unique numeric attempt, candidate SHA,
+three-digit evaluator revision, terminal verdict, and exact result-file hash.
+It never relaxes the canonical ledger parser. Before archive derivation, each
+legacy entry must still match an existing complete ordered host allocation,
+candidate, revision, terminal result, active freeze identity, and on-disk
+result hash. The original private ledger remains copied byte-for-byte with its
+original identity; a separate promoted normalization record names the source
+identity and reconciliation method.
+
+This is not an archive-loss, complete-recovery, or unbound-evidence recovery:
+all private bytes and canonical host evidence survive. Those mechanisms would
+misclassify a producer/consumer schema mismatch as evidence loss and are not
+used.
+
+Focused closeout/archive tests passed 45/45, including missing, duplicate,
+reordered, contradictory, malformed, and hash-mismatched legacy entries.
+Typecheck, lint, format check, and diff check passed. The reviewed runtime
+delta does not change methodology definitions, role contracts, skills, public
+validators, frozen inputs, the evaluator, candidate D, or the canonical
+workflow ledger.
