@@ -120,6 +120,29 @@
   was preserved and excluded from the candidate.
 - Measurement cutoff: immediately before this manifest update.
 
+## 2026-11-05 — As-Built
+
+- Execution: `999a3feb-3640-4fe4-b513-1d5d77584ae3`.
+- Skill: as-built, contract version 4
+  (`sha256:dc3c422691fb36a292b49db411ff9aefd5199f8602b73ef87428fd0a09ea534b`).
+- Inspected candidate: `5df58ccd70b8fc8954f7497279d823ab2088842d`.
+- Inputs: frozen `spike.md`
+  (`sha256:eac9f72546fa65ab722dbcfd6b7d0d47c0787c1e6cd6cd66b5c570913b87baaa`),
+  frozen `design-map.md`
+  (`sha256:4d92074b4d9e8511d6dc3623f1f09dc23726bb118c0d4e3bd51102e815c819ea`),
+  final verification result
+  (`sha256:c15811403dbbe5ff046d0c65d92bf0d393d47d2569c0d8d9433f28bfad42403a`),
+  and completed promotion record
+  (`sha256:19e4b8d47306ee18085168f068f5eddb94990bcbd3521a11a8c7ccad771dd7d9`).
+- Result: `succeeded`. Reconstructed the host-owned split-coding-smoke
+  completion path and found no Missing, Contradictory, or Extra material
+  behavior or structure against the frozen contract.
+- Output: `as-built.md`
+  (`sha256:1bc1ae7630ee8534ad1703d9d8ee9d08e16702689c3807f1156f99511f236189`).
+- Statistics: none recorded; no additional reliable runtime statistics were
+  available through this update's measurement cutoff.
+- Measurement cutoff: immediately before this manifest update.
+
 ## 2026-11-04 — Evaluator Verify (attempt 3)
 
 - Skill: evaluator, contract version 14, mode `verify`
