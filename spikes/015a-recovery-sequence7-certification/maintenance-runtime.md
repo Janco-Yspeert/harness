@@ -162,3 +162,27 @@ Typecheck, lint, format check, and diff check passed. The reviewed runtime
 delta does not change methodology definitions, role contracts, skills, public
 validators, frozen inputs, the evaluator, candidate D, or the canonical
 workflow ledger.
+
+## Active-evaluator archive-path supplement (2026-11-05)
+
+The human operator authorized maintenance runtime
+`c7ffb1ca56db5ef8df0ec7fe283c7c263fe2bea7`, descended from
+`7210c9c8c25b182c2c0327c5ecb269353074dbf6`, to recover host-owned promotion
+of the existing canonical PASS only. It reuses the generic correction first
+implemented in `1c206039c8873a2bffa894b36e76db7746cf26bd`
+(`fix(runtime): archive active evaluator root artifacts`), rather than
+creating a recovery-specific archive protocol.
+
+The correction preserves separate locations required by the frozen evaluator
+contract: active freeze metadata remains `.eval/freeze.json`, active payload
+files resolve from the evaluator root, and superseded payloads remain under
+`.eval/revisions/<revision>/`. It does not change any frozen byte, evaluator
+identity, result, candidate, grant, workflow transition, or methodology
+definition. The prior legacy attempt-ledger compatibility correction remains
+present in the same runtime lineage.
+
+Focused closeout tests passed, including root-active and revision-scoped
+layouts with missing and hash-drift refusal. Typecheck, lint, formatting, and
+diff checks passed. A read-only derivation against the actual revision-001
+workspace verified all eleven planned archive items and their identities before
+promotion was retried.
