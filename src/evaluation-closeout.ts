@@ -360,6 +360,14 @@ interface PrivateAttempt {
   readonly resultIdentity?: string;
 }
 
+interface PrivateAttemptResolution {
+  readonly entries: readonly PrivateAttempt[];
+  readonly compatibility?: {
+    readonly sourceIdentity: string;
+    readonly content: string;
+  };
+}
+
 function privateAttempts(value: unknown): PrivateAttempt[] {
   if (value === null || typeof value !== "object" || Array.isArray(value))
     throw new Error("attempt ledger must be an object");
@@ -420,6 +428,142 @@ function privateAttempts(value: unknown): PrivateAttempt[] {
   });
 }
 
+// Sequence-7's original private ledger producer used an explicit numeric
+// `attempt` and result hash, but predates the canonical `id`/`resultPath`
+// shape. Accept that exact historical shape only when every field needed to
+// bind it independently is present. This is not a relaxed canonical parser.
+function legacyPrivateAttempts(
+  evaluatorRoot: string,
+  ledgerBytes: Buffer,
+  value: unknown,
+): PrivateAttemptResolution {
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    throw new Error("attempt ledger must be an object");
+  const ledger = value as Record<string, unknown>;
+  if (ledger.schemaVersion !== 2 || !Array.isArray(ledger.attempts))
+    throw new Error("attempt ledger does not use the canonical schema");
+  const seen = new Set<number>();
+  const normalized: Array<{
+    id: string;
+    implementation: string;
+    evaluatorRevision: string;
+    evaluatorRevisionIdentity: string;
+    status: Verdict;
+    resultPath: string;
+    resultIdentity: string;
+  }> = [];
+  for (const raw of ledger.attempts) {
+    if (raw === null || typeof raw !== "object" || Array.isArray(raw))
+      throw new Error("legacy private attempt entry is malformed");
+    const entry = raw as Record<string, unknown>;
+    const allowed = new Set([
+      "attempt",
+      "candidate",
+      "classification",
+      "evaluatorRevision",
+      "result",
+      "status",
+    ]);
+    const extra = Object.keys(entry).find((key) => !allowed.has(key));
+    if (extra !== undefined || "id" in entry)
+      throw new Error(
+        "private attempt is neither canonical nor supported legacy shape",
+      );
+    if (
+      !Number.isSafeInteger(entry.attempt) ||
+      (entry.attempt as number) < 1 ||
+      typeof entry.candidate !== "string" ||
+      !/^[a-f0-9]{40}$/.test(entry.candidate) ||
+      typeof entry.evaluatorRevision !== "string" ||
+      !/^\d{3}$/.test(entry.evaluatorRevision) ||
+      typeof entry.status !== "string" ||
+      !VERDICTS.includes(entry.status) ||
+      typeof entry.result !== "string" ||
+      !/^sha256:[a-f0-9]{64}$/.test(entry.result) ||
+      (entry.classification !== undefined &&
+        typeof entry.classification !== "string")
+    )
+      throw new Error(
+        "legacy private attempt lacks exact reconciliation fields",
+      );
+    const attempt = entry.attempt as number;
+    if (seen.has(attempt))
+      throw new Error(`duplicate legacy private attempt ${String(attempt)}`);
+    seen.add(attempt);
+    const id = String(attempt).padStart(3, "0");
+    const resultPath = `.eval/attempts/${id}/eval-result.md`;
+    const resultBytes = readRegular(evaluatorRoot, resultPath);
+    if (resultBytes === null || identity(resultBytes) !== entry.result)
+      throw new Error(
+        `legacy private attempt ${id} result is missing or changed`,
+      );
+    const freeze = readRegular(evaluatorRoot, ".eval/freeze.json");
+    if (freeze === null)
+      throw new Error("active evaluator revision identity mismatch");
+    parseFreeze(freeze, entry.evaluatorRevision);
+    normalized.push({
+      id,
+      implementation: `git:${entry.candidate}`,
+      evaluatorRevision: entry.evaluatorRevision,
+      evaluatorRevisionIdentity: identity(freeze),
+      status: entry.status as Verdict,
+      resultPath,
+      resultIdentity: entry.result,
+    });
+  }
+  const content = `${canonical({
+    schemaVersion: 1,
+    kind: "legacy-attempt-ledger-normalization",
+    method: "explicit-attempt-host-reconciliation-v1",
+    source: {
+      path: ".eval/attempt-ledger.json",
+      identity: identity(ledgerBytes),
+    },
+    attempts: normalized,
+  })}\n`;
+  return {
+    entries: normalized.map((entry) => ({
+      attempt: Number(entry.id),
+      implementation: entry.implementation,
+      evaluatorRevision: entry.evaluatorRevision,
+      evaluatorRevisionIdentity: entry.evaluatorRevisionIdentity,
+      status: entry.status,
+      resultPath: entry.resultPath,
+      resultIdentity: entry.resultIdentity,
+    })),
+    compatibility: { sourceIdentity: identity(ledgerBytes), content },
+  };
+}
+
+function resolvedPrivateAttempts(
+  evaluatorRoot: string,
+  ledgerBytes: Buffer,
+): PrivateAttemptResolution {
+  const value: unknown = JSON.parse(ledgerBytes.toString("utf8"));
+  try {
+    return { entries: privateAttempts(value) };
+  } catch (error) {
+    const ledger =
+      value !== null && typeof value === "object" && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : undefined;
+    const historical =
+      Array.isArray(ledger?.attempts) &&
+      ledger.attempts.every(
+        (entry) =>
+          entry !== null &&
+          typeof entry === "object" &&
+          !Array.isArray(entry) &&
+          !("id" in entry) &&
+          "attempt" in entry &&
+          "candidate" in entry &&
+          "result" in entry,
+      );
+    if (!historical) throw error;
+    return legacyPrivateAttempts(evaluatorRoot, ledgerBytes, value);
+  }
+}
+
 // Host derivation of the post-PASS archive from the private attempt ledger and
 // the host's own allocation records. No evaluator-authored plan or eligibility
 // decision is read.
@@ -430,9 +574,8 @@ export function deriveHostArchive(
 ): ArchivePlan {
   const ledgerBytes = readRegular(evaluatorRoot, ".eval/attempt-ledger.json");
   if (ledgerBytes === null) throw new Error("attempt ledger is missing");
-  const privateEntries = privateAttempts(
-    JSON.parse(ledgerBytes.toString("utf8")),
-  );
+  const privateResolution = resolvedPrivateAttempts(evaluatorRoot, ledgerBytes);
+  const privateEntries = privateResolution.entries;
   if (allocations.length === 0) throw new Error("host has no allocations");
   allocations.forEach((allocation, index) => {
     if (allocation.attempt !== index + 1)
@@ -520,7 +663,7 @@ export function deriveHostArchive(
     freeze === null
   )
     throw new Error("archive requires a terminal PASS and frozen revision");
-  return buildArchivePlan(evaluatorRoot, {
+  const archive = buildArchivePlan(evaluatorRoot, {
     schemaVersion: 1,
     kind: "evaluation-fact",
     result: last.result,
@@ -530,4 +673,21 @@ export function deriveHostArchive(
     resultIdentity: last.artifact.identity,
     attempts,
   });
+  if (!privateResolution.compatibility) return archive;
+  return {
+    ...archive,
+    items: [
+      {
+        source: ".eval/attempt-ledger.json",
+        destination: "attempt-ledger.json",
+        identity: privateResolution.compatibility.sourceIdentity,
+      },
+      {
+        destination: "attempt-ledger-normalization.json",
+        identity: identity(privateResolution.compatibility.content),
+        content: privateResolution.compatibility.content,
+      },
+      ...archive.items,
+    ],
+  };
 }

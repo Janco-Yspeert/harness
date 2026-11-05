@@ -748,6 +748,22 @@ function privateEntry(
   };
 }
 
+function legacyPrivateEntry(
+  attempt: number,
+  status: "PASS" | "FAIL" | "BLOCKED",
+  result: string,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    attempt,
+    candidate: COMMIT,
+    evaluatorRevision: "001",
+    status,
+    result,
+    ...overrides,
+  };
+}
+
 function hostAttempt(
   attempt: number,
   result?: "PASS" | "FAIL" | "BLOCKED",
@@ -922,6 +938,127 @@ void test("014k AC08/AC10: malformed, duplicate, unknown and conflicting private
   assert.throws(
     () => deriveHostArchive(root, COMMIT, [allocation]),
     /changed since it was recorded/,
+  );
+});
+
+void test("post-PASS compatibility: explicit legacy attempts reconcile against host history without rewriting the ledger", (t) => {
+  const { root } = archiveFixture(t);
+  const blocked = put(root, ".eval/attempts/001/eval-result.md", "blocked\n");
+  const failed = put(root, ".eval/attempts/002/eval-result.md", "failed\n");
+  const passed = put(root, ".eval/attempts/003/eval-result.md", "passed\n");
+  const ledger = `${JSON.stringify({
+    schemaVersion: 2,
+    // The historical producer did not order this array canonically. Explicit
+    // attempt numbers and host history, rather than position, bind it.
+    attempts: [
+      legacyPrivateEntry(3, "PASS", passed),
+      legacyPrivateEntry(1, "BLOCKED", blocked, {
+        classification: "INFRASTRUCTURE_FAILURE",
+      }),
+      legacyPrivateEntry(2, "FAIL", failed, {
+        classification: "IMPLEMENTATION_FAILURE",
+      }),
+    ],
+  })}\n`;
+  const ledgerIdentity = put(root, ".eval/attempt-ledger.json", ledger);
+  const plan = deriveHostArchive(root, COMMIT, [
+    hostAttempt(1, "BLOCKED"),
+    hostAttempt(2, "FAIL"),
+    hostAttempt(3, "PASS"),
+  ]);
+  const fact = JSON.parse(
+    plan.items.find((item) => item.destination === "evaluation-fact.json")
+      ?.content ?? "null",
+  ) as EvaluationFact;
+  assert.deepEqual(
+    fact.attempts.map((entry) => [
+      entry.attempt,
+      entry.state,
+      entry.state === "TERMINAL" ? entry.result : null,
+    ]),
+    [
+      [1, "TERMINAL", "BLOCKED"],
+      [2, "TERMINAL", "FAIL"],
+      [3, "TERMINAL", "PASS"],
+    ],
+  );
+  assert.equal(
+    plan.items.find((item) => item.destination === "attempt-ledger.json")
+      ?.identity,
+    ledgerIdentity,
+  );
+  const normalization = plan.items.find(
+    (item) => item.destination === "attempt-ledger-normalization.json",
+  );
+  assert.ok(normalization?.content);
+  const normalized = JSON.parse(normalization.content ?? "null") as {
+    source: { identity: string };
+    method: string;
+    attempts: Array<{ id: string; resultIdentity: string }>;
+  };
+  assert.equal(normalized.source.identity, ledgerIdentity);
+  assert.equal(normalized.method, "explicit-attempt-host-reconciliation-v1");
+  assert.deepEqual(
+    normalized.attempts.map((entry) => [entry.id, entry.resultIdentity]),
+    [
+      ["003", passed],
+      ["001", blocked],
+      ["002", failed],
+    ],
+  );
+
+  const reject = (
+    attempts: readonly Record<string, unknown>[],
+    expected: RegExp,
+  ): void => {
+    put(
+      root,
+      ".eval/attempt-ledger.json",
+      `${JSON.stringify({ schemaVersion: 2, attempts })}\n`,
+    );
+    assert.throws(
+      () =>
+        deriveHostArchive(root, COMMIT, [
+          hostAttempt(1, "BLOCKED"),
+          hostAttempt(2, "FAIL"),
+          hostAttempt(3, "PASS"),
+        ]),
+      expected,
+    );
+  };
+  reject(
+    [
+      legacyPrivateEntry(1, "BLOCKED", blocked),
+      legacyPrivateEntry(3, "PASS", passed),
+    ],
+    /terminal evidence gap for attempt 2/,
+  );
+  reject(
+    [
+      legacyPrivateEntry(1, "BLOCKED", blocked),
+      legacyPrivateEntry(1, "BLOCKED", blocked),
+    ],
+    /duplicate legacy private attempt 1/,
+  );
+  reject(
+    [legacyPrivateEntry(1, "BLOCKED", blocked, { candidate: "b".repeat(40) })],
+    /candidate conflicts/,
+  );
+  reject(
+    [
+      {
+        attempt: "1",
+        candidate: COMMIT,
+        evaluatorRevision: "001",
+        status: "PASS",
+        result: passed,
+      },
+    ],
+    /legacy private attempt lacks exact reconciliation fields/,
+  );
+  reject(
+    [legacyPrivateEntry(1, "BLOCKED", passed)],
+    /result is missing or changed/,
   );
 });
 
