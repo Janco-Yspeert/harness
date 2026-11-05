@@ -151,3 +151,27 @@
 - Checks: Git-state inspection, typecheck, lint and format:check clean; full test run showed only the 8 failures inherited identically from baseline `1159f664`; test-coverage, Spike 015 and scope reviews satisfied.
 - Limitations: no live provider, network or sequence-8 authority used.
 - Measurement cutoff: immediately before this manifest update.
+
+## 2026-11-05 — Outcome
+
+- Execution: `72309f84-68ef-47ba-9f24-08aa942f4a7d`.
+- Skill: outcome, contract version 5
+  (`sha256:2ab64cee141d06a88ff04dc540ddfa7a15c364e07bb717b7fab70c15460b7e82`).
+- Inputs: accepted candidate `5df58ccd70b8fc8954f7497279d823ab2088842d`; frozen brief
+  (`sha256:eac9f72546fa65ab722dbcfd6b7d0d47c0787c1e6cd6cd66b5c570913b87baaa`);
+  frozen Design Map
+  (`sha256:4d92074b4d9e8511d6dc3623f1f09dc23726bb118c0d4e3bd51102e815c819ea`);
+  completed promotion
+  (`sha256:19e4b8d47306ee18085168f068f5eddb94990bcbd3521a11a8c7ccad771dd7d9`);
+  and As-Built
+  (`sha256:1bc1ae7630ee8534ad1703d9d8ee9d08e16702689c3807f1156f99511f236189`).
+- Result: `succeeded`; completion mode `STANDARD`. The historical synthesis
+  records evaluator attempt history (BLOCKED, FAIL, then PASS), the exact
+  committed PASS candidate and promotion provenance, and the distinction
+  between this sequence-7 certification and later sequence-8 operational work.
+- Output: `outcome.md`
+  (`sha256:30cb7c3fc069944178fbd30a728541a42d0e911d2a87c2d2a80fc74ae2a98300`).
+- Statistics: none recorded; no additional reliable runtime statistics were
+  available through this update's measurement cutoff. This entry is not
+  retrospective.
+- Measurement cutoff: immediately before this manifest update.
