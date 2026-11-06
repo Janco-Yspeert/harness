@@ -1,6 +1,6 @@
 # Operator maintenance-runtime authorization — Spike 015a recovery
 
-Date: 2026-11-03  
+Date: 2026-11-03
 Status: authorized operator maintenance; applies before `evaluator-prepare`
 
 ## Authority and identity
