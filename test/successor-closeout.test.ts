@@ -875,6 +875,33 @@ void test("014k AC06/AC07/AC10: host allocations are the backbone; sparse privat
   );
 });
 
+void test("legacy attempt ledgers normalize only with independently verified result bytes", (t) => {
+  const { root } = archiveFixture(t);
+  const result = put(root, ".eval/attempts/001/eval-result.md", "pass\n");
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({
+      schemaVersion: 2,
+      attempts: [
+        {
+          attempt: 1,
+          candidate: COMMIT,
+          evaluatorRevision: "001",
+          result,
+          status: "PASS",
+        },
+      ],
+    })}\n`,
+  );
+  const plan = deriveHostArchive(root, COMMIT, [hostAttempt(1, "PASS")]);
+  assert.ok(
+    plan.items.some(
+      (item) => item.destination === "attempt-ledger-normalization.json",
+    ),
+  );
+});
+
 void test("014k AC07/AC08: terminal host state never degrades to NONTERMINAL when private evidence is absent", (t) => {
   const { root } = archiveFixture(t);
   put(

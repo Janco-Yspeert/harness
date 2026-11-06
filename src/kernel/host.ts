@@ -20,6 +20,7 @@ import {
   planLaunch,
   registeredAdapter,
   type ProviderAdapter,
+  type ProviderEvent,
 } from "../executors/adapters.ts";
 import {
   inspectCandidateMethodology,
@@ -139,7 +140,8 @@ function operationalFailure(error: unknown): OperationalFailureClass {
       : undefined;
   if (category === "provider-not-installed" || category === "no-adapter")
     return "provider-unavailable";
-  if (category === "permission-denied") return "authentication-failure";
+  if (category === "permission-denied")
+    return "pre-allocation-readiness-failure";
   if (category === "provider-config-invalid")
     return "launch-shape-incompatibility";
   return "pre-allocation-readiness-failure";
@@ -157,6 +159,30 @@ const DEFAULT_READINESS_TIMEOUT_MS: Readonly<Record<string, number>> = {
   codex: 60_000,
   claude: 15_000,
 };
+
+function readinessFailureFromEvent(
+  event: ProviderEvent,
+): OperationalFailureClass | undefined {
+  if (event.kind === "authentication-failed") return "authentication-failure";
+  if (event.kind === "permission-denied") return "provider-permission-denied";
+  if (event.kind === "tools-unavailable")
+    return "required-connectivity-tool-failure";
+  if (event.kind === "provider-error" || event.kind === "rate-limited")
+    return "pre-allocation-readiness-failure";
+  return undefined;
+}
+
+function readinessFailureIsRetryable(
+  failure: OperationalFailureClass,
+): boolean {
+  return ![
+    "authentication-failure",
+    "provider-permission-denied",
+    "required-connectivity-tool-failure",
+    "provider-unavailable",
+    "launch-shape-incompatibility",
+  ].includes(failure);
+}
 
 export type ReadinessDiagnosticCause =
   | "passed"
@@ -467,25 +493,23 @@ export async function runProviderReadiness(input: {
         diagnostics.line("stdout", line);
         for (const event of input.adapter.parse(line)) {
           diagnostics.event(event.kind);
+          const eventFailure = readinessFailureFromEvent(event);
           if (event.kind === "tools-unavailable") {
-            failure = "required-connectivity-tool-failure";
             cause = "missing-mcp-confirmation";
             toolConnected = false;
           }
           if (event.kind === "tool-confirmed" && event.tool === "readiness")
             toolConnected = true;
           if (event.kind === "permission-denied") {
-            failure = "pre-allocation-readiness-failure";
             cause = "permission-denied";
           }
           if (event.kind === "provider-error") {
-            failure = "pre-allocation-readiness-failure";
             cause = "provider-error";
           }
           if (event.kind === "rate-limited") {
-            failure = "pre-allocation-readiness-failure";
             cause = "rate-limited";
           }
+          if (eventFailure) failure = eventFailure;
         }
       };
       const stdout = new BoundedReadinessStream("stdout", diagnostics, observe);
@@ -1686,6 +1710,15 @@ export class GovernedHost {
           // Deterministic host configuration refusals keep their specific
           // category; retrying them cannot change the outcome.
           if (refusal) throw refusal;
+          if (failure && !readinessFailureIsRetryable(failure)) {
+            send(409, {
+              kind: "stop",
+              reason: "deterministic provider readiness failure",
+              category: failure,
+              attempt: attempt.id,
+            });
+            return;
+          }
           if (!failure) successfulAttempt = attempt;
         }
         const registration = this.kernel.register(workflow, profile.id);

@@ -227,6 +227,7 @@ export const DIAGNOSTIC_CATEGORIES = [
   "provider-not-installed",
   "provider-config-invalid",
   "assignment-not-delivered",
+  "authentication-failed",
   "permission-denied",
   "provider-crashed",
   "missing-result",

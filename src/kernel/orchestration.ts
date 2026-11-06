@@ -14,6 +14,7 @@ export const AUTOMATIC_OPERATIONAL_RETRIES = 3;
 export const OPERATIONAL_FAILURE_CLASSES = [
   "provider-unavailable",
   "authentication-failure",
+  "provider-permission-denied",
   "containment-setup-failure",
   "workspace-storage-readiness-failure",
   "required-connectivity-tool-failure",
