@@ -184,6 +184,17 @@ function readinessFailureIsRetryable(
   ].includes(failure);
 }
 
+function preferReadinessFailure(
+  current: OperationalFailureClass | undefined,
+  incoming: OperationalFailureClass,
+): OperationalFailureClass {
+  // Claude can report a specific deterministic condition and then append a
+  // generic failed-result event. Keep the specific condition for retries and
+  // diagnostics rather than letting event order turn it into a transient one.
+  if (!current || readinessFailureIsRetryable(current)) return incoming;
+  return current;
+}
+
 export type ReadinessDiagnosticCause =
   | "passed"
   | "timeout"
@@ -509,7 +520,8 @@ export async function runProviderReadiness(input: {
           if (event.kind === "rate-limited") {
             cause = "rate-limited";
           }
-          if (eventFailure) failure = eventFailure;
+          if (eventFailure)
+            failure = preferReadinessFailure(failure, eventFailure);
         }
       };
       const stdout = new BoundedReadinessStream("stdout", diagnostics, observe);
