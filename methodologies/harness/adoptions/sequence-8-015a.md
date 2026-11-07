@@ -2,8 +2,8 @@
 
 Date: 2026-11-07
 
-Decision: **PROMOTE** the exact accepted and independently evaluated Spike
-015a successor candidate as trusted Harness methodology sequence 8.
+Decision: **PROMOTE** the exact accepted and independently evaluated Spike 015a
+successor candidate as trusted Harness methodology sequence 8.
 
 ## Exact adoption bindings
 
@@ -20,6 +20,6 @@ Decision: **PROMOTE** the exact accepted and independently evaluated Spike
 - STANDARD Outcome:
   `sha256:30cb7c3fc069944178fbd30a728541a42d0e911d2a87c2d2a80fc74ae2a98300`
 
-This is forward-only. Existing workflow grants retain their sequence-7
-bindings; new workflows may bind sequence 8. This decision does not certify or
-start the separate post-adoption split-repository operational smoke.
+This is forward-only. Existing workflow grants retain their sequence-7 bindings;
+new workflows may bind sequence 8. This decision does not certify or start the
+separate post-adoption split-repository operational smoke.
