@@ -52,7 +52,7 @@ function assignment(n: string): Assignment {
     rootAuthority: null,
   } as unknown as RoleGrant;
   return {
-    protocolVersion: 1,
+    protocolVersion: 2,
     execution: `execution-${n}`,
     workflow: `workflow-${n}`,
     roleGrant: grant,

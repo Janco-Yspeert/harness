@@ -33,6 +33,7 @@ import {
 } from "../src/executors/adapters.ts";
 import { locateContainment } from "../src/executors/containment.ts";
 import {
+  preflightPreparedCoverage,
   providerEnvironment,
   resultContractInstructions,
 } from "../src/executors/governed.ts";
@@ -362,7 +363,7 @@ void test("AC08/AC09/AC07: Claude adapter delivers the exact assignment, relays 
     join(fixtureSource, "methodology/skills/smoke-claude-promotion.md"),
     "utf8",
   );
-  assert.equal(assignment.protocolVersion, 1);
+  assert.equal(assignment.protocolVersion, 2);
   assert.equal(assignment.execution, execution.id);
   assert.equal(assignment.skill.content, skillBytes);
   assert.equal(assignment.skill.identity, identity(skillBytes));
@@ -1692,7 +1693,7 @@ void test("014j AC10/AC11: exact constraints fail before launch when a generic a
 });
 
 void test("AC08: the versioned worker protocol is typed, provider-neutral and cannot carry binding or credentials", async () => {
-  assert.equal(WORKER_PROTOCOL_SCHEMAS.version, 1);
+  assert.equal(WORKER_PROTOCOL_SCHEMAS.version, 2);
   assert.deepEqual(Object.keys(WORKER_PROTOCOL_SCHEMAS.operations), [
     ...WORKER_OPERATIONS,
   ]);
@@ -1713,6 +1714,15 @@ void test("AC08: the versioned worker protocol is typed, provider-neutral and ca
   assert.deepEqual(
     parseWorkerRequest("requestHuman", { kind: "input", question: "q" }),
     { operation: "requestHuman", kind: "input", question: "q" },
+  );
+  assert.deepEqual(
+    parseWorkerRequest("preflightPreparedCoverage", {
+      coverageMap: { criteria: [], readiness: {} },
+    }),
+    {
+      operation: "preflightPreparedCoverage",
+      coverageMap: { criteria: [], readiness: {} },
+    },
   );
   const list = (await handleMessage(
     { port: 1, key: "k" },
@@ -1765,6 +1775,45 @@ void test("AC08: the versioned worker protocol is typed, provider-neutral and ca
   assert.doesNotThrow(() => {
     assertBoundedExecutorCommand(codexArgs);
   });
+});
+
+void test("prepared coverage preflight exposes the active schema and uses the trusted validator", () => {
+  const valid = {
+    criteria: [
+      {
+        id: "AC1",
+        frozenAuthority: "frozen brief AC1",
+        mode: "executable-public-command",
+        required: true,
+        procedures: ["P-AC1"],
+        sufficiency: "The procedure establishes AC1.",
+      },
+    ],
+    readiness: {
+      evaluatorRevision: "sha256:revision",
+      privateInventoryIdentity: "sha256:inventory",
+      validatorResultBinding: "sha256:validation",
+      integrityValidation: "PASS",
+    },
+  };
+  const pass = preflightPreparedCoverage(valid);
+  assert.equal(pass.valid, true);
+  assert.equal(pass.validator.name, "prepared-coverage");
+  assert.equal(pass.contract.criteria.required, "boolean");
+  assert.deepEqual(pass.contract.criteria.requiredFields, [
+    "id",
+    "frozenAuthority",
+    "mode",
+    "required",
+    "procedures",
+    "sufficiency",
+  ]);
+  const rejected = preflightPreparedCoverage({
+    ...valid,
+    criteria: [{ ...valid.criteria[0], required: undefined }],
+  });
+  assert.equal(rejected.valid, false);
+  assert.match(rejected.error ?? "", /required disposition/);
 });
 
 void test("worker result instructions surface the pinned methodology vocabulary and constraints", () => {

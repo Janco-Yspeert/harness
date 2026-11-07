@@ -532,6 +532,7 @@ const PROFILE_KEYS = [
   "cost",
   "maxTurns",
   "readinessTimeoutMs",
+  "preparedCoveragePreflight",
 ];
 
 // Production executor configuration: every profile must name a registered
@@ -625,6 +626,13 @@ export function validateProductionExecutors(raw: unknown): ExecutorProfile[] {
     )
       throw new Error(
         `executor profile ${name} readinessTimeoutMs must be between 1000 and 120000`,
+      );
+    if (
+      profile.preparedCoveragePreflight !== undefined &&
+      typeof profile.preparedCoveragePreflight !== "boolean"
+    )
+      throw new Error(
+        `executor profile ${name} preparedCoveragePreflight must be boolean`,
       );
     return structuredClone(profile) as unknown as ExecutorProfile;
   });

@@ -1,14 +1,15 @@
-// Harness worker-to-host protocol, version 1.
+// Harness worker-to-host protocol, version 2.
 //
-// These four operations are the only model-visible Harness surface. They are
+// These five operations are the only model-visible Harness surface. They are
 // identical for every provider adapter. The adapter binds each call to its
 // own execution, session and credential; nothing here can name another
 // execution, carry a credential or widen authority. Lifecycle and diagnostics
 // are adapter/host observations and are deliberately not operations.
 
-export const WORKER_PROTOCOL_VERSION = 1 as const;
+export const WORKER_PROTOCOL_VERSION = 2 as const;
 export const WORKER_OPERATIONS = [
   "assignment",
+  "preflightPreparedCoverage",
   "submitResult",
   "requestAction",
   "requestHuman",
@@ -36,6 +37,7 @@ export const MAX_EVIDENCE_BYTES = 131_072;
 type Json = Record<string, unknown>;
 export type WorkerRequest =
   | { operation: "assignment" }
+  | { operation: "preflightPreparedCoverage"; coverageMap: Json }
   | {
       operation: "submitResult";
       disposition: (typeof RESULT_DISPOSITIONS)[number];
@@ -111,6 +113,32 @@ export const WORKER_PROTOCOL_SCHEMAS = {
           contractIdentity: string,
           inputs: { type: "object" },
           executionContext: { type: "object" },
+        },
+      },
+    },
+    preflightPreparedCoverage: {
+      description:
+        "Evaluator-preparation only: return the current public coverage-map contract and run the trusted prepared-coverage validator against the complete proposed coverageMap. A successful preflight binds the canonical map identity for this execution; evaluator preparation may submit succeeded only after the published coverage-map.json matches that identity.",
+      request: {
+        type: "object",
+        additionalProperties: false,
+        required: ["coverageMap"],
+        properties: { coverageMap: { type: "object" } },
+      },
+      response: {
+        type: "object",
+        required: ["protocolVersion", "validator", "contract", "valid"],
+        properties: {
+          protocolVersion: { const: WORKER_PROTOCOL_VERSION },
+          validator: {
+            type: "object",
+            required: ["name", "identity"],
+            properties: { name: string, identity: string },
+          },
+          contract: { type: "object" },
+          valid: { type: "boolean" },
+          coverageIdentity: string,
+          error: string,
         },
       },
     },
@@ -255,7 +283,7 @@ function member<T extends string>(
   return value as T;
 }
 
-// Validates a model-supplied tool call against the version 1 schema. The
+// Validates a model-supplied tool call against the version 2 schema. The
 // result is fully typed; nothing else from the call is forwarded.
 export function parseWorkerRequest(
   operation: string,
@@ -266,6 +294,10 @@ export function parseWorkerRequest(
   if (op === "assignment") {
     only(args, [], op);
     return { operation: op };
+  }
+  if (op === "preflightPreparedCoverage") {
+    only(args, ["coverageMap"], op);
+    return { operation: op, coverageMap: record(args.coverageMap, op) };
   }
   if (op === "submitResult") {
     only(args, ["disposition", "methodology"], op);

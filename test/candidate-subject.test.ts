@@ -293,7 +293,7 @@ void test("014i AC02/AC04/TR3c-d: the subject relay records results and confines
       methodology: { result: "PASS" },
     }),
     {
-      protocolVersion: 1,
+      protocolVersion: 2,
       observation: { status: "recorded", authoritative: false },
     },
   );

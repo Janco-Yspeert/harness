@@ -3,7 +3,7 @@
 // The host has already selected the adapter, located its installed provider,
 // planned permissions/constraints and recorded the allocation. This module
 // delivers the exact assignment, starts the provider with a clean environment,
-// consumes its structured event stream, relays the four typed worker
+// consumes its structured event stream, relays the five typed worker
 // operations to the authenticated host API, and reports lifecycle facts. It
 // never infers a result or action from exit status or prose, and never
 // retries.
@@ -13,6 +13,7 @@ import {
   appendFileSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   realpathSync,
   rmSync,
   statSync,
@@ -34,6 +35,11 @@ import type {
   RoleGrant,
   WorkerExecutionContext,
 } from "../kernel/model.ts";
+import { workflowRepositoryRoot } from "../kernel/model.ts";
+import {
+  harnessValidators,
+  validatePreparedMap,
+} from "../methodologies/harness-public.ts";
 import {
   deriveExecutionShape,
   shapeIdentity,
@@ -110,6 +116,67 @@ const WORKER_RULES =
   "- Use only the granted workspaces and capabilities. Never push, publish directly, or reveal credentials.\n" +
   "- Read detailed inputs just in time from their bound paths inside granted workspaces; the identities below say which exact bytes are authoritative.";
 
+// This executor-owned description makes the current public shape available to
+// a worker. The preflight below remains the source of truth: it invokes the
+// untouched trusted validator and returns that validator's content identity.
+const PREPARED_COVERAGE_CONTRACT = {
+  criteria: {
+    requiredFields: [
+      "id",
+      "frozenAuthority",
+      "mode",
+      "required",
+      "procedures",
+      "sufficiency",
+    ],
+    id: "nonempty string; unique across criteria",
+    frozenAuthority: "nonempty string",
+    mode: "nonempty string other than BLOCKED",
+    required: "boolean",
+    procedures: "nonempty array of nonempty strings",
+    sufficiency: "nonempty string",
+  },
+  readiness: {
+    requiredFields: [
+      "evaluatorRevision",
+      "privateInventoryIdentity",
+      "validatorResultBinding",
+      "integrityValidation",
+    ],
+    evaluatorRevision: "nonempty string",
+    privateInventoryIdentity: "nonempty string",
+    validatorResultBinding: "nonempty string",
+    integrityValidation: "PASS",
+  },
+} as const;
+
+export function preflightPreparedCoverage(document: unknown): {
+  readonly validator: { readonly name: "prepared-coverage"; readonly identity: string };
+  readonly contract: typeof PREPARED_COVERAGE_CONTRACT;
+  readonly valid: boolean;
+  readonly coverageIdentity?: string;
+  readonly error?: string;
+} {
+  const validator = harnessValidators["prepared-coverage"];
+  if (!validator) throw new Error("prepared coverage validator unavailable");
+  try {
+    validatePreparedMap(document);
+    return {
+      validator: { name: "prepared-coverage", identity: validator.identity },
+      contract: PREPARED_COVERAGE_CONTRACT,
+      valid: true,
+      coverageIdentity: contentId(document),
+    };
+  } catch (error) {
+    return {
+      validator: { name: "prepared-coverage", identity: validator.identity },
+      contract: PREPARED_COVERAGE_CONTRACT,
+      valid: false,
+      error: (error as Error).message,
+    };
+  }
+}
+
 // Worker context is assembled in two deterministic parts. The stable part
 // depends only on the protocol, the role and its pinned skill and contract
 // bytes, so distinct executions of the same pinned role share it byte for
@@ -117,7 +184,10 @@ const WORKER_RULES =
 // methodology binding, input identities, candidate/attempt values) is placed
 // after it. Nothing evaluator-private is ever part of either part: the host
 // delivers only pinned public methodology bytes and identities.
-export function workerContext(assignment: Assignment): {
+export function workerContext(
+  assignment: Assignment,
+  requirePreparedCoveragePreflight = false,
+): {
   stable: string;
   volatile: string;
 } {
@@ -129,6 +199,10 @@ export function workerContext(assignment: Assignment): {
     assignment.executionContext.terminalOutcomes.length === 0
       ? ""
       : `\nHost-derived legal terminal outcomes (machine-readable): ${JSON.stringify(assignment.executionContext.terminalOutcomes)}\n"disposition" describes whether this role invocation successfully completed its reporting protocol. It does not duplicate the evaluator verdict. An evaluator that successfully concludes the verification is BLOCKED must still submit "disposition": "succeeded" with "methodology.result": "BLOCKED".\n`;
+  const preparedCoverageInstruction =
+    grant.role !== "evaluator-prepare" || !requirePreparedCoveragePreflight
+      ? ""
+      : "\nEvaluator preparation requirement: call preflightPreparedCoverage with your complete proposed public coverage map before submitting a succeeded result. Its response contains the active public contract and validates that exact map using the trusted validator. Publish only a map whose successful preflight coverageIdentity matches; the host rejects a succeeded result without that binding. This preflight does not create or attest any evaluator-owned evidence for you.\n";
   return {
     stable:
       `You are the governed Harness worker for role ${grant.role}.\n\n` +
@@ -146,6 +220,7 @@ export function workerContext(assignment: Assignment): {
       `Host-issued execution context: ${JSON.stringify(assignment.executionContext)}\n` +
       outcomeInstruction +
       compatibilityInstruction +
+      preparedCoverageInstruction +
       "Call the assignment tool for the full Role Grant, including granted workspaces and host actions.",
   };
 }
@@ -157,11 +232,14 @@ export function resultContractInstructions(contract: RoleContract): string {
   );
 }
 
-export function workerInstructions(assignment: Assignment): {
+export function workerInstructions(
+  assignment: Assignment,
+  requirePreparedCoveragePreflight = false,
+): {
   system: string;
   prompt: string;
 } {
-  const context = workerContext(assignment);
+  const context = workerContext(assignment, requirePreparedCoveragePreflight);
   return {
     system: `${context.stable}${context.volatile}`,
     prompt:
@@ -284,6 +362,7 @@ export class GovernedProviderRun {
   #failure: DiagnosticCategory | undefined;
   #privateBytes = 0;
   #privateLog: string | undefined;
+  #preparedCoveragePreflight: { readonly coverageIdentity: string } | undefined;
   readonly #relayKey = randomBytes(32).toString("hex");
   readonly done: Promise<void>;
 
@@ -424,7 +503,10 @@ export class GovernedProviderRun {
       if (address === null || typeof address === "string")
         throw new Error("relay has no loopback port");
       const workspaces = launchWorkspaces(assignment.roleGrant);
-      const instructions = workerInstructions(assignment);
+      const instructions = workerInstructions(
+        assignment,
+        launch.profile.preparedCoveragePreflight === true,
+      );
       const { program, args } = checkedCommand(launch.adapter, launch.program, {
         shape: launch.shape,
         workspaces,
@@ -613,7 +695,7 @@ export class GovernedProviderRun {
   }
 
   // Loopback relay for this execution only. Its key is not a host credential:
-  // it reaches exactly the four operations already bound to this execution.
+  // it reaches exactly the five operations already bound to this execution.
   #listen(): Promise<Server> {
     return new Promise((resolveServer, reject) => {
       const server = createServer((connection) => {
@@ -674,7 +756,36 @@ export class GovernedProviderRun {
     }
   }
 
-  // The four operations, each bound to this adapter's own execution.
+  #assertPreparedCoveragePreflight(assignment: Assignment): void {
+    const preflight = this.#preparedCoveragePreflight;
+    if (!preflight)
+      throw new Error(
+        "evaluator preparation must pass preflightPreparedCoverage before submitting succeeded",
+      );
+    const workflow = this.#launch.kernel.project.workflows[assignment.workflow];
+    if (!workflow) throw new Error("configured workflow is unavailable");
+    let coverage: unknown;
+    try {
+      coverage = JSON.parse(
+        readFileSync(
+          resolve(
+            workflowRepositoryRoot(this.#launch.kernel.project),
+            workflow.directory,
+            "coverage-map.json",
+          ),
+          "utf8",
+        ),
+      );
+    } catch {
+      throw new Error("published coverage map is unreadable after preflight");
+    }
+    if (contentId(coverage) !== preflight.coverageIdentity)
+      throw new Error(
+        "published coverage map differs from the successful preflight draft",
+      );
+  }
+
+  // The five operations, each bound to this adapter's own execution.
   async relay(request: WorkerRequest): Promise<unknown> {
     const assignment = this.#assignment;
     if (!assignment) throw new Error("assignment not delivered");
@@ -684,11 +795,29 @@ export class GovernedProviderRun {
         typeof value.error === "string" ? value.error : "host request failed",
       );
     if (request.operation === "assignment") return assignment;
+    if (request.operation === "preflightPreparedCoverage") {
+      if (assignment.roleGrant.role !== "evaluator-prepare")
+        throw new Error(
+          "preflightPreparedCoverage is available only to evaluator preparation",
+        );
+      const preflight = preflightPreparedCoverage(request.coverageMap);
+      this.#preparedCoveragePreflight =
+        preflight.valid && preflight.coverageIdentity
+          ? { coverageIdentity: preflight.coverageIdentity }
+          : undefined;
+      return { protocolVersion: WORKER_PROTOCOL_VERSION, ...preflight };
+    }
     if (request.operation === "submitResult") {
       if (!this.#confirmed) {
         this.#diagnostic("result-rejected", "executor model not yet confirmed");
         throw new Error("exact model constraint is not yet confirmed");
       }
+      if (
+        this.#launch.profile.preparedCoveragePreflight &&
+        assignment.roleGrant.role === "evaluator-prepare" &&
+        request.disposition === "succeeded"
+      )
+        this.#assertPreparedCoveragePreflight(assignment);
       const response = await this.#call("POST", `${path}/result`, {
         disposition: request.disposition,
         methodology: request.methodology,
