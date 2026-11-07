@@ -48,6 +48,7 @@ export type ProviderEvent =
     }
   | { kind: "tools-unavailable"; detail: string }
   | { kind: "tool-confirmed"; tool: string }
+  | { kind: "authentication-failed"; detail: string }
   | { kind: "permission-denied"; detail: string }
   | { kind: "rate-limited"; detail: string }
   | { kind: "provider-error"; detail: string };
@@ -211,7 +212,17 @@ const claude: ProviderAdapter = {
         });
       }
     }
-    if (event.error === "rate_limit")
+    if (
+      event.error === "authentication_error" ||
+      event.error === "authentication_failed" ||
+      event.error === "unauthorized" ||
+      event.error === "invalid_api_key"
+    )
+      events.push({
+        kind: "authentication-failed",
+        detail: "provider authentication failed",
+      });
+    else if (event.error === "rate_limit")
       events.push({ kind: "rate-limited", detail: "provider rate limit" });
     else if (typeof event.error === "string" && event.type === "assistant")
       events.push({ kind: "provider-error", detail: "provider API error" });

@@ -188,7 +188,37 @@ void test("014l readiness: permission denial is a readiness failure, not authent
     },
   ]);
   assert.equal(denied.state, "failed");
-  assert.equal(denied.failure, "pre-allocation-readiness-failure");
+  assert.equal(denied.failure, "provider-permission-denied");
+});
+
+void test("readiness: Claude permission denial outranks its accompanying generic result error", async () => {
+  const denied = await probe([
+    init,
+    {
+      type: "result",
+      permission_denials: [{ tool_name: "mcp__harness__readiness" }],
+      is_error: true,
+    },
+  ]);
+  assert.equal(denied.state, "failed");
+  assert.equal(denied.failure, "provider-permission-denied");
+});
+
+void test("readiness: authentication failure outranks a later generic provider error", async () => {
+  const denied = await probe([
+    { type: "assistant", error: "authentication_error" },
+    { type: "result", is_error: true },
+  ]);
+  assert.equal(denied.state, "failed");
+  assert.equal(denied.failure, "authentication-failure");
+});
+
+void test("readiness: explicit provider authentication errors retain their distinct failure", async () => {
+  const denied = await probe([
+    { type: "assistant", error: "authentication_error" },
+  ]);
+  assert.equal(denied.state, "failed");
+  assert.equal(denied.failure, "authentication-failure");
 });
 
 void test("readiness: Codex receives a bounded sixty-second default while configured profiles override it", () => {

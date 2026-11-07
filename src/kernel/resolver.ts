@@ -62,6 +62,8 @@ const MECHANICS = new Set([
   "kernel.allocation",
   "kernel.launch-attempt",
   "kernel.readiness-consumed",
+  "kernel.retry-authority",
+  "kernel.retry-exhausted",
   "kernel.session",
   "kernel.exposure",
   "kernel.process",
