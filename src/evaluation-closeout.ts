@@ -559,7 +559,11 @@ export function validatePrivateAttemptFinalization(
 ): void {
   const ledgerBytes = readRegular(evaluatorRoot, ".eval/attempt-ledger.json");
   if (ledgerBytes === null) throw new Error("attempt ledger is missing");
-  const entries = privateAttempts(JSON.parse(ledgerBytes.toString("utf8")));
+  // Finalization and archival must reconcile the same narrowly supported
+  // evidence formats. `resolvedPrivateAttempts` retains canonical parsing as
+  // the default and admits the historical shape only after independently
+  // binding its result bytes and freeze metadata.
+  const entries = resolvedPrivateAttempts(evaluatorRoot, ledgerBytes).entries;
   const entry = entries.find((item) => item.attempt === expected.attempt);
   if (!entry)
     throw new Error(

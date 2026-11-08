@@ -900,6 +900,14 @@ void test("legacy attempt ledgers normalize only with independently verified res
       (item) => item.destination === "attempt-ledger-normalization.json",
     ),
   );
+  assert.doesNotThrow(() => {
+    validatePrivateAttemptFinalization(root, {
+      attempt: 1,
+      candidate: COMMIT,
+      evaluatorRevision: "001",
+      result: "PASS",
+    });
+  });
 });
 
 void test("014k AC07/AC08: terminal host state never degrades to NONTERMINAL when private evidence is absent", (t) => {
