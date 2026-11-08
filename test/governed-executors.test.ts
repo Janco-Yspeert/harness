@@ -33,6 +33,8 @@ import {
 } from "../src/executors/adapters.ts";
 import { locateContainment } from "../src/executors/containment.ts";
 import {
+  implementationCoverageBindings,
+  validatePreparedImplementationBindings,
   preflightPreparedCoverage,
   providerEnvironment,
   resultContractInstructions,
@@ -55,6 +57,7 @@ import type {
 import type {
   Execution,
   ExecutorProfile,
+  RoleContract,
   RoleGrant,
   WorkflowGrant,
 } from "../src/kernel/model.ts";
@@ -1814,6 +1817,62 @@ void test("prepared coverage preflight exposes the active schema and uses the tr
   });
   assert.equal(rejected.valid, false);
   assert.match(rejected.error ?? "", /required disposition/);
+});
+
+void test("prepared coverage preflight rejects a missing or mismatched Implementation requirements binding", () => {
+  const implementation = JSON.parse(
+    readFileSync("methodologies/harness/contracts/implementation.json", "utf8"),
+  ) as RoleContract;
+  const requirements = Buffer.from("public evaluator requirements\n");
+  assert.deepEqual(implementationCoverageBindings(implementation), [
+    {
+      input: "requirements",
+      path: "eval-requirements.md",
+      coverageField: "evaluationRequirements",
+    },
+  ]);
+  const coverage = {
+    criteria: [
+      {
+        id: "AC1",
+        frozenAuthority: "frozen brief AC1",
+        mode: "executable-public-command",
+        required: true,
+        procedures: ["P-AC1"],
+        sufficiency: "The procedure establishes AC1.",
+      },
+    ],
+    readiness: {
+      evaluatorRevision: "sha256:revision",
+      privateInventoryIdentity: "sha256:inventory",
+      validatorResultBinding: "sha256:validation",
+      integrityValidation: "PASS",
+    },
+    evaluationRequirements: identity(requirements),
+  };
+  assert.doesNotThrow(() =>
+    validatePreparedImplementationBindings(coverage, implementation, {
+      requirements,
+    }),
+  );
+  const missing: Record<string, unknown> = { ...coverage };
+  delete missing.evaluationRequirements;
+  assert.throws(
+    () =>
+      validatePreparedImplementationBindings(missing, implementation, {
+        requirements,
+      }),
+    /does not bind eval-requirements\.md/,
+  );
+  assert.throws(
+    () =>
+      validatePreparedImplementationBindings(
+        { ...coverage, evaluationRequirements: `sha256:${"0".repeat(64)}` },
+        implementation,
+        { requirements },
+      ),
+    /does not bind eval-requirements\.md/,
+  );
 });
 
 void test("worker result instructions surface the pinned methodology vocabulary and constraints", () => {

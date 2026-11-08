@@ -118,7 +118,7 @@ export const WORKER_PROTOCOL_SCHEMAS = {
     },
     preflightPreparedCoverage: {
       description:
-        "Evaluator-preparation only: return the current public coverage-map contract and run the trusted prepared-coverage validator against the complete proposed coverageMap. A successful preflight binds the canonical map identity for this execution; evaluator preparation may submit succeeded only after the published coverage-map.json matches that identity.",
+        "Evaluator-preparation only: return the current public coverage-map contract, derive the immediate Implementation handoff bindings from its pinned contract, and validate the complete proposed coverageMap against the trusted validator and committed public artifacts. A successful preflight binds the canonical map identity for this execution; evaluator preparation may submit succeeded only after the published coverage-map.json matches that identity and the downstream handoff is valid.",
       request: {
         type: "object",
         additionalProperties: false,
@@ -127,7 +127,13 @@ export const WORKER_PROTOCOL_SCHEMAS = {
       },
       response: {
         type: "object",
-        required: ["protocolVersion", "validator", "contract", "valid"],
+        required: [
+          "protocolVersion",
+          "validator",
+          "contract",
+          "handoff",
+          "valid",
+        ],
         properties: {
           protocolVersion: { const: WORKER_PROTOCOL_VERSION },
           validator: {
@@ -136,6 +142,15 @@ export const WORKER_PROTOCOL_SCHEMAS = {
             properties: { name: string, identity: string },
           },
           contract: { type: "object" },
+          handoff: {
+            type: "object",
+            required: ["valid", "contract"],
+            properties: {
+              valid: { type: "boolean" },
+              contract: { type: "object" },
+              error: string,
+            },
+          },
           valid: { type: "boolean" },
           coverageIdentity: string,
           error: string,
