@@ -608,7 +608,11 @@ void test("the writable split workspace is the provider cwd", (t) => {
   assert.equal(launchWorkspaces(base)[0]?.id, "docs");
 });
 
-function splitKernelFixture(t: TestContext, allocate = true) {
+function splitKernelFixture(
+  t: TestContext,
+  allocate = true,
+  evidenceDestinations = ["manifest.md"],
+) {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "split-kernel-")));
   t.after(() => {
     rmSync(dir, { recursive: true, force: true });
@@ -644,7 +648,7 @@ function splitKernelFixture(t: TestContext, allocate = true) {
     methodology: {},
     human: [],
     postconditions: ["manifest.md"],
-    workflowEvidence: { destinations: ["manifest.md"] },
+    workflowEvidence: { destinations: evidenceDestinations },
   };
   const policy: WorkflowPolicy = {
     schemaVersion: 1,
@@ -797,6 +801,99 @@ void test("split implementation commits source and brokers docs evidence with an
     false,
   );
   assert.ok(existsSync(join(f.docs, "spikes", f.workflow, "workflow.jsonl")));
+});
+
+void test("split implementation may revise its own brokered evidence at the exact current checkpoint", (t) => {
+  const f = splitKernelFixture(t);
+  const run = f.run;
+  assert.ok(run);
+  const original = f.kernel.recordEvidence(f.workflow, run.execution.id, [
+    { destination: "manifest.md", content: "# Manifest\n\nwrong identity\n" },
+  ]);
+  assert.equal(original.status, "succeeded", original.reason ?? "");
+  const replacement = f.kernel.recordEvidence(f.workflow, run.execution.id, [
+    { destination: "manifest.md", content: "# Manifest\n\ncorrect identity\n" },
+  ]);
+  assert.equal(replacement.status, "succeeded", replacement.reason ?? "");
+  assert.equal(replacement.before, original.after);
+  assert.ok(original.after);
+  assert.equal(git(f.docs, ["rev-parse", "HEAD^"]), original.after);
+  assert.equal(
+    git(f.docs, ["show", `${original.after}:spikes/${f.workflow}/manifest.md`]),
+    "# Manifest\n\nwrong identity",
+  );
+  assert.equal(
+    git(f.docs, ["show", `HEAD:spikes/${f.workflow}/manifest.md`]),
+    "# Manifest\n\ncorrect identity",
+  );
+
+  writeFileSync(join(f.source, "feature.txt"), "implemented\n");
+  git(f.source, ["add", "feature.txt"]);
+  git(f.source, ["commit", "-q", "-m", "implement"]);
+  const completed = f.kernel.result(
+    f.workflow,
+    run.execution.id,
+    "succeeded",
+    {},
+  );
+  assert.equal(completed.transition?.status, "recorded");
+  assert.equal(completed.result?.commits?.workflow.commit, replacement.after);
+  const handoff = f.kernel
+    .events(f.workflow)
+    .find((event) => event.transition === "implementation-handoff");
+  assert.equal(
+    (handoff?.evidence.repositories as { workflow?: { commit?: string } })
+      .workflow?.commit,
+    replacement.after,
+  );
+});
+
+void test("split evidence revision rejects a new destination and a conflicting docs checkpoint", (t) => {
+  const f = splitKernelFixture(t, true, ["manifest.md", "extra.md"]);
+  const run = f.run;
+  assert.ok(run);
+  const original = f.kernel.recordEvidence(f.workflow, run.execution.id, [
+    { destination: "manifest.md", content: "# Manifest\n\noriginal\n" },
+  ]);
+  assert.equal(original.status, "succeeded", original.reason ?? "");
+
+  const newDestination = f.kernel.recordEvidence(f.workflow, run.execution.id, [
+    { destination: "extra.md", content: "not a revision\n" },
+  ]);
+  assert.equal(newDestination.status, "failed");
+  assert.match(
+    newDestination.reason ?? "",
+    /revision destination was not previously brokered/,
+  );
+  assert.equal(
+    existsSync(join(f.docs, "spikes", f.workflow, "extra.md")),
+    false,
+  );
+
+  // A failed host action puts the execution into attention, so use an
+  // independent fixture to prove repository drift is rejected as stale.
+  const drift = splitKernelFixture(t);
+  assert.ok(drift.run);
+  assert.equal(
+    drift.kernel.recordEvidence(drift.workflow, drift.run.execution.id, [
+      { destination: "manifest.md", content: "# Manifest\n\noriginal\n" },
+    ]).status,
+    "succeeded",
+  );
+  writeFileSync(join(drift.docs, "conflict.txt"), "conflict\n");
+  git(drift.docs, ["add", "conflict.txt"]);
+  git(drift.docs, ["commit", "-q", "-m", "conflicting docs update"]);
+  const stale = drift.kernel.recordEvidence(
+    drift.workflow,
+    drift.run.execution.id,
+    [{ destination: "manifest.md", content: "# Manifest\n\nreplacement\n" }],
+  );
+  assert.equal(stale.status, "failed");
+  assert.match(stale.reason ?? "", /checkpoint is stale/);
+  assert.equal(
+    git(drift.docs, ["show", `HEAD:spikes/${drift.workflow}/manifest.md`]),
+    "# Manifest\n\noriginal",
+  );
 });
 
 void test("a docs HEAD drift denies evidence and cannot create a combined transition", (t) => {
