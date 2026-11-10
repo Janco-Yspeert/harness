@@ -11,3 +11,6 @@
 - 2026-10-04 — The first real revision-003 E5 subject launch exposed Git-quoted
   Unicode paths in full candidate export; switched the existing exporter to
   binary-safe NUL-delimited enumeration and added a reproducing regression.
+- 2026-11-10 — Repaired linked-worktree containment by resolving the actual
+  per-worktree and common Git metadata paths, preserving read-only hooks and
+  configuration while allowing a granted commit.

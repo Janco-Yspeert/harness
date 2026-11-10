@@ -36,6 +36,7 @@ import {
   locateContainment,
   probeNestedSandbox,
 } from "../src/executors/containment.ts";
+import { resolveWorkspaceGitMetadata } from "../src/executors/git-metadata.ts";
 import { startHarnessHost } from "../src/index.ts";
 import { loadProject } from "../src/kernel/configuration.ts";
 import { identity, readLedger } from "../src/kernel/ledger.ts";
@@ -1296,6 +1297,49 @@ void test("014e D4 (H4): Codex composes workspace modes and Git authority indepe
   assert.ok(!readOnly.some((arg) => arg.includes("default_permissions")));
 });
 
+void test("014e D4 (H4): Codex resolves a linked worktree's actual Git metadata paths", (t) => {
+  const dir = realpathSync(
+    mkdtempSync(join(tmpdir(), "codex-profile-linked-")),
+  );
+  t.after(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const repositoryWorkspace = join(dir, "repository");
+  const workspace = join(dir, "candidate");
+  git(dir, ["init", "-q", "-b", "main", repositoryWorkspace]);
+  git(repositoryWorkspace, ["commit", "-q", "--allow-empty", "-m", "baseline"]);
+  git(repositoryWorkspace, [
+    "worktree",
+    "add",
+    "-q",
+    "-b",
+    "candidate",
+    workspace,
+  ]);
+  const metadata = resolveWorkspaceGitMetadata(workspace);
+  assert.ok(metadata?.linked, "linked worktree metadata must resolve");
+  const command = ADAPTERS.codex.command(
+    codexInput(ALL, [{ path: workspace, mode: "write" }]),
+  );
+  const filesystem = command.find((arg) =>
+    arg.startsWith(`permissions.${CODEX_WORKSPACE_PROFILE}.filesystem=`),
+  );
+  assert.ok(filesystem);
+  for (const entry of [
+    `${JSON.stringify(metadata.pointer)}="read"`,
+    `${JSON.stringify(metadata.gitDir)}="write"`,
+    `${JSON.stringify(metadata.commonDir)}="write"`,
+    `${JSON.stringify(join(metadata.commonDir, "hooks"))}="read"`,
+    `${JSON.stringify(join(metadata.commonDir, "config"))}="read"`,
+  ])
+    assert.ok(filesystem.includes(entry), entry);
+  assert.ok(
+    !filesystem.includes(
+      `${JSON.stringify(join(workspace, ".git", "hooks"))}="read"`,
+    ),
+  );
+});
+
 function locateCodex(): string | undefined {
   const found = spawnSync("sh", ["-c", "command -v codex"], {
     encoding: "utf8",
@@ -1386,6 +1430,91 @@ cd '${workspace}'
   assert.equal(git(workspace, ["rev-list", "--count", "HEAD"]), "2");
   assert.equal(existsSync(join(hooks, "pre-commit")), false);
   assert.equal(readFileSync(configPath, "utf8"), config);
+});
+
+void test("014e D4 (H4): linked worktree metadata permits commits but keeps the actual common config and hooks read-only", (t) => {
+  const codex = locateCodex();
+  if (codex === undefined) {
+    t.skip("codex is not installed");
+    return;
+  }
+  const located = locateContainment([]);
+  assert.ok(located.ok, "bubblewrap is required for containment tests");
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "codex-linked-git-")));
+  t.after(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const repositoryWorkspace = join(dir, "repository");
+  const workspace = join(dir, "candidate");
+  const scratch = join(dir, "scratch");
+  mkdirSync(scratch);
+  git(dir, ["init", "-q", "-b", "main", repositoryWorkspace]);
+  git(repositoryWorkspace, ["commit", "-q", "--allow-empty", "-m", "baseline"]);
+  git(repositoryWorkspace, [
+    "worktree",
+    "add",
+    "-q",
+    "-b",
+    "candidate",
+    workspace,
+  ]);
+  const metadata = resolveWorkspaceGitMetadata(workspace);
+  assert.ok(metadata?.linked, "linked worktree metadata must resolve");
+  const config = readFileSync(join(metadata.commonDir, "config"), "utf8");
+  const script = `
+cd '${workspace}'
+common=$(git rev-parse --path-format=absolute --git-common-dir)
+{
+  echo linked > tracked.txt
+  if git add tracked.txt && git -c user.name=Worker -c user.email=worker@example.invalid commit -q -m linked 2>/dev/null; then echo commit=yes; else echo commit=no; fi
+  if touch "$common/hooks/pre-commit" 2>/dev/null; then echo write-hook=yes; else echo write-hook=no; fi
+  if (echo '[core]' >> "$common/config") 2>/dev/null; then echo write-config=yes; else echo write-config=no; fi
+} > linked.results
+`;
+  const command = containedLaunch({
+    bwrap: located.path,
+    provider: "codex",
+    program: codex,
+    args: [
+      "sandbox",
+      "-C",
+      workspace,
+      ...codexWorkspaceProfile([workspace], [workspace], [metadata]),
+      "-P",
+      CODEX_WORKSPACE_PROFILE,
+      "--",
+      "/bin/sh",
+      "-c",
+      script,
+    ],
+    cwd: workspace,
+    workspaces: [{ path: workspace, mode: "write" }],
+    scratch,
+    nodePath: process.execPath,
+    toolFiles: [],
+    masked: [],
+    protectedRoots: [repository],
+    env: { PATH: "/usr/bin:/bin" },
+  });
+  const result = spawnSync(command.program, command.args, {
+    env: command.env,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(results(join(workspace, "linked.results")), {
+    commit: "yes",
+    "write-hook": "no",
+    "write-config": "no",
+  });
+  assert.equal(git(workspace, ["log", "-1", "--format=%s"]), "linked");
+  assert.equal(
+    readFileSync(join(metadata.commonDir, "config"), "utf8"),
+    config,
+  );
+  assert.equal(
+    existsSync(join(metadata.commonDir, "hooks", "pre-commit")),
+    false,
+  );
 });
 
 void test("sequence 6: the real Codex mixed profile writes private and scratch state but not the repository or its Git metadata", (t) => {
