@@ -876,7 +876,7 @@ void test("014k AC06/AC07/AC10: host allocations are the backbone; sparse privat
 });
 
 void test("legacy attempt ledgers normalize only with independently verified result bytes", (t) => {
-  const { root } = archiveFixture(t);
+  const { root, freeze } = archiveFixture(t);
   const result = put(root, ".eval/attempts/001/eval-result.md", "pass\n");
   put(
     root,
@@ -894,7 +894,9 @@ void test("legacy attempt ledgers normalize only with independently verified res
       ],
     })}\n`,
   );
-  const plan = deriveHostArchive(root, COMMIT, [hostAttempt(1, "PASS")]);
+  const plan = deriveHostArchive(root, COMMIT, [
+    { ...hostAttempt(1, "PASS"), evaluatorRevision: freeze },
+  ]);
   assert.ok(
     plan.items.some(
       (item) => item.destination === "attempt-ledger-normalization.json",
@@ -904,10 +906,68 @@ void test("legacy attempt ledgers normalize only with independently verified res
     validatePrivateAttemptFinalization(root, {
       attempt: 1,
       candidate: COMMIT,
-      evaluatorRevision: "001",
+      evaluatorRevision: freeze,
       result: "PASS",
     });
   });
+});
+
+void test("legacy canonical schema-v1 rows reconcile only through frozen evidence", (t) => {
+  const { root, freeze } = archiveFixture(t);
+  const result = put(root, ".eval/attempts/001/eval-result.md", "fail\n");
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({
+      schemaVersion: 1,
+      attempts: [
+        {
+          id: "001",
+          implementation: `git:${COMMIT}`,
+          evaluatorRevision: "001",
+          resultPath: ".eval/attempts/001/eval-result.md",
+          resultIdentity: result,
+          status: "FAIL",
+        },
+      ],
+    })}\n`,
+  );
+  assert.doesNotThrow(() => {
+    validatePrivateAttemptFinalization(root, {
+      attempt: 1,
+      candidate: COMMIT,
+      evaluatorRevision: freeze,
+      result: "FAIL",
+    });
+  });
+  put(
+    root,
+    ".eval/attempt-ledger.json",
+    `${JSON.stringify({
+      schemaVersion: 1,
+      attempts: [
+        {
+          id: "001",
+          implementation: `git:${COMMIT}`,
+          evaluatorRevision: "001",
+          resultPath: ".eval/attempts/001/eval-result.md",
+          resultIdentity: result,
+          status: "FAIL",
+          evaluatorRevisionIdentity: freeze,
+        },
+      ],
+    })}\n`,
+  );
+  assert.throws(
+    () =>
+      validatePrivateAttemptFinalization(root, {
+        attempt: 1,
+        candidate: COMMIT,
+        evaluatorRevision: freeze,
+        result: "FAIL",
+      }),
+    /neither canonical nor supported legacy shape/,
+  );
 });
 
 void test("014k AC07/AC08: terminal host state never degrades to NONTERMINAL when private evidence is absent", (t) => {
@@ -1055,7 +1115,7 @@ void test("evaluator terminalization accepts the exact canonical allocated row a
     validatePrivateAttemptFinalization(root, {
       attempt: 2,
       candidate: COMMIT,
-      evaluatorRevision: "001",
+      evaluatorRevision: freeze,
       result: "PASS",
     });
   });
@@ -1074,7 +1134,7 @@ void test("evaluator finalization refuses allocated, malformed, incomplete, mism
     validatePrivateAttemptFinalization(root, {
       attempt: 1,
       candidate: COMMIT,
-      evaluatorRevision: "001",
+      evaluatorRevision: freeze,
       result: "PASS",
     });
   };
@@ -1102,7 +1162,7 @@ void test("evaluator finalization refuses allocated, malformed, incomplete, mism
   assert.throws(check, /exact evidence/);
   write({ ...canonical, implementation: `git:${"2".repeat(40)}` });
   assert.throws(check, /candidate conflicts/);
-  write({ ...canonical, evaluatorRevision: "002" });
+  write({ ...canonical, evaluatorRevisionIdentity: SHA("f") });
   assert.throws(check, /revision conflicts/);
   write(canonical);
   writeFileSync(join(root, path), "changed\n");
@@ -1140,7 +1200,7 @@ void test("evaluator finalization fails when result bytes are removed and an emp
     validatePrivateAttemptFinalization(root, {
       attempt: 1,
       candidate: COMMIT,
-      evaluatorRevision: "001",
+      evaluatorRevision: freeze,
       result: "PASS",
     });
   };

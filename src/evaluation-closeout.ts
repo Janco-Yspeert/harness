@@ -372,6 +372,19 @@ interface PrivateAttemptResolution {
   };
 }
 
+function matchesEvaluatorRevision(
+  entry: PrivateAttempt,
+  expected: string,
+): boolean {
+  // Historical host allocations carried the evaluator's revision label. Newer
+  // grants carry the freeze identity. Both facts bind the same frozen revision;
+  // the private row must still bind its label to the active freeze below.
+  return (
+    entry.evaluatorRevision === expected ||
+    entry.evaluatorRevisionIdentity === expected
+  );
+}
+
 export function privateAttempts(value: unknown): PrivateAttempt[] {
   if (value === null || typeof value !== "object" || Array.isArray(value))
     throw new Error("attempt ledger must be an object");
@@ -432,10 +445,107 @@ export function privateAttempts(value: unknown): PrivateAttempt[] {
   });
 }
 
-// The legacy sequence-7 producer predated canonical ids and result paths.
-// Admit only that exact, independently reconciled shape; canonical parsing
-// remains strict for every other ledger.
-function legacyPrivateAttempts(
+// Schema-v1 used canonical ids and result paths, but predated the freeze
+// identity field. Admit only that exact historical template and derive the
+// missing identity from the frozen revision it names. This leaves the source
+// ledger byte-for-byte intact and does not relax the schema-v2 parser.
+function legacyCanonicalV1PrivateAttempts(
+  evaluatorRoot: string,
+  ledgerBytes: Buffer,
+  value: unknown,
+): PrivateAttemptResolution {
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    throw new Error("attempt ledger must be an object");
+  const ledger = value as Record<string, unknown>;
+  if (ledger.schemaVersion !== 1 || !Array.isArray(ledger.attempts))
+    throw new Error("attempt ledger does not use the canonical schema");
+  const seen = new Set<number>();
+  const entries: PrivateAttempt[] = ledger.attempts.map((raw) => {
+    if (raw === null || typeof raw !== "object" || Array.isArray(raw))
+      throw new Error("legacy canonical-v1 private attempt is malformed");
+    const entry = raw as Record<string, unknown>;
+    const allowed = new Set([
+      "id",
+      "implementation",
+      "evaluatorRevision",
+      "resultPath",
+      "resultIdentity",
+      "status",
+    ]);
+    if (Object.keys(entry).some((key) => !allowed.has(key)))
+      throw new Error(
+        "private attempt is neither canonical nor supported legacy shape",
+      );
+    if (
+      typeof entry.id !== "string" ||
+      !/^\d{3}$/.test(entry.id) ||
+      typeof entry.implementation !== "string" ||
+      !/^git:[a-f0-9]{40}$/.test(entry.implementation) ||
+      typeof entry.evaluatorRevision !== "string" ||
+      !/^\d{3}$/.test(entry.evaluatorRevision) ||
+      typeof entry.status !== "string" ||
+      !VERDICTS.includes(entry.status) ||
+      typeof entry.resultPath !== "string" ||
+      typeof entry.resultIdentity !== "string" ||
+      !/^sha256:[a-f0-9]{64}$/.test(entry.resultIdentity)
+    )
+      throw new Error(
+        "legacy canonical-v1 private attempt lacks exact reconciliation fields",
+      );
+    const attempt = Number(entry.id);
+    if (attempt < 1 || String(attempt).padStart(3, "0") !== entry.id)
+      throw new Error(
+        `legacy canonical-v1 private attempt id is invalid: ${entry.id}`,
+      );
+    if (seen.has(attempt))
+      throw new Error(
+        `duplicate legacy canonical-v1 private attempt ${entry.id}`,
+      );
+    seen.add(attempt);
+    const resultPath = `.eval/attempts/${entry.id}/eval-result.md`;
+    if (entry.resultPath !== resultPath)
+      throw new Error(
+        `legacy canonical-v1 private attempt ${entry.id} lacks its canonical result path`,
+      );
+    const result = readRegular(evaluatorRoot, resultPath);
+    if (result === null || identity(result) !== entry.resultIdentity)
+      throw new Error(
+        `legacy canonical-v1 private attempt ${entry.id} result is missing or changed`,
+      );
+    const freeze = readRegular(evaluatorRoot, ".eval/freeze.json");
+    if (freeze === null)
+      throw new Error("active evaluator revision identity mismatch");
+    parseFreeze(freeze, entry.evaluatorRevision);
+    return {
+      attempt,
+      implementation: entry.implementation,
+      evaluatorRevision: entry.evaluatorRevision,
+      evaluatorRevisionIdentity: identity(freeze),
+      status: entry.status as Verdict,
+      resultPath,
+      resultIdentity: entry.resultIdentity,
+    };
+  });
+  const content = `${canonical({
+    schemaVersion: 1,
+    kind: "legacy-attempt-ledger-normalization",
+    method: "canonical-v1-attempt-host-reconciliation-v1",
+    source: {
+      path: ".eval/attempt-ledger.json",
+      identity: identity(ledgerBytes),
+    },
+    attempts: entries,
+  })}\n`;
+  return {
+    entries,
+    compatibility: { sourceIdentity: identity(ledgerBytes), content },
+  };
+}
+
+// The other legacy producer predated canonical ids and result paths. Admit
+// only that exact, independently reconciled shape; canonical parsing remains
+// strict for every other ledger.
+function legacyNumericPrivateAttempts(
   evaluatorRoot: string,
   ledgerBytes: Buffer,
   value: unknown,
@@ -526,12 +636,32 @@ function resolvedPrivateAttempts(
   try {
     return { entries: privateAttempts(value) };
   } catch (error) {
-    const attempts =
+    const ledger =
       value !== null && typeof value === "object" && !Array.isArray(value)
-        ? (value as Record<string, unknown>).attempts
+        ? (value as Record<string, unknown>)
         : undefined;
+    const attempts = ledger?.attempts;
+    if (!Array.isArray(attempts)) throw error;
     if (
-      !Array.isArray(attempts) ||
+      ledger?.schemaVersion === 1 &&
+      attempts.every(
+        (entry) =>
+          entry !== null &&
+          typeof entry === "object" &&
+          !Array.isArray(entry) &&
+          "id" in entry &&
+          "implementation" in entry &&
+          "evaluatorRevision" in entry &&
+          "resultPath" in entry &&
+          "resultIdentity" in entry,
+      )
+    )
+      return legacyCanonicalV1PrivateAttempts(
+        evaluatorRoot,
+        ledgerBytes,
+        value,
+      );
+    if (
       !attempts.every(
         (entry) =>
           entry !== null &&
@@ -544,7 +674,7 @@ function resolvedPrivateAttempts(
       )
     )
       throw error;
-    return legacyPrivateAttempts(evaluatorRoot, ledgerBytes, value);
+    return legacyNumericPrivateAttempts(evaluatorRoot, ledgerBytes, value);
   }
 }
 
@@ -573,7 +703,7 @@ export function validatePrivateAttemptFinalization(
     throw new Error(
       `private attempt ${String(expected.attempt)} candidate conflicts`,
     );
-  if (entry.evaluatorRevision !== expected.evaluatorRevision)
+  if (!matchesEvaluatorRevision(entry, expected.evaluatorRevision))
     throw new Error(
       `private attempt ${String(expected.attempt)} revision conflicts`,
     );
@@ -594,7 +724,7 @@ export function validatePrivateAttemptFinalization(
   const freeze = readRegular(evaluatorRoot, ".eval/freeze.json");
   if (freeze === null || identity(freeze) !== entry.evaluatorRevisionIdentity)
     throw new Error("active evaluator revision identity mismatch");
-  parseFreeze(freeze, expected.evaluatorRevision);
+  parseFreeze(freeze, entry.evaluatorRevision);
 }
 
 // Host derivation of the post-PASS archive from the private attempt ledger and
@@ -653,13 +783,14 @@ export function deriveHostArchive(
     if (entry) {
       if (entry.implementation !== `git:${allocation.candidate}`)
         throw new Error(`private attempt ${attempt} candidate conflicts`);
-      if (entry.evaluatorRevision !== allocation.evaluatorRevision)
+      if (!matchesEvaluatorRevision(entry, allocation.evaluatorRevision))
         throw new Error(`private attempt ${attempt} revision conflicts`);
     }
     const base = {
       attempt: allocation.attempt,
       execution: allocation.execution,
-      evaluatorRevision: allocation.evaluatorRevision,
+      evaluatorRevision:
+        entry?.evaluatorRevision ?? allocation.evaluatorRevision,
     };
     if (!result) {
       if (entry && entry.status !== "ALLOCATED")
