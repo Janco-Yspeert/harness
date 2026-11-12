@@ -958,17 +958,14 @@ void test("legacy canonical schema-v1 rows reconcile only through frozen evidenc
       ],
     })}\n`,
   );
-  assert.throws(
-    () => {
-      validatePrivateAttemptFinalization(root, {
-        attempt: 1,
-        candidate: COMMIT,
-        evaluatorRevision: freeze,
-        result: "FAIL",
-      });
-    },
-    /neither canonical nor supported legacy shape/,
-  );
+  assert.throws(() => {
+    validatePrivateAttemptFinalization(root, {
+      attempt: 1,
+      candidate: COMMIT,
+      evaluatorRevision: freeze,
+      result: "FAIL",
+    });
+  }, /neither canonical nor supported legacy shape/);
 });
 
 void test("014k AC07/AC08: terminal host state never degrades to NONTERMINAL when private evidence is absent", (t) => {

@@ -153,7 +153,10 @@ const PREPARED_COVERAGE_CONTRACT = {
 } as const;
 
 export function preflightPreparedCoverage(document: unknown): {
-  readonly validator: { readonly name: "prepared-coverage"; readonly identity: string };
+  readonly validator: {
+    readonly name: "prepared-coverage";
+    readonly identity: string;
+  };
   readonly contract: typeof PREPARED_COVERAGE_CONTRACT;
   readonly valid: boolean;
   readonly coverageIdentity?: string;
