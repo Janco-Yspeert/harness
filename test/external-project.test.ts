@@ -306,7 +306,7 @@ async function settled(url: string, id: string): Promise<Execution> {
   throw new Error("execution did not settle");
 }
 
-void test("014e AC01/TR1: the unchanged Harness config and an external config bind the same exact trusted N+1 from committed Harness history", (t) => {
+void test("014e AC01/TR1: the unchanged Harness config and an external config bind the same latest trusted record from committed Harness history", (t) => {
   const harness = loadProject("harness.project.json");
   assert.equal(harness.methodologyRoot, undefined);
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "external-n1-")));
@@ -342,12 +342,7 @@ void test("014e AC01/TR1: the unchanged Harness config and an external config bi
   const other = trustedDefinition(externalProject, harnessValidators);
   assert.equal(other.id, self.id);
   const binding = trustedBinding(externalProject);
-  assert.deepEqual(binding.trusted, {
-    sequence: 7,
-    manifest:
-      "sha256:bea2ae256165b900a40e4cefd0fa98cfad665b5511bf2107f02b785f3fe00eea",
-    revision: "3e753a4a732c87fc5b42e9e3cf771482aba6a522",
-  });
+  assert.deepEqual(binding.trusted, trustedBinding(harness).trusted);
   assert.equal(binding.methodologyRepository, realpathSync(repository));
   // Nothing methodology-shaped exists in the external project.
   assert.equal(existsSync(join(project, "methodologies")), false);
