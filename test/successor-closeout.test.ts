@@ -959,13 +959,14 @@ void test("legacy canonical schema-v1 rows reconcile only through frozen evidenc
     })}\n`,
   );
   assert.throws(
-    () =>
+    () => {
       validatePrivateAttemptFinalization(root, {
         attempt: 1,
         candidate: COMMIT,
         evaluatorRevision: freeze,
         result: "FAIL",
-      }),
+      });
+    },
     /neither canonical nor supported legacy shape/,
   );
 });
