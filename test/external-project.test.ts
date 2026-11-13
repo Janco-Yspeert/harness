@@ -717,7 +717,7 @@ check() { if eval "$2" >/dev/null 2>&1; then echo "$1=yes"; else echo "$1=no"; f
 {
   check read-private "cat '${join(f.hidden, "promotion-bytes.txt")}'"
   check write-methodology "touch '${join(f.harness, "pwned")}'"
-  check write-harness "touch '${join(repository, ".containment-probe")}'"
+  check write-harness "touch '${join(f.harness, ".containment-probe")}'"
   check read-real-home "test -n \\"\\$(${unexpected})\\""
   check read-host-private "ls '${join(f.dir, "host-private")}'"
   check ledger-content "test -s '${f.ledger}'"
@@ -802,7 +802,7 @@ void test("014e AC03/AC04/D4: contained public and protected workers see only th
   });
   assert.notEqual(protectedHome, process.env.HOME);
   assert.equal(existsSync(join(f.harness, "pwned")), false);
-  assert.equal(existsSync(join(repository, ".containment-probe")), false);
+  assert.equal(existsSync(join(f.harness, ".containment-probe")), false);
   assert.equal(
     git(join(f.dir, "remote.git"), ["branch", "--list", "pushed"]),
     "",
