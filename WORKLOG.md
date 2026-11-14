@@ -22,3 +22,7 @@
   through AppArmor. CI now loads Ubuntu's packaged, scoped Bubblewrap profile
   for the ephemeral runner and verifies both outer and nested namespace creation
   without relaxing the global restriction.
+- 2026-11-14 — The packaged profile proved incapable of starting Bubblewrap: its
+  stacked child denies the CAP_SYS_ADMIN Bubblewrap needs inside the user
+  namespace. CI instead uses a versioned, executable-scoped runner profile;
+  global AppArmor policy and the outer/nested containment probes remain intact.

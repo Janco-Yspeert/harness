@@ -39,19 +39,22 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes bubblewrap apparmor-profiles
+          sudo apt-get install --yes bubblewrap
           npm ci
 
       - name: Enable Bubblewrap's scoped AppArmor profile
         # Ubuntu 24.04 restricts unprivileged user namespaces by default.
-        # Load the distribution-provided bwrap profile for this ephemeral runner
-        # only; do not relax the global AppArmor user-namespace restriction.
+        # This exact profile only applies to /usr/bin/bwrap on this ephemeral
+        # runner; it does not relax the global AppArmor user-namespace
+        # restriction. Ubuntu's apparmor-profiles bwrap-userns-restrict profile
+        # cannot initialize Bubblewrap's required mount namespace because it
+        # denies CAP_SYS_ADMIN to Bubblewrap's stacked child label.
         run: |
-          profile=/usr/share/apparmor/extra-profiles/bwrap-userns-restrict
+          profile=.github/ci/harness-bwrap-userns
           test -r "$profile"
           sudo apparmor_parser --replace "$profile"
           sudo aa-status
-          sudo grep -E '^bwrap |^unpriv_bwrap ' /sys/kernel/security/apparmor/profiles
+          sudo grep -E '^harness-bwrap-userns ' /sys/kernel/security/apparmor/profiles
 
       - name: Verify containment prerequisites
         run: |
