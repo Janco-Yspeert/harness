@@ -16,8 +16,8 @@ concurrency:
 jobs:
   check:
     name: Check
-    # Containment is an Ubuntu-host contract. Keep this on the supported LTS
-    # rather than letting ubuntu-latest silently change namespace behaviour.
+    # Provider-free deterministic tests remain mandatory on GitHub-hosted
+    # Ubuntu. Real containment runs in the separate Containment job.
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
@@ -37,61 +37,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes bubblewrap
-          npm ci
-
-      - name: Enable Bubblewrap's scoped AppArmor profile
-        # Ubuntu 24.04 restricts unprivileged user namespaces by default.
-        # This exact profile only applies to /usr/bin/bwrap on this ephemeral
-        # runner; it does not relax the global AppArmor user-namespace
-        # restriction. Ubuntu's apparmor-profiles bwrap-userns-restrict profile
-        # cannot initialize Bubblewrap's required mount namespace because it
-        # denies CAP_SYS_ADMIN to Bubblewrap's stacked child label.
-        run: |
-          profile=.github/ci/harness-bwrap-userns
-          test -r "$profile"
-          sudo apparmor_parser --replace "$profile"
-          sudo aa-status
-          sudo grep -E '^harness-bwrap-userns ' /sys/kernel/security/apparmor/profiles
-
-      - name: Verify containment prerequisites
-        run: |
-          report_containment_failure() {
-            status=$1
-            echo "Bubblewrap containment preflight failed (exit $status)." >&2
-            echo "=== User-namespace kernel settings ===" >&2
-            for setting in \
-              /proc/sys/kernel/apparmor_restrict_unprivileged_userns \
-              /proc/sys/kernel/unprivileged_userns_clone \
-              /proc/sys/user/max_user_namespaces; do
-              if test -r "$setting"; then
-                printf '%s=' "$setting" >&2
-                cat "$setting" >&2
-              fi
-            done
-            echo "=== Direct unprivileged user-namespace probe ===" >&2
-            if unshare --user --map-root-user -- true; then
-              echo "unshare --user succeeded" >&2
-            else
-              echo "unshare --user failed" >&2
-            fi
-            echo "=== AppArmor profile status ===" >&2
-            sudo aa-status >&2 || true
-            echo "=== AppArmor kernel audit records ===" >&2
-            sudo journalctl -k -b --no-pager | \
-              grep -Ei 'apparmor|DENIED|userns|bwrap' | tail -n 200 >&2 || true
-            exit "$status"
-          }
-
-          command -v bwrap
-          bwrap --version
-          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true || \
-            report_containment_failure $?
-          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / \
-            bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true || \
-            report_containment_failure $?
+        run: npm ci
 
       - name: Typecheck
         run: npm run typecheck
@@ -102,8 +48,44 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
-      # These tests create real Git repositories, hosts and nested bubblewrap
-      # namespaces. Serial files keep cleanup deterministic and leave a useful
-      # failure summary instead of a cancelled, interleaved test swarm.
-      - name: Run tests
-        run: bash tools/ci-test-files.sh
+      # Serial files keep cleanup deterministic and leave a useful failure
+      # summary. The hosted job runs every provider-free deterministic file;
+      # the runner prints each containment file as an explicit SKIP and the
+      # separate Containment job makes them required on a capable host.
+      - name: Run deterministic tests
+        run: bash tools/ci-test-files.sh ordinary
+
+  containment:
+    name: Containment
+    # GitHub-hosted Ubuntu runners allow the bwrap AppArmor profile to load but
+    # make uid_map read-only. This runner must be dedicated to Harness, provide
+    # bwrap and a scoped profile that permits its nested user namespaces, and
+    # retain the global AppArmor user-namespace restriction.
+    runs-on: [self-hosted, linux, x64, harness-containment]
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.12.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify containment prerequisites
+        run: |
+          command -v bwrap
+          bwrap --version
+          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
+          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / \
+            bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
+
+      - name: Run containment tests
+        run: bash tools/ci-test-files.sh containment

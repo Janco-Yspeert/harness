@@ -24,5 +24,6 @@
   without relaxing the global restriction.
 - 2026-11-14 — The packaged profile proved incapable of starting Bubblewrap: its
   stacked child denies the CAP_SYS_ADMIN Bubblewrap needs inside the user
-  namespace. CI instead uses a versioned, executable-scoped runner profile;
-  global AppArmor policy and the outer/nested containment probes remain intact.
+  namespace. GitHub-hosted runners then exposed a separate, read-only uid-map
+  restriction, so provider-free tests stay mandatory there while a dedicated
+  runner must prove the unchanged outer/nested containment probes.
