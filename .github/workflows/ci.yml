@@ -58,10 +58,26 @@ jobs:
           report_containment_failure() {
             status=$1
             echo "Bubblewrap containment preflight failed (exit $status)." >&2
+            echo "=== User-namespace kernel settings ===" >&2
+            for setting in \
+              /proc/sys/kernel/apparmor_restrict_unprivileged_userns \
+              /proc/sys/kernel/unprivileged_userns_clone \
+              /proc/sys/user/max_user_namespaces; do
+              if test -r "$setting"; then
+                printf '%s=' "$setting" >&2
+                cat "$setting" >&2
+              fi
+            done
+            echo "=== Direct unprivileged user-namespace probe ===" >&2
+            if unshare --user --map-root-user -- true; then
+              echo "unshare --user succeeded" >&2
+            else
+              echo "unshare --user failed" >&2
+            fi
             echo "=== AppArmor profile status ===" >&2
             sudo aa-status >&2 || true
             echo "=== AppArmor kernel audit records ===" >&2
-            sudo journalctl --kernel --boot --no-pager | \
+            sudo journalctl -k -b --no-pager | \
               grep -Ei 'apparmor|DENIED|userns|bwrap' | tail -n 200 >&2 || true
             exit "$status"
           }
