@@ -37,7 +37,18 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          npm ci
+
+      - name: Verify containment prerequisites
+        run: |
+          command -v bwrap
+          bwrap --version
+          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
+          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / \
+            bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
 
       - name: Typecheck
         run: npm run typecheck
@@ -52,4 +63,4 @@ jobs:
       # namespaces. Serial files keep cleanup deterministic and leave a useful
       # failure summary instead of a cancelled, interleaved test swarm.
       - name: Run tests
-        run: npm run test:ci
+        run: bash tools/ci-test-files.sh
