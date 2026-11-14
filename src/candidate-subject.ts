@@ -654,6 +654,12 @@ export class CandidateSubjectRelay {
         observation: { status: "recorded", authoritative: false },
       };
     }
+    if (request.operation === "preflightPreparedCoverage")
+      return {
+        protocolVersion: WORKER_PROTOCOL_VERSION,
+        valid: false,
+        reason: "prepared coverage preflight is authoritative-host-only",
+      };
     if (request.operation === "requestHuman")
       return {
         protocolVersion: WORKER_PROTOCOL_VERSION,

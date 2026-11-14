@@ -16,8 +16,10 @@ concurrency:
 jobs:
   check:
     name: Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Containment is an Ubuntu-host contract. Keep this on the supported LTS
+    # rather than letting ubuntu-latest silently change namespace behaviour.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -35,7 +37,30 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          npm ci
 
-      - name: Run checks
-        run: npm run check
+      - name: Verify containment prerequisites
+        run: |
+          command -v bwrap
+          bwrap --version
+          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
+          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / \
+            bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      # These tests create real Git repositories, hosts and nested bubblewrap
+      # namespaces. Serial files keep cleanup deterministic and leave a useful
+      # failure summary instead of a cancelled, interleaved test swarm.
+      - name: Run tests
+        run: bash tools/ci-test-files.sh
