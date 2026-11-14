@@ -39,16 +39,40 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes bubblewrap
+          sudo apt-get install --yes bubblewrap apparmor-profiles
           npm ci
+
+      - name: Enable Bubblewrap's scoped AppArmor profile
+        # Ubuntu 24.04 restricts unprivileged user namespaces by default.
+        # Load the distribution-provided bwrap profile for this ephemeral runner
+        # only; do not relax the global AppArmor user-namespace restriction.
+        run: |
+          profile=/usr/share/apparmor/extra-profiles/bwrap-userns-restrict
+          test -r "$profile"
+          sudo apparmor_parser --replace "$profile"
+          sudo aa-status
+          sudo grep -E '^bwrap |^unpriv_bwrap ' /sys/kernel/security/apparmor/profiles
 
       - name: Verify containment prerequisites
         run: |
+          report_containment_failure() {
+            status=$1
+            echo "Bubblewrap containment preflight failed (exit $status)." >&2
+            echo "=== AppArmor profile status ===" >&2
+            sudo aa-status >&2 || true
+            echo "=== AppArmor kernel audit records ===" >&2
+            sudo journalctl --kernel --boot --no-pager | \
+              grep -Ei 'apparmor|DENIED|userns|bwrap' | tail -n 200 >&2 || true
+            exit "$status"
+          }
+
           command -v bwrap
           bwrap --version
-          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
+          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true || \
+            report_containment_failure $?
           bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / \
-            bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
+            bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true || \
+            report_containment_failure $?
 
       - name: Typecheck
         run: npm run typecheck

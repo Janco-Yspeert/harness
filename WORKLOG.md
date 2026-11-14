@@ -18,3 +18,7 @@
   environment and serializes real Git/namespace fixture files; the
   external-project probe was corrected to target the external Harness runtime
   actually protected by that fixture.
+- 2026-11-14 — Ubuntu 24.04 Actions runners restrict unprivileged namespaces
+  through AppArmor. CI now loads Ubuntu's packaged, scoped Bubblewrap profile
+  for the ephemeral runner and verifies both outer and nested namespace creation
+  without relaxing the global restriction.
