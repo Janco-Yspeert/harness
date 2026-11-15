@@ -11,3 +11,22 @@
 - 2026-10-04 — The first real revision-003 E5 subject launch exposed Git-quoted
   Unicode paths in full candidate export; switched the existing exporter to
   binary-safe NUL-delimited enumeration and added a reproducing regression.
+- 2026-11-10 — Repaired linked-worktree containment by resolving the actual
+  per-worktree and common Git metadata paths, preserving read-only hooks and
+  configuration while allowing a granted commit.
+- 2026-11-13 — Consolidation CI now pins the supported Ubuntu 24.04 containment
+  environment and serializes real Git/namespace fixture files; the
+  external-project probe was corrected to target the external Harness runtime
+  actually protected by that fixture.
+- 2026-11-14 — Ubuntu 24.04 Actions runners restrict unprivileged namespaces
+  through AppArmor. CI now loads Ubuntu's packaged, scoped Bubblewrap profile
+  for the ephemeral runner and verifies both outer and nested namespace creation
+  without relaxing the global restriction.
+- 2026-11-14 — The packaged profile proved incapable of starting Bubblewrap: its
+  stacked child denies the CAP_SYS_ADMIN Bubblewrap needs inside the user
+  namespace. GitHub-hosted runners then exposed a separate, read-only uid-map
+  restriction, so provider-free tests stay mandatory there while a dedicated
+  runner must prove the unchanged outer/nested containment probes.
+- 2026-11-15 — Routine GitHub CI now runs the provider-free deterministic
+  partition only. Real Bubblewrap assertions remain unchanged and are invoked
+  explicitly with `npm run test:containment` on a compatible Ubuntu host.

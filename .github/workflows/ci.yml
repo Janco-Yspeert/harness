@@ -16,8 +16,11 @@ concurrency:
 jobs:
   check:
     name: Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # GitHub-hosted Ubuntu runs provider-free deterministic tests. Real
+    # containment has an explicit local command because it requires host
+    # namespace capabilities that hosted runners do not provide reliably.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -37,5 +40,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run checks
-        run: npm run check
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      # Serial files keep cleanup deterministic and leave a useful failure
+      # summary. Containment files are explicitly reported as local-only skips.
+      - name: Run deterministic tests
+        run: npm run test:ordinary

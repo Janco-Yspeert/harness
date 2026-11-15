@@ -3,16 +3,17 @@
 // The host has already selected the adapter, located its installed provider,
 // planned permissions/constraints and recorded the allocation. This module
 // delivers the exact assignment, starts the provider with a clean environment,
-// consumes its structured event stream, relays the four typed worker
+// consumes its structured event stream, relays the five typed worker
 // operations to the authenticated host API, and reports lifecycle facts. It
 // never infers a result or action from exit status or prose, and never
 // retries.
-import { spawn, type ChildProcess } from "node:child_process";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import {
   appendFileSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   realpathSync,
   rmSync,
   statSync,
@@ -30,10 +31,17 @@ import type {
   DiagnosticCategory,
   Execution,
   ExecutorProfile,
+  LedgerEvent,
   RoleContract,
   RoleGrant,
   WorkerExecutionContext,
 } from "../kernel/model.ts";
+import { workflowRepositoryRoot } from "../kernel/model.ts";
+import {
+  harnessValidators,
+  validatePreparedMap,
+} from "../methodologies/harness-public.ts";
+import { committedBinding, roleInputs } from "../kernel/resolver.ts";
 import {
   deriveExecutionShape,
   shapeIdentity,
@@ -110,6 +118,131 @@ const WORKER_RULES =
   "- Use only the granted workspaces and capabilities. Never push, publish directly, or reveal credentials.\n" +
   "- Read detailed inputs just in time from their bound paths inside granted workspaces; the identities below say which exact bytes are authoritative.";
 
+// This executor-owned description makes the current public shape available to
+// a worker. The preflight below remains the source of truth: it invokes the
+// untouched trusted validator and returns that validator's content identity.
+const PREPARED_COVERAGE_CONTRACT = {
+  criteria: {
+    requiredFields: [
+      "id",
+      "frozenAuthority",
+      "mode",
+      "required",
+      "procedures",
+      "sufficiency",
+    ],
+    id: "nonempty string; unique across criteria",
+    frozenAuthority: "nonempty string",
+    mode: "nonempty string other than BLOCKED",
+    required: "boolean",
+    procedures: "nonempty array of nonempty strings",
+    sufficiency: "nonempty string",
+  },
+  readiness: {
+    requiredFields: [
+      "evaluatorRevision",
+      "privateInventoryIdentity",
+      "validatorResultBinding",
+      "integrityValidation",
+    ],
+    evaluatorRevision: "nonempty string",
+    privateInventoryIdentity: "nonempty string",
+    validatorResultBinding: "nonempty string",
+    integrityValidation: "PASS",
+  },
+} as const;
+
+export function preflightPreparedCoverage(document: unknown): {
+  readonly validator: {
+    readonly name: "prepared-coverage";
+    readonly identity: string;
+  };
+  readonly contract: typeof PREPARED_COVERAGE_CONTRACT;
+  readonly valid: boolean;
+  readonly coverageIdentity?: string;
+  readonly error?: string;
+} {
+  const validator = harnessValidators["prepared-coverage"];
+  if (!validator) throw new Error("prepared coverage validator unavailable");
+  try {
+    validatePreparedMap(document);
+    return {
+      validator: { name: "prepared-coverage", identity: validator.identity },
+      contract: PREPARED_COVERAGE_CONTRACT,
+      valid: true,
+      coverageIdentity: contentId(document),
+    };
+  } catch (error) {
+    return {
+      validator: { name: "prepared-coverage", identity: validator.identity },
+      contract: PREPARED_COVERAGE_CONTRACT,
+      valid: false,
+      error: (error as Error).message,
+    };
+  }
+}
+
+type ImplementationCoverageBinding = {
+  readonly input: string;
+  readonly path: string;
+  readonly coverageField: string;
+};
+
+// The downstream role contract, not this executor, defines which prepared-map
+// fields bind later public artifacts. Keeping this projection generic prevents
+// the preflight from drifting into an independently maintained schema.
+export function implementationCoverageBindings(
+  contract: RoleContract,
+): readonly ImplementationCoverageBinding[] {
+  return contract.inputs.flatMap((input) => {
+    const binding = input.identityBinding;
+    if (!binding || binding.input !== "coverage") return [];
+    const artifact = contract.inputs.find((entry) => entry.name === input.name);
+    if (!artifact?.path)
+      throw new Error(
+        `implementation binding ${input.name} has no public artifact path`,
+      );
+    return [
+      {
+        input: input.name,
+        path: artifact.path,
+        coverageField: binding.field,
+      },
+    ];
+  });
+}
+
+function fieldAt(document: unknown, path: string): unknown {
+  return path.split(".").reduce<unknown>((value, field) => {
+    if (value === null || typeof value !== "object" || Array.isArray(value))
+      return undefined;
+    return (value as Record<string, unknown>)[field];
+  }, document);
+}
+
+// This is the identity-binding portion of the Implementation input resolver.
+// The host also calls roleInputs below, which validates the complete pinned
+// role contract and committed provenance against the actual workspace.
+export function validatePreparedImplementationBindings(
+  coverageMap: unknown,
+  contract: RoleContract,
+  artifacts: Record<string, Buffer>,
+): readonly ImplementationCoverageBinding[] {
+  const bindings = implementationCoverageBindings(contract);
+  for (const binding of bindings) {
+    const bytes = artifacts[binding.input];
+    if (!bytes)
+      throw new Error(
+        `implementation handoff artifact is unavailable: ${binding.path}`,
+      );
+    if (fieldAt(coverageMap, binding.coverageField) !== identity(bytes))
+      throw new Error(
+        `coverage map does not bind ${binding.path} for Implementation`,
+      );
+  }
+  return bindings;
+}
+
 // Worker context is assembled in two deterministic parts. The stable part
 // depends only on the protocol, the role and its pinned skill and contract
 // bytes, so distinct executions of the same pinned role share it byte for
@@ -117,7 +250,10 @@ const WORKER_RULES =
 // methodology binding, input identities, candidate/attempt values) is placed
 // after it. Nothing evaluator-private is ever part of either part: the host
 // delivers only pinned public methodology bytes and identities.
-export function workerContext(assignment: Assignment): {
+export function workerContext(
+  assignment: Assignment,
+  requirePreparedCoveragePreflight = false,
+): {
   stable: string;
   volatile: string;
 } {
@@ -129,6 +265,10 @@ export function workerContext(assignment: Assignment): {
     assignment.executionContext.terminalOutcomes.length === 0
       ? ""
       : `\nHost-derived legal terminal outcomes (machine-readable): ${JSON.stringify(assignment.executionContext.terminalOutcomes)}\n"disposition" describes whether this role invocation successfully completed its reporting protocol. It does not duplicate the evaluator verdict. An evaluator that successfully concludes the verification is BLOCKED must still submit "disposition": "succeeded" with "methodology.result": "BLOCKED".\n`;
+  const preparedCoverageInstruction =
+    grant.role !== "evaluator-prepare" || !requirePreparedCoveragePreflight
+      ? ""
+      : "\nEvaluator preparation requirement: commit the complete public checkpoint, then call preflightPreparedCoverage with your complete proposed public coverage map before submitting a succeeded result. Its response contains the active public coverage contract and the immediate Implementation handoff derived from the pinned Implementation contract. The handoff lists every coverage-map field that must bind a committed public artifact and its exact identity. Publish only a map whose successful preflight coverageIdentity matches and whose handoff is valid; the host rejects a succeeded result without those bindings. This preflight does not create or attest any evaluator-owned evidence for you.\n";
   return {
     stable:
       `You are the governed Harness worker for role ${grant.role}.\n\n` +
@@ -146,6 +286,7 @@ export function workerContext(assignment: Assignment): {
       `Host-issued execution context: ${JSON.stringify(assignment.executionContext)}\n` +
       outcomeInstruction +
       compatibilityInstruction +
+      preparedCoverageInstruction +
       "Call the assignment tool for the full Role Grant, including granted workspaces and host actions.",
   };
 }
@@ -157,11 +298,14 @@ export function resultContractInstructions(contract: RoleContract): string {
   );
 }
 
-export function workerInstructions(assignment: Assignment): {
+export function workerInstructions(
+  assignment: Assignment,
+  requirePreparedCoveragePreflight = false,
+): {
   system: string;
   prompt: string;
 } {
-  const context = workerContext(assignment);
+  const context = workerContext(assignment, requirePreparedCoveragePreflight);
   return {
     system: `${context.stable}${context.volatile}`,
     prompt:
@@ -284,6 +428,7 @@ export class GovernedProviderRun {
   #failure: DiagnosticCategory | undefined;
   #privateBytes = 0;
   #privateLog: string | undefined;
+  #preparedCoveragePreflight: { readonly coverageIdentity: string } | undefined;
   readonly #relayKey = randomBytes(32).toString("hex");
   readonly done: Promise<void>;
 
@@ -424,7 +569,10 @@ export class GovernedProviderRun {
       if (address === null || typeof address === "string")
         throw new Error("relay has no loopback port");
       const workspaces = launchWorkspaces(assignment.roleGrant);
-      const instructions = workerInstructions(assignment);
+      const instructions = workerInstructions(
+        assignment,
+        launch.profile.preparedCoveragePreflight === true,
+      );
       const { program, args } = checkedCommand(launch.adapter, launch.program, {
         shape: launch.shape,
         workspaces,
@@ -613,7 +761,7 @@ export class GovernedProviderRun {
   }
 
   // Loopback relay for this execution only. Its key is not a host credential:
-  // it reaches exactly the four operations already bound to this execution.
+  // it reaches exactly the five operations already bound to this execution.
   #listen(): Promise<Server> {
     return new Promise((resolveServer, reject) => {
       const server = createServer((connection) => {
@@ -674,7 +822,166 @@ export class GovernedProviderRun {
     }
   }
 
-  // The four operations, each bound to this adapter's own execution.
+  #preflightImplementationHandoff(
+    assignment: Assignment,
+    coverageMap: unknown,
+  ): {
+    readonly valid: boolean;
+    readonly contract: {
+      readonly role: "implementation";
+      readonly coverageBindings: ReadonlyArray<
+        ImplementationCoverageBinding & { readonly expectedIdentity?: string }
+      >;
+    };
+    readonly error?: string;
+  } {
+    let implementation: RoleContract;
+    try {
+      const role = this.#launch.kernel.definition(
+        assignment.workflow,
+        assignment.methodology,
+      ).roles.implementation;
+      if (!role)
+        throw new Error("pinned methodology has no Implementation contract");
+      implementation = role.contract;
+    } catch (error) {
+      return {
+        valid: false,
+        contract: { role: "implementation", coverageBindings: [] },
+        error: (error as Error).message,
+      };
+    }
+    const bindings = implementationCoverageBindings(implementation);
+    const contract = {
+      role: "implementation" as const,
+      coverageBindings: bindings,
+    };
+    try {
+      const project = this.#launch.kernel.project;
+      const workflow = project.workflows[assignment.workflow];
+      if (!workflow) throw new Error("configured workflow is unavailable");
+      const root = workflowRepositoryRoot(project);
+      const directory = resolve(root, workflow.directory);
+      const coveragePath = resolve(directory, "coverage-map.json");
+      const publishedBytes = readFileSync(coveragePath);
+      const publishedMap: unknown = JSON.parse(publishedBytes.toString("utf8"));
+      if (contentId(publishedMap) !== contentId(coverageMap))
+        throw new Error(
+          "published coverage map differs from the preflight draft",
+        );
+      const artifacts: Record<string, Buffer> = {};
+      const expanded = bindings.map((binding) => {
+        const path = resolve(directory, binding.path);
+        const bytes = readFileSync(path);
+        artifacts[binding.input] = bytes;
+        return {
+          ...binding,
+          expectedIdentity: identity(bytes),
+        };
+      });
+      const commit = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: root,
+        encoding: "utf8",
+      }).trim();
+      const coverageIdentity = identity(publishedBytes);
+      const artifactBinding = committedBinding(
+        project,
+        "workflow",
+        commit,
+        relative(root, coveragePath),
+        coverageIdentity,
+      );
+      for (const binding of expanded) {
+        const committed = execFileSync(
+          "git",
+          [
+            "show",
+            `${commit}:${relative(root, resolve(directory, binding.path))}`,
+          ],
+          { cwd: root },
+        );
+        if (identity(committed) !== binding.expectedIdentity)
+          throw new Error(
+            `Implementation handoff artifact is not committed: ${binding.path}`,
+          );
+      }
+      validatePreparedImplementationBindings(
+        publishedMap,
+        implementation,
+        artifacts,
+      );
+      const event: LedgerEvent = {
+        transition: "evaluation-prepared",
+        evidence: {
+          path: "coverage-map.json",
+          identity: coverageIdentity,
+          commit,
+          artifactBinding,
+        },
+      };
+      const definition = this.#launch.kernel.definition(
+        assignment.workflow,
+        assignment.methodology,
+      );
+      const role = definition.roles.implementation;
+      if (!role)
+        throw new Error("pinned methodology has no Implementation role");
+      roleInputs(
+        project,
+        assignment.workflow,
+        role,
+        [...this.#launch.kernel.events(assignment.workflow), event],
+        definition,
+        harnessValidators,
+      );
+      return {
+        valid: true,
+        contract: { role: "implementation", coverageBindings: expanded },
+      };
+    } catch (error) {
+      return {
+        valid: false,
+        contract,
+        error: (error as Error).message,
+      };
+    }
+  }
+
+  #assertPreparedCoveragePreflight(assignment: Assignment): void {
+    const preflight = this.#preparedCoveragePreflight;
+    if (!preflight)
+      throw new Error(
+        "evaluator preparation must pass preflightPreparedCoverage before submitting succeeded",
+      );
+    const workflow = this.#launch.kernel.project.workflows[assignment.workflow];
+    if (!workflow) throw new Error("configured workflow is unavailable");
+    let coverage: unknown;
+    try {
+      coverage = JSON.parse(
+        readFileSync(
+          resolve(
+            workflowRepositoryRoot(this.#launch.kernel.project),
+            workflow.directory,
+            "coverage-map.json",
+          ),
+          "utf8",
+        ),
+      );
+    } catch {
+      throw new Error("published coverage map is unreadable after preflight");
+    }
+    if (contentId(coverage) !== preflight.coverageIdentity)
+      throw new Error(
+        "published coverage map differs from the successful preflight draft",
+      );
+    const handoff = this.#preflightImplementationHandoff(assignment, coverage);
+    if (!handoff.valid)
+      throw new Error(
+        `prepared coverage no longer satisfies Implementation handoff: ${handoff.error ?? "unknown error"}`,
+      );
+  }
+
+  // The five operations, each bound to this adapter's own execution.
   async relay(request: WorkerRequest): Promise<unknown> {
     const assignment = this.#assignment;
     if (!assignment) throw new Error("assignment not delivered");
@@ -684,11 +991,41 @@ export class GovernedProviderRun {
         typeof value.error === "string" ? value.error : "host request failed",
       );
     if (request.operation === "assignment") return assignment;
+    if (request.operation === "preflightPreparedCoverage") {
+      if (assignment.roleGrant.role !== "evaluator-prepare")
+        throw new Error(
+          "preflightPreparedCoverage is available only to evaluator preparation",
+        );
+      const coverage = preflightPreparedCoverage(request.coverageMap);
+      const handoff = this.#preflightImplementationHandoff(
+        assignment,
+        request.coverageMap,
+      );
+      const preflight = {
+        ...coverage,
+        handoff,
+        valid: coverage.valid && handoff.valid,
+        ...(coverage.valid && handoff.valid
+          ? {}
+          : { error: coverage.error ?? handoff.error }),
+      };
+      this.#preparedCoveragePreflight =
+        preflight.valid && preflight.coverageIdentity
+          ? { coverageIdentity: preflight.coverageIdentity }
+          : undefined;
+      return { protocolVersion: WORKER_PROTOCOL_VERSION, ...preflight };
+    }
     if (request.operation === "submitResult") {
       if (!this.#confirmed) {
         this.#diagnostic("result-rejected", "executor model not yet confirmed");
         throw new Error("exact model constraint is not yet confirmed");
       }
+      if (
+        this.#launch.profile.preparedCoveragePreflight &&
+        assignment.roleGrant.role === "evaluator-prepare" &&
+        request.disposition === "succeeded"
+      )
+        this.#assertPreparedCoveragePreflight(assignment);
       const response = await this.#call("POST", `${path}/result`, {
         disposition: request.disposition,
         methodology: request.methodology,

@@ -33,6 +33,7 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 import { AdapterRefusal, locateProvider, type ProviderId } from "./adapters.ts";
+import { resolveWorkspaceGitMetadata } from "./git-metadata.ts";
 
 const NAMESPACES = [
   "--unshare-user",
@@ -397,6 +398,40 @@ export function containedLaunch(input: ContainmentInput): {
       workspace.path,
       workspace.path,
     );
+  // A linked worktree's .git file points outside its workspace. Make only its
+  // actual Git directories visible, then re-bind configuration and hooks
+  // read-only. This preserves the normal write grant for refs/objects/index
+  // while neither treating the pointer file as a directory nor exposing a
+  // checkout parent wholesale.
+  const metadataMounts = new Map<string, "read" | "write">();
+  const readOnlyMetadata = new Set<string>();
+  for (const workspace of workspaces) {
+    let metadata;
+    try {
+      metadata = resolveWorkspaceGitMetadata(workspace.path);
+    } catch (error) {
+      throw new AdapterRefusal(
+        "provider-config-invalid",
+        `workspace Git metadata is invalid: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    if (metadata === undefined) continue;
+    for (const path of [metadata.commonDir, metadata.gitDir]) {
+      const real = runtimeBinding(path, "Git metadata", input.protectedRoots);
+      if (workspace.mode === "write" || !metadataMounts.has(real))
+        metadataMounts.set(real, workspace.mode);
+    }
+    for (const path of metadata.readOnlyPaths)
+      readOnlyMetadata.add(
+        runtimeBinding(path, "Git metadata", input.protectedRoots),
+      );
+  }
+  for (const [path, mode] of [...metadataMounts.entries()].sort(
+    ([a], [b]) => a.length - b.length,
+  ))
+    args.push(mode === "write" ? "--bind" : "--ro-bind", path, path);
+  for (const path of [...readOnlyMetadata].sort((a, b) => a.length - b.length))
+    args.push("--ro-bind", path, path);
   for (const file of input.masked)
     if (existsSync(file))
       args.push("--ro-bind", "/dev/null", realpathSync(file));

@@ -26,6 +26,10 @@ import {
   assertBoundedExecutorCommand,
   codexExecCommand,
 } from "../workflow-backend.ts";
+import {
+  resolveWorkspaceGitMetadata,
+  type WorkspaceGitMetadata,
+} from "./git-metadata.ts";
 import { WORKER_OPERATIONS } from "./protocol.ts";
 
 export type ProviderId = "claude" | "codex";
@@ -288,21 +292,39 @@ const CODEX_READ_ONLY_METADATA = [
 export function codexWorkspaceProfile(
   writableRoots: readonly string[],
   gitWritableRoots: readonly string[],
+  metadata: readonly WorkspaceGitMetadata[] = [],
 ): string[] {
   const gitWritable = new Set(gitWritableRoots);
+  const byWorkspace = new Map(
+    metadata.map((entry) => [entry.workspace, entry]),
+  );
   const entries = [
     '":root"="read"',
     '":slash_tmp"="write"',
     '":tmpdir"="write"',
-    ...writableRoots.flatMap((root) => [
-      `${tomlString(root)}="write"`,
-      `${tomlString(join(root, ".git"))}=${
-        gitWritable.has(root) ? '"write"' : '"read"'
-      }`,
-      ...CODEX_READ_ONLY_METADATA.map(
-        (path) => `${tomlString(join(root, path))}="read"`,
-      ),
-    ]),
+    ...writableRoots.flatMap((root) => {
+      const git = byWorkspace.get(root);
+      if (git === undefined)
+        return [
+          `${tomlString(root)}="write"`,
+          `${tomlString(join(root, ".git"))}=${
+            gitWritable.has(root) ? '"write"' : '"read"'
+          }`,
+          ...CODEX_READ_ONLY_METADATA.map(
+            (path) => `${tomlString(join(root, path))}="read"`,
+          ),
+        ];
+      const gitMode = gitWritable.has(root) ? '"write"' : '"read"';
+      return [
+        `${tomlString(root)}="write"`,
+        ...(git.linked ? [`${tomlString(git.pointer)}="read"`] : []),
+        `${tomlString(git.commonDir)}=${gitMode}`,
+        ...(git.gitDir === git.commonDir
+          ? []
+          : [`${tomlString(git.gitDir)}=${gitMode}`]),
+        ...git.readOnlyPaths.map((path) => `${tomlString(path)}="read"`),
+      ];
+    }),
   ];
   return [
     "-c",
@@ -396,6 +418,18 @@ const codex: ProviderAdapter = {
     const gitWritableRoots = input.shape.capabilities.includes("git-commit")
       ? writableRoots
       : [];
+    let workspaceGitMetadata: WorkspaceGitMetadata[];
+    try {
+      workspaceGitMetadata = writableRoots.flatMap((root) => {
+        const metadata = resolveWorkspaceGitMetadata(root);
+        return metadata === undefined ? [] : [metadata];
+      });
+    } catch (error) {
+      throw new AdapterRefusal(
+        "provider-config-invalid",
+        `workspace Git metadata is invalid: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
     // Codex refuses `--sandbox` together with `default_permissions`, so the
     // profile replaces it (and `--add-dir`) rather than widening it.
     return [
@@ -403,7 +437,11 @@ const codex: ProviderAdapter = {
       "exec",
       "--cd",
       primary.path,
-      ...codexWorkspaceProfile(writableRoots, gitWritableRoots),
+      ...codexWorkspaceProfile(
+        writableRoots,
+        gitWritableRoots,
+        workspaceGitMetadata,
+      ),
       ...options,
       prompt,
     ];
@@ -532,6 +570,7 @@ const PROFILE_KEYS = [
   "cost",
   "maxTurns",
   "readinessTimeoutMs",
+  "preparedCoveragePreflight",
 ];
 
 // Production executor configuration: every profile must name a registered
@@ -625,6 +664,13 @@ export function validateProductionExecutors(raw: unknown): ExecutorProfile[] {
     )
       throw new Error(
         `executor profile ${name} readinessTimeoutMs must be between 1000 and 120000`,
+      );
+    if (
+      profile.preparedCoveragePreflight !== undefined &&
+      typeof profile.preparedCoveragePreflight !== "boolean"
+    )
+      throw new Error(
+        `executor profile ${name} preparedCoveragePreflight must be boolean`,
       );
     return structuredClone(profile) as unknown as ExecutorProfile;
   });

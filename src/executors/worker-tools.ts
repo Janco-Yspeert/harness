@@ -1,11 +1,11 @@
 // Repository-owned Harness worker tool server (MCP over stdio).
 //
 // A registered provider adapter starts this exact file as the provider's only
-// Harness tool server. It exposes the four version 1 worker operations and
+// Harness tool server. It exposes the five version 2 worker operations and
 // relays each call over loopback to its adapter's per-execution relay, which
 // holds the host session credential and binds every call to its own
 // execution. This process receives only a relay key that is scoped to those
-// four operations for that one execution; it never receives a host credential,
+// five operations for that one execution; it never receives a host credential,
 // never chooses an execution, and has no behaviour beyond typed relay.
 import { createConnection } from "node:net";
 import { createInterface } from "node:readline";

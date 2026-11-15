@@ -3573,11 +3573,30 @@ export class ExecutionKernel {
           }
         };
         action.before = git(["rev-parse", "--verify", "HEAD^{commit}"]);
-        if (
-          splitWorkflow(this.project) &&
-          action.before !== grant.commits?.workflow.commit
-        )
-          throw new Error("evidence workflow checkpoint is stale");
+        if (splitWorkflow(this.project)) {
+          const previous = execution.actions
+            .filter(
+              (candidate): candidate is EvidenceActionResult =>
+                candidate.request.kind === "evidence" &&
+                candidate.status === "succeeded",
+            )
+            .at(-1);
+          if (previous) {
+            if (!previous.binding || previous.after !== previous.binding.commit)
+              throw new Error("previous evidence checkpoint is invalid");
+            if (action.before !== previous.after)
+              throw new Error("evidence workflow checkpoint is stale");
+            const previouslyBrokered = new Set(
+              previous.request.files.map((file) => file.destination),
+            );
+            if (files.some((file) => !previouslyBrokered.has(file.destination)))
+              throw new Error(
+                "evidence revision destination was not previously brokered",
+              );
+          } else if (action.before !== grant.commits?.workflow.commit) {
+            throw new Error("evidence workflow checkpoint is stale");
+          }
+        }
         for (const [index, target] of targets.entries()) {
           const prior = existsSync(target) ? readFileSync(target) : null;
           const created: string[] = [];

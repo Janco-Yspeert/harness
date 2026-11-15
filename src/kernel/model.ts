@@ -379,6 +379,10 @@ export interface ExecutorProfile {
   // Bounded pre-allocation readiness deadline. When omitted, the host uses
   // the registered provider's conservative default.
   readinessTimeoutMs?: number;
+  // Opt-in executor interface guard for evaluator preparation. When enabled,
+  // a succeeded evaluator-preparation result must be bound to a successful
+  // trusted coverage-map preflight from this execution.
+  preparedCoveragePreflight?: boolean;
   // Fixture-only: honoured solely when a profile is passed programmatically
   // to the host. Production configuration rejects it.
   command?: string[];
