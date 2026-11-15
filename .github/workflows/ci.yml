@@ -16,8 +16,9 @@ concurrency:
 jobs:
   check:
     name: Check
-    # Provider-free deterministic tests remain mandatory on GitHub-hosted
-    # Ubuntu. Real containment runs in the separate Containment job.
+    # GitHub-hosted Ubuntu runs provider-free deterministic tests. Real
+    # containment has an explicit local command because it requires host
+    # namespace capabilities that hosted runners do not provide reliably.
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
@@ -49,43 +50,6 @@ jobs:
         run: npm run format:check
 
       # Serial files keep cleanup deterministic and leave a useful failure
-      # summary. The hosted job runs every provider-free deterministic file;
-      # the runner prints each containment file as an explicit SKIP and the
-      # separate Containment job makes them required on a capable host.
+      # summary. Containment files are explicitly reported as local-only skips.
       - name: Run deterministic tests
-        run: bash tools/ci-test-files.sh ordinary
-
-  containment:
-    name: Containment
-    # GitHub-hosted Ubuntu runners allow the bwrap AppArmor profile to load but
-    # make uid_map read-only. This runner must be dedicated to Harness, provide
-    # bwrap and a scoped profile that permits its nested user namespaces, and
-    # retain the global AppArmor user-namespace restriction.
-    runs-on: [self-hosted, linux, x64, harness-containment]
-    timeout-minutes: 20
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24.12.0
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Verify containment prerequisites
-        run: |
-          command -v bwrap
-          bwrap --version
-          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
-          bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / \
-            bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
-
-      - name: Run containment tests
-        run: bash tools/ci-test-files.sh containment
+        run: npm run test:ordinary

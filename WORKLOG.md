@@ -27,3 +27,6 @@
   namespace. GitHub-hosted runners then exposed a separate, read-only uid-map
   restriction, so provider-free tests stay mandatory there while a dedicated
   runner must prove the unchanged outer/nested containment probes.
+- 2026-11-15 — Routine GitHub CI now runs the provider-free deterministic
+  partition only. Real Bubblewrap assertions remain unchanged and are invoked
+  explicitly with `npm run test:containment` on a compatible Ubuntu host.

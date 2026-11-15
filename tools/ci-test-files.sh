@@ -21,13 +21,22 @@ is_containment_file() {
   esac
 }
 
+if [[ "$mode" == "containment" ]]; then
+  echo "=== VERIFY real Bubblewrap containment prerequisites ==="
+  command -v bwrap
+  bwrap --version
+  timeout 15s bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
+  timeout 15s bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / \
+    bwrap --unshare-user --unshare-pid --die-with-parent --ro-bind / / true
+fi
+
 passed=0
 skipped=0
 
 for test_file in test/*.test.ts; do
   if is_containment_file "$test_file"; then
     if [[ "$mode" == "ordinary" ]]; then
-      printf '=== SKIP %s (requires real Bubblewrap containment; dedicated runner) ===\n' "$test_file"
+      printf '=== SKIP %s (requires real Bubblewrap containment; compatible local Ubuntu host) ===\n' "$test_file"
       skipped=$((skipped + 1))
       continue
     fi

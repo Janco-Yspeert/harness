@@ -202,6 +202,24 @@ Harness uses Node's native TypeScript type stripping at runtime, so runtime
 TypeScript syntax must remain erasable. Static checking, linting, formatting,
 and tests are collected under `npm run check`.
 
+Routine GitHub CI runs the provider-free deterministic partition:
+
+```sh
+npm run test:ordinary
+```
+
+The four real Bubblewrap containment files stay in the repository but are not
+run on GitHub-hosted runners. Run them on a compatible Ubuntu host where
+unprivileged user namespaces, including nested Bubblewrap, are supported:
+
+```sh
+npm run test:containment
+```
+
+That command proves an outer and nested Bubblewrap launch before running the
+files. A passing ordinary CI check does **not** attest that operating-system
+containment was exercised.
+
 ### Workflow CLI
 
 The workflow runner operates on one `spikes/NNN-*/` directory at a time:
