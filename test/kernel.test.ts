@@ -961,7 +961,6 @@ void test("implementation feedback input binds only the current post-handoff imp
   );
   json(feedbackPath, {
     result: "FAIL",
-    classification: "IMPLEMENTATION_FAILURE",
     requirement: "public:test",
     expected: "expected behavior",
     observed: "observed behavior",

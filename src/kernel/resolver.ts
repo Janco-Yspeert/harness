@@ -219,11 +219,20 @@ export function roleInputs(
       ) {
         documents[rule.name] = JSON.parse(bytes.toString("utf8")) as unknown;
         if (
-          !Object.entries(rule.jsonChecks ?? {}).every(
-            ([path, value]) =>
-              contentId(fieldAt(documents[rule.name], path)) ===
-              contentId(value),
-          )
+          !Object.entries(rule.jsonChecks ?? {}).every(([path, value]) => {
+            const artifactValue = fieldAt(documents[rule.name], path);
+            // A finalized transition already binds declared event fields.
+            // Legacy public result shapes may omit a duplicated semantic
+            // field while retaining the canonical artifact identity, so do
+            // not require a history-rewriting artifact mutation merely to
+            // re-express a fact the bound event carries.
+            const actual =
+              artifactValue === undefined &&
+              Object.hasOwn(rule.eventFields ?? {}, path)
+                ? fieldAt(event?.evidence, path)
+                : artifactValue;
+            return contentId(actual) === contentId(value);
+          })
         )
           throw new Error(`input validation failed: ${rule.name}`);
       }
