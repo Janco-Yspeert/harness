@@ -2934,6 +2934,128 @@ void test("014k AC10: missing workflow evidence fails closed without parent-root
   );
 });
 
+void test("terminal evaluator submission rejects a malformed ledger without consuming the allocation, then finalizes the corrected FAIL", (t) => {
+  const f = fixture(t, "evaluator-submission-handshake");
+  const candidate = "c".repeat(40);
+  const evaluatorRevision = "001";
+  const privateRoot = required(f.project.workspaces.evaluation).path;
+  const resultPath = ".eval/attempts/001/eval-result.md";
+  const result = "# Attempt 001\n\nFAIL\n";
+  const spec = "spec\n";
+  const freeze = `${JSON.stringify({
+    evaluatorRevision,
+    artifacts: { "eval-spec.md": identity(spec) },
+  })}\n`;
+  const writeLedger = (value: unknown) => {
+    mkdirSync(join(privateRoot, ".eval"), { recursive: true });
+    writeFileSync(
+      join(privateRoot, ".eval/attempt-ledger.json"),
+      `${JSON.stringify(value)}\n`,
+    );
+  };
+  mkdirSync(dirname(join(privateRoot, resultPath)), { recursive: true });
+  writeFileSync(join(privateRoot, resultPath), result);
+  writeFileSync(join(privateRoot, "eval-spec.md"), spec);
+  writeFileSync(join(privateRoot, ".eval/freeze.json"), freeze);
+  writeLedger({ schemaVersion: 99, attempts: [] });
+
+  f.event("candidate", { commit: candidate, evaluatorRevision });
+  f.contract.workspaces.push("evaluation");
+  f.contract.inputs.push(
+    { name: "candidate", event: "candidate", field: "commit" },
+    {
+      name: "evaluatorRevision",
+      event: "candidate",
+      field: "evaluatorRevision",
+    },
+  );
+  f.contract.methodology = { result: ["FAIL"] };
+  f.contract.promotion = {
+    sourceWorkspace: "evaluation",
+    destinationWorkspace: "repository",
+    destination: "evaluation",
+    candidateInput: "candidate",
+    revisionInput: "evaluatorRevision",
+    when: { result: "PASS" },
+    allocationEvent: "verification-allocated",
+    attemptField: "attempt",
+    transition: "promotion-recorded",
+    derive: "host-archive",
+  };
+  const role = required(f.policy.roles.produce);
+  role.onAllocate = {
+    transition: "verification-allocated",
+    fromInputs: { commit: "candidate", evaluatorRevision: "evaluatorRevision" },
+    counterField: "attempt",
+  };
+  role.outcomes = [
+    {
+      disposition: "succeeded",
+      methodology: { result: "FAIL" },
+      transition: "verification-finalized",
+      evidence: {
+        artifact: "verification-result.json",
+        allocation: "verification-allocated",
+      },
+    },
+  ];
+  f.policy.roles["evaluator-verify"] = role;
+  delete f.policy.roles.produce;
+  json(join(f.root, "contracts/produce.json"), f.contract);
+  json(join(f.root, "policy.json"), f.policy);
+  json(join(f.root, "items", f.workflow, "verification-result.json"), {
+    commit: candidate,
+    evaluatorRevision,
+    result: "FAIL",
+  });
+  git(f.root, ["init", "-b", "main"]);
+  git(f.root, ["add", "."]);
+  git(f.root, ["commit", "-m", "verification evidence"]);
+
+  const grant = f.authorize();
+  const run = allocate(f, grant, "evaluator-verify");
+  f.kernel.process(f.workflow, run.execution.id, "running");
+  assert.throws(
+    () =>
+      f.kernel.result(f.workflow, run.execution.id, "succeeded", {
+        result: "FAIL",
+      }),
+    /attempt ledger does not use the canonical schema/,
+  );
+  assert.equal(f.kernel.execution(f.workflow, run.execution.id).result, null);
+  assert.equal(
+    f.kernel
+      .events(f.workflow)
+      .filter((event) => event.transition === "kernel.result").length,
+    0,
+  );
+
+  writeLedger({
+    schemaVersion: 2,
+    attempts: [
+      {
+        id: "001",
+        implementation: `git:${candidate}`,
+        evaluatorRevision,
+        evaluatorRevisionIdentity: identity(freeze),
+        resultPath,
+        resultIdentity: identity(result),
+        status: "FAIL",
+      },
+    ],
+  });
+  const accepted = f.kernel.result(f.workflow, run.execution.id, "succeeded", {
+    result: "FAIL",
+  });
+  assert.equal(accepted.transition?.status, "recorded");
+  assert.equal(
+    f.kernel
+      .events(f.workflow)
+      .filter((event) => event.transition === "verification-finalized").length,
+    1,
+  );
+});
+
 void test("root complete-evidence recovery records exactly one truthful promotion", (t) => {
   const f = fixture(t, "complete-archive-recovery");
   const candidate = "d".repeat(40);

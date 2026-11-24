@@ -2188,6 +2188,18 @@ export class ExecutionKernel {
       );
       if (resultConstraints.length && matchingOutcomes.length !== 1)
         throw this.#terminalOutcomeError(workflow, grant);
+      // An evaluator verdict is only useful once its private, immutable
+      // evidence can be bound to the host allocation.  Do this before a
+      // semantic result is appended: a bad ledger is an administrative
+      // submission error, not a terminal evaluator outcome.  The worker can
+      // correct the ledger and submit the same verdict in this allocation.
+      this.#validateTerminalEvaluatorSubmission(
+        workflow,
+        execution,
+        grant,
+        matchingOutcomes,
+        methodology,
+      );
       for (const path of disposition === "succeeded"
         ? role.contract.postconditions
         : [])
@@ -2233,6 +2245,51 @@ export class ExecutionKernel {
       const next = this.execution(workflow, id);
       this.#telemetry("semantic-result", next);
       return next;
+    });
+  }
+  #validateTerminalEvaluatorSubmission(
+    workflow: string,
+    execution: Execution,
+    grant: RoleGrant,
+    outcomes: readonly { readonly transition: string }[],
+    methodology: Data,
+  ): void {
+    if (
+      grant.role !== "evaluator-verify" ||
+      !outcomes.some((rule) => rule.transition === "verification-finalized")
+    )
+      return;
+    const promotion = required(
+      grant.hostActions.promotion,
+      "verification finalization lacks its private evidence contract",
+    );
+    const configured =
+      this.project.workflows[workflow]?.workspaces?.[
+        promotion.sourceWorkspace
+      ] ?? this.project.workspaces[promotion.sourceWorkspace];
+    const evaluatorWorkspace = grant.workspaces.find(
+      (workspace) =>
+        configured !== undefined &&
+        workspace.id === configured.id &&
+        workspace.path === configured.path,
+    );
+    if (!evaluatorWorkspace)
+      throw new Error(
+        "verification private evidence workspace is outside Role Grant",
+      );
+    const allocation = required(
+      this.events(workflow).findLast(
+        (event) =>
+          event.transition === promotion.allocationEvent &&
+          event.evidence.execution === execution.id,
+      ),
+      "verification submission lacks its exact allocation",
+    );
+    validatePrivateAttemptFinalization(realpathSync(evaluatorWorkspace.path), {
+      attempt: Number(allocation.evidence[promotion.attemptField]),
+      candidate: required(grant.inputs.candidate),
+      evaluatorRevision: required(grant.inputs.evaluatorRevision),
+      result: required(methodology.result) as "PASS" | "FAIL" | "BLOCKED",
     });
   }
   recoverTransition(
